@@ -1,0 +1,601 @@
+package com.mememymood.feature.gallery.presentation
+
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
+import com.mememymood.core.model.EmojiTag
+import com.mememymood.core.model.Meme
+import com.mememymood.core.ui.theme.MemeMoodTheme
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+
+/**
+ * UI tests for [MemeDetailScreen].
+ *
+ * Tests verify:
+ * - Detail view display
+ * - Emoji chips display
+ * - Edit mode functionality
+ * - Share and delete buttons
+ * - Dialog interactions
+ */
+@RunWith(AndroidJUnit4::class)
+class MemeDetailScreenTest {
+
+    @get:Rule
+    val composeTestRule = createComposeRule()
+
+    private val testMeme = Meme(
+        id = 1L,
+        filePath = "/test/meme.jpg",
+        fileName = "meme.jpg",
+        mimeType = "image/jpeg",
+        width = 1080,
+        height = 1080,
+        fileSizeBytes = 102400,
+        importedAt = System.currentTimeMillis(),
+        emojiTags = listOf(
+            EmojiTag("😂", "face_with_tears_of_joy"),
+            EmojiTag("🔥", "fire"),
+            EmojiTag("💀", "skull")
+        ),
+        title = "Funny Cat Meme",
+        description = "A hilarious cat doing cat things",
+        isFavorite = false
+    )
+
+    // ============ Loading State Tests ============
+
+    @Test
+    fun memeDetailScreen_showsLoadingIndicator_whenLoading() {
+        composeTestRule.setContent {
+            MemeMoodTheme {
+                MemeDetailScreen(
+                    uiState = MemeDetailUiState(isLoading = true),
+                    onIntent = {},
+                    onNavigateBack = {},
+                    onNavigateToShare = {}
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("LoadingIndicator").assertIsDisplayed()
+    }
+
+    // ============ Content Display Tests ============
+
+    @Test
+    fun memeDetailScreen_displaysMemeImage() {
+        composeTestRule.setContent {
+            MemeMoodTheme {
+                MemeDetailScreen(
+                    uiState = MemeDetailUiState(
+                        meme = testMeme,
+                        isLoading = false
+                    ),
+                    onIntent = {},
+                    onNavigateBack = {},
+                    onNavigateToShare = {}
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("MemeImage").assertIsDisplayed()
+    }
+
+    @Test
+    fun memeDetailScreen_displaysTitle() {
+        composeTestRule.setContent {
+            MemeMoodTheme {
+                MemeDetailScreen(
+                    uiState = MemeDetailUiState(
+                        meme = testMeme,
+                        isLoading = false
+                    ),
+                    onIntent = {},
+                    onNavigateBack = {},
+                    onNavigateToShare = {}
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Funny Cat Meme").assertIsDisplayed()
+    }
+
+    @Test
+    fun memeDetailScreen_displaysDescription() {
+        composeTestRule.setContent {
+            MemeMoodTheme {
+                MemeDetailScreen(
+                    uiState = MemeDetailUiState(
+                        meme = testMeme,
+                        isLoading = false
+                    ),
+                    onIntent = {},
+                    onNavigateBack = {},
+                    onNavigateToShare = {}
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("A hilarious cat doing cat things").assertIsDisplayed()
+    }
+
+    @Test
+    fun memeDetailScreen_displaysEmojiTags() {
+        composeTestRule.setContent {
+            MemeMoodTheme {
+                MemeDetailScreen(
+                    uiState = MemeDetailUiState(
+                        meme = testMeme,
+                        isLoading = false
+                    ),
+                    onIntent = {},
+                    onNavigateBack = {},
+                    onNavigateToShare = {}
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("😂").assertIsDisplayed()
+        composeTestRule.onNodeWithText("🔥").assertIsDisplayed()
+        composeTestRule.onNodeWithText("💀").assertIsDisplayed()
+    }
+
+    // ============ Top Bar Tests ============
+
+    @Test
+    fun memeDetailScreen_showsBackButton() {
+        composeTestRule.setContent {
+            MemeMoodTheme {
+                MemeDetailScreen(
+                    uiState = MemeDetailUiState(
+                        meme = testMeme,
+                        isLoading = false
+                    ),
+                    onIntent = {},
+                    onNavigateBack = {},
+                    onNavigateToShare = {}
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithContentDescription("Navigate back").assertIsDisplayed()
+    }
+
+    @Test
+    fun memeDetailScreen_navigatesBack_onBackClick() {
+        var navigatedBack = false
+
+        composeTestRule.setContent {
+            MemeMoodTheme {
+                MemeDetailScreen(
+                    uiState = MemeDetailUiState(
+                        meme = testMeme,
+                        isLoading = false
+                    ),
+                    onIntent = {},
+                    onNavigateBack = { navigatedBack = true },
+                    onNavigateToShare = {}
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithContentDescription("Navigate back").performClick()
+
+        assertThat(navigatedBack).isTrue()
+    }
+
+    @Test
+    fun memeDetailScreen_showsEditButton() {
+        composeTestRule.setContent {
+            MemeMoodTheme {
+                MemeDetailScreen(
+                    uiState = MemeDetailUiState(
+                        meme = testMeme,
+                        isLoading = false
+                    ),
+                    onIntent = {},
+                    onNavigateBack = {},
+                    onNavigateToShare = {}
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithContentDescription("Edit").assertIsDisplayed()
+    }
+
+    @Test
+    fun memeDetailScreen_showsShareButton() {
+        composeTestRule.setContent {
+            MemeMoodTheme {
+                MemeDetailScreen(
+                    uiState = MemeDetailUiState(
+                        meme = testMeme,
+                        isLoading = false
+                    ),
+                    onIntent = {},
+                    onNavigateBack = {},
+                    onNavigateToShare = {}
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithContentDescription("Share").assertIsDisplayed()
+    }
+
+    @Test
+    fun memeDetailScreen_showsDeleteButton() {
+        composeTestRule.setContent {
+            MemeMoodTheme {
+                MemeDetailScreen(
+                    uiState = MemeDetailUiState(
+                        meme = testMeme,
+                        isLoading = false
+                    ),
+                    onIntent = {},
+                    onNavigateBack = {},
+                    onNavigateToShare = {}
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithContentDescription("Delete").assertIsDisplayed()
+    }
+
+    // ============ Favorite Button Tests ============
+
+    @Test
+    fun memeDetailScreen_showsFavoriteButton_notFavorited() {
+        composeTestRule.setContent {
+            MemeMoodTheme {
+                MemeDetailScreen(
+                    uiState = MemeDetailUiState(
+                        meme = testMeme.copy(isFavorite = false),
+                        isLoading = false
+                    ),
+                    onIntent = {},
+                    onNavigateBack = {},
+                    onNavigateToShare = {}
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithContentDescription("Add to favorites").assertIsDisplayed()
+    }
+
+    @Test
+    fun memeDetailScreen_showsFavoriteButton_favorited() {
+        composeTestRule.setContent {
+            MemeMoodTheme {
+                MemeDetailScreen(
+                    uiState = MemeDetailUiState(
+                        meme = testMeme.copy(isFavorite = true),
+                        isLoading = false
+                    ),
+                    onIntent = {},
+                    onNavigateBack = {},
+                    onNavigateToShare = {}
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithContentDescription("Remove from favorites").assertIsDisplayed()
+    }
+
+    @Test
+    fun memeDetailScreen_togglesFavorite_onFavoriteClick() {
+        var receivedIntent: MemeDetailIntent? = null
+
+        composeTestRule.setContent {
+            MemeMoodTheme {
+                MemeDetailScreen(
+                    uiState = MemeDetailUiState(
+                        meme = testMeme,
+                        isLoading = false
+                    ),
+                    onIntent = { receivedIntent = it },
+                    onNavigateBack = {},
+                    onNavigateToShare = {}
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithContentDescription("Add to favorites").performClick()
+
+        assertThat(receivedIntent).isEqualTo(MemeDetailIntent.ToggleFavorite)
+    }
+
+    // ============ Edit Mode Tests ============
+
+    @Test
+    fun memeDetailScreen_showsEditFields_inEditMode() {
+        composeTestRule.setContent {
+            MemeMoodTheme {
+                MemeDetailScreen(
+                    uiState = MemeDetailUiState(
+                        meme = testMeme,
+                        isLoading = false,
+                        isEditMode = true,
+                        editedTitle = "Funny Cat Meme",
+                        editedDescription = "A hilarious cat doing cat things"
+                    ),
+                    onIntent = {},
+                    onNavigateBack = {},
+                    onNavigateToShare = {}
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("TitleTextField").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("DescriptionTextField").assertIsDisplayed()
+    }
+
+    @Test
+    fun memeDetailScreen_showsSaveDiscardButtons_inEditMode() {
+        composeTestRule.setContent {
+            MemeMoodTheme {
+                MemeDetailScreen(
+                    uiState = MemeDetailUiState(
+                        meme = testMeme,
+                        isLoading = false,
+                        isEditMode = true,
+                        editedTitle = "Funny Cat Meme"
+                    ),
+                    onIntent = {},
+                    onNavigateBack = {},
+                    onNavigateToShare = {}
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Save").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Discard").assertIsDisplayed()
+    }
+
+    @Test
+    fun memeDetailScreen_togglesEditMode_onEditClick() {
+        var receivedIntent: MemeDetailIntent? = null
+
+        composeTestRule.setContent {
+            MemeMoodTheme {
+                MemeDetailScreen(
+                    uiState = MemeDetailUiState(
+                        meme = testMeme,
+                        isLoading = false
+                    ),
+                    onIntent = { receivedIntent = it },
+                    onNavigateBack = {},
+                    onNavigateToShare = {}
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithContentDescription("Edit").performClick()
+
+        assertThat(receivedIntent).isEqualTo(MemeDetailIntent.ToggleEditMode)
+    }
+
+    @Test
+    fun memeDetailScreen_savesChanges_onSaveClick() {
+        var receivedIntent: MemeDetailIntent? = null
+
+        composeTestRule.setContent {
+            MemeMoodTheme {
+                MemeDetailScreen(
+                    uiState = MemeDetailUiState(
+                        meme = testMeme,
+                        isLoading = false,
+                        isEditMode = true,
+                        editedTitle = "New Title"
+                    ),
+                    onIntent = { receivedIntent = it },
+                    onNavigateBack = {},
+                    onNavigateToShare = {}
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Save").performClick()
+
+        assertThat(receivedIntent).isEqualTo(MemeDetailIntent.SaveChanges)
+    }
+
+    @Test
+    fun memeDetailScreen_discardsChanges_onDiscardClick() {
+        var receivedIntent: MemeDetailIntent? = null
+
+        composeTestRule.setContent {
+            MemeMoodTheme {
+                MemeDetailScreen(
+                    uiState = MemeDetailUiState(
+                        meme = testMeme,
+                        isLoading = false,
+                        isEditMode = true,
+                        editedTitle = "New Title"
+                    ),
+                    onIntent = { receivedIntent = it },
+                    onNavigateBack = {},
+                    onNavigateToShare = {}
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Discard").performClick()
+
+        assertThat(receivedIntent).isEqualTo(MemeDetailIntent.DiscardChanges)
+    }
+
+    // ============ Delete Dialog Tests ============
+
+    @Test
+    fun memeDetailScreen_showsDeleteDialog_whenShowDeleteDialogTrue() {
+        composeTestRule.setContent {
+            MemeMoodTheme {
+                MemeDetailScreen(
+                    uiState = MemeDetailUiState(
+                        meme = testMeme,
+                        isLoading = false,
+                        showDeleteDialog = true
+                    ),
+                    onIntent = {},
+                    onNavigateBack = {},
+                    onNavigateToShare = {}
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Delete Meme").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Are you sure", substring = true).assertIsDisplayed()
+    }
+
+    @Test
+    fun memeDetailScreen_confirmsDelete_onDeleteConfirmClick() {
+        var receivedIntent: MemeDetailIntent? = null
+
+        composeTestRule.setContent {
+            MemeMoodTheme {
+                MemeDetailScreen(
+                    uiState = MemeDetailUiState(
+                        meme = testMeme,
+                        isLoading = false,
+                        showDeleteDialog = true
+                    ),
+                    onIntent = { receivedIntent = it },
+                    onNavigateBack = {},
+                    onNavigateToShare = {}
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Delete").performClick()
+
+        assertThat(receivedIntent).isEqualTo(MemeDetailIntent.ConfirmDelete)
+    }
+
+    @Test
+    fun memeDetailScreen_dismissesDialog_onCancelClick() {
+        var receivedIntent: MemeDetailIntent? = null
+
+        composeTestRule.setContent {
+            MemeMoodTheme {
+                MemeDetailScreen(
+                    uiState = MemeDetailUiState(
+                        meme = testMeme,
+                        isLoading = false,
+                        showDeleteDialog = true
+                    ),
+                    onIntent = { receivedIntent = it },
+                    onNavigateBack = {},
+                    onNavigateToShare = {}
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Cancel").performClick()
+
+        assertThat(receivedIntent).isEqualTo(MemeDetailIntent.DismissDeleteDialog)
+    }
+
+    // ============ Emoji Picker Tests ============
+
+    @Test
+    fun memeDetailScreen_showsEmojiPicker_whenShowEmojiPickerTrue() {
+        composeTestRule.setContent {
+            MemeMoodTheme {
+                MemeDetailScreen(
+                    uiState = MemeDetailUiState(
+                        meme = testMeme,
+                        isLoading = false,
+                        isEditMode = true,
+                        showEmojiPicker = true,
+                        editedEmojis = listOf("😂", "🔥")
+                    ),
+                    onIntent = {},
+                    onNavigateBack = {},
+                    onNavigateToShare = {}
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("EmojiPicker").assertIsDisplayed()
+    }
+
+    @Test
+    fun memeDetailScreen_showsAddEmojiButton_inEditMode() {
+        composeTestRule.setContent {
+            MemeMoodTheme {
+                MemeDetailScreen(
+                    uiState = MemeDetailUiState(
+                        meme = testMeme,
+                        isLoading = false,
+                        isEditMode = true,
+                        editedEmojis = listOf("😂")
+                    ),
+                    onIntent = {},
+                    onNavigateBack = {},
+                    onNavigateToShare = {}
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithContentDescription("Add emoji").assertIsDisplayed()
+    }
+
+    // ============ Error State Tests ============
+
+    @Test
+    fun memeDetailScreen_showsError_whenErrorMessagePresent() {
+        composeTestRule.setContent {
+            MemeMoodTheme {
+                MemeDetailScreen(
+                    uiState = MemeDetailUiState(
+                        meme = null,
+                        isLoading = false,
+                        errorMessage = "Failed to load meme"
+                    ),
+                    onIntent = {},
+                    onNavigateBack = {},
+                    onNavigateToShare = {}
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Failed to load meme").assertIsDisplayed()
+    }
+
+    // ============ Share Navigation Test ============
+
+    @Test
+    fun memeDetailScreen_navigatesToShare_onShareClick() {
+        var receivedIntent: MemeDetailIntent? = null
+
+        composeTestRule.setContent {
+            MemeMoodTheme {
+                MemeDetailScreen(
+                    uiState = MemeDetailUiState(
+                        meme = testMeme,
+                        isLoading = false
+                    ),
+                    onIntent = { receivedIntent = it },
+                    onNavigateBack = {},
+                    onNavigateToShare = {}
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithContentDescription("Share").performClick()
+
+        assertThat(receivedIntent).isEqualTo(MemeDetailIntent.Share)
+    }
+}

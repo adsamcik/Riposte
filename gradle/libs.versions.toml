@@ -1,0 +1,146 @@
+[versions]
+# Core
+agp = "8.13.2"
+kotlin = "2.1.0"
+ksp = "2.1.0-1.0.29"
+
+# Compose
+compose-bom = "2025.01.00"
+
+# AndroidX
+core-ktx = "1.15.0"
+activity-compose = "1.9.3"
+lifecycle = "2.8.7"
+navigation = "2.8.5"
+room = "2.7.0"
+datastore = "1.1.2"
+
+# Hilt
+hilt = "2.53"
+hilt-navigation-compose = "1.2.0"
+
+# Coroutines
+coroutines = "1.9.0"
+
+# Image Loading
+coil = "2.7.0"
+
+# ML Kit (On-device AI)
+mlkit-text-recognition = "16.0.0"
+mlkit-image-labeling = "17.0.8"
+
+# TensorFlow Lite (Semantic Embeddings)
+tensorflow-lite = "0.4.4"
+
+# Serialization
+kotlinx-serialization = "1.7.3"
+
+# Testing
+junit = "4.13.2"
+androidx-test-ext = "1.2.1"
+espresso = "3.6.1"
+mockk = "1.13.13"
+turbine = "1.2.0"
+robolectric = "4.14.1"
+truth = "1.4.4"
+androidx-test-core = "1.6.1"
+androidx-test-runner = "1.6.2"
+
+[libraries]
+# Core AndroidX
+core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "core-ktx" }
+activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activity-compose" }
+
+# Compose BOM
+compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "compose-bom" }
+compose-ui = { group = "androidx.compose.ui", name = "ui" }
+compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
+compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
+compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
+compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
+compose-material3 = { group = "androidx.compose.material3", name = "material3" }
+compose-material3-window-size = { group = "androidx.compose.material3", name = "material3-window-size-class" }
+compose-material-icons = { group = "androidx.compose.material", name = "material-icons-extended" }
+compose-runtime = { group = "androidx.compose.runtime", name = "runtime" }
+
+# Lifecycle & ViewModel
+lifecycle-runtime-compose = { group = "androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "lifecycle" }
+lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "lifecycle" }
+
+# Navigation
+navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigation" }
+
+# Hilt
+hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
+hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
+hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "hilt-navigation-compose" }
+
+# Room
+room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
+room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+room-testing = { group = "androidx.room", name = "room-testing", version.ref = "room" }
+
+# DataStore
+datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
+
+# Coroutines
+coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }
+coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
+coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
+
+# Image Loading
+coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
+
+# ML Kit (On-device AI)
+mlkit-text-recognition = { group = "com.google.mlkit", name = "text-recognition", version.ref = "mlkit-text-recognition" }
+mlkit-image-labeling = { group = "com.google.mlkit", name = "image-labeling", version.ref = "mlkit-image-labeling" }
+
+# TensorFlow Lite (Semantic Embeddings)
+tensorflow-lite = { group = "org.tensorflow", name = "tensorflow-lite", version.ref = "tensorflow-lite" }
+tensorflow-lite-support = { group = "org.tensorflow", name = "tensorflow-lite-support", version.ref = "tensorflow-lite" }
+
+# Serialization
+kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+
+# Testing
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+androidx-test-ext = { group = "androidx.test.ext", name = "junit", version.ref = "androidx-test-ext" }
+androidx-test-core = { group = "androidx.test", name = "core", version.ref = "androidx-test-core" }
+androidx-test-core-ktx = { group = "androidx.test", name = "core-ktx", version.ref = "androidx-test-core" }
+androidx-test-runner = { group = "androidx.test", name = "runner", version.ref = "androidx-test-runner" }
+espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espresso" }
+mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
+mockk-android = { group = "io.mockk", name = "mockk-android", version.ref = "mockk" }
+turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
+robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
+truth = { group = "com.google.truth", name = "truth", version.ref = "truth" }
+hilt-android-testing = { group = "com.google.dagger", name = "hilt-android-testing", version.ref = "hilt" }
+
+[bundles]
+compose = [
+    "compose-ui",
+    "compose-ui-graphics",
+    "compose-ui-tooling-preview",
+    "compose-material3",
+    "compose-material-icons",
+    "compose-runtime"
+]
+compose-debug = ["compose-ui-tooling", "compose-ui-test-manifest"]
+lifecycle = ["lifecycle-runtime-compose", "lifecycle-viewmodel-compose"]
+room = ["room-runtime", "room-ktx"]
+mlkit = ["mlkit-text-recognition", "mlkit-image-labeling"]
+tensorflow = ["tensorflow-lite", "tensorflow-lite-support"]
+testing = ["junit", "coroutines-test", "mockk", "turbine", "truth"]
+android-testing = ["androidx-test-ext", "espresso-core", "compose-ui-test-junit4", "hilt-android-testing"]
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+android-library = { id = "com.android.library", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+room = { id = "androidx.room", version.ref = "room" }

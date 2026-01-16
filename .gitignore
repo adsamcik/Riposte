@@ -1,0 +1,41 @@
+# Project-wide ignores
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.idea_modules/
+out/
+
+# Android Studio
+/captures
+.externalNativeBuild
+.cxx
+
+# Local configuration
+local.properties
+*.log
+*.tmp
+*.bak
+*.swp
+*~.nib
+
+# Keystore
+*.jks
+*.keystore
+
+# Mac
+.DS_Store
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# Kotlin
+*.kotlin_module

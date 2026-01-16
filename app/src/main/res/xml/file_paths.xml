@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Share cache directory -->
+    <cache-path
+        name="share_cache"
+        path="share_cache/" />
+    
+    <!-- Memes storage directory -->
+    <files-path
+        name="memes"
+        path="memes/" />
+    
+    <!-- External files (if needed for compatibility) -->
+    <external-files-path
+        name="external_memes"
+        path="memes/" />
+</paths>

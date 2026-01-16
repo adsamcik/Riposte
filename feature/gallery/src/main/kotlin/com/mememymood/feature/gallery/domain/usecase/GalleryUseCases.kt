@@ -1,0 +1,71 @@
+package com.mememymood.feature.gallery.domain.usecase
+
+import com.mememymood.core.model.Meme
+import com.mememymood.feature.gallery.domain.repository.GalleryRepository
+import kotlinx.coroutines.flow.Flow
+import javax.inject.Inject
+
+/**
+ * Use case for getting all memes.
+ */
+class GetMemesUseCase @Inject constructor(
+    private val repository: GalleryRepository
+) {
+    operator fun invoke(): Flow<List<Meme>> = repository.getMemes()
+}
+
+/**
+ * Use case for getting favorite memes.
+ */
+class GetFavoritesUseCase @Inject constructor(
+    private val repository: GalleryRepository
+) {
+    operator fun invoke(): Flow<List<Meme>> = repository.getFavorites()
+}
+
+/**
+ * Use case for getting a meme by ID.
+ */
+class GetMemeByIdUseCase @Inject constructor(
+    private val repository: GalleryRepository
+) {
+    suspend operator fun invoke(id: Long): Meme? = repository.getMemeById(id)
+}
+
+/**
+ * Use case for deleting memes.
+ */
+class DeleteMemesUseCase @Inject constructor(
+    private val repository: GalleryRepository
+) {
+    suspend operator fun invoke(ids: Set<Long>): Result<Unit> = repository.deleteMemes(ids)
+    
+    suspend operator fun invoke(id: Long): Result<Unit> = repository.deleteMeme(id)
+}
+
+/**
+ * Use case for toggling favorite status.
+ */
+class ToggleFavoriteUseCase @Inject constructor(
+    private val repository: GalleryRepository
+) {
+    suspend operator fun invoke(id: Long): Result<Unit> = repository.toggleFavorite(id)
+}
+
+/**
+ * Use case for updating a meme with its emoji tags.
+ */
+class UpdateMemeUseCase @Inject constructor(
+    private val repository: GalleryRepository
+) {
+    suspend operator fun invoke(meme: Meme): Result<Unit> = repository.updateMemeWithEmojis(meme)
+}
+
+/**
+ * Use case for filtering memes by emoji.
+ */
+class GetMemesByEmojiUseCase @Inject constructor(
+    private val repository: GalleryRepository
+) {
+    operator fun invoke(emoji: String): Flow<List<Meme>> = repository.getMemesByEmoji(emoji)
+}
