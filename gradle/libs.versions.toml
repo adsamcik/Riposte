@@ -16,7 +16,7 @@ room = "2.7.0"
 datastore = "1.1.2"
 
 # Hilt
-hilt = "2.53"
+hilt = "2.57.2"
 hilt-navigation-compose = "1.2.0"
 
 # Coroutines

@@ -1,6 +1,7 @@
 package com.mememymood.feature.settings.presentation
 
 import android.content.Context
+import androidx.core.content.pm.PackageInfoCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mememymood.core.datastore.PreferencesDataStore
@@ -74,7 +75,8 @@ class SettingsViewModel @Inject constructor(
     private fun getAppVersion(): String {
         return try {
             val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-            "${packageInfo.versionName} (${packageInfo.longVersionCode})"
+            val versionCode = PackageInfoCompat.getLongVersionCode(packageInfo)
+            "${packageInfo.versionName} ($versionCode)"
         } catch (e: Exception) {
             "1.0.0"
         }
