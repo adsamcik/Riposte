@@ -1,48 +1,48 @@
 [versions]
 # Core
 agp = "8.13.2"
-kotlin = "2.1.0"
-ksp = "2.1.0-1.0.29"
+kotlin = "2.3.0"
+ksp = "2.3.0"
 
 # Compose
-compose-bom = "2025.01.00"
+compose-bom = "2025.12.00"
 
 # AndroidX
-core-ktx = "1.15.0"
-activity-compose = "1.9.3"
-lifecycle = "2.8.7"
-navigation = "2.8.5"
-room = "2.7.0"
-datastore = "1.1.2"
+core-ktx = "1.17.0"
+activity-compose = "1.12.2"
+lifecycle = "2.10.0"
+navigation = "2.9.6"
+room = "2.8.4"
+datastore = "1.2.0"
 
 # Hilt
-hilt = "2.57.2"
-hilt-navigation-compose = "1.2.0"
+hilt = "2.58"
+hilt-navigation-compose = "1.3.0"
 
 # Coroutines
-coroutines = "1.9.0"
+coroutines = "1.10.1"
 
-# Image Loading
-coil = "2.7.0"
+# Image Loading (Coil 3)
+coil = "3.3.0"
 
 # ML Kit (On-device AI)
-mlkit-text-recognition = "16.0.0"
-mlkit-image-labeling = "17.0.8"
+mlkit-text-recognition = "16.0.1"
+mlkit-image-labeling = "17.0.9"
 
-# TensorFlow Lite (Semantic Embeddings)
-tensorflow-lite = "0.4.4"
+# LiteRT (Replaces TensorFlow Lite)
+litert = "2.1.0"
 
 # Serialization
-kotlinx-serialization = "1.7.3"
+kotlinx-serialization = "1.8.0"
 
 # Testing
 junit = "4.13.2"
 androidx-test-ext = "1.2.1"
 espresso = "3.6.1"
-mockk = "1.13.13"
-turbine = "1.2.0"
-robolectric = "4.14.1"
-truth = "1.4.4"
+mockk = "1.14.7"
+turbine = "1.2.1"
+robolectric = "4.16"
+truth = "1.4.5"
 androidx-test-core = "1.6.1"
 androidx-test-runner = "1.6.2"
 
@@ -90,16 +90,16 @@ coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-
 coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
 coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
 
-# Image Loading
-coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
+# Image Loading (Coil 3)
+coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }
+coil-network = { group = "io.coil-kt.coil3", name = "coil-network-okhttp", version.ref = "coil" }
 
 # ML Kit (On-device AI)
 mlkit-text-recognition = { group = "com.google.mlkit", name = "text-recognition", version.ref = "mlkit-text-recognition" }
 mlkit-image-labeling = { group = "com.google.mlkit", name = "image-labeling", version.ref = "mlkit-image-labeling" }
 
-# TensorFlow Lite (Semantic Embeddings)
-tensorflow-lite = { group = "org.tensorflow", name = "tensorflow-lite", version.ref = "tensorflow-lite" }
-tensorflow-lite-support = { group = "org.tensorflow", name = "tensorflow-lite-support", version.ref = "tensorflow-lite" }
+# LiteRT (On-device AI Runtime - Replaces TensorFlow Lite)
+litert-runtime = { group = "com.google.ai.edge.litert", name = "litert", version.ref = "litert" }
 
 # Serialization
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
@@ -131,7 +131,7 @@ compose-debug = ["compose-ui-tooling", "compose-ui-test-manifest"]
 lifecycle = ["lifecycle-runtime-compose", "lifecycle-viewmodel-compose"]
 room = ["room-runtime", "room-ktx"]
 mlkit = ["mlkit-text-recognition", "mlkit-image-labeling"]
-tensorflow = ["tensorflow-lite", "tensorflow-lite-support"]
+litert = ["litert-runtime"]
 testing = ["junit", "coroutines-test", "mockk", "turbine", "truth"]
 android-testing = ["androidx-test-ext", "espresso-core", "compose-ui-test-junit4", "hilt-android-testing"]
 

@@ -6,19 +6,15 @@ plugins {
 
 android {
     namespace = "com.mememymood.core.ui"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
-        minSdk = 26
+        minSdk = 30
     }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
-    }
-
-    kotlinOptions {
-        jvmTarget = "17"
     }
 
     buildFeatures {
@@ -37,8 +33,9 @@ dependencies {
     implementation(libs.bundles.compose)
     debugImplementation(libs.bundles.compose.debug)
 
-    // Image Loading
+    // Image Loading (Coil 3)
     implementation(libs.coil.compose)
+    implementation(libs.coil.network)
 
     // Testing
     testImplementation(libs.bundles.testing)

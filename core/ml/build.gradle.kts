@@ -7,19 +7,15 @@ plugins {
 
 android {
     namespace = "com.mememymood.core.ml"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
-        minSdk = 26
+        minSdk = 30
     }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
-    }
-
-    kotlinOptions {
-        jvmTarget = "17"
     }
 }
 
@@ -34,8 +30,8 @@ dependencies {
     // ML Kit
     implementation(libs.bundles.mlkit)
 
-    // TensorFlow Lite (for semantic embeddings)
-    implementation(libs.bundles.tensorflow)
+    // LiteRT (for semantic embeddings - replaces TensorFlow Lite)
+    implementation(libs.bundles.litert)
 
     // ExifInterface for metadata handling
     implementation("androidx.exifinterface:exifinterface:1.3.7")

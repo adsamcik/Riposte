@@ -14,6 +14,9 @@ plugins {
 subprojects {
     tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
         compilerOptions {
+            // Set JVM target to match Java 17 (Kotlin 2.3.0 defaults to 21)
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+            
             // Treat all warnings as errors for stricter code quality
             allWarningsAsErrors.set(false)
             
