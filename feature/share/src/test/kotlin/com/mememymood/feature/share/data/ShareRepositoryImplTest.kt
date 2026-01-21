@@ -100,7 +100,6 @@ class ShareRepositoryImplTest {
             defaultFormat = ImageFormat.PNG,
             defaultQuality = 85,
             stripMetadata = true,
-            addWatermark = false,
         )
         every { preferencesDataStore.sharingPreferences } returns flowOf(preferences)
 
@@ -109,7 +108,6 @@ class ShareRepositoryImplTest {
         assertThat(result.format).isEqualTo(ImageFormat.PNG)
         assertThat(result.quality).isEqualTo(85)
         assertThat(result.stripMetadata).isTrue()
-        assertThat(result.addWatermark).isFalse()
     }
 
     @Test

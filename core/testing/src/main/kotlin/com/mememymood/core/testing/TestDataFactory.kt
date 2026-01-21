@@ -235,22 +235,19 @@ object TestDataFactory {
      * @param maxWidth Maximum width in pixels.
      * @param maxHeight Maximum height in pixels.
      * @param stripMetadata Whether to strip metadata.
-     * @param addWatermark Whether to add watermark.
      */
     fun createShareConfig(
         format: ImageFormat = ImageFormat.WEBP,
         quality: Int = 85,
         maxWidth: Int? = 1080,
         maxHeight: Int? = 1080,
-        stripMetadata: Boolean = true,
-        addWatermark: Boolean = false
+        stripMetadata: Boolean = true
     ): ShareConfig = ShareConfig(
         format = format,
         quality = quality,
         maxWidth = maxWidth,
         maxHeight = maxHeight,
-        stripMetadata = stripMetadata,
-        addWatermark = addWatermark
+        stripMetadata = stripMetadata
     )
 
     /**
@@ -275,7 +272,6 @@ object TestDataFactory {
         maxWidth: Int = 1080,
         maxHeight: Int = 1080,
         stripMetadata: Boolean = true,
-        addWatermark: Boolean = false,
         recentShareTargets: List<String> = emptyList(),
         favoriteShareTargets: List<String> = emptyList()
     ): SharingPreferences = SharingPreferences(
@@ -284,7 +280,6 @@ object TestDataFactory {
         maxWidth = maxWidth,
         maxHeight = maxHeight,
         stripMetadata = stripMetadata,
-        addWatermark = addWatermark,
         recentShareTargets = recentShareTargets,
         favoriteShareTargets = favoriteShareTargets
     )

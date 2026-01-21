@@ -10,7 +10,6 @@ sealed interface SettingsIntent {
     data class SetDefaultQuality(val quality: Int) : SettingsIntent
     data class SetDefaultMaxDimension(val dimension: Int) : SettingsIntent
     data class SetKeepMetadata(val keep: Boolean) : SettingsIntent
-    data class SetAddWatermark(val add: Boolean) : SettingsIntent
 
     // Search
     data class SetEnableSemanticSearch(val enabled: Boolean) : SettingsIntent

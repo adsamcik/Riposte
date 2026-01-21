@@ -131,7 +131,6 @@ Users can customize how memes are shared:
 | Quality | 0-100% |
 | Max Size | 480p - Original |
 | Metadata | Keep / Strip |
-| Watermark | On / Off |
 
 ## Dependencies
 

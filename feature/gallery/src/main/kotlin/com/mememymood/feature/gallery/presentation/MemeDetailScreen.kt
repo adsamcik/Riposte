@@ -1,5 +1,6 @@
 package com.mememymood.feature.gallery.presentation
 
+import android.content.Intent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -22,6 +23,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
@@ -68,9 +70,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.mememymood.core.model.EmojiTag
@@ -85,11 +88,11 @@ import java.time.format.FormatStyle
 @Composable
 fun MemeDetailScreen(
     onNavigateBack: () -> Unit,
-    onNavigateToShare: (Long) -> Unit,
     viewModel: MemeDetailViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
 
     var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
@@ -99,26 +102,85 @@ fun MemeDetailScreen(
         viewModel.effects.collectLatest { effect ->
             when (effect) {
                 is MemeDetailEffect.NavigateBack -> onNavigateBack()
-                is MemeDetailEffect.NavigateToShare -> onNavigateToShare(effect.memeId)
+                is MemeDetailEffect.LaunchShareIntent -> {
+                    context.startActivity(Intent.createChooser(effect.intent, "Share Meme"))
+                }
                 is MemeDetailEffect.ShowSnackbar -> snackbarHostState.showSnackbar(effect.message)
                 is MemeDetailEffect.ShowError -> snackbarHostState.showSnackbar(effect.message)
             }
         }
     }
 
+    MemeDetailScreenContent(
+        uiState = uiState,
+        onIntent = viewModel::onIntent,
+        onNavigateBack = onNavigateBack,
+        snackbarHostState = snackbarHostState,
+        scale = scale,
+        offset = offset,
+        showControls = showControls,
+        onScaleChange = { scale = it },
+        onOffsetChange = { offset = it },
+        onShowControlsChange = { showControls = it },
+    )
+}
+
+/**
+ * Test-friendly overload that accepts UI state directly.
+ */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+fun MemeDetailScreen(
+    uiState: MemeDetailUiState,
+    onIntent: (MemeDetailIntent) -> Unit,
+    onNavigateBack: () -> Unit,
+) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    var scale by remember { mutableFloatStateOf(1f) }
+    var offset by remember { mutableStateOf(Offset.Zero) }
+    var showControls by remember { mutableStateOf(true) }
+
+    MemeDetailScreenContent(
+        uiState = uiState,
+        onIntent = onIntent,
+        onNavigateBack = onNavigateBack,
+        snackbarHostState = snackbarHostState,
+        scale = scale,
+        offset = offset,
+        showControls = showControls,
+        onScaleChange = { scale = it },
+        onOffsetChange = { offset = it },
+        onShowControlsChange = { showControls = it },
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+private fun MemeDetailScreenContent(
+    uiState: MemeDetailUiState,
+    onIntent: (MemeDetailIntent) -> Unit,
+    onNavigateBack: () -> Unit,
+    snackbarHostState: SnackbarHostState,
+    scale: Float,
+    offset: Offset,
+    showControls: Boolean,
+    onScaleChange: (Float) -> Unit,
+    onOffsetChange: (Offset) -> Unit,
+    onShowControlsChange: (Boolean) -> Unit,
+) {
     // Delete confirmation dialog
     if (uiState.showDeleteDialog) {
         AlertDialog(
-            onDismissRequest = { viewModel.onIntent(MemeDetailIntent.DismissDeleteDialog) },
+            onDismissRequest = { onIntent(MemeDetailIntent.DismissDeleteDialog) },
             title = { Text("Delete Meme?") },
             text = { Text("This action cannot be undone.") },
             confirmButton = {
-                TextButton(onClick = { viewModel.onIntent(MemeDetailIntent.ConfirmDelete) }) {
+                TextButton(onClick = { onIntent(MemeDetailIntent.ConfirmDelete) }) {
                     Text("Delete", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { viewModel.onIntent(MemeDetailIntent.DismissDeleteDialog) }) {
+                TextButton(onClick = { onIntent(MemeDetailIntent.DismissDeleteDialog) }) {
                     Text("Cancel")
                 }
             },
@@ -130,12 +192,12 @@ fun MemeDetailScreen(
         EditEmojiDialog(
             selectedEmojis = uiState.editedEmojis,
             onAddEmoji = { emoji ->
-                viewModel.onIntent(MemeDetailIntent.AddEmoji(emoji))
+                onIntent(MemeDetailIntent.AddEmoji(emoji))
             },
             onRemoveEmoji = { emoji ->
-                viewModel.onIntent(MemeDetailIntent.RemoveEmoji(emoji))
+                onIntent(MemeDetailIntent.RemoveEmoji(emoji))
             },
-            onDismiss = { viewModel.onIntent(MemeDetailIntent.DismissEmojiPicker) },
+            onDismiss = { onIntent(MemeDetailIntent.DismissEmojiPicker) },
         )
     }
 
@@ -155,13 +217,14 @@ fun MemeDetailScreen(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = uiState.errorMessage ?: "Error",
+                    text = uiState.errorMessage.orEmpty().ifEmpty { "Error" },
                     color = MaterialTheme.colorScheme.error,
                 )
             }
         }
 
         uiState.meme != null -> {
+            val meme = uiState.meme
             BottomSheetScaffold(
                 scaffoldState = scaffoldState,
                 sheetPeekHeight = 200.dp,
@@ -169,7 +232,7 @@ fun MemeDetailScreen(
                 sheetContent = {
                     MemeInfoSheet(
                         uiState = uiState,
-                        onIntent = viewModel::onIntent,
+                        onIntent = onIntent,
                         modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars),
                     )
                 },
@@ -182,24 +245,24 @@ fun MemeDetailScreen(
                         .background(Color.Black)
                         .pointerInput(Unit) {
                             detectTapGestures(
-                                onTap = { showControls = !showControls },
+                                onTap = { onShowControlsChange(!showControls) },
                                 onDoubleTap = {
-                                    scale = if (scale > 1f) 1f else 2f
-                                    offset = Offset.Zero
+                                    onScaleChange(if (scale > 1f) 1f else 2f)
+                                    onOffsetChange(Offset.Zero)
                                 },
                             )
                         }
                         .pointerInput(Unit) {
                             detectTransformGestures { _, pan, zoom, _ ->
-                                scale = (scale * zoom).coerceIn(0.5f, 4f)
-                                offset += pan
+                                onScaleChange((scale * zoom).coerceIn(0.5f, 4f))
+                                onOffsetChange(offset + pan)
                             }
                         },
                 ) {
                     // Zoomable image
                     AsyncImage(
-                        model = uiState.meme?.filePath,
-                        contentDescription = uiState.meme?.title,
+                        model = meme.filePath,
+                        contentDescription = meme.title,
                         contentScale = ContentScale.Fit,
                         modifier = Modifier
                             .fillMaxSize()
@@ -222,13 +285,14 @@ fun MemeDetailScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .background(Color.Black.copy(alpha = 0.5f))
+                                .windowInsetsPadding(WindowInsets.statusBars)
                                 .padding(8.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             IconButton(onClick = onNavigateBack) {
                                 Icon(
                                     Icons.AutoMirrored.Filled.ArrowBack,
-                                    contentDescription = "Back",
+                                    contentDescription = "Navigate back",
                                     tint = Color.White,
                                 )
                             }
@@ -236,16 +300,16 @@ fun MemeDetailScreen(
                             
                             // Favorite button
                             IconButton(
-                                onClick = { viewModel.onIntent(MemeDetailIntent.ToggleFavorite) },
+                                onClick = { onIntent(MemeDetailIntent.ToggleFavorite) },
                             ) {
                                 Icon(
-                                    if (uiState.meme?.isFavorite == true) {
+                                    if (meme.isFavorite) {
                                         Icons.Filled.Favorite
                                     } else {
                                         Icons.Filled.FavoriteBorder
                                     },
                                     contentDescription = "Favorite",
-                                    tint = if (uiState.meme?.isFavorite == true) {
+                                    tint = if (meme.isFavorite) {
                                         MaterialTheme.colorScheme.error
                                     } else {
                                         Color.White

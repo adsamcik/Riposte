@@ -3,8 +3,10 @@ package com.mememymood.feature.search.data.repository
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
 import com.mememymood.core.database.dao.MemeDao
+import com.mememymood.core.database.dao.MemeEmbeddingDao
 import com.mememymood.core.database.dao.MemeSearchDao
 import com.mememymood.core.database.entity.MemeEntity
+import com.mememymood.core.database.entity.MemeWithEmbeddingData
 import com.mememymood.core.datastore.AppPreferences
 import com.mememymood.core.datastore.DarkMode
 import com.mememymood.core.datastore.PreferencesDataStore
@@ -36,6 +38,7 @@ class SearchRepositoryImplTest {
 
     private lateinit var memeDao: MemeDao
     private lateinit var memeSearchDao: MemeSearchDao
+    private lateinit var memeEmbeddingDao: MemeEmbeddingDao
     private lateinit var semanticSearchEngine: SemanticSearchEngine
     private lateinit var preferencesDataStore: PreferencesDataStore
 
@@ -64,15 +67,18 @@ class SearchRepositoryImplTest {
     fun setup() {
         memeDao = mockk()
         memeSearchDao = mockk()
+        memeEmbeddingDao = mockk()
         semanticSearchEngine = mockk()
         preferencesDataStore = mockk()
 
         every { preferencesDataStore.appPreferences } returns flowOf(defaultPreferences)
         every { preferencesDataStore.recentSearches } returns flowOf(recentSearches)
+        coEvery { memeEmbeddingDao.getMemesWithEmbeddings() } returns emptyList()
 
         repository = SearchRepositoryImpl(
             memeDao = memeDao,
             memeSearchDao = memeSearchDao,
+            memeEmbeddingDao = memeEmbeddingDao,
             semanticSearchEngine = semanticSearchEngine,
             preferencesDataStore = preferencesDataStore
         )
@@ -184,8 +190,8 @@ class SearchRepositoryImplTest {
     @Test
     fun `searchSemantic uses semantic search engine`() = runTest {
         val embedding = createTestEmbedding(128)
-        val entitiesWithEmbeddings = testMemeEntities.map { it.copy(embedding = embedding) }
-        every { memeDao.getAllMemes() } returns flowOf(entitiesWithEmbeddings)
+        val testEmbeddingData = testMemeEntities.map { createMemeWithEmbeddingData(it, embedding) }
+        coEvery { memeEmbeddingDao.getMemesWithEmbeddings() } returns testEmbeddingData
 
         val semanticResults = testMemeEntities.mapIndexed { index, entity ->
             SearchResult(
@@ -225,8 +231,8 @@ class SearchRepositoryImplTest {
 
         // Setup semantic results
         val embedding = createTestEmbedding(128)
-        val entitiesWithEmbeddings = testMemeEntities.map { it.copy(embedding = embedding) }
-        every { memeDao.getAllMemes() } returns flowOf(entitiesWithEmbeddings)
+        val testEmbeddingData = testMemeEntities.map { createMemeWithEmbeddingData(it, embedding) }
+        coEvery { memeEmbeddingDao.getMemesWithEmbeddings() } returns testEmbeddingData
 
         val semanticResults = listOf(
             SearchResult(
@@ -253,6 +259,7 @@ class SearchRepositoryImplTest {
         repository = SearchRepositoryImpl(
             memeDao = memeDao,
             memeSearchDao = memeSearchDao,
+            memeEmbeddingDao = memeEmbeddingDao,
             semanticSearchEngine = semanticSearchEngine,
             preferencesDataStore = preferencesDataStore
         )
@@ -276,6 +283,7 @@ class SearchRepositoryImplTest {
         repository = SearchRepositoryImpl(
             memeDao = memeDao,
             memeSearchDao = memeSearchDao,
+            memeEmbeddingDao = memeEmbeddingDao,
             semanticSearchEngine = semanticSearchEngine,
             preferencesDataStore = preferencesDataStore
         )
@@ -291,8 +299,8 @@ class SearchRepositoryImplTest {
         every { memeSearchDao.searchMemes(any()) } returns flowOf(singleEntity)
 
         val embedding = createTestEmbedding(128)
-        val entityWithEmbedding = singleEntity.map { it.copy(embedding = embedding) }
-        every { memeDao.getAllMemes() } returns flowOf(entityWithEmbedding)
+        val testEmbeddingData = singleEntity.map { createMemeWithEmbeddingData(it, embedding) }
+        coEvery { memeEmbeddingDao.getMemesWithEmbeddings() } returns testEmbeddingData
 
         val semanticResult = listOf(
             SearchResult(
@@ -442,7 +450,9 @@ class SearchRepositoryImplTest {
                 .filter { it.isNotEmpty() }
                 .map { com.mememymood.core.model.EmojiTag.fromEmoji(it.trim()) },
             textContent = textContent,
-            isFavorite = isFavorite
+            isFavorite = isFavorite,
+            createdAt = createdAt,
+            useCount = useCount,
         )
     }
 
@@ -451,6 +461,24 @@ class SearchRepositoryImplTest {
         val buffer = ByteBuffer.allocate(size * 4).order(ByteOrder.LITTLE_ENDIAN)
         floats.forEach { buffer.putFloat(it) }
         return buffer.array()
+    }
+
+    private fun createMemeWithEmbeddingData(
+        entity: MemeEntity,
+        embedding: ByteArray
+    ): MemeWithEmbeddingData {
+        return MemeWithEmbeddingData(
+            memeId = entity.id,
+            filePath = entity.filePath,
+            fileName = entity.fileName,
+            title = entity.title,
+            description = entity.description,
+            textContent = entity.textContent,
+            emojiTagsJson = entity.emojiTagsJson,
+            embedding = embedding,
+            dimension = embedding.size / 4,
+            modelVersion = "test:1.0.0"
+        )
     }
 
     // endregion

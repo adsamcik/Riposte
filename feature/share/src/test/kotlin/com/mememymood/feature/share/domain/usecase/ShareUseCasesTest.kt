@@ -92,7 +92,6 @@ class ShareUseCasesTest {
             maxWidth = 2000,
             maxHeight = 2000,
             stripMetadata = false,
-            addWatermark = true,
         )
         coEvery { repository.getDefaultShareConfig() } returns customConfig
 
@@ -103,7 +102,6 @@ class ShareUseCasesTest {
         assertThat(result.maxWidth).isEqualTo(2000)
         assertThat(result.maxHeight).isEqualTo(2000)
         assertThat(result.stripMetadata).isFalse()
-        assertThat(result.addWatermark).isTrue()
     }
 
     // endregion
@@ -140,7 +138,6 @@ class ShareUseCasesTest {
             maxWidth = 500,
             maxHeight = 500,
             stripMetadata = true,
-            addWatermark = false,
         )
         coEvery { repository.prepareForSharing(testMeme, customConfig) } returns Result.success(mockUri)
 
@@ -224,7 +221,6 @@ class ShareUseCasesTest {
             maxWidth = null,
             maxHeight = null,
             stripMetadata = false,
-            addWatermark = true,
         )
         coEvery { repository.saveToGallery(testMeme, highQualityConfig) } returns Result.success(mockUri)
 

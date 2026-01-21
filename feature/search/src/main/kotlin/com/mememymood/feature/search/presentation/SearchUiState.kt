@@ -13,10 +13,60 @@ data class SearchUiState(
     val isSearching: Boolean = false,
     val hasSearched: Boolean = false,
     val errorMessage: String? = null,
-)
+    // UX enhancements
+    val searchDurationMs: Long = 0L,
+    val totalResultCount: Int = 0,
+    val isVoiceSearchActive: Boolean = false,
+    val quickFilters: List<QuickFilter> = QuickFilter.defaultFilters(),
+    val selectedQuickFilter: QuickFilter? = null,
+    val sortOrder: SearchSortOrder = SearchSortOrder.RELEVANCE,
+    val viewMode: SearchViewMode = SearchViewMode.GRID,
+) {
+    val hasActiveFilters: Boolean
+        get() = selectedEmojiFilters.isNotEmpty() || selectedQuickFilter != null
+
+    val resultSummary: String
+        get() = when {
+            !hasSearched -> ""
+            isSearching -> "Searching..."
+            results.isEmpty() -> "No results found"
+            else -> "$totalResultCount result${if (totalResultCount != 1) "s" else ""} in ${searchDurationMs}ms"
+        }
+}
 
 enum class SearchMode {
     TEXT,
     SEMANTIC,
     HYBRID,
+}
+
+enum class SearchSortOrder(val label: String) {
+    RELEVANCE("Relevance"),
+    NEWEST("Newest"),
+    OLDEST("Oldest"),
+    MOST_USED("Most Used"),
+}
+
+enum class SearchViewMode {
+    GRID,
+    LIST,
+}
+
+data class QuickFilter(
+    val id: String,
+    val label: String,
+    val emoji: String,
+    val query: String? = null,
+    val emojiFilter: String? = null,
+) {
+    companion object {
+        fun defaultFilters() = listOf(
+            QuickFilter("favorites", "Favorites", "⭐", query = "is:favorite"),
+            QuickFilter("recent", "Recent", "🕐", query = "is:recent"),
+            QuickFilter("trending", "Trending", "🔥"),
+            QuickFilter("funny", "Funny", "😂", emojiFilter = "😂"),
+            QuickFilter("love", "Love", "❤️", emojiFilter = "❤️"),
+            QuickFilter("reactions", "Reactions", "😮", query = "type:reaction"),
+        )
+    }
 }

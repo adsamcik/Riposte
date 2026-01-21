@@ -9,11 +9,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -57,7 +59,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mememymood.core.model.ImageFormat
 import com.mememymood.core.ui.component.LoadingScreen
@@ -107,6 +109,7 @@ fun ShareScreen(
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
+        contentWindowInsets = WindowInsets.safeDrawing
     ) { paddingValues ->
         when {
             uiState.isLoading -> {
@@ -199,13 +202,6 @@ private fun ShareContent(
             description = "Preserve emoji tags and other data",
             checked = !uiState.config.stripMetadata,
             onCheckedChange = { onIntent(ShareIntent.SetStripMetadata(!it)) },
-        )
-
-        SettingToggle(
-            title = "Add Watermark",
-            description = "Add 'Made with Meme My Mood' text",
-            checked = uiState.config.addWatermark,
-            onCheckedChange = { onIntent(ShareIntent.SetAddWatermark(it)) },
         )
 
         Spacer(Modifier.height(24.dp))

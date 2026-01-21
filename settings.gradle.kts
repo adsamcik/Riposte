@@ -19,6 +19,9 @@ rootProject.name = "meme-my-mood"
 // App module
 include(":app")
 
+// Baseline Profile module
+include(":baselineprofile")
+
 // Core modules
 include(":core:common")
 include(":core:ui")

@@ -3,9 +3,6 @@ package com.mememymood.feature.share.data
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.Canvas
-import android.graphics.Paint
-import android.graphics.Typeface
 import androidx.exifinterface.media.ExifInterface
 import com.mememymood.core.model.ImageFormat
 import com.mememymood.core.model.ShareConfig
@@ -17,19 +14,12 @@ import javax.inject.Singleton
 
 /**
  * Utility class for processing images before sharing.
- * Handles resizing, compression, format conversion, and watermarking.
+ * Handles resizing, compression, and format conversion.
  */
 @Singleton
 class ImageProcessor @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
 ) {
-
-    companion object {
-        private const val WATERMARK_TEXT = "Made with Meme My Mood"
-        private const val WATERMARK_PADDING = 16f
-        private const val WATERMARK_TEXT_SIZE = 24f
-        private const val WATERMARK_ALPHA = 128
-    }
 
     /**
      * Process an image according to the share configuration.
@@ -47,16 +37,9 @@ class ImageProcessor @Inject constructor(
         val maxHeight = config.maxHeight ?: originalBitmap.height
         val resizedBitmap = resizeBitmap(originalBitmap, maxWidth, maxHeight)
 
-        // Add watermark if enabled
-        val watermarkedBitmap = if (config.addWatermark) {
-            addWatermark(resizedBitmap)
-        } else {
-            resizedBitmap
-        }
-
         // Save in target format with compression
         val success = saveBitmap(
-            bitmap = watermarkedBitmap,
+            bitmap = resizedBitmap,
             file = outputFile,
             format = config.format,
             quality = config.quality,
@@ -66,10 +49,7 @@ class ImageProcessor @Inject constructor(
         if (resizedBitmap != originalBitmap) {
             originalBitmap.recycle()
         }
-        if (watermarkedBitmap != resizedBitmap) {
-            resizedBitmap.recycle()
-        }
-        watermarkedBitmap.recycle()
+        resizedBitmap.recycle()
 
         if (!success) {
             return ProcessResult.Error("Failed to save processed image")
@@ -84,8 +64,8 @@ class ImageProcessor @Inject constructor(
 
         return ProcessResult.Success(
             file = outputFile,
-            width = watermarkedBitmap.width,
-            height = watermarkedBitmap.height,
+            width = resizedBitmap.width,
+            height = resizedBitmap.height,
             fileSize = outputFile.length(),
         )
     }
@@ -122,31 +102,6 @@ class ImageProcessor @Inject constructor(
         quality: Int,
     ): Boolean {
         return saveBitmap(bitmap, outputFile, format, quality)
-    }
-
-    /**
-     * Add a semi-transparent watermark to the bottom-right corner.
-     */
-    fun addWatermark(bitmap: Bitmap): Bitmap {
-        val result = bitmap.copy(Bitmap.Config.ARGB_8888, true)
-        val canvas = Canvas(result)
-
-        val paint = Paint().apply {
-            color = android.graphics.Color.WHITE
-            alpha = WATERMARK_ALPHA
-            textSize = WATERMARK_TEXT_SIZE * (bitmap.width / 1080f).coerceIn(0.5f, 2f)
-            typeface = Typeface.DEFAULT_BOLD
-            isAntiAlias = true
-            setShadowLayer(4f, 2f, 2f, android.graphics.Color.BLACK)
-        }
-
-        val textWidth = paint.measureText(WATERMARK_TEXT)
-        val x = bitmap.width - textWidth - WATERMARK_PADDING
-        val y = bitmap.height - WATERMARK_PADDING
-
-        canvas.drawText(WATERMARK_TEXT, x, y, paint)
-
-        return result
     }
 
     /**

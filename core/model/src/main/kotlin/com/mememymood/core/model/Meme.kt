@@ -19,7 +19,9 @@ data class Meme(
     val title: String? = null,
     val description: String? = null,
     val textContent: String? = null,
-    val isFavorite: Boolean = false
+    val isFavorite: Boolean = false,
+    val createdAt: Long = importedAt,
+    val useCount: Int = 0,
 ) {
     /**
      * Returns a comma-separated string of emojis for display.

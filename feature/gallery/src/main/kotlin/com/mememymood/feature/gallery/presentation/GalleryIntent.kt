@@ -73,4 +73,9 @@ sealed interface GalleryIntent {
      * Navigate to import screen.
      */
     data object NavigateToImport : GalleryIntent
+
+    /**
+     * Quick share a meme (long press action).
+     */
+    data class QuickShare(val memeId: Long) : GalleryIntent
 }

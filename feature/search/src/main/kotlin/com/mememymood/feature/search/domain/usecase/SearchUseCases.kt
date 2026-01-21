@@ -122,6 +122,13 @@ class SearchUseCases @Inject constructor(
     }
 
     /**
+     * Delete a specific recent search.
+     */
+    suspend fun deleteRecentSearch(query: String) {
+        repository.deleteRecentSearch(query)
+    }
+
+    /**
      * Clear all recent searches.
      */
     suspend fun clearRecentSearches() {

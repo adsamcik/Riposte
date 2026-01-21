@@ -22,7 +22,7 @@ import java.time.Instant
 import javax.inject.Inject
 
 class ShareRepositoryImpl @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val memeDao: MemeDao,
     private val preferencesDataStore: PreferencesDataStore,
     private val imageProcessor: ImageProcessor,
@@ -45,7 +45,6 @@ class ShareRepositoryImpl @Inject constructor(
             maxWidth = prefs.maxWidth,
             maxHeight = prefs.maxHeight,
             stripMetadata = prefs.stripMetadata,
-            addWatermark = prefs.addWatermark,
         )
     }
 
@@ -221,6 +220,8 @@ class ShareRepositoryImpl @Inject constructor(
             description = description,
             textContent = textContent,
             isFavorite = isFavorite,
+            createdAt = createdAt,
+            useCount = useCount,
         )
     }
 }

@@ -75,7 +75,18 @@ data class MemeEntity(
     /**
      * Whether this meme is marked as favorite.
      */
-    val isFavorite: Boolean = false
+    val isFavorite: Boolean = false,
+    
+    /**
+     * Timestamp when the original image was created (epoch millis).
+     * Falls back to importedAt if not available.
+     */
+    val createdAt: Long = importedAt,
+    
+    /**
+     * Number of times this meme has been shared or used.
+     */
+    val useCount: Int = 0,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -100,6 +111,8 @@ data class MemeEntity(
             if (!embedding.contentEquals(other.embedding)) return false
         } else if (other.embedding != null) return false
         if (isFavorite != other.isFavorite) return false
+        if (createdAt != other.createdAt) return false
+        if (useCount != other.useCount) return false
 
         return true
     }
@@ -119,6 +132,8 @@ data class MemeEntity(
         result = 31 * result + (textContent?.hashCode() ?: 0)
         result = 31 * result + (embedding?.contentHashCode() ?: 0)
         result = 31 * result + isFavorite.hashCode()
+        result = 31 * result + createdAt.hashCode()
+        result = 31 * result + useCount
         return result
     }
 }

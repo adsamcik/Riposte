@@ -28,7 +28,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val preferencesDataStore: PreferencesDataStore,
 ) : ViewModel() {
 
@@ -60,7 +60,6 @@ class SettingsViewModel @Inject constructor(
                     defaultQuality = sharingPrefs.defaultQuality,
                     defaultMaxDimension = sharingPrefs.maxWidth, // Using maxWidth as the max dimension setting
                     keepMetadata = sharingPrefs.keepMetadata,
-                    addWatermark = sharingPrefs.addWatermark,
                     enableSemanticSearch = appPrefs.enableSemanticSearch,
                     saveSearchHistory = appPrefs.saveSearchHistory,
                     appVersion = getAppVersion(),
@@ -93,7 +92,6 @@ class SettingsViewModel @Inject constructor(
             is SettingsIntent.SetDefaultQuality -> setDefaultQuality(intent.quality)
             is SettingsIntent.SetDefaultMaxDimension -> setDefaultMaxDimension(intent.dimension)
             is SettingsIntent.SetKeepMetadata -> setKeepMetadata(intent.keep)
-            is SettingsIntent.SetAddWatermark -> setAddWatermark(intent.add)
 
             // Search
             is SettingsIntent.SetEnableSemanticSearch -> setEnableSemanticSearch(intent.enabled)
@@ -172,13 +170,6 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             val current = preferencesDataStore.sharingPreferences.first()
             preferencesDataStore.updateSharingPreferences(current.copy(keepMetadata = keep))
-        }
-    }
-
-    private fun setAddWatermark(add: Boolean) {
-        viewModelScope.launch {
-            val current = preferencesDataStore.sharingPreferences.first()
-            preferencesDataStore.updateSharingPreferences(current.copy(addWatermark = add))
         }
     }
 
@@ -265,8 +256,7 @@ class SettingsViewModel @Inject constructor(
                         "defaultQuality" to sharingPrefs.defaultQuality,
                         "maxWidth" to sharingPrefs.maxWidth,
                         "maxHeight" to sharingPrefs.maxHeight,
-                        "keepMetadata" to sharingPrefs.keepMetadata,
-                        "addWatermark" to sharingPrefs.addWatermark
+                        "keepMetadata" to sharingPrefs.keepMetadata
                     ),
                     "appPreferences" to mapOf(
                         "darkMode" to appPrefs.darkMode.name,
@@ -349,9 +339,7 @@ class SettingsViewModel @Inject constructor(
                                 maxHeight = (sharingPrefsJson["maxHeight"] as? JsonPrimitive)?.intOrNull
                                     ?: currentSharing.maxHeight,
                                 keepMetadata = (sharingPrefsJson["keepMetadata"] as? JsonPrimitive)?.booleanOrNull
-                                    ?: currentSharing.keepMetadata,
-                                addWatermark = (sharingPrefsJson["addWatermark"] as? JsonPrimitive)?.booleanOrNull
-                                    ?: currentSharing.addWatermark
+                                    ?: currentSharing.keepMetadata
                             )
                         )
                     }

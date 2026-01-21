@@ -20,7 +20,7 @@ import javax.inject.Singleton
  */
 @Singleton
 class XmpMetadataHandler @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
 ) {
     companion object {
         private const val XMP_NAMESPACE = "http://meme-my-mood.app/1.0/"

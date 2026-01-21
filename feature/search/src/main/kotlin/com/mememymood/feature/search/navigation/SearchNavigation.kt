@@ -4,22 +4,27 @@ import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavOptions
 import androidx.navigation.compose.composable
+import com.mememymood.core.common.navigation.SearchRoute
 import com.mememymood.feature.search.presentation.SearchScreen
 
+// Legacy route constant for backward compatibility
+@Deprecated("Use SearchRoute object for type-safe navigation")
 const val SEARCH_ROUTE = "search"
 
 fun NavController.navigateToSearch(navOptions: NavOptions? = null) {
-    navigate(SEARCH_ROUTE, navOptions)
+    navigate(SearchRoute, navOptions)
 }
 
 fun NavGraphBuilder.searchScreen(
     onNavigateBack: () -> Unit,
-    onNavigateToMeme: (Long) -> Unit
+    onNavigateToMeme: (Long) -> Unit,
+    onStartVoiceSearch: (() -> Unit)? = null,
 ) {
-    composable(route = SEARCH_ROUTE) {
+    composable<SearchRoute> {
         SearchScreen(
             onNavigateBack = onNavigateBack,
-            onNavigateToMeme = onNavigateToMeme
+            onNavigateToMeme = onNavigateToMeme,
+            onStartVoiceSearch = onStartVoiceSearch,
         )
     }
 }

@@ -60,8 +60,7 @@ class GalleryScreenTest {
                     onNavigateToMeme = {},
                     onNavigateToSearch = {},
                     onNavigateToImport = {},
-                    onNavigateToSettings = {},
-                    onNavigateToShare = {}
+                    onNavigateToSettings = {}
                 )
             }
         }
@@ -84,8 +83,7 @@ class GalleryScreenTest {
                     onNavigateToMeme = {},
                     onNavigateToSearch = {},
                     onNavigateToImport = {},
-                    onNavigateToSettings = {},
-                    onNavigateToShare = {}
+                    onNavigateToSettings = {}
                 )
             }
         }
@@ -108,8 +106,7 @@ class GalleryScreenTest {
                     onNavigateToMeme = {},
                     onNavigateToSearch = {},
                     onNavigateToImport = {},
-                    onNavigateToSettings = {},
-                    onNavigateToShare = {}
+                    onNavigateToSettings = {}
                 )
             }
         }
@@ -132,8 +129,7 @@ class GalleryScreenTest {
                     onNavigateToMeme = {},
                     onNavigateToSearch = {},
                     onNavigateToImport = {},
-                    onNavigateToSettings = {},
-                    onNavigateToShare = {}
+                    onNavigateToSettings = {}
                 )
             }
         }
@@ -161,8 +157,7 @@ class GalleryScreenTest {
                     onNavigateToMeme = {},
                     onNavigateToSearch = {},
                     onNavigateToImport = {},
-                    onNavigateToSettings = {},
-                    onNavigateToShare = {}
+                    onNavigateToSettings = {}
                 )
             }
         }
@@ -188,8 +183,7 @@ class GalleryScreenTest {
                     onNavigateToMeme = {},
                     onNavigateToSearch = {},
                     onNavigateToImport = {},
-                    onNavigateToSettings = {},
-                    onNavigateToShare = {}
+                    onNavigateToSettings = {}
                 )
             }
         }
@@ -213,8 +207,7 @@ class GalleryScreenTest {
                     onNavigateToMeme = {},
                     onNavigateToSearch = {},
                     onNavigateToImport = {},
-                    onNavigateToSettings = {},
-                    onNavigateToShare = {}
+                    onNavigateToSettings = {}
                 )
             }
         }
@@ -243,8 +236,7 @@ class GalleryScreenTest {
                     onNavigateToMeme = {},
                     onNavigateToSearch = {},
                     onNavigateToImport = {},
-                    onNavigateToSettings = {},
-                    onNavigateToShare = {}
+                    onNavigateToSettings = {}
                 )
             }
         }
@@ -271,8 +263,7 @@ class GalleryScreenTest {
                     onNavigateToMeme = {},
                     onNavigateToSearch = {},
                     onNavigateToImport = {},
-                    onNavigateToSettings = {},
-                    onNavigateToShare = {}
+                    onNavigateToSettings = {}
                 )
             }
         }
@@ -296,8 +287,7 @@ class GalleryScreenTest {
                     onNavigateToMeme = {},
                     onNavigateToSearch = {},
                     onNavigateToImport = {},
-                    onNavigateToSettings = {},
-                    onNavigateToShare = {}
+                    onNavigateToSettings = {}
                 )
             }
         }
@@ -320,8 +310,7 @@ class GalleryScreenTest {
                     onNavigateToMeme = {},
                     onNavigateToSearch = {},
                     onNavigateToImport = {},
-                    onNavigateToSettings = {},
-                    onNavigateToShare = {}
+                    onNavigateToSettings = {}
                 )
             }
         }
@@ -346,8 +335,7 @@ class GalleryScreenTest {
                     onNavigateToMeme = {},
                     onNavigateToSearch = {},
                     onNavigateToImport = {},
-                    onNavigateToSettings = {},
-                    onNavigateToShare = {}
+                    onNavigateToSettings = {}
                 )
             }
         }
@@ -372,8 +360,7 @@ class GalleryScreenTest {
                     onNavigateToMeme = {},
                     onNavigateToSearch = {},
                     onNavigateToImport = {},
-                    onNavigateToSettings = {},
-                    onNavigateToShare = {}
+                    onNavigateToSettings = {}
                 )
             }
         }
@@ -398,8 +385,7 @@ class GalleryScreenTest {
                     onNavigateToMeme = {},
                     onNavigateToSearch = { navigatedToSearch = true },
                     onNavigateToImport = {},
-                    onNavigateToSettings = {},
-                    onNavigateToShare = {}
+                    onNavigateToSettings = {}
                 )
             }
         }
@@ -424,8 +410,7 @@ class GalleryScreenTest {
                     onNavigateToMeme = {},
                     onNavigateToSearch = {},
                     onNavigateToImport = { navigatedToImport = true },
-                    onNavigateToSettings = {},
-                    onNavigateToShare = {}
+                    onNavigateToSettings = {}
                 )
             }
         }
@@ -450,8 +435,7 @@ class GalleryScreenTest {
                     onNavigateToMeme = {},
                     onNavigateToSearch = {},
                     onNavigateToImport = {},
-                    onNavigateToSettings = { navigatedToSettings = true },
-                    onNavigateToShare = {}
+                    onNavigateToSettings = { navigatedToSettings = true }
                 )
             }
         }
@@ -478,8 +462,7 @@ class GalleryScreenTest {
                     onNavigateToMeme = { navigatedToMemeId = it },
                     onNavigateToSearch = {},
                     onNavigateToImport = {},
-                    onNavigateToSettings = {},
-                    onNavigateToShare = {}
+                    onNavigateToSettings = {}
                 )
             }
         }
@@ -506,8 +489,7 @@ class GalleryScreenTest {
                     onNavigateToMeme = {},
                     onNavigateToSearch = {},
                     onNavigateToImport = {},
-                    onNavigateToSettings = {},
-                    onNavigateToShare = {}
+                    onNavigateToSettings = {}
                 )
             }
         }
@@ -538,8 +520,7 @@ class GalleryScreenTest {
                     onNavigateToMeme = {},
                     onNavigateToSearch = {},
                     onNavigateToImport = {},
-                    onNavigateToSettings = {},
-                    onNavigateToShare = {}
+                    onNavigateToSettings = {}
                 )
             }
         }
@@ -564,8 +545,7 @@ class GalleryScreenTest {
                     onNavigateToMeme = {},
                     onNavigateToSearch = {},
                     onNavigateToImport = {},
-                    onNavigateToSettings = {},
-                    onNavigateToShare = {}
+                    onNavigateToSettings = {}
                 )
             }
         }

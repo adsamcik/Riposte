@@ -30,7 +30,7 @@ import org.junit.runner.RunWith
  * - Format selection
  * - Quality slider
  * - Size presets
- * - Metadata/watermark toggles
+ * - Metadata toggle
  * - Share and save buttons
  * - Processing indicator
  * - Success/error states
@@ -293,25 +293,6 @@ class ShareScreenTest {
         composeTestRule.onNodeWithTag("StripMetadataSwitch").performClick()
 
         assertThat(receivedIntent).isInstanceOf(ShareIntent.SetStripMetadata::class.java)
-    }
-
-    @Test
-    fun shareScreen_showsAddWatermarkToggle() {
-        composeTestRule.setContent {
-            MemeMoodTheme {
-                ShareScreen(
-                    uiState = ShareUiState(
-                        meme = testMeme,
-                        config = defaultConfig,
-                        isLoading = false
-                    ),
-                    onIntent = {},
-                    onNavigateBack = {}
-                )
-            }
-        }
-
-        composeTestRule.onNodeWithText("Add Watermark").assertIsDisplayed()
     }
 
     // ============ Action Button Tests ============

@@ -22,7 +22,7 @@ import javax.inject.Inject
 class GalleryRepositoryImpl @Inject constructor(
     private val memeDao: MemeDao,
     private val emojiTagDao: EmojiTagDao,
-    @IoDispatcher private val ioDispatcher: CoroutineDispatcher
+    @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) : GalleryRepository {
 
     override fun getMemes(): Flow<List<Meme>> {

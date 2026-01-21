@@ -69,6 +69,11 @@ interface SearchRepository {
     suspend fun addRecentSearch(query: String)
 
     /**
+     * Delete a specific recent search.
+     */
+    suspend fun deleteRecentSearch(query: String)
+
+    /**
      * Clear recent searches.
      */
     suspend fun clearRecentSearches()

@@ -59,6 +59,7 @@ dependencies {
     api(libs.androidx.test.core.ktx)
     api(libs.androidx.test.runner)
     api(libs.androidx.test.ext)
+    api(libs.espresso.intents)
 
     // Compose Testing
     api(platform(libs.compose.bom))

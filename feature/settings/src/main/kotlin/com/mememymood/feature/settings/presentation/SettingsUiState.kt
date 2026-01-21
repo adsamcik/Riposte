@@ -15,7 +15,6 @@ data class SettingsUiState(
     val defaultQuality: Int = 85,
     val defaultMaxDimension: Int = 1080,
     val keepMetadata: Boolean = true,
-    val addWatermark: Boolean = false,
 
     // Search
     val enableSemanticSearch: Boolean = true,

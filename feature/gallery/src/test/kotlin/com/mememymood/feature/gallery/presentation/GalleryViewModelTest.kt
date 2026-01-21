@@ -13,6 +13,7 @@ import com.mememymood.feature.gallery.domain.usecase.GetFavoritesUseCase
 import com.mememymood.feature.gallery.domain.usecase.GetMemesByEmojiUseCase
 import com.mememymood.feature.gallery.domain.usecase.GetMemesUseCase
 import com.mememymood.feature.gallery.domain.usecase.ToggleFavoriteUseCase
+import com.mememymood.feature.share.domain.usecase.ShareUseCases
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -42,6 +43,7 @@ class GalleryViewModelTest {
     private lateinit var deleteMemesUseCase: DeleteMemesUseCase
     private lateinit var toggleFavoriteUseCase: ToggleFavoriteUseCase
     private lateinit var preferencesDataStore: PreferencesDataStore
+    private lateinit var shareUseCases: ShareUseCases
 
     private lateinit var viewModel: GalleryViewModel
 
@@ -71,6 +73,7 @@ class GalleryViewModelTest {
         deleteMemesUseCase = mockk()
         toggleFavoriteUseCase = mockk()
         preferencesDataStore = mockk()
+        shareUseCases = mockk()
 
         every { getMemesUseCase() } returns flowOf(testMemes)
         every { getFavoritesUseCase() } returns flowOf(testMemes.filter { it.isFavorite })
@@ -90,7 +93,8 @@ class GalleryViewModelTest {
             getMemesByEmojiUseCase = getMemesByEmojiUseCase,
             deleteMemeUseCase = deleteMemesUseCase,
             toggleFavoriteUseCase = toggleFavoriteUseCase,
-            preferencesDataStore = preferencesDataStore
+            preferencesDataStore = preferencesDataStore,
+            shareUseCases = shareUseCases
         )
     }
 

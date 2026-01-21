@@ -10,6 +10,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -50,8 +51,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mememymood.core.ui.component.EmptyState
 import com.mememymood.core.ui.component.ErrorState
@@ -69,6 +71,7 @@ fun GalleryScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
     var showDeleteDialog by remember { mutableStateOf(false) }
     var deleteCount by remember { mutableStateOf(0) }
     var showMenu by remember { mutableStateOf(false) }
@@ -86,30 +89,104 @@ fun GalleryScreen(
                     showDeleteDialog = true
                 }
                 is GalleryEffect.OpenShareSheet -> {
-                    // Handle share - navigate to share screen with meme IDs
+                    // Handle share - navigate to meme detail for sharing
                     if (effect.memeIds.size == 1) {
                         onNavigateToMeme(effect.memeIds.first())
                     }
                 }
                 is GalleryEffect.ShowError -> snackbarHostState.showSnackbar(effect.message)
+                is GalleryEffect.LaunchShareIntent -> {
+                    context.startActivity(android.content.Intent.createChooser(effect.intent, "Share Meme"))
+                }
             }
         }
     }
+
+    GalleryScreenContent(
+        uiState = uiState,
+        onIntent = viewModel::onIntent,
+        onNavigateToMeme = onNavigateToMeme,
+        onNavigateToSearch = onNavigateToSearch,
+        onNavigateToImport = onNavigateToImport,
+        onNavigateToSettings = onNavigateToSettings,
+        snackbarHostState = snackbarHostState,
+        showDeleteDialog = showDeleteDialog,
+        deleteCount = deleteCount,
+        showMenu = showMenu,
+        onShowDeleteDialogChange = { showDeleteDialog = it },
+        onDeleteCountChange = { deleteCount = it },
+        onShowMenuChange = { showMenu = it },
+    )
+}
+
+/**
+ * Test-friendly overload that accepts UI state directly.
+ */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@Composable
+fun GalleryScreen(
+    uiState: GalleryUiState,
+    onIntent: (GalleryIntent) -> Unit,
+    onNavigateToMeme: (Long) -> Unit,
+    onNavigateToSearch: () -> Unit,
+    onNavigateToImport: () -> Unit,
+    onNavigateToSettings: () -> Unit,
+) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var deleteCount by remember { mutableStateOf(0) }
+    var showMenu by remember { mutableStateOf(false) }
+
+    GalleryScreenContent(
+        uiState = uiState,
+        onIntent = onIntent,
+        onNavigateToMeme = onNavigateToMeme,
+        onNavigateToSearch = onNavigateToSearch,
+        onNavigateToImport = onNavigateToImport,
+        onNavigateToSettings = onNavigateToSettings,
+        snackbarHostState = snackbarHostState,
+        showDeleteDialog = showDeleteDialog,
+        deleteCount = deleteCount,
+        showMenu = showMenu,
+        onShowDeleteDialogChange = { showDeleteDialog = it },
+        onDeleteCountChange = { deleteCount = it },
+        onShowMenuChange = { showMenu = it },
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@Composable
+private fun GalleryScreenContent(
+    uiState: GalleryUiState,
+    onIntent: (GalleryIntent) -> Unit,
+    onNavigateToMeme: (Long) -> Unit,
+    onNavigateToSearch: () -> Unit,
+    onNavigateToImport: () -> Unit,
+    onNavigateToSettings: () -> Unit,
+    snackbarHostState: SnackbarHostState,
+    showDeleteDialog: Boolean,
+    deleteCount: Int,
+    showMenu: Boolean,
+    onShowDeleteDialogChange: (Boolean) -> Unit,
+    onDeleteCountChange: (Int) -> Unit,
+    onShowMenuChange: (Boolean) -> Unit,
+) {
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     // Delete confirmation dialog
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = {
-                showDeleteDialog = false
-                viewModel.onIntent(GalleryIntent.CancelDelete)
+                onShowDeleteDialogChange(false)
+                onIntent(GalleryIntent.CancelDelete)
             },
             title = { Text("Delete Memes") },
             text = { Text("Are you sure you want to delete $deleteCount meme(s)? This cannot be undone.") },
             confirmButton = {
                 TextButton(
                     onClick = {
-                        showDeleteDialog = false
-                        viewModel.onIntent(GalleryIntent.ConfirmDelete)
+                        onShowDeleteDialogChange(false)
+                        onIntent(GalleryIntent.ConfirmDelete)
                     }
                 ) {
                     Text("Delete", color = MaterialTheme.colorScheme.error)
@@ -118,8 +195,8 @@ fun GalleryScreen(
             dismissButton = {
                 TextButton(
                     onClick = {
-                        showDeleteDialog = false
-                        viewModel.onIntent(GalleryIntent.CancelDelete)
+                        onShowDeleteDialogChange(false)
+                        onIntent(GalleryIntent.CancelDelete)
                     }
                 ) {
                     Text("Cancel")
@@ -143,47 +220,47 @@ fun GalleryScreen(
                 },
                 navigationIcon = {
                     if (uiState.isSelectionMode) {
-                        IconButton(onClick = { viewModel.onIntent(GalleryIntent.ClearSelection) }) {
+                        IconButton(onClick = { onIntent(GalleryIntent.ClearSelection) }) {
                             Icon(Icons.Default.Close, contentDescription = "Cancel selection")
                         }
                     }
                 },
                 actions = {
                     if (uiState.isSelectionMode) {
-                        IconButton(onClick = { viewModel.onIntent(GalleryIntent.SelectAll) }) {
+                        IconButton(onClick = { onIntent(GalleryIntent.SelectAll) }) {
                             Icon(Icons.Default.SelectAll, contentDescription = "Select all")
                         }
                     } else {
                         IconButton(onClick = onNavigateToSearch) {
                             Icon(Icons.Default.Search, contentDescription = "Search")
                         }
-                        IconButton(onClick = { showMenu = true }) {
+                        IconButton(onClick = { onShowMenuChange(true) }) {
                             Icon(Icons.Default.MoreVert, contentDescription = "More options")
                         }
                         DropdownMenu(
                             expanded = showMenu,
-                            onDismissRequest = { showMenu = false }
+                            onDismissRequest = { onShowMenuChange(false) }
                         ) {
                             DropdownMenuItem(
                                 text = { Text("All Memes") },
                                 onClick = {
-                                    viewModel.onIntent(GalleryIntent.SetFilter(GalleryFilter.All))
-                                    showMenu = false
+                                    onIntent(GalleryIntent.SetFilter(GalleryFilter.All))
+                                    onShowMenuChange(false)
                                 }
                             )
                             DropdownMenuItem(
                                 text = { Text("Favorites") },
                                 leadingIcon = { Icon(Icons.Outlined.FavoriteBorder, null) },
                                 onClick = {
-                                    viewModel.onIntent(GalleryIntent.SetFilter(GalleryFilter.Favorites))
-                                    showMenu = false
+                                    onIntent(GalleryIntent.SetFilter(GalleryFilter.Favorites))
+                                    onShowMenuChange(false)
                                 }
                             )
                             DropdownMenuItem(
                                 text = { Text("Settings") },
                                 onClick = {
                                     onNavigateToSettings()
-                                    showMenu = false
+                                    onShowMenuChange(false)
                                 }
                             )
                         }
@@ -200,10 +277,10 @@ fun GalleryScreen(
             ) {
                 BottomAppBar(
                     actions = {
-                        IconButton(onClick = { viewModel.onIntent(GalleryIntent.ShareSelected) }) {
+                        IconButton(onClick = { onIntent(GalleryIntent.ShareSelected) }) {
                             Icon(Icons.Default.Share, contentDescription = "Share")
                         }
-                        IconButton(onClick = { viewModel.onIntent(GalleryIntent.DeleteSelected) }) {
+                        IconButton(onClick = { onIntent(GalleryIntent.DeleteSelected) }) {
                             Icon(
                                 Icons.Default.Delete,
                                 contentDescription = "Delete",
@@ -221,13 +298,14 @@ fun GalleryScreen(
                 exit = fadeOut()
             ) {
                 FloatingActionButton(
-                    onClick = { viewModel.onIntent(GalleryIntent.NavigateToImport) }
+                    onClick = { onIntent(GalleryIntent.NavigateToImport) }
                 ) {
                     Icon(Icons.Default.Add, contentDescription = "Import memes")
                 }
             }
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { paddingValues ->
         Box(
             modifier = Modifier
@@ -240,8 +318,8 @@ fun GalleryScreen(
                 }
                 uiState.error != null -> {
                     ErrorState(
-                        message = uiState.error!!,
-                        onRetry = { viewModel.onIntent(GalleryIntent.LoadMemes) }
+                        message = uiState.error.orEmpty(),
+                        onRetry = { onIntent(GalleryIntent.LoadMemes) }
                     )
                 }
                 uiState.isEmpty -> {
@@ -250,7 +328,7 @@ fun GalleryScreen(
                         title = "No memes yet",
                         message = "Import some memes to get started!",
                         actionLabel = "Import Memes",
-                        onAction = { viewModel.onIntent(GalleryIntent.NavigateToImport) }
+                        onAction = { onIntent(GalleryIntent.NavigateToImport) }
                     )
                 }
                 else -> {
@@ -268,13 +346,13 @@ fun GalleryScreen(
 
                             Box(
                                 modifier = Modifier.combinedClickable(
-                                    onClick = { viewModel.onIntent(GalleryIntent.OpenMeme(meme.id)) },
-                                    onLongClick = { viewModel.onIntent(GalleryIntent.StartSelection(meme.id)) }
+                                    onClick = { onIntent(GalleryIntent.OpenMeme(meme.id)) },
+                                    onLongClick = { onIntent(GalleryIntent.QuickShare(meme.id)) }
                                 )
                             ) {
                                 MemeCardCompact(
                                     meme = meme,
-                                    onClick = { viewModel.onIntent(GalleryIntent.OpenMeme(meme.id)) }
+                                    onClick = { onIntent(GalleryIntent.OpenMeme(meme.id)) }
                                 )
 
                                 // Selection overlay
@@ -291,7 +369,7 @@ fun GalleryScreen(
                                     
                                     androidx.compose.material3.Checkbox(
                                         checked = isSelected,
-                                        onCheckedChange = { viewModel.onIntent(GalleryIntent.ToggleSelection(meme.id)) },
+                                        onCheckedChange = { onIntent(GalleryIntent.ToggleSelection(meme.id)) },
                                         modifier = Modifier
                                             .align(Alignment.TopStart)
                                             .padding(4.dp)

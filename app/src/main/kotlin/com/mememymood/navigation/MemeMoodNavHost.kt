@@ -5,7 +5,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
-import com.mememymood.feature.gallery.navigation.GALLERY_ROUTE
+import com.mememymood.core.common.navigation.GalleryRoute
 import com.mememymood.feature.gallery.navigation.galleryScreen
 import com.mememymood.feature.gallery.navigation.memeDetailScreen
 import com.mememymood.feature.gallery.navigation.navigateToMemeDetail
@@ -15,18 +15,17 @@ import com.mememymood.feature.search.navigation.navigateToSearch
 import com.mememymood.feature.search.navigation.searchScreen
 import com.mememymood.feature.settings.navigation.navigateToSettings
 import com.mememymood.feature.settings.navigation.settingsScreen
-import com.mememymood.feature.share.navigation.navigateToShare
-import com.mememymood.feature.share.navigation.shareScreen
 
 /**
  * Main navigation host for Meme My Mood.
  * Defines all navigation routes and their connections.
+ * Uses type-safe navigation with Kotlin serialization.
  */
 @Composable
 fun MemeMoodNavHost(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
-    startDestination: String = GALLERY_ROUTE
+    startDestination: Any = GalleryRoute
 ) {
     NavHost(
         navController = navController,
@@ -54,9 +53,6 @@ fun MemeMoodNavHost(
             onNavigateBack = {
                 navController.popBackStack()
             },
-            onNavigateToShare = { memeId ->
-                navController.navigateToShare(memeId)
-            }
         )
 
         // Import screen
@@ -76,13 +72,6 @@ fun MemeMoodNavHost(
             },
             onNavigateToMeme = { memeId ->
                 navController.navigateToMemeDetail(memeId)
-            }
-        )
-
-        // Share screen
-        shareScreen(
-            onNavigateBack = {
-                navController.popBackStack()
             }
         )
 

@@ -20,7 +20,7 @@ import kotlin.coroutines.resumeWithException
  */
 @Singleton
 class MlKitTextRecognizer @Inject constructor(
-    @ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context
 ) : TextRecognizer {
 
     private val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)

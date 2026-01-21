@@ -47,7 +47,6 @@ class ShareViewModel @Inject constructor(
                 it.copy(maxWidth = intent.dimension, maxHeight = intent.dimension) 
             }
             is ShareIntent.SetStripMetadata -> updateConfig { it.copy(stripMetadata = intent.strip) }
-            is ShareIntent.SetAddWatermark -> updateConfig { it.copy(addWatermark = intent.add) }
             is ShareIntent.Share -> share()
             is ShareIntent.SaveToGallery -> saveToGallery()
             is ShareIntent.RefreshPreview -> updatePreview()
@@ -115,13 +114,7 @@ class ShareViewModel @Inject constructor(
                     val original = BitmapFactory.decodeFile(meme.filePath)
                     val maxWidth = config.maxWidth ?: original.width
                     val maxHeight = config.maxHeight ?: original.height
-                    var processed = imageProcessor.resizeBitmap(original, maxWidth, maxHeight)
-                    
-                    if (config.addWatermark) {
-                        val watermarked = imageProcessor.addWatermark(processed)
-                        if (processed != original) processed.recycle()
-                        processed = watermarked
-                    }
+                    val processed = imageProcessor.resizeBitmap(original, maxWidth, maxHeight)
                     
                     if (processed != original) original.recycle()
                     processed

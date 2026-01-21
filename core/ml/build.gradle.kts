@@ -22,10 +22,19 @@ android {
 dependencies {
     implementation(project(":core:common"))
     implementation(project(":core:model"))
+    implementation(project(":core:database"))
 
     // Hilt
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
+
+    // WorkManager with Hilt
+    implementation(libs.workmanager.runtime)
+    implementation(libs.hilt.work)
+    ksp(libs.hilt.work.compiler)
+
+    // DataStore for version tracking
+    implementation(libs.datastore.preferences)
 
     // ML Kit
     implementation(libs.bundles.mlkit)
@@ -47,4 +56,5 @@ dependencies {
     testImplementation(libs.bundles.testing)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core)
+    testImplementation(libs.workmanager.testing)
 }

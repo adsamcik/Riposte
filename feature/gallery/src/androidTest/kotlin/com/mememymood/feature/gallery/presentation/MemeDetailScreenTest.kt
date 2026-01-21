@@ -63,8 +63,7 @@ class MemeDetailScreenTest {
                 MemeDetailScreen(
                     uiState = MemeDetailUiState(isLoading = true),
                     onIntent = {},
-                    onNavigateBack = {},
-                    onNavigateToShare = {}
+                    onNavigateBack = {}
                 )
             }
         }
@@ -84,8 +83,7 @@ class MemeDetailScreenTest {
                         isLoading = false
                     ),
                     onIntent = {},
-                    onNavigateBack = {},
-                    onNavigateToShare = {}
+                    onNavigateBack = {}
                 )
             }
         }
@@ -103,8 +101,7 @@ class MemeDetailScreenTest {
                         isLoading = false
                     ),
                     onIntent = {},
-                    onNavigateBack = {},
-                    onNavigateToShare = {}
+                    onNavigateBack = {}
                 )
             }
         }
@@ -122,8 +119,7 @@ class MemeDetailScreenTest {
                         isLoading = false
                     ),
                     onIntent = {},
-                    onNavigateBack = {},
-                    onNavigateToShare = {}
+                    onNavigateBack = {}
                 )
             }
         }
@@ -141,8 +137,7 @@ class MemeDetailScreenTest {
                         isLoading = false
                     ),
                     onIntent = {},
-                    onNavigateBack = {},
-                    onNavigateToShare = {}
+                    onNavigateBack = {}
                 )
             }
         }
@@ -164,8 +159,7 @@ class MemeDetailScreenTest {
                         isLoading = false
                     ),
                     onIntent = {},
-                    onNavigateBack = {},
-                    onNavigateToShare = {}
+                    onNavigateBack = {}
                 )
             }
         }
@@ -185,8 +179,7 @@ class MemeDetailScreenTest {
                         isLoading = false
                     ),
                     onIntent = {},
-                    onNavigateBack = { navigatedBack = true },
-                    onNavigateToShare = {}
+                    onNavigateBack = { navigatedBack = true }
                 )
             }
         }
@@ -206,8 +199,7 @@ class MemeDetailScreenTest {
                         isLoading = false
                     ),
                     onIntent = {},
-                    onNavigateBack = {},
-                    onNavigateToShare = {}
+                    onNavigateBack = {}
                 )
             }
         }
@@ -225,8 +217,7 @@ class MemeDetailScreenTest {
                         isLoading = false
                     ),
                     onIntent = {},
-                    onNavigateBack = {},
-                    onNavigateToShare = {}
+                    onNavigateBack = {}
                 )
             }
         }
@@ -244,8 +235,7 @@ class MemeDetailScreenTest {
                         isLoading = false
                     ),
                     onIntent = {},
-                    onNavigateBack = {},
-                    onNavigateToShare = {}
+                    onNavigateBack = {}
                 )
             }
         }
@@ -265,8 +255,7 @@ class MemeDetailScreenTest {
                         isLoading = false
                     ),
                     onIntent = {},
-                    onNavigateBack = {},
-                    onNavigateToShare = {}
+                    onNavigateBack = {}
                 )
             }
         }
@@ -284,8 +273,7 @@ class MemeDetailScreenTest {
                         isLoading = false
                     ),
                     onIntent = {},
-                    onNavigateBack = {},
-                    onNavigateToShare = {}
+                    onNavigateBack = {}
                 )
             }
         }
@@ -305,8 +293,7 @@ class MemeDetailScreenTest {
                         isLoading = false
                     ),
                     onIntent = { receivedIntent = it },
-                    onNavigateBack = {},
-                    onNavigateToShare = {}
+                    onNavigateBack = {}
                 )
             }
         }
@@ -331,8 +318,7 @@ class MemeDetailScreenTest {
                         editedDescription = "A hilarious cat doing cat things"
                     ),
                     onIntent = {},
-                    onNavigateBack = {},
-                    onNavigateToShare = {}
+                    onNavigateBack = {}
                 )
             }
         }
@@ -353,8 +339,7 @@ class MemeDetailScreenTest {
                         editedTitle = "Funny Cat Meme"
                     ),
                     onIntent = {},
-                    onNavigateBack = {},
-                    onNavigateToShare = {}
+                    onNavigateBack = {}
                 )
             }
         }
@@ -375,8 +360,7 @@ class MemeDetailScreenTest {
                         isLoading = false
                     ),
                     onIntent = { receivedIntent = it },
-                    onNavigateBack = {},
-                    onNavigateToShare = {}
+                    onNavigateBack = {}
                 )
             }
         }
@@ -400,8 +384,7 @@ class MemeDetailScreenTest {
                         editedTitle = "New Title"
                     ),
                     onIntent = { receivedIntent = it },
-                    onNavigateBack = {},
-                    onNavigateToShare = {}
+                    onNavigateBack = {}
                 )
             }
         }
@@ -425,8 +408,7 @@ class MemeDetailScreenTest {
                         editedTitle = "New Title"
                     ),
                     onIntent = { receivedIntent = it },
-                    onNavigateBack = {},
-                    onNavigateToShare = {}
+                    onNavigateBack = {}
                 )
             }
         }
@@ -449,8 +431,7 @@ class MemeDetailScreenTest {
                         showDeleteDialog = true
                     ),
                     onIntent = {},
-                    onNavigateBack = {},
-                    onNavigateToShare = {}
+                    onNavigateBack = {}
                 )
             }
         }
@@ -472,8 +453,7 @@ class MemeDetailScreenTest {
                         showDeleteDialog = true
                     ),
                     onIntent = { receivedIntent = it },
-                    onNavigateBack = {},
-                    onNavigateToShare = {}
+                    onNavigateBack = {}
                 )
             }
         }
@@ -496,8 +476,7 @@ class MemeDetailScreenTest {
                         showDeleteDialog = true
                     ),
                     onIntent = { receivedIntent = it },
-                    onNavigateBack = {},
-                    onNavigateToShare = {}
+                    onNavigateBack = {}
                 )
             }
         }
@@ -522,8 +501,7 @@ class MemeDetailScreenTest {
                         editedEmojis = listOf("😂", "🔥")
                     ),
                     onIntent = {},
-                    onNavigateBack = {},
-                    onNavigateToShare = {}
+                    onNavigateBack = {}
                 )
             }
         }
@@ -543,8 +521,7 @@ class MemeDetailScreenTest {
                         editedEmojis = listOf("😂")
                     ),
                     onIntent = {},
-                    onNavigateBack = {},
-                    onNavigateToShare = {}
+                    onNavigateBack = {}
                 )
             }
         }
@@ -565,8 +542,7 @@ class MemeDetailScreenTest {
                         errorMessage = "Failed to load meme"
                     ),
                     onIntent = {},
-                    onNavigateBack = {},
-                    onNavigateToShare = {}
+                    onNavigateBack = {}
                 )
             }
         }
@@ -588,8 +564,7 @@ class MemeDetailScreenTest {
                         isLoading = false
                     ),
                     onIntent = { receivedIntent = it },
-                    onNavigateBack = {},
-                    onNavigateToShare = {}
+                    onNavigateBack = {}
                 )
             }
         }

@@ -1,6 +1,7 @@
 package com.mememymood.feature.search.data
 
 import com.mememymood.core.database.dao.MemeDao
+import com.mememymood.core.database.dao.MemeEmbeddingDao
 import com.mememymood.core.database.dao.MemeSearchDao
 import com.mememymood.core.datastore.PreferencesDataStore
 import com.mememymood.core.ml.MemeWithEmbedding
@@ -18,6 +19,7 @@ import javax.inject.Inject
 class SearchRepositoryImpl @Inject constructor(
     private val memeDao: MemeDao,
     private val memeSearchDao: MemeSearchDao,
+    private val memeEmbeddingDao: MemeEmbeddingDao,
     private val semanticSearchEngine: SemanticSearchEngine,
     private val preferencesDataStore: PreferencesDataStore,
 ) : SearchRepository {
@@ -48,17 +50,37 @@ class SearchRepositoryImpl @Inject constructor(
     override suspend fun searchSemantic(query: String, limit: Int): List<SearchResult> {
         if (query.isBlank()) return emptyList()
 
-        val entities = memeDao.getAllMemes().first()
-        val memesWithEmbeddings = entities.filter { it.embedding != null }
+        // Use the new embedding table for better performance
+        val memesWithEmbeddings = memeEmbeddingDao.getMemesWithEmbeddings()
 
         if (memesWithEmbeddings.isEmpty()) {
             return emptyList()
         }
 
-        val candidates = memesWithEmbeddings.map { entity ->
+        val candidates = memesWithEmbeddings.mapNotNull { data ->
+            val embeddingBytes = data.embedding ?: return@mapNotNull null
+            
+            val meme = Meme(
+                id = data.memeId,
+                filePath = data.filePath,
+                fileName = data.fileName,
+                mimeType = "image/jpeg", // Default, could be stored
+                width = 0,
+                height = 0,
+                fileSizeBytes = 0,
+                importedAt = 0,
+                emojiTags = data.emojiTagsJson
+                    .split(",")
+                    .filter { it.isNotBlank() }
+                    .map { EmojiTag.fromEmoji(it.trim()) },
+                title = data.title,
+                description = data.description,
+                textContent = data.textContent,
+            )
+            
             MemeWithEmbedding(
-                meme = entity.toDomain(),
-                embedding = decodeEmbedding(entity.embedding!!)
+                meme = meme,
+                embedding = decodeEmbedding(embeddingBytes)
             )
         }
 
@@ -113,6 +135,10 @@ class SearchRepositoryImpl @Inject constructor(
     override suspend fun addRecentSearch(query: String) {
         if (query.isBlank()) return
         preferencesDataStore.addRecentSearch(query.trim())
+    }
+
+    override suspend fun deleteRecentSearch(query: String) {
+        preferencesDataStore.deleteRecentSearch(query)
     }
 
     override suspend fun clearRecentSearches() {
@@ -194,6 +220,8 @@ class SearchRepositoryImpl @Inject constructor(
                 .map { EmojiTag.fromEmoji(it.trim()) },
             textContent = textContent,
             isFavorite = isFavorite,
+            createdAt = createdAt,
+            useCount = useCount,
         )
     }
 

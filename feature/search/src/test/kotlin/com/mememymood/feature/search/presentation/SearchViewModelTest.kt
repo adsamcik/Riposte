@@ -63,6 +63,7 @@ class SearchViewModelTest {
         coEvery { searchUseCases.hybridSearch(any(), any()) } returns testSearchResults
         coEvery { searchUseCases.getSearchSuggestions(any()) } returns suggestions
         coEvery { searchUseCases.addRecentSearch(any()) } returns Unit
+        coEvery { searchUseCases.deleteRecentSearch(any()) } returns Unit
         coEvery { searchUseCases.clearRecentSearches() } returns Unit
     }
 
@@ -395,6 +396,343 @@ class SearchViewModelTest {
         advanceUntilIdle()
 
         assertThat(viewModel.uiState.value.query).isEqualTo("very funny")
+    }
+
+    // endregion
+
+    // region Quick Filter Tests
+
+    @Test
+    fun `SelectQuickFilter updates selected filter in state`() = runTest {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        val filter = QuickFilter.defaultFilters().first()
+        viewModel.onIntent(SearchIntent.SelectQuickFilter(filter))
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.selectedQuickFilter).isEqualTo(filter)
+    }
+
+    @Test
+    fun `SelectQuickFilter with emojiFilter adds to emoji filters`() = runTest {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        val funnyFilter = QuickFilter.defaultFilters().find { it.id == "funny" }!!
+        viewModel.onIntent(SearchIntent.SelectQuickFilter(funnyFilter))
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.selectedEmojiFilters).contains("😂")
+    }
+
+    @Test
+    fun `SelectQuickFilter with query updates query and searches`() = runTest {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        val favoritesFilter = QuickFilter.defaultFilters().find { it.id == "favorites" }!!
+        viewModel.onIntent(SearchIntent.SelectQuickFilter(favoritesFilter))
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.query).isEqualTo("is:favorite")
+    }
+
+    @Test
+    fun `ClearQuickFilter clears selected filter`() = runTest {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        val filter = QuickFilter.defaultFilters().first()
+        viewModel.onIntent(SearchIntent.SelectQuickFilter(filter))
+        advanceUntilIdle()
+
+        viewModel.onIntent(SearchIntent.ClearQuickFilter)
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.selectedQuickFilter).isNull()
+    }
+
+    @Test
+    fun `SelectQuickFilter emits haptic feedback effect`() = runTest {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        turbineScope {
+            val effectsFlow = viewModel.effects.testIn(backgroundScope)
+
+            val filter = QuickFilter.defaultFilters().first()
+            viewModel.onIntent(SearchIntent.SelectQuickFilter(filter))
+            advanceUntilIdle()
+
+            val effect = effectsFlow.awaitItem()
+            assertThat(effect).isInstanceOf(SearchEffect.TriggerHapticFeedback::class.java)
+
+            effectsFlow.cancel()
+        }
+    }
+
+    // endregion
+
+    // region Sort Order Tests
+
+    @Test
+    fun `initial sort order is RELEVANCE`() = runTest {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.sortOrder).isEqualTo(SearchSortOrder.RELEVANCE)
+    }
+
+    @Test
+    fun `SetSortOrder updates sort order in state`() = runTest {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onIntent(SearchIntent.SetSortOrder(SearchSortOrder.NEWEST))
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.sortOrder).isEqualTo(SearchSortOrder.NEWEST)
+    }
+
+    @Test
+    fun `SetSortOrder re-sorts existing results`() = runTest {
+        val olderMeme = createTestMeme(1, "old.jpg").copy(createdAt = 1000L)
+        val newerMeme = createTestMeme(2, "new.jpg").copy(createdAt = 2000L)
+        val results = listOf(
+            SearchResult(meme = olderMeme, relevanceScore = 1.0f, matchType = MatchType.TEXT),
+            SearchResult(meme = newerMeme, relevanceScore = 0.5f, matchType = MatchType.TEXT)
+        )
+        coEvery { searchUseCases.hybridSearch(any(), any()) } returns results
+
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onIntent(SearchIntent.UpdateQuery("test"))
+        advanceTimeBy(350)
+        advanceUntilIdle()
+
+        // By default sorted by relevance, so older meme first
+        assertThat(viewModel.uiState.value.results.first().meme.id).isEqualTo(1)
+
+        viewModel.onIntent(SearchIntent.SetSortOrder(SearchSortOrder.NEWEST))
+        advanceUntilIdle()
+
+        // Now sorted by newest, so newer meme first
+        assertThat(viewModel.uiState.value.results.first().meme.id).isEqualTo(2)
+    }
+
+    @Test
+    fun `SetSortOrder emits haptic feedback effect`() = runTest {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        turbineScope {
+            val effectsFlow = viewModel.effects.testIn(backgroundScope)
+
+            viewModel.onIntent(SearchIntent.SetSortOrder(SearchSortOrder.OLDEST))
+            advanceUntilIdle()
+
+            val effect = effectsFlow.awaitItem()
+            assertThat(effect).isInstanceOf(SearchEffect.TriggerHapticFeedback::class.java)
+
+            effectsFlow.cancel()
+        }
+    }
+
+    // endregion
+
+    // region View Mode Tests
+
+    @Test
+    fun `initial view mode is GRID`() = runTest {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.viewMode).isEqualTo(SearchViewMode.GRID)
+    }
+
+    @Test
+    fun `SetViewMode updates view mode in state`() = runTest {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onIntent(SearchIntent.SetViewMode(SearchViewMode.LIST))
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.viewMode).isEqualTo(SearchViewMode.LIST)
+    }
+
+    @Test
+    fun `SetViewMode emits haptic feedback effect`() = runTest {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        turbineScope {
+            val effectsFlow = viewModel.effects.testIn(backgroundScope)
+
+            viewModel.onIntent(SearchIntent.SetViewMode(SearchViewMode.LIST))
+            advanceUntilIdle()
+
+            val effect = effectsFlow.awaitItem()
+            assertThat(effect).isInstanceOf(SearchEffect.TriggerHapticFeedback::class.java)
+
+            effectsFlow.cancel()
+        }
+    }
+
+    // endregion
+
+    // region Delete Recent Search Tests
+
+    @Test
+    fun `DeleteRecentSearch removes search from list`() = runTest {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onIntent(SearchIntent.DeleteRecentSearch("cat"))
+        advanceUntilIdle()
+
+        coVerify { searchUseCases.deleteRecentSearch("cat") }
+        assertThat(viewModel.uiState.value.recentSearches).doesNotContain("cat")
+    }
+
+    // endregion
+
+    // region Voice Search Tests
+
+    @Test
+    fun `StartVoiceSearch sets voice search active and emits effect`() = runTest {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        turbineScope {
+            val effectsFlow = viewModel.effects.testIn(backgroundScope)
+
+            viewModel.onIntent(SearchIntent.StartVoiceSearch)
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.isVoiceSearchActive).isTrue()
+
+            val effect = effectsFlow.awaitItem()
+            assertThat(effect).isInstanceOf(SearchEffect.StartVoiceRecognition::class.java)
+
+            effectsFlow.cancel()
+        }
+    }
+
+    @Test
+    fun `StopVoiceSearch sets voice search inactive`() = runTest {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onIntent(SearchIntent.StartVoiceSearch)
+        advanceUntilIdle()
+
+        viewModel.onIntent(SearchIntent.StopVoiceSearch)
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.isVoiceSearchActive).isFalse()
+    }
+
+    @Test
+    fun `VoiceSearchResult updates query and performs search`() = runTest {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onIntent(SearchIntent.StartVoiceSearch)
+        advanceUntilIdle()
+
+        viewModel.onIntent(SearchIntent.VoiceSearchResult("voice query"))
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.query).isEqualTo("voice query")
+        assertThat(viewModel.uiState.value.isVoiceSearchActive).isFalse()
+        coVerify { searchUseCases.addRecentSearch("voice query") }
+    }
+
+    @Test
+    fun `VoiceSearchResult with blank text does not search`() = runTest {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onIntent(SearchIntent.StartVoiceSearch)
+        viewModel.onIntent(SearchIntent.VoiceSearchResult(""))
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.query).isEmpty()
+        assertThat(viewModel.uiState.value.isVoiceSearchActive).isFalse()
+    }
+
+    // endregion
+
+    // region Search Stats Tests
+
+    @Test
+    fun `search updates totalResultCount and searchDurationMs`() = runTest {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onIntent(SearchIntent.UpdateQuery("test"))
+        advanceTimeBy(350)
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertThat(state.totalResultCount).isEqualTo(testSearchResults.size)
+        // In test environment, execution is instant so duration may be 0
+        assertThat(state.searchDurationMs).isAtLeast(0L)
+    }
+
+    @Test
+    fun `resultSummary shows correct format when has results`() = runTest {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onIntent(SearchIntent.UpdateQuery("test"))
+        advanceTimeBy(350)
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertThat(state.resultSummary).contains("result")
+        assertThat(state.resultSummary).contains("ms")
+    }
+
+    @Test
+    fun `resultSummary is empty when not searched`() = runTest {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.resultSummary).isEmpty()
+    }
+
+    @Test
+    fun `hasActiveFilters is true when emoji filters selected`() = runTest {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onIntent(SearchIntent.ToggleEmojiFilter("😂"))
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.hasActiveFilters).isTrue()
+    }
+
+    @Test
+    fun `hasActiveFilters is true when quick filter selected`() = runTest {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onIntent(SearchIntent.SelectQuickFilter(QuickFilter.defaultFilters().first()))
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.hasActiveFilters).isTrue()
+    }
+
+    @Test
+    fun `hasActiveFilters is false when no filters`() = runTest {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.hasActiveFilters).isFalse()
     }
 
     // endregion

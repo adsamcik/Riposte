@@ -109,14 +109,12 @@ class SettingsViewModelTest {
         maxWidth: Int = 1080,
         maxHeight: Int = 1080,
         keepMetadata: Boolean = true,
-        addWatermark: Boolean = false,
     ) = SharingPreferences(
         defaultFormat = defaultFormat,
         defaultQuality = defaultQuality,
         maxWidth = maxWidth,
         maxHeight = maxHeight,
         keepMetadata = keepMetadata,
-        addWatermark = addWatermark,
     )
 
     // region Initialization Tests
@@ -167,7 +165,6 @@ class SettingsViewModelTest {
             defaultQuality = 90,
             maxWidth = 2048,
             keepMetadata = false,
-            addWatermark = true,
         )
 
         viewModel = createViewModel()
@@ -178,7 +175,6 @@ class SettingsViewModelTest {
         assertThat(state.defaultQuality).isEqualTo(90)
         assertThat(state.defaultMaxDimension).isEqualTo(2048)
         assertThat(state.keepMetadata).isFalse()
-        assertThat(state.addWatermark).isTrue()
     }
 
     @Test
@@ -341,21 +337,6 @@ class SettingsViewModelTest {
 
         coVerify { preferencesDataStore.updateSharingPreferences(any()) }
         assertThat(prefsSlot.captured.keepMetadata).isFalse()
-    }
-
-    @Test
-    fun `SetAddWatermark updates sharing preferences`() = runTest {
-        val prefsSlot = slot<SharingPreferences>()
-        coEvery { preferencesDataStore.updateSharingPreferences(capture(prefsSlot)) } returns Unit
-
-        viewModel = createViewModel()
-        advanceUntilIdle()
-
-        viewModel.onIntent(SettingsIntent.SetAddWatermark(true))
-        advanceUntilIdle()
-
-        coVerify { preferencesDataStore.updateSharingPreferences(any()) }
-        assertThat(prefsSlot.captured.addWatermark).isTrue()
     }
 
     // endregion

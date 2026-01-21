@@ -227,7 +227,6 @@ class FakePreferencesDataStore {
             maxWidth = 1080,
             maxHeight = 1080,
             stripMetadata = true,
-            addWatermark = false,
             recentShareTargets = emptyList(),
             favoriteShareTargets = emptyList()
         )

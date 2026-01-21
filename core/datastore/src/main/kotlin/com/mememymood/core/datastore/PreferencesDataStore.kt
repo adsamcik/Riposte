@@ -26,7 +26,7 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
  */
 @Singleton
 class PreferencesDataStore @Inject constructor(
-    @ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context
 ) {
 
     private object PreferencesKeys {
@@ -36,7 +36,6 @@ class PreferencesDataStore @Inject constructor(
         val MAX_WIDTH = intPreferencesKey("max_width")
         val MAX_HEIGHT = intPreferencesKey("max_height")
         val STRIP_METADATA = booleanPreferencesKey("strip_metadata")
-        val ADD_WATERMARK = booleanPreferencesKey("add_watermark")
         val RECENT_SHARE_TARGETS = stringSetPreferencesKey("recent_share_targets")
         val FAVORITE_SHARE_TARGETS = stringSetPreferencesKey("favorite_share_targets")
 
@@ -65,7 +64,6 @@ class PreferencesDataStore @Inject constructor(
             maxWidth = prefs[PreferencesKeys.MAX_WIDTH] ?: 1080,
             maxHeight = prefs[PreferencesKeys.MAX_HEIGHT] ?: 1080,
             stripMetadata = prefs[PreferencesKeys.STRIP_METADATA] ?: true,
-            addWatermark = prefs[PreferencesKeys.ADD_WATERMARK] ?: false,
             recentShareTargets = prefs[PreferencesKeys.RECENT_SHARE_TARGETS]?.toList() ?: emptyList(),
             favoriteShareTargets = prefs[PreferencesKeys.FAVORITE_SHARE_TARGETS]?.toList() ?: emptyList()
         )
@@ -81,7 +79,6 @@ class PreferencesDataStore @Inject constructor(
             prefs[PreferencesKeys.MAX_WIDTH] = preferences.maxWidth
             prefs[PreferencesKeys.MAX_HEIGHT] = preferences.maxHeight
             prefs[PreferencesKeys.STRIP_METADATA] = preferences.stripMetadata
-            prefs[PreferencesKeys.ADD_WATERMARK] = preferences.addWatermark
             prefs[PreferencesKeys.RECENT_SHARE_TARGETS] = preferences.recentShareTargets.toSet()
             prefs[PreferencesKeys.FAVORITE_SHARE_TARGETS] = preferences.favoriteShareTargets.toSet()
         }
@@ -165,6 +162,17 @@ class PreferencesDataStore @Inject constructor(
             current.add(0, query)
             // Keep only the 20 most recent
             prefs[PreferencesKeys.RECENT_SEARCHES] = current.take(MAX_RECENT_SEARCHES).toSet()
+        }
+    }
+
+    /**
+     * Deletes a specific search query from recent searches.
+     */
+    suspend fun deleteRecentSearch(query: String) {
+        context.dataStore.edit { prefs ->
+            val current = prefs[PreferencesKeys.RECENT_SEARCHES]?.toMutableList() ?: mutableListOf()
+            current.remove(query)
+            prefs[PreferencesKeys.RECENT_SEARCHES] = current.toSet()
         }
     }
 

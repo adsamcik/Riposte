@@ -28,7 +28,7 @@ import kotlin.coroutines.resumeWithException
  */
 @Singleton
 class SimpleEmbeddingGenerator @Inject constructor(
-    @ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context
 ) : EmbeddingGenerator {
 
     private val imageLabeler = ImageLabeling.getClient(

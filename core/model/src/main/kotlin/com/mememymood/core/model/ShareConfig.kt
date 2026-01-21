@@ -30,12 +30,7 @@ data class ShareConfig(
     /**
      * Whether to strip metadata from the shared image.
      */
-    val stripMetadata: Boolean = true,
-    
-    /**
-     * Whether to add a watermark to the shared image.
-     */
-    val addWatermark: Boolean = false
+    val stripMetadata: Boolean = true
 ) {
     companion object {
         val DEFAULT = ShareConfig()

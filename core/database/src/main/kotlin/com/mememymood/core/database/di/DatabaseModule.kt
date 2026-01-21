@@ -5,6 +5,7 @@ import androidx.room.Room
 import com.mememymood.core.database.MemeDatabase
 import com.mememymood.core.database.dao.EmojiTagDao
 import com.mememymood.core.database.dao.MemeDao
+import com.mememymood.core.database.dao.MemeEmbeddingDao
 import com.mememymood.core.database.dao.MemeSearchDao
 import dagger.Module
 import dagger.Provides
@@ -27,7 +28,7 @@ object DatabaseModule {
             MemeDatabase::class.java,
             "meme_my_mood.db"
         )
-            .fallbackToDestructiveMigration()
+            .addMigrations(MemeDatabase.MIGRATION_1_2)
             .build()
     }
 
@@ -47,5 +48,11 @@ object DatabaseModule {
     @Singleton
     fun provideEmojiTagDao(database: MemeDatabase): EmojiTagDao {
         return database.emojiTagDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideMemeEmbeddingDao(database: MemeDatabase): MemeEmbeddingDao {
+        return database.memeEmbeddingDao()
     }
 }

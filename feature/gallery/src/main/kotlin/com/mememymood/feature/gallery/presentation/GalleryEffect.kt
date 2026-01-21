@@ -33,4 +33,9 @@ sealed interface GalleryEffect {
      * Show error message.
      */
     data class ShowError(val message: String) : GalleryEffect
+
+    /**
+     * Launch share intent directly.
+     */
+    data class LaunchShareIntent(val intent: android.content.Intent) : GalleryEffect
 }

@@ -7,7 +7,6 @@ sealed interface ShareIntent {
     data class SetQuality(val quality: Int) : ShareIntent
     data class SetMaxDimension(val dimension: Int) : ShareIntent
     data class SetStripMetadata(val strip: Boolean) : ShareIntent
-    data class SetAddWatermark(val add: Boolean) : ShareIntent
     data object Share : ShareIntent
     data object SaveToGallery : ShareIntent
     data object RefreshPreview : ShareIntent

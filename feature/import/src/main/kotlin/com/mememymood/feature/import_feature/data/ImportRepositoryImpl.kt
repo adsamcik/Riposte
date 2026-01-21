@@ -9,7 +9,7 @@ import com.mememymood.core.database.dao.EmojiTagDao
 import com.mememymood.core.database.dao.MemeDao
 import com.mememymood.core.database.entity.EmojiTagEntity
 import com.mememymood.core.database.entity.MemeEntity
-import com.mememymood.core.ml.EmbeddingGenerator
+import com.mememymood.core.ml.EmbeddingManager
 import com.mememymood.core.ml.TextRecognizer
 import com.mememymood.core.ml.XmpMetadataHandler
 import com.mememymood.core.model.EmojiTag
@@ -29,11 +29,11 @@ import java.util.UUID
 import javax.inject.Inject
 
 class ImportRepositoryImpl @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val memeDao: MemeDao,
     private val emojiTagDao: EmojiTagDao,
     private val textRecognizer: TextRecognizer,
-    private val embeddingGenerator: EmbeddingGenerator,
+    private val embeddingManager: EmbeddingManager,
     private val xmpMetadataHandler: XmpMetadataHandler,
 ) : ImportRepository {
 
@@ -82,9 +82,8 @@ class ImportRepositoryImpl @Inject constructor(
             // Extract text from image
             val extractedText = extractTextFromBitmap(bitmap)
 
-            // Generate embeddings
+            // Build search text for embedding generation
             val searchText = buildSearchText(title, description, extractedText, emojis)
-            val embedding = embeddingGenerator.generateFromText(searchText)
 
             // Create XMP metadata and embed in image
             val xmpMetadata = if (emojis.isNotEmpty()) {
@@ -102,10 +101,7 @@ class ImportRepositoryImpl @Inject constructor(
             // Calculate file hash for duplicate detection
             val fileHash = calculateFileHash(imageFile)
 
-            // Convert embedding to ByteArray for storage
-            val embeddingBytes = encodeEmbedding(embedding)
-
-            // Create database entity
+            // Create database entity (embedding stored separately in meme_embeddings table)
             val now = System.currentTimeMillis()
             val originalFileName = getFileNameFromUri(uri) ?: "Untitled"
             val mimeType = context.contentResolver.getType(uri) ?: "image/jpeg"
@@ -121,11 +117,16 @@ class ImportRepositoryImpl @Inject constructor(
                 title = title ?: originalFileName,
                 description = description,
                 textContent = extractedText,
-                embedding = embeddingBytes,
+                embedding = null, // Embeddings now stored in separate table
             )
 
             // Insert meme
             val memeId = memeDao.insertMeme(memeEntity)
+
+            // Generate and store embedding in the new embeddings table
+            if (searchText.isNotBlank()) {
+                embeddingManager.generateAndStoreEmbedding(memeId, searchText)
+            }
 
             // Insert emoji tags
             val emojiTagEntities = emojis.map { emoji ->
@@ -368,13 +369,6 @@ class ImportRepositoryImpl @Inject constructor(
                 append(EmojiTag.fromEmoji(emoji).name.replace("_", " ")).append(" ")
             }
         }.trim()
-    }
-
-    private fun encodeEmbedding(embedding: FloatArray): ByteArray {
-        val buffer = java.nio.ByteBuffer.allocate(embedding.size * 4)
-            .order(java.nio.ByteOrder.LITTLE_ENDIAN)
-        embedding.forEach { buffer.putFloat(it) }
-        return buffer.array()
     }
 
     private fun calculateFileHash(file: File): String {

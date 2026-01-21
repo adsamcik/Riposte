@@ -8,6 +8,7 @@ import com.mememymood.feature.gallery.domain.usecase.DeleteMemesUseCase
 import com.mememymood.feature.gallery.domain.usecase.GetMemeByIdUseCase
 import com.mememymood.feature.gallery.domain.usecase.ToggleFavoriteUseCase
 import com.mememymood.feature.gallery.domain.usecase.UpdateMemeUseCase
+import com.mememymood.feature.share.domain.usecase.ShareUseCases
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,6 +26,7 @@ class MemeDetailViewModel @Inject constructor(
     private val updateMemeUseCase: UpdateMemeUseCase,
     private val deleteMemeUseCase: DeleteMemesUseCase,
     private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
+    private val shareUseCases: ShareUseCases,
 ) : ViewModel() {
 
     private val memeId: Long = savedStateHandle.get<Long>("memeId") ?: -1L
@@ -184,7 +186,28 @@ class MemeDetailViewModel @Inject constructor(
     private fun share() {
         val meme = _uiState.value.meme ?: return
         viewModelScope.launch {
-            _effects.send(MemeDetailEffect.NavigateToShare(meme.id))
+            _uiState.update { it.copy(isLoading = true) }
+            
+            try {
+                // Get default share config from settings
+                val config = shareUseCases.getDefaultConfig()
+                
+                // Prepare the meme for sharing
+                val result = shareUseCases.prepareForSharing(meme, config)
+                result.fold(
+                    onSuccess = { uri ->
+                        val intent = shareUseCases.createShareIntent(uri, config.format.mimeType)
+                        _effects.send(MemeDetailEffect.LaunchShareIntent(intent))
+                    },
+                    onFailure = { error ->
+                        _effects.send(MemeDetailEffect.ShowError(error.message ?: "Failed to share"))
+                    }
+                )
+            } catch (e: Exception) {
+                _effects.send(MemeDetailEffect.ShowError(e.message ?: "Failed to share"))
+            } finally {
+                _uiState.update { it.copy(isLoading = false) }
+            }
         }
     }
 

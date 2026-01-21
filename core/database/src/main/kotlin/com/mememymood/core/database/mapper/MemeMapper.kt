@@ -34,7 +34,9 @@ object MemeMapper {
             title = title,
             description = description,
             textContent = textContent,
-            isFavorite = isFavorite
+            isFavorite = isFavorite,
+            createdAt = createdAt,
+            useCount = useCount,
         )
     }
 
@@ -55,7 +57,9 @@ object MemeMapper {
             title = title,
             description = description,
             textContent = textContent,
-            isFavorite = isFavorite
+            isFavorite = isFavorite,
+            createdAt = createdAt,
+            useCount = useCount,
         )
     }
 

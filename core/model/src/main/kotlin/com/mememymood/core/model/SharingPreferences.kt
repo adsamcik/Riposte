@@ -43,11 +43,6 @@ data class SharingPreferences(
     val keepMetadata: Boolean = true,
     
     /**
-     * Whether to add watermark by default.
-     */
-    val addWatermark: Boolean = false,
-    
-    /**
      * Recently used apps for sharing (package names).
      */
     val recentShareTargets: List<String> = emptyList(),
@@ -65,8 +60,7 @@ data class SharingPreferences(
         quality = defaultQuality,
         maxWidth = maxWidth,
         maxHeight = maxHeight,
-        stripMetadata = stripMetadata,
-        addWatermark = addWatermark
+        stripMetadata = stripMetadata
     )
     
     companion object {

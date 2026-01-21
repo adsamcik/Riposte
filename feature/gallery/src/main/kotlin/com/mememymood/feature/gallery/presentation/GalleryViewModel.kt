@@ -3,11 +3,13 @@ package com.mememymood.feature.gallery.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mememymood.core.datastore.PreferencesDataStore
+import com.mememymood.core.model.ImageFormat
 import com.mememymood.feature.gallery.domain.usecase.DeleteMemesUseCase
 import com.mememymood.feature.gallery.domain.usecase.GetFavoritesUseCase
 import com.mememymood.feature.gallery.domain.usecase.GetMemesByEmojiUseCase
 import com.mememymood.feature.gallery.domain.usecase.GetMemesUseCase
 import com.mememymood.feature.gallery.domain.usecase.ToggleFavoriteUseCase
+import com.mememymood.feature.share.domain.usecase.ShareUseCases
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,7 +28,8 @@ class GalleryViewModel @Inject constructor(
     private val getMemesByEmojiUseCase: GetMemesByEmojiUseCase,
     private val deleteMemeUseCase: DeleteMemesUseCase,
     private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
-    private val preferencesDataStore: PreferencesDataStore
+    private val preferencesDataStore: PreferencesDataStore,
+    private val shareUseCases: ShareUseCases
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(GalleryUiState())
@@ -58,6 +61,7 @@ class GalleryViewModel @Inject constructor(
             is GalleryIntent.SetGridColumns -> setGridColumns(intent.columns)
             is GalleryIntent.ShareSelected -> shareSelected()
             is GalleryIntent.NavigateToImport -> navigateToImport()
+            is GalleryIntent.QuickShare -> quickShare(intent.memeId)
         }
     }
 
@@ -195,6 +199,39 @@ class GalleryViewModel @Inject constructor(
     private fun navigateToImport() {
         viewModelScope.launch {
             _effects.send(GalleryEffect.NavigateToImport)
+        }
+    }
+
+    private fun quickShare(memeId: Long) {
+        viewModelScope.launch {
+            try {
+                val meme = shareUseCases.getMeme(memeId)
+                if (meme == null) {
+                    _effects.send(GalleryEffect.ShowError("Meme not found"))
+                    return@launch
+                }
+
+                val config = shareUseCases.getDefaultConfig()
+                val result = shareUseCases.prepareForSharing(meme, config)
+
+                result.fold(
+                    onSuccess = { uri ->
+                        val mimeType = when (config.format) {
+                            ImageFormat.JPEG -> "image/jpeg"
+                            ImageFormat.PNG -> "image/png"
+                            ImageFormat.WEBP -> "image/webp"
+                            ImageFormat.GIF -> "image/gif"
+                        }
+                        val intent = shareUseCases.createShareIntent(uri, mimeType)
+                        _effects.send(GalleryEffect.LaunchShareIntent(intent))
+                    },
+                    onFailure = { error ->
+                        _effects.send(GalleryEffect.ShowError(error.message ?: "Share failed"))
+                    }
+                )
+            } catch (e: Exception) {
+                _effects.send(GalleryEffect.ShowError(e.message ?: "Share failed"))
+            }
         }
     }
 }

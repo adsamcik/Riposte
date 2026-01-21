@@ -120,67 +120,6 @@ class ImageProcessorTest {
 
     // endregion
 
-    // region addWatermark Tests
-
-    @Test
-    fun `addWatermark returns new bitmap`() {
-        val originalBitmap = createRealBitmap(1080, 1920)
-
-        val result = imageProcessor.addWatermark(originalBitmap)
-
-        assertThat(result).isNotSameInstanceAs(originalBitmap)
-        assertThat(result.width).isEqualTo(originalBitmap.width)
-        assertThat(result.height).isEqualTo(originalBitmap.height)
-        
-        // Cleanup
-        result.recycle()
-        originalBitmap.recycle()
-    }
-
-    @Test
-    fun `addWatermark preserves dimensions`() {
-        val originalBitmap = createRealBitmap(800, 600)
-
-        val result = imageProcessor.addWatermark(originalBitmap)
-
-        assertThat(result.width).isEqualTo(800)
-        assertThat(result.height).isEqualTo(600)
-        
-        // Cleanup
-        result.recycle()
-        originalBitmap.recycle()
-    }
-
-    @Test
-    fun `addWatermark works with small images`() {
-        val smallBitmap = createRealBitmap(100, 100)
-
-        val result = imageProcessor.addWatermark(smallBitmap)
-
-        assertThat(result.width).isEqualTo(100)
-        assertThat(result.height).isEqualTo(100)
-        
-        // Cleanup
-        result.recycle()
-        smallBitmap.recycle()
-    }
-
-    @Test
-    fun `addWatermark works with large images`() {
-        val largeBitmap = createRealBitmap(4000, 3000)
-
-        val result = imageProcessor.addWatermark(largeBitmap)
-
-        assertThat(result.width).isEqualTo(4000)
-        assertThat(result.height).isEqualTo(3000)
-        
-        // Cleanup
-        result.recycle()
-        largeBitmap.recycle()
-    }
-
-    // endregion
-
     // region estimateFileSize Tests
 
     @Test
@@ -266,7 +205,6 @@ class ImageProcessorTest {
             quality = 80,
             maxWidth = 500,
             maxHeight = 500,
-            addWatermark = false,
         )
 
         val result = imageProcessor.processImage(
@@ -280,34 +218,6 @@ class ImageProcessorTest {
         assertThat(success.width).isEqualTo(500)
         assertThat(success.height).isEqualTo(500)
         assertThat(success.file).isEqualTo(outputFile)
-
-        unmockkStatic(BitmapFactory::class)
-        outputFile.delete()
-        inputBitmap.recycle()
-    }
-
-    @Test
-    fun `processImage applies watermark when configured`() {
-        val inputBitmap = createRealBitmap(500, 500)
-        mockkStatic(BitmapFactory::class)
-        every { BitmapFactory.decodeFile(any()) } returns inputBitmap
-
-        val outputFile = File.createTempFile("test", ".jpg")
-        val config = ShareConfig(
-            format = ImageFormat.JPEG,
-            quality = 80,
-            maxWidth = null,
-            maxHeight = null,
-            addWatermark = true,
-        )
-
-        val result = imageProcessor.processImage(
-            sourcePath = "/test/path.jpg",
-            config = config,
-            outputFile = outputFile,
-        )
-
-        assertThat(result).isInstanceOf(ImageProcessor.ProcessResult.Success::class.java)
 
         unmockkStatic(BitmapFactory::class)
         outputFile.delete()

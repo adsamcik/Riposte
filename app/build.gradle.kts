@@ -2,8 +2,10 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.baselineprofile)
 }
 
 android {
@@ -13,7 +15,7 @@ android {
     defaultConfig {
         applicationId = "com.mememymood"
         minSdk = 30
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0.0"
 
@@ -97,11 +99,27 @@ dependencies {
     implementation(libs.coroutines.core)
     implementation(libs.coroutines.android)
 
+    // Profile Installer for baseline profiles
+    implementation(libs.profile.installer)
+
+    // Baseline Profile
+    baselineProfile(project(":baselineprofile"))
+
     // Testing
     testImplementation(libs.bundles.testing)
     testImplementation(libs.robolectric)
     androidTestImplementation(libs.bundles.android.testing)
     androidTestImplementation(project(":core:testing"))
+    androidTestImplementation(project(":core:database"))
+    androidTestImplementation(libs.room.runtime)
     androidTestImplementation(libs.hilt.android.testing)
     kspAndroidTest(libs.hilt.compiler)
+}
+
+baselineProfile {
+    // Automatically generate baseline profile during release builds
+    automaticGenerationDuringBuild = false
+    
+    // Don't include in debug builds
+    dexLayoutOptimization = true
 }
