@@ -72,6 +72,8 @@ import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
@@ -124,13 +126,14 @@ fun SearchScreen(
     var isSearchActive by remember { mutableStateOf(false) }
     val hapticFeedback = LocalHapticFeedback.current
     val focusManager = LocalFocusManager.current
+    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
         viewModel.effects.collectLatest { effect ->
             when (effect) {
                 is SearchEffect.NavigateToMeme -> onNavigateToMeme(effect.memeId)
-                is SearchEffect.ShowError -> { /* Show snackbar */ }
-                is SearchEffect.ShowSnackbar -> { /* Show snackbar */ }
+                is SearchEffect.ShowError -> snackbarHostState.showSnackbar(effect.message)
+                is SearchEffect.ShowSnackbar -> snackbarHostState.showSnackbar(effect.message)
                 is SearchEffect.StartVoiceRecognition -> onStartVoiceSearch?.invoke()
                 is SearchEffect.TriggerHapticFeedback -> {
                     hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -140,7 +143,8 @@ fun SearchScreen(
     }
 
     Scaffold(
-        contentWindowInsets = WindowInsets.safeDrawing
+        contentWindowInsets = WindowInsets.safeDrawing,
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         Column(
             modifier = Modifier

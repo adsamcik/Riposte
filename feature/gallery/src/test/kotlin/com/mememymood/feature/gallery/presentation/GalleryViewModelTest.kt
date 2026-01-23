@@ -3,9 +3,9 @@ package com.mememymood.feature.gallery.presentation
 import app.cash.turbine.test
 import app.cash.turbine.turbineScope
 import com.google.common.truth.Truth.assertThat
-import com.mememymood.core.datastore.AppPreferences
-import com.mememymood.core.datastore.DarkMode
 import com.mememymood.core.datastore.PreferencesDataStore
+import com.mememymood.core.model.AppPreferences
+import com.mememymood.core.model.DarkMode
 import com.mememymood.core.model.EmojiTag
 import com.mememymood.core.model.Meme
 import com.mememymood.feature.gallery.domain.usecase.DeleteMemesUseCase

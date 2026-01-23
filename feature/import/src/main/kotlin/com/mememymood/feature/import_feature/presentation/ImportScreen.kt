@@ -57,6 +57,8 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetValue
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberBottomSheetScaffoldState
@@ -92,6 +94,7 @@ fun ImportScreen(
     viewModel: ImportViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     val multiplePhotoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickMultipleVisualMedia(maxItems = 20),
@@ -112,13 +115,13 @@ fun ImportScreen(
                     onImportComplete()
                 }
                 is ImportEffect.ShowError -> {
-                    // Handle error - could show snackbar
+                    snackbarHostState.showSnackbar(effect.message)
                 }
                 is ImportEffect.NavigateToGallery -> {
                     onNavigateBack()
                 }
                 is ImportEffect.ShowSnackbar -> {
-                    // Handle snackbar
+                    snackbarHostState.showSnackbar(effect.message)
                 }
             }
         }
@@ -142,6 +145,7 @@ fun ImportScreen(
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
         sheetPeekHeight = 0.dp,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         sheetContent = {
             uiState.editingImage?.let { importImage ->
                 EditImageSheet(

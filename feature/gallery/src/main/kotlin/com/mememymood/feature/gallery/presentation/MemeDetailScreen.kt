@@ -88,6 +88,7 @@ import java.time.format.FormatStyle
 @Composable
 fun MemeDetailScreen(
     onNavigateBack: () -> Unit,
+    onNavigateToShare: (Long) -> Unit = {},
     viewModel: MemeDetailViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -102,6 +103,7 @@ fun MemeDetailScreen(
         viewModel.effects.collectLatest { effect ->
             when (effect) {
                 is MemeDetailEffect.NavigateBack -> onNavigateBack()
+                is MemeDetailEffect.NavigateToShare -> onNavigateToShare(effect.memeId)
                 is MemeDetailEffect.LaunchShareIntent -> {
                     context.startActivity(Intent.createChooser(effect.intent, "Share Meme"))
                 }

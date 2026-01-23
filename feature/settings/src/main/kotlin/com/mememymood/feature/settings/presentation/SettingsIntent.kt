@@ -1,12 +1,15 @@
 package com.mememymood.feature.settings.presentation
 
+import com.mememymood.core.model.DarkMode
+import com.mememymood.core.model.ImageFormat
+
 sealed interface SettingsIntent {
     // Appearance
     data class SetDarkMode(val mode: DarkMode) : SettingsIntent
     data class SetDynamicColors(val enabled: Boolean) : SettingsIntent
 
     // Sharing
-    data class SetDefaultFormat(val format: com.mememymood.core.model.ImageFormat) : SettingsIntent
+    data class SetDefaultFormat(val format: ImageFormat) : SettingsIntent
     data class SetDefaultQuality(val quality: Int) : SettingsIntent
     data class SetDefaultMaxDimension(val dimension: Int) : SettingsIntent
     data class SetKeepMetadata(val keep: Boolean) : SettingsIntent
@@ -26,10 +29,4 @@ sealed interface SettingsIntent {
     // About
     data object OpenLicenses : SettingsIntent
     data object OpenPrivacyPolicy : SettingsIntent
-}
-
-enum class DarkMode {
-    SYSTEM,
-    LIGHT,
-    DARK,
 }

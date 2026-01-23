@@ -54,11 +54,18 @@ class MemeDetailViewModel @Inject constructor(
             is MemeDetailIntent.DismissDeleteDialog -> dismissDeleteDialog()
             is MemeDetailIntent.ConfirmDelete -> confirmDelete()
             is MemeDetailIntent.Share -> share()
+            is MemeDetailIntent.OpenShareScreen -> openShareScreen()
             is MemeDetailIntent.SaveChanges -> saveChanges()
             is MemeDetailIntent.DiscardChanges -> discardChanges()
             is MemeDetailIntent.ShowEmojiPicker -> showEmojiPicker()
             is MemeDetailIntent.DismissEmojiPicker -> dismissEmojiPicker()
             is MemeDetailIntent.Dismiss -> dismiss()
+        }
+    }
+
+    private fun openShareScreen() {
+        viewModelScope.launch {
+            _effects.send(MemeDetailEffect.NavigateToShare(memeId))
         }
     }
 

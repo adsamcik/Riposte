@@ -36,6 +36,9 @@ litert = "2.1.0"
 workmanager = "2.10.0"
 hilt-work = "1.2.0"
 
+# ExifInterface
+exifinterface = "1.3.7"
+
 # Serialization
 kotlinx-serialization = "1.8.0"
 
@@ -118,6 +121,9 @@ workmanager-runtime = { group = "androidx.work", name = "work-runtime-ktx", vers
 workmanager-testing = { group = "androidx.work", name = "work-testing", version.ref = "workmanager" }
 hilt-work = { group = "androidx.hilt", name = "hilt-work", version.ref = "hilt-work" }
 hilt-work-compiler = { group = "androidx.hilt", name = "hilt-compiler", version.ref = "hilt-work" }
+
+# ExifInterface
+exifinterface = { group = "androidx.exifinterface", name = "exifinterface", version.ref = "exifinterface" }
 
 # Serialization
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx-serialization" }

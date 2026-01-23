@@ -34,11 +34,11 @@ interface MemeSearchDao {
      * Uses BM25 ranking for better search results.
      */
     @Query("""
-        SELECT m.*, bm25(memes_fts) as 'rank'
+        SELECT m.*, bm25(memes_fts) as `rank`
         FROM memes m
         INNER JOIN memes_fts fts ON m.rowid = fts.rowid
         WHERE memes_fts MATCH :query
-        ORDER BY 'rank'
+        ORDER BY `rank`
     """)
     suspend fun searchMemesRanked(query: String): List<MemeWithRank>
 

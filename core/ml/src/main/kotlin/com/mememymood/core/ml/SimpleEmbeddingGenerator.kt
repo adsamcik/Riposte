@@ -55,12 +55,16 @@ class SimpleEmbeddingGenerator @Inject constructor(
     }
 
     override suspend fun generateFromUri(uri: Uri): FloatArray = withContext(Dispatchers.IO) {
-        val inputStream = context.contentResolver.openInputStream(uri)
-        val bitmap = BitmapFactory.decodeStream(inputStream)
-        inputStream?.close()
+        val bitmap = context.contentResolver.openInputStream(uri)?.use { inputStream ->
+            BitmapFactory.decodeStream(inputStream)
+        }
         
         if (bitmap != null) {
-            generateFromImage(bitmap)
+            try {
+                generateFromImage(bitmap)
+            } finally {
+                bitmap.recycle()
+            }
         } else {
             FloatArray(embeddingDimension)
         }
@@ -70,7 +74,7 @@ class SimpleEmbeddingGenerator @Inject constructor(
         return suspendCancellableCoroutine { continuation ->
             val image = InputImage.fromBitmap(bitmap, 0)
             
-            imageLabeler.process(image)
+            val task = imageLabeler.process(image)
                 .addOnSuccessListener { labels ->
                     val labelTexts = labels.map { it.text.lowercase() }
                     continuation.resume(labelTexts)
@@ -78,6 +82,11 @@ class SimpleEmbeddingGenerator @Inject constructor(
                 .addOnFailureListener { exception ->
                     continuation.resumeWithException(exception)
                 }
+            
+            continuation.invokeOnCancellation {
+                // ML Kit tasks cannot be cancelled, but we log for debugging
+                // The callback will still fire but continuation is already cancelled
+            }
         }
     }
 

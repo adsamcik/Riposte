@@ -23,7 +23,7 @@ import com.mememymood.core.database.entity.MemeFtsEntity
         EmojiTagEntity::class,
         MemeEmbeddingEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = true
 )
 abstract class MemeDatabase : RoomDatabase() {
@@ -81,6 +81,20 @@ abstract class MemeDatabase : RoomDatabase() {
                     FROM memes
                     WHERE embedding IS NOT NULL
                 """)
+            }
+        }
+
+        /**
+         * Migration from version 2 to 3: Add indexes for common query patterns.
+         */
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Add index on importedAt for sorting queries
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_memes_importedAt ON memes(importedAt)")
+                // Add index on isFavorite for filtering queries
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_memes_isFavorite ON memes(isFavorite)")
+                // Add unique index on filePath for duplicate detection
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_memes_filePath ON memes(filePath)")
             }
         }
     }

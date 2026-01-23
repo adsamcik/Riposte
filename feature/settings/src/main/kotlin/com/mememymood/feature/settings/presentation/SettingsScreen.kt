@@ -46,6 +46,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.mememymood.core.model.DarkMode
 import com.mememymood.core.model.ImageFormat
 import com.mememymood.feature.settings.presentation.component.ClickableSettingItem
 import com.mememymood.feature.settings.presentation.component.DialogSettingItem

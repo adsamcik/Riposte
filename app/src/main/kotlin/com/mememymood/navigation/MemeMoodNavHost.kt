@@ -15,6 +15,8 @@ import com.mememymood.feature.search.navigation.navigateToSearch
 import com.mememymood.feature.search.navigation.searchScreen
 import com.mememymood.feature.settings.navigation.navigateToSettings
 import com.mememymood.feature.settings.navigation.settingsScreen
+import com.mememymood.feature.share.navigation.navigateToShare
+import com.mememymood.feature.share.navigation.shareScreen
 
 /**
  * Main navigation host for Meme My Mood.
@@ -53,6 +55,16 @@ fun MemeMoodNavHost(
             onNavigateBack = {
                 navController.popBackStack()
             },
+            onNavigateToShare = { memeId ->
+                navController.navigateToShare(memeId)
+            }
+        )
+
+        // Share screen
+        shareScreen(
+            onNavigateBack = {
+                navController.popBackStack()
+            }
         )
 
         // Import screen

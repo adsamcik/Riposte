@@ -1,12 +1,20 @@
 package com.mememymood.core.database.entity
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
 /**
  * Database entity for storing meme information.
  */
-@Entity(tableName = "memes")
+@Entity(
+    tableName = "memes",
+    indices = [
+        Index(value = ["importedAt"]),
+        Index(value = ["isFavorite"]),
+        Index(value = ["filePath"], unique = true)
+    ]
+)
 data class MemeEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,

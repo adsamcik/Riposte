@@ -5,8 +5,9 @@ import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
-import com.mememymood.core.datastore.AppPreferences
 import com.mememymood.core.datastore.PreferencesDataStore
+import com.mememymood.core.model.AppPreferences
+import com.mememymood.core.model.DarkMode
 import com.mememymood.core.model.ImageFormat
 import com.mememymood.core.model.SharingPreferences
 import io.mockk.coEvery
@@ -92,7 +93,7 @@ class SettingsViewModelTest {
     }
 
     private fun createDefaultAppPreferences(
-        darkMode: com.mememymood.core.datastore.DarkMode = com.mememymood.core.datastore.DarkMode.SYSTEM,
+        darkMode: DarkMode = DarkMode.SYSTEM,
         dynamicColors: Boolean = true,
         enableSemanticSearch: Boolean = true,
         saveSearchHistory: Boolean = true,
@@ -204,7 +205,7 @@ class SettingsViewModelTest {
         viewModel.onIntent(SettingsIntent.SetDarkMode(DarkMode.LIGHT))
         advanceUntilIdle()
 
-        coVerify { preferencesDataStore.setDarkMode(com.mememymood.core.datastore.DarkMode.LIGHT) }
+        coVerify { preferencesDataStore.setDarkMode(DarkMode.LIGHT) }
     }
 
     @Test
@@ -215,7 +216,7 @@ class SettingsViewModelTest {
         viewModel.onIntent(SettingsIntent.SetDarkMode(DarkMode.DARK))
         advanceUntilIdle()
 
-        coVerify { preferencesDataStore.setDarkMode(com.mememymood.core.datastore.DarkMode.DARK) }
+        coVerify { preferencesDataStore.setDarkMode(DarkMode.DARK) }
     }
 
     @Test
@@ -226,7 +227,7 @@ class SettingsViewModelTest {
         viewModel.onIntent(SettingsIntent.SetDarkMode(DarkMode.SYSTEM))
         advanceUntilIdle()
 
-        coVerify { preferencesDataStore.setDarkMode(com.mememymood.core.datastore.DarkMode.SYSTEM) }
+        coVerify { preferencesDataStore.setDarkMode(DarkMode.SYSTEM) }
     }
 
     @Test
@@ -234,7 +235,7 @@ class SettingsViewModelTest {
         viewModel = createViewModel()
         advanceUntilIdle()
 
-        appPreferencesFlow.value = createDefaultAppPreferences(darkMode = com.mememymood.core.datastore.DarkMode.DARK)
+        appPreferencesFlow.value = createDefaultAppPreferences(darkMode = DarkMode.DARK)
         advanceUntilIdle()
 
         assertThat(viewModel.uiState.value.darkMode).isEqualTo(DarkMode.DARK)
@@ -633,7 +634,7 @@ class SettingsViewModelTest {
 
         // Update datastore
         appPreferencesFlow.value = createDefaultAppPreferences(
-            darkMode = com.mememymood.core.datastore.DarkMode.LIGHT,
+            darkMode = DarkMode.LIGHT,
             dynamicColors = false,
         )
         advanceUntilIdle()

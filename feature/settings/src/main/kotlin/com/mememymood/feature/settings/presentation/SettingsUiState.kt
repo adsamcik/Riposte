@@ -1,5 +1,6 @@
 package com.mememymood.feature.settings.presentation
 
+import com.mememymood.core.model.DarkMode
 import com.mememymood.core.model.ImageFormat
 
 /**

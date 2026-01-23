@@ -12,6 +12,7 @@ sealed interface MemeDetailIntent {
     data object DismissDeleteDialog : MemeDetailIntent
     data object ConfirmDelete : MemeDetailIntent
     data object Share : MemeDetailIntent
+    data object OpenShareScreen : MemeDetailIntent
     data object SaveChanges : MemeDetailIntent
     data object DiscardChanges : MemeDetailIntent
     data object ShowEmojiPicker : MemeDetailIntent

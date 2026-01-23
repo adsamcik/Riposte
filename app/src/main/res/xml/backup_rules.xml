@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Full backup content configuration for Android 11 and below.
+    Specifies what data should be included/excluded from cloud backup.
+-->
+<full-backup-content>
+    <!-- Include -->
+    <include domain="database" path="meme_my_mood.db" />
+    <include domain="file" path="memes/" />
+    <include domain="sharedpref" path="meme_my_mood_preferences.preferences_pb" />
+    
+    <!-- Exclude -->
+    <exclude domain="cache" path="." />
+    <exclude domain="database" path="meme_my_mood.db-journal" />
+    <exclude domain="database" path="meme_my_mood.db-wal" />
+    <exclude domain="database" path="meme_my_mood.db-shm" />
+</full-backup-content>

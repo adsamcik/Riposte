@@ -27,7 +27,7 @@ class ImportViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(ImportUiState())
     val uiState: StateFlow<ImportUiState> = _uiState.asStateFlow()
 
-    private val _effects = Channel<ImportEffect>()
+    private val _effects = Channel<ImportEffect>(Channel.BUFFERED)
     val effects = _effects.receiveAsFlow()
 
     private var importJob: Job? = null

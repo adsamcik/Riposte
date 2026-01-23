@@ -1,7 +1,7 @@
 package com.mememymood.core.testing
 
-import com.mememymood.core.datastore.AppPreferences
-import com.mememymood.core.datastore.DarkMode
+import com.mememymood.core.model.AppPreferences
+import com.mememymood.core.model.DarkMode
 import com.mememymood.core.model.ImageFormat
 import com.mememymood.core.model.SharingPreferences
 import kotlinx.coroutines.flow.Flow

@@ -5,6 +5,7 @@ import androidx.core.content.pm.PackageInfoCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mememymood.core.datastore.PreferencesDataStore
+import com.mememymood.core.model.DarkMode
 import com.mememymood.core.model.ImageFormat
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -50,11 +51,7 @@ class SettingsViewModel @Inject constructor(
                 preferencesDataStore.sharingPreferences,
             ) { appPrefs, sharingPrefs ->
                 _uiState.value.copy(
-                    darkMode = when (appPrefs.darkMode) {
-                        com.mememymood.core.datastore.DarkMode.SYSTEM -> DarkMode.SYSTEM
-                        com.mememymood.core.datastore.DarkMode.LIGHT -> DarkMode.LIGHT
-                        com.mememymood.core.datastore.DarkMode.DARK -> DarkMode.DARK
-                    },
+                    darkMode = appPrefs.darkMode,
                     dynamicColorsEnabled = appPrefs.dynamicColors,
                     defaultFormat = sharingPrefs.defaultFormat,
                     defaultQuality = sharingPrefs.defaultQuality,
@@ -113,12 +110,7 @@ class SettingsViewModel @Inject constructor(
 
     private fun setDarkMode(mode: DarkMode) {
         viewModelScope.launch {
-            val datastoreMode = when (mode) {
-                DarkMode.SYSTEM -> com.mememymood.core.datastore.DarkMode.SYSTEM
-                DarkMode.LIGHT -> com.mememymood.core.datastore.DarkMode.LIGHT
-                DarkMode.DARK -> com.mememymood.core.datastore.DarkMode.DARK
-            }
-            preferencesDataStore.setDarkMode(datastoreMode)
+            preferencesDataStore.setDarkMode(mode)
         }
     }
 
@@ -349,7 +341,7 @@ class SettingsViewModel @Inject constructor(
                         val currentApp = preferencesDataStore.appPreferences.first()
                         val darkModeName = (appPrefsJson["darkMode"] as? JsonPrimitive)?.contentOrNull
                         val darkMode = darkModeName?.let {
-                            try { com.mememymood.core.datastore.DarkMode.valueOf(it) } catch (_: Exception) { null }
+                            try { DarkMode.valueOf(it) } catch (_: Exception) { null }
                         } ?: currentApp.darkMode
                         
                         preferencesDataStore.updateAppPreferences(

@@ -43,7 +43,7 @@ dependencies {
     implementation(libs.bundles.litert)
 
     // ExifInterface for metadata handling
-    implementation("androidx.exifinterface:exifinterface:1.3.7")
+    implementation(libs.exifinterface)
 
     // Kotlinx Serialization
     implementation(libs.kotlinx.serialization.json)

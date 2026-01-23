@@ -47,7 +47,7 @@ dependencies {
     implementation(libs.coil.compose)
     
     // ExifInterface
-    implementation("androidx.exifinterface:exifinterface:1.3.7")
+    implementation(libs.exifinterface)
 
     // Coroutines
     implementation(libs.coroutines.core)

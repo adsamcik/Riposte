@@ -28,7 +28,10 @@ object DatabaseModule {
             MemeDatabase::class.java,
             "meme_my_mood.db"
         )
-            .addMigrations(MemeDatabase.MIGRATION_1_2)
+            .addMigrations(
+                MemeDatabase.MIGRATION_1_2,
+                MemeDatabase.MIGRATION_2_3
+            )
             .build()
     }
 

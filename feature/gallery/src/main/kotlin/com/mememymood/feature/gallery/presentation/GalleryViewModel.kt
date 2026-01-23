@@ -35,7 +35,7 @@ class GalleryViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(GalleryUiState())
     val uiState: StateFlow<GalleryUiState> = _uiState.asStateFlow()
 
-    private val _effects = Channel<GalleryEffect>()
+    private val _effects = Channel<GalleryEffect>(Channel.BUFFERED)
     val effects = _effects.receiveAsFlow()
 
     private var pendingDeleteIds: Set<Long> = emptySet()

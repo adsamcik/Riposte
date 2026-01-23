@@ -5,15 +5,20 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.mememymood.core.model.AppPreferences
+import com.mememymood.core.model.DarkMode
 import com.mememymood.core.model.ImageFormat
 import com.mememymood.core.model.SharingPreferences
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
+import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -55,19 +60,27 @@ class PreferencesDataStore @Inject constructor(
     /**
      * Flow of sharing preferences.
      */
-    val sharingPreferences: Flow<SharingPreferences> = context.dataStore.data.map { prefs ->
-        SharingPreferences(
-            defaultFormat = prefs[PreferencesKeys.DEFAULT_FORMAT]?.let { 
-                ImageFormat.valueOf(it) 
-            } ?: ImageFormat.WEBP,
-            defaultQuality = prefs[PreferencesKeys.DEFAULT_QUALITY] ?: 85,
-            maxWidth = prefs[PreferencesKeys.MAX_WIDTH] ?: 1080,
-            maxHeight = prefs[PreferencesKeys.MAX_HEIGHT] ?: 1080,
-            stripMetadata = prefs[PreferencesKeys.STRIP_METADATA] ?: true,
-            recentShareTargets = prefs[PreferencesKeys.RECENT_SHARE_TARGETS]?.toList() ?: emptyList(),
-            favoriteShareTargets = prefs[PreferencesKeys.FAVORITE_SHARE_TARGETS]?.toList() ?: emptyList()
-        )
-    }
+    val sharingPreferences: Flow<SharingPreferences> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { prefs ->
+            SharingPreferences(
+                defaultFormat = prefs[PreferencesKeys.DEFAULT_FORMAT]?.let { 
+                    ImageFormat.valueOf(it) 
+                } ?: ImageFormat.WEBP,
+                defaultQuality = prefs[PreferencesKeys.DEFAULT_QUALITY] ?: 85,
+                maxWidth = prefs[PreferencesKeys.MAX_WIDTH] ?: 1080,
+                maxHeight = prefs[PreferencesKeys.MAX_HEIGHT] ?: 1080,
+                stripMetadata = prefs[PreferencesKeys.STRIP_METADATA] ?: true,
+                recentShareTargets = prefs[PreferencesKeys.RECENT_SHARE_TARGETS]?.toList() ?: emptyList(),
+                favoriteShareTargets = prefs[PreferencesKeys.FAVORITE_SHARE_TARGETS]?.toList() ?: emptyList()
+            )
+        }
 
     /**
      * Updates sharing preferences.
@@ -100,17 +113,25 @@ class PreferencesDataStore @Inject constructor(
     /**
      * Flow of app preferences.
      */
-    val appPreferences: Flow<AppPreferences> = context.dataStore.data.map { prefs ->
-        AppPreferences(
-            darkMode = prefs[PreferencesKeys.DARK_MODE]?.let { DarkMode.valueOf(it) } ?: DarkMode.SYSTEM,
-            dynamicColors = prefs[PreferencesKeys.DYNAMIC_COLORS] ?: true,
-            gridColumns = prefs[PreferencesKeys.GRID_COLUMNS] ?: 2,
-            showEmojiNames = prefs[PreferencesKeys.SHOW_EMOJI_NAMES] ?: false,
-            enableSemanticSearch = prefs[PreferencesKeys.ENABLE_SEMANTIC_SEARCH] ?: true,
-            autoExtractText = prefs[PreferencesKeys.AUTO_EXTRACT_TEXT] ?: true,
-            saveSearchHistory = prefs[PreferencesKeys.SAVE_SEARCH_HISTORY] ?: true
-        )
-    }
+    val appPreferences: Flow<AppPreferences> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { prefs ->
+            AppPreferences(
+                darkMode = prefs[PreferencesKeys.DARK_MODE]?.let { DarkMode.valueOf(it) } ?: DarkMode.SYSTEM,
+                dynamicColors = prefs[PreferencesKeys.DYNAMIC_COLORS] ?: true,
+                gridColumns = prefs[PreferencesKeys.GRID_COLUMNS] ?: 2,
+                showEmojiNames = prefs[PreferencesKeys.SHOW_EMOJI_NAMES] ?: false,
+                enableSemanticSearch = prefs[PreferencesKeys.ENABLE_SEMANTIC_SEARCH] ?: true,
+                autoExtractText = prefs[PreferencesKeys.AUTO_EXTRACT_TEXT] ?: true,
+                saveSearchHistory = prefs[PreferencesKeys.SAVE_SEARCH_HISTORY] ?: true
+            )
+        }
 
     /**
      * Updates app preferences.
@@ -148,9 +169,17 @@ class PreferencesDataStore @Inject constructor(
     /**
      * Flow of recent searches.
      */
-    val recentSearches: Flow<List<String>> = context.dataStore.data.map { prefs ->
-        prefs[PreferencesKeys.RECENT_SEARCHES]?.toList() ?: emptyList()
-    }
+    val recentSearches: Flow<List<String>> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { prefs ->
+            prefs[PreferencesKeys.RECENT_SEARCHES]?.toList() ?: emptyList()
+        }
 
     /**
      * Adds a search query to recent searches.
@@ -188,26 +217,4 @@ class PreferencesDataStore @Inject constructor(
     companion object {
         private const val MAX_RECENT_SEARCHES = 20
     }
-}
-
-/**
- * App-level preferences.
- */
-data class AppPreferences(
-    val darkMode: DarkMode = DarkMode.SYSTEM,
-    val dynamicColors: Boolean = true,
-    val gridColumns: Int = 2,
-    val showEmojiNames: Boolean = false,
-    val enableSemanticSearch: Boolean = true,
-    val autoExtractText: Boolean = true,
-    val saveSearchHistory: Boolean = true
-)
-
-/**
- * Dark mode options.
- */
-enum class DarkMode {
-    LIGHT,
-    DARK,
-    SYSTEM
 }
