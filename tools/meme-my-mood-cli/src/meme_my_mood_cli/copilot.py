@@ -47,7 +47,7 @@ SYSTEM_PROMPT = """You are a meme analysis assistant. Analyze the provided meme 
 
 1. "emojis": An array of 1-5 Unicode emoji characters that best represent the mood, emotion, or theme of the meme.
 
-2. "title": A short, catchy title for the meme (max 100 characters).
+2. "title": A simple, descriptive title that plainly describes the meme content (max 50 characters). Don't try to be clever or catchy - just describe what's in the image. Examples: "Confused cat at computer", "Drake pointing meme", "Distracted boyfriend".
 
 3. "description": A brief description of what's happening in the meme (max 200 characters).
 
@@ -56,7 +56,7 @@ SYSTEM_PROMPT = """You are a meme analysis assistant. Analyze the provided meme 
 5. "tags": An array of 3-8 lowercase keywords/tags for searching.
 
 Respond ONLY with valid JSON, no markdown or explanation. Example:
-{"emojis": ["😂", "🐱"], "title": "Cat discovers programming", "description": "A cat staring at code with a confused expression", "textContent": "When the code works but you don't know why", "tags": ["cat", "programming", "confused", "funny"]}"""
+{"emojis": ["😂", "🐱"], "title": "Confused cat at computer", "description": "A cat staring at code with a confused expression", "textContent": "When the code works but you don't know why", "tags": ["cat", "programming", "confused", "funny"]}"""
 
 
 def get_mime_type(path: Path) -> str:
