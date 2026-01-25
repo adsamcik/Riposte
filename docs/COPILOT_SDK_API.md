@@ -3,6 +3,10 @@
 > **Last Updated:** January 25, 2026  
 > **SDK Status:** Technical Preview (v0.1.18)
 
+> ⚠️ **Note:** The meme-my-mood-cli does NOT use the Copilot SDK. It uses the GitHub Models API directly.
+> See [GITHUB_MODELS_API.md](./GITHUB_MODELS_API.md) for the actual implementation.
+> This document is kept for reference only.
+
 ## Overview
 
 The GitHub Copilot SDK enables programmatic access to GitHub Copilot's agentic capabilities. It exposes the same engine behind Copilot CLI: a production-tested agent runtime you can invoke programmatically.

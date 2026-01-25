@@ -176,3 +176,36 @@ class ScreenViewModel @Inject constructor(
 - Don't create God classes/objects
 - Don't mix UI logic with business logic
 - Don't use platform-specific code in shared modules
+
+## CLI Tool (meme-my-mood-cli)
+
+The project includes a Python CLI tool at `tools/meme-my-mood-cli/` for batch annotating meme images with AI.
+
+### Key Points
+- Uses **GitHub Models API** at `https://models.github.ai/inference/chat/completions`
+- NOT the Copilot SDK (which requires Copilot CLI backend)
+- Authentication: GitHub PAT with `models` scope
+- Model format: `openai/gpt-4.1` (provider prefix required)
+- Outputs JSON sidecar files matching `MemeMetadata` schema
+- **No fallback behavior** - errors should propagate, not return placeholder data
+- **venv required** - run `scripts/setup.ps1` or `scripts/setup.sh`
+
+### Metadata Schema
+```json
+{
+  "schemaVersion": "1.0",
+  "emojis": ["😂", "🔥"],
+  "title": "Plain descriptive title",
+  "description": "Brief description",
+  "tags": ["tag1", "tag2"],
+  "textContent": "Extracted text from image",
+  "createdAt": "2026-01-25T12:00:00+00:00",
+  "appVersion": "cli-1.0.0"
+}
+```
+
+### Title Guidelines
+- Use plain, descriptive titles (max 50 chars)
+- Describe what's in the image, not clever wordplay
+- Good: "Person in gamer outfit pointing at camera"
+- Bad: "Gamer Vibes On Point"
