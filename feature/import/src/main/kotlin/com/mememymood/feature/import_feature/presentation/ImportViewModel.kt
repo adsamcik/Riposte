@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.mememymood.core.model.MemeMetadata
 import com.mememymood.feature.import_feature.domain.usecase.ExtractTextUseCase
 import com.mememymood.feature.import_feature.domain.usecase.ImportImageUseCase
+import com.mememymood.feature.import_feature.domain.usecase.ImportZipBundleUseCase
 import com.mememymood.feature.import_feature.domain.usecase.SuggestEmojisUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -21,7 +22,8 @@ import javax.inject.Inject
 class ImportViewModel @Inject constructor(
     private val importImageUseCase: ImportImageUseCase,
     private val suggestEmojisUseCase: SuggestEmojisUseCase,
-    private val extractTextUseCase: ExtractTextUseCase
+    private val extractTextUseCase: ExtractTextUseCase,
+    private val importZipBundleUseCase: ImportZipBundleUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ImportUiState())
@@ -35,6 +37,7 @@ class ImportViewModel @Inject constructor(
     fun onIntent(intent: ImportIntent) {
         when (intent) {
             is ImportIntent.ImagesSelected -> handleImagesSelected(intent)
+            is ImportIntent.ZipSelected -> handleZipSelected(intent)
             is ImportIntent.RemoveImage -> removeImage(intent.index)
             is ImportIntent.EditImage -> editImage(intent.index)
             is ImportIntent.CloseEditor -> closeEditor()
@@ -71,6 +74,37 @@ class ImportViewModel @Inject constructor(
             newImages.forEachIndexed { index, image ->
                 val actualIndex = _uiState.value.selectedImages.size - newImages.size + index
                 processImage(actualIndex, image)
+            }
+        }
+    }
+
+    private fun handleZipSelected(intent: ImportIntent.ZipSelected) {
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    isImporting = true,
+                    importProgress = 0f,
+                    statusMessage = "Extracting bundle...",
+                )
+            }
+
+            val result = importZipBundleUseCase(intent.uri)
+
+            _uiState.update { it.copy(isImporting = false, statusMessage = null) }
+
+            if (result.successCount > 0) {
+                _effects.send(ImportEffect.ImportComplete(result.successCount))
+                if (result.failureCount > 0) {
+                    _effects.send(
+                        ImportEffect.ShowSnackbar(
+                            "Imported ${result.successCount} memes, ${result.failureCount} failed",
+                        ),
+                    )
+                }
+                _effects.send(ImportEffect.NavigateToGallery)
+            } else {
+                val errorMsg = result.errors.values.firstOrNull() ?: "Failed to import bundle"
+                _effects.send(ImportEffect.ShowError(errorMsg))
             }
         }
     }

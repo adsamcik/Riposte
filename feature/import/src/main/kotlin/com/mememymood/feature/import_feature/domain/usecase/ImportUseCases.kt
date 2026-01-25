@@ -61,3 +61,79 @@ class ExtractTextUseCase @Inject constructor(
         return repository.extractText(uri)
     }
 }
+
+/**
+ * Result of importing a ZIP bundle.
+ *
+ * @property successCount Number of successfully imported memes.
+ * @property failureCount Number of failed imports.
+ * @property importedMemes List of successfully imported memes.
+ * @property errors Map of filename to error message for failed imports.
+ */
+data class ZipImportResult(
+    val successCount: Int,
+    val failureCount: Int,
+    val importedMemes: List<Meme>,
+    val errors: Map<String, String>,
+)
+
+/**
+ * Use case for importing a .meme.zip bundle.
+ *
+ * Extracts images and their JSON sidecar metadata from a ZIP bundle
+ * and imports them into the app.
+ */
+class ImportZipBundleUseCase @Inject constructor(
+    private val repository: ImportRepository,
+    private val zipImporter: com.mememymood.feature.import_feature.data.ZipImporter,
+) {
+    /**
+     * Import all images from a .meme.zip bundle.
+     *
+     * @param zipUri URI pointing to the ZIP file.
+     * @return Result containing import statistics and any errors.
+     */
+    suspend operator fun invoke(zipUri: Uri): ZipImportResult {
+        // Check if this is a valid ZIP bundle
+        if (!zipImporter.isMemeZipBundle(zipUri)) {
+            return ZipImportResult(
+                successCount = 0,
+                failureCount = 1,
+                importedMemes = emptyList(),
+                errors = mapOf("bundle" to "Not a valid .meme.zip bundle"),
+            )
+        }
+
+        // Extract the bundle
+        val extractionResult = zipImporter.extractBundle(zipUri)
+
+        // Import each extracted image
+        val importedMemes = mutableListOf<Meme>()
+        val importErrors = extractionResult.errors.toMutableMap()
+
+        for (extractedMeme in extractionResult.extractedMemes) {
+            val result = repository.importImage(
+                uri = extractedMeme.imageUri,
+                metadata = extractedMeme.metadata,
+            )
+
+            result.fold(
+                onSuccess = { meme -> importedMemes.add(meme) },
+                onFailure = { error ->
+                    val fileName = extractedMeme.imageUri.lastPathSegment ?: "unknown"
+                    importErrors[fileName] = error.message ?: "Import failed"
+                },
+            )
+        }
+
+        // Clean up extracted files
+        zipImporter.cleanupExtractedFiles()
+
+        return ZipImportResult(
+            successCount = importedMemes.size,
+            failureCount = importErrors.size,
+            importedMemes = importedMemes,
+            errors = importErrors,
+        )
+    }
+}

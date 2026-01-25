@@ -13,6 +13,11 @@ sealed interface ImportIntent {
     data class ImagesSelected(val uris: List<Uri>) : ImportIntent
 
     /**
+     * User selected a .meme.zip bundle file.
+     */
+    data class ZipSelected(val uri: Uri) : ImportIntent
+
+    /**
      * Remove an image from the import list.
      */
     data class RemoveImage(val index: Int) : ImportIntent

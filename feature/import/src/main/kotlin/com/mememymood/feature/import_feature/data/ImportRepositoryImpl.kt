@@ -79,8 +79,8 @@ class ImportRepositoryImpl @Inject constructor(
                 thumbnail.compress(Bitmap.CompressFormat.JPEG, 80, out)
             }
 
-            // Extract text from image
-            val extractedText = extractTextFromBitmap(bitmap)
+            // Use pre-extracted text from metadata if available, otherwise run OCR
+            val extractedText = metadata?.textContent ?: extractTextFromBitmap(bitmap)
 
             // Build search text for embedding generation
             val searchText = buildSearchText(title, description, extractedText, emojis)

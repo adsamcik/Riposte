@@ -67,7 +67,14 @@ data class MemeMetadata(
      * These are in addition to auto-generated emoji name tags.
      */
     @SerialName("tags")
-    val tags: List<String> = emptyList()
+    val tags: List<String> = emptyList(),
+
+    /**
+     * Optional pre-extracted text content from the image.
+     * If provided, the app may skip OCR processing.
+     */
+    @SerialName("textContent")
+    val textContent: String? = null,
 ) {
     init {
         require(emojis.isNotEmpty()) { "At least one emoji is required" }

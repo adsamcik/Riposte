@@ -111,6 +111,9 @@ fun ImportScreen(
                         PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
                     )
                 }
+                is ImportEffect.OpenFilePicker -> {
+                    // TODO: Launch file picker for .meme.zip bundles
+                }
                 is ImportEffect.ImportComplete -> {
                     onImportComplete()
                 }

@@ -7,6 +7,7 @@ import com.mememymood.core.model.Meme
 import com.mememymood.core.model.MemeMetadata
 import com.mememymood.feature.import_feature.domain.usecase.ExtractTextUseCase
 import com.mememymood.feature.import_feature.domain.usecase.ImportImageUseCase
+import com.mememymood.feature.import_feature.domain.usecase.ImportZipBundleUseCase
 import com.mememymood.feature.import_feature.domain.usecase.SuggestEmojisUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -32,6 +33,7 @@ class ImportViewModelTest {
     private lateinit var importImageUseCase: ImportImageUseCase
     private lateinit var suggestEmojisUseCase: SuggestEmojisUseCase
     private lateinit var extractTextUseCase: ExtractTextUseCase
+    private lateinit var importZipBundleUseCase: ImportZipBundleUseCase
     private lateinit var viewModel: ImportViewModel
 
     @Before
@@ -40,7 +42,13 @@ class ImportViewModelTest {
         importImageUseCase = mockk(relaxed = true)
         suggestEmojisUseCase = mockk(relaxed = true)
         extractTextUseCase = mockk(relaxed = true)
-        viewModel = ImportViewModel(importImageUseCase, suggestEmojisUseCase, extractTextUseCase)
+        importZipBundleUseCase = mockk(relaxed = true)
+        viewModel = ImportViewModel(
+            importImageUseCase,
+            suggestEmojisUseCase,
+            extractTextUseCase,
+            importZipBundleUseCase,
+        )
     }
 
     @After
