@@ -27,17 +27,36 @@ A command-line tool for annotating meme images using the GitHub Copilot SDK. Gen
 
 ## Installation
 
-### Option 1: Install via pip
-
-```bash
-pip install meme-my-mood-cli
-```
-
-### Option 2: From source
+### From source (recommended)
 
 ```bash
 cd tools/meme-my-mood-cli
+
+# Create and activate virtual environment
+python -m venv .venv
+
+# Windows
+.venv\Scripts\activate
+
+# macOS/Linux
+source .venv/bin/activate
+
+# Install dependencies
 pip install -e .
+```
+
+### Quick setup (Windows)
+
+```bash
+cd tools/meme-my-mood-cli
+.\scripts\setup.ps1
+```
+
+### Quick setup (macOS/Linux)
+
+```bash
+cd tools/meme-my-mood-cli
+./scripts/setup.sh
 ```
 
 ## Quick Start
@@ -159,7 +178,12 @@ Authentication, model management, and API calls are all handled by the Copilot C
 git clone https://github.com/meme-my-mood/meme-my-mood
 cd meme-my-mood/tools/meme-my-mood-cli
 
-# Install in development mode
+# Create and activate virtual environment
+python -m venv .venv
+.venv\Scripts\activate  # Windows
+source .venv/bin/activate  # macOS/Linux
+
+# Install in development mode with dev dependencies
 pip install -e ".[dev]"
 
 # Run tests
