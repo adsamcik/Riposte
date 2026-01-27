@@ -1,5 +1,6 @@
-"""Image annotation command using GitHub Models API."""
+"""Image annotation command using GitHub Copilot SDK."""
 
+import asyncio
 import json
 import sys
 import zipfile
@@ -18,12 +19,14 @@ from rich.progress import (
 )
 
 from meme_my_mood_cli import __version__
-from meme_my_mood_cli.config import get_access_token, get_default_model
 from meme_my_mood_cli.copilot import (
-    analyze_image,
+    analyze_image_async,
+    get_rate_limiter,
+    reset_rate_limiter,
     CopilotError,
     CopilotNotAuthenticatedError,
     RateLimitError,
+    ServerError,
 )
 
 console = Console()
@@ -75,6 +78,68 @@ def get_images_in_folder(folder: Path) -> list[Path]:
         if file.is_file() and is_supported_image(file):
             images.append(file)
     return sorted(images)
+
+
+def has_sidecar(image_path: Path, output_dir: Path | None = None) -> bool:
+    """Check if an image already has a JSON sidecar file.
+    
+    Args:
+        image_path: Path to the image file.
+        output_dir: Optional output directory. If None, uses the image's directory.
+        
+    Returns:
+        True if a sidecar file exists.
+    """
+    if output_dir is None:
+        output_dir = image_path.parent
+    
+    sidecar_path = output_dir / f"{image_path.name}.json"
+    return sidecar_path.exists()
+
+
+def filter_images_by_mode(
+    images: list[Path],
+    output_dir: Path,
+    *,
+    force: bool = False,
+    only_missing: bool = False,
+) -> tuple[list[Path], int]:
+    """Filter images based on processing mode.
+    
+    Args:
+        images: List of all image paths.
+        output_dir: Output directory for sidecar files.
+        force: If True, process all images (regenerate all sidecars).
+        only_missing: If True, only process images without existing sidecars.
+        
+    Returns:
+        Tuple of (filtered images to process, count of skipped images).
+    """
+    if force:
+        # Process all images, overwrite existing sidecars
+        return images, 0
+    
+    if only_missing:
+        # Only process images without sidecars
+        to_process = []
+        skipped = 0
+        for img in images:
+            if has_sidecar(img, output_dir):
+                skipped += 1
+            else:
+                to_process.append(img)
+        return to_process, skipped
+    
+    # Default behavior: same as only_missing for safety
+    # (don't overwrite existing sidecars unless --force is used)
+    to_process = []
+    skipped = 0
+    for img in images:
+        if has_sidecar(img, output_dir):
+            skipped += 1
+        else:
+            to_process.append(img)
+    return to_process, skipped
 
 
 def create_sidecar_metadata(
@@ -137,9 +202,6 @@ def write_sidecar(image_path: Path, metadata: dict, output_dir: Path | None = No
     return sidecar_path
 
 
-
-
-
 @click.command()
 @click.argument(
     "folder",
@@ -157,8 +219,23 @@ def write_sidecar(image_path: Path, metadata: dict, output_dir: Path | None = No
 )
 @click.option(
     "--model", "-m",
-    default="openai/gpt-4.1",
-    help="Model to use for analysis (default: openai/gpt-4.1)",
+    default="gpt-4.1",
+    help="Model to use for analysis (default: gpt-4.1)",
+)
+@click.option(
+    "--force", "-f",
+    is_flag=True,
+    help="Force regeneration of all sidecars, overwriting existing ones",
+)
+@click.option(
+    "--continue", "continue_missing",
+    is_flag=True,
+    help="Only process images that don't have JSON sidecars yet",
+)
+@click.option(
+    "--add-new",
+    is_flag=True,
+    help="Alias for --continue: only add new images without metadata",
 )
 @click.option("--dry-run", is_flag=True, help="Show what would be processed")
 @click.option("--verbose", "-v", is_flag=True, help="Show detailed progress")
@@ -167,6 +244,9 @@ def annotate(
     create_zip: bool,
     output: Path | None,
     model: str,
+    force: bool,
+    continue_missing: bool,
+    add_new: bool,
     dry_run: bool,
     verbose: bool,
 ) -> None:
@@ -174,113 +254,191 @@ def annotate(
     
     FOLDER is the path to a directory containing images to annotate.
     
-    Requires a GitHub PAT with 'models' scope.
-    Run 'meme-cli auth login' to authenticate.
+    Uses GitHub Copilot SDK (requires Copilot CLI installed).
+    
+    \b
+    Processing Modes:
+      Default:     Skip images that already have sidecar files
+      --force:     Regenerate all sidecars (overwrites existing)
+      --continue:  Same as default, explicitly skip existing
+      --add-new:   Alias for --continue
     """
-    # Check for access token
-    access_token = get_access_token()
-    if not access_token:
+    # Validate mutually exclusive options
+    if force and (continue_missing or add_new):
         console.print(
-            "\n[red]Error: Not authenticated.[/red]"
-        )
-        console.print(
-            "Run [bold]meme-cli auth login[/bold] to authenticate,\n"
-            "or set the GITHUB_TOKEN environment variable."
+            "[red]Error: --force cannot be used with "
+            "--continue or --add-new[/red]"
         )
         sys.exit(1)
     
+    # --add-new is an alias for --continue
+    only_missing = continue_missing or add_new or not force
+    
+    # Set up output directory early for filtering
+    output_dir = output or folder
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
     # Find images
-    images = get_images_in_folder(folder)
-    if not images:
-        console.print(f"[yellow]No supported images found in {folder}[/yellow]")
+    all_images = get_images_in_folder(folder)
+    if not all_images:
+        console.print(
+            f"[yellow]No supported images found in {folder}[/yellow]"
+        )
         console.print(
             f"Supported formats: {', '.join(sorted(SUPPORTED_EXTENSIONS))}"
         )
         return
     
-    console.print(f"\n[bold]Found {len(images)} image(s) to annotate[/bold]\n")
+    # Filter images based on processing mode
+    images, skipped = filter_images_by_mode(
+        all_images, output_dir, force=force, only_missing=only_missing
+    )
+    
+    # Show mode and counts
+    if force:
+        mode_desc = "[bold red]Force mode[/bold red] - regenerating all sidecars"
+    else:
+        mode_desc = "[bold]Incremental mode[/bold] - skipping existing sidecars"
+    
+    console.print(f"\n{mode_desc}")
+    console.print(f"Total images: {len(all_images)}")
+    if skipped > 0:
+        console.print(f"[dim]Skipping {skipped} image(s) with existing sidecars[/dim]")
+    console.print(f"[bold]Processing {len(images)} image(s)[/bold]\n")
+    
+    if not images:
+        console.print("[green]✓ All images already have sidecars![/green]")
+        return
     
     if dry_run:
         console.print("[dim]Dry run - no files will be created[/dim]\n")
         for img in images:
-            console.print(f"  • {img.name}")
+            sidecar_exists = has_sidecar(img, output_dir)
+            status = "[yellow]overwrite[/yellow]" if sidecar_exists else "[green]new[/green]"
+            console.print(f"  • {img.name} ({status})")
         return
     
-    # Set up output directory
-    output_dir = output or folder
-    output_dir.mkdir(parents=True, exist_ok=True)
+    # Reset rate limiter for this batch
+    reset_rate_limiter()
     
-    # Process images
-    processed = []
-    errors = []
-    
-    with Progress(
-        SpinnerColumn(),
-        TextColumn("[progress.description]{task.description}"),
-        BarColumn(),
-        TaskProgressColumn(),
-        console=console,
-    ) as progress:
-        task = progress.add_task("Annotating images...", total=len(images))
+    # Process images with async
+    async def process_images():
+        processed = []
+        errors = []
+        rate_limiter = get_rate_limiter()
         
-        for image_path in images:
-            progress.update(task, description=f"Processing {image_path.name}...")
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            TaskProgressColumn(),
+            console=console,
+        ) as progress:
+            task = progress.add_task("Annotating images...", total=len(images))
             
-            try:
-                # Analyze image with GitHub Models API
-                result = analyze_image(
-                    image_path,
-                    access_token=access_token,
-                    model=model,
-                    verbose=verbose,
+            for image_path in images:
+                progress.update(
+                    task, description=f"Processing {image_path.name}..."
                 )
                 
-                # Create sidecar metadata
-                metadata = create_sidecar_metadata(
-                    emojis=result["emojis"],
-                    title=result.get("title"),
-                    description=result.get("description"),
-                    text_content=result.get("textContent"),
-                    tags=result.get("tags"),
-                )
+                # Retry loop for rate limiting
+                max_retries = 5
+                for attempt in range(max_retries):
+                    try:
+                        # Analyze image with Copilot SDK
+                        result = await analyze_image_async(
+                            image_path,
+                            model=model,
+                            verbose=verbose,
+                        )
+                        
+                        # Create sidecar metadata
+                        metadata = create_sidecar_metadata(
+                            emojis=result["emojis"],
+                            title=result.get("title"),
+                            description=result.get("description"),
+                            text_content=result.get("textContent"),
+                            tags=result.get("tags"),
+                        )
+                        
+                        # Write sidecar file
+                        sidecar_path = write_sidecar(
+                            image_path, metadata, output_dir
+                        )
+                        processed.append((image_path, sidecar_path))
+                        
+                        if verbose:
+                            emojis_str = " ".join(result.get("emojis", []))
+                            console.print(
+                                f"  [green]✓[/green] "
+                                f"{image_path.name} → {emojis_str}"
+                            )
+                        break  # Success, exit retry loop
+                        
+                    except CopilotNotAuthenticatedError as e:
+                        console.print(f"\n[red]Error: {e}[/red]")
+                        console.print(
+                            "Install GitHub Copilot CLI: "
+                            "https://github.com/github/copilot-cli"
+                        )
+                        sys.exit(1)
+                    except RateLimitError as e:
+                        wait_time = e.retry_after or rate_limiter.record_failure()
+                        if rate_limiter.should_give_up():
+                            console.print(
+                                f"\n[red]Too many rate limits. "
+                                f"Skipping {image_path.name}[/red]"
+                            )
+                            errors.append((image_path, str(e)))
+                            break
+                        console.print(
+                            f"\n[yellow]Rate limit hit. "
+                            f"Waiting {wait_time:.1f}s... "
+                            f"(attempt {attempt + 1}/{max_retries})[/yellow]"
+                        )
+                        await asyncio.sleep(wait_time)
+                    except ServerError as e:
+                        # Server errors (500/502/504) are transient, retry
+                        wait_time = rate_limiter.record_failure()
+                        if rate_limiter.should_give_up():
+                            console.print(
+                                f"\n[red]Too many server errors. "
+                                f"Skipping {image_path.name}[/red]"
+                            )
+                            errors.append((image_path, str(e)))
+                            break
+                        console.print(
+                            f"\n[yellow]Server error. "
+                            f"Waiting {wait_time:.1f}s... "
+                            f"(attempt {attempt + 1}/{max_retries})[/yellow]"
+                        )
+                        await asyncio.sleep(wait_time)
+                    except CopilotError as e:
+                        errors.append((image_path, str(e)))
+                        console.print(
+                            f"  [red]✗[/red] {image_path.name}: {e}"
+                        )
+                        break
+                    except Exception as e:
+                        errors.append((image_path, str(e)))
+                        console.print(
+                            f"  [red]✗[/red] {image_path.name}: {e}"
+                        )
+                        break
                 
-                # Write sidecar file
-                sidecar_path = write_sidecar(image_path, metadata, output_dir)
-                processed.append((image_path, sidecar_path))
-                
-                if verbose:
-                    emojis_str = " ".join(result.get("emojis", []))
-                    console.print(
-                        f"  [green]✓[/green] {image_path.name} → {emojis_str}"
-                    )
-                
-            except CopilotNotAuthenticatedError as e:
-                console.print(
-                    f"\n[red]Error: {e}[/red]"
-                )
-                console.print(
-                    "Run [bold]meme-cli auth login[/bold] to authenticate."
-                )
-                sys.exit(1)
-            except RateLimitError as e:
-                console.print(
-                    "\n[yellow]Rate limit reached. Waiting before retry...[/yellow]"
-                )
-                errors.append((image_path, str(e)))
-            except CopilotError as e:
-                errors.append((image_path, str(e)))
-                console.print(f"  [red]✗[/red] {image_path.name}: {e}")
-            except Exception as e:
-                errors.append((image_path, str(e)))
-                console.print(f"  [red]✗[/red] {image_path.name}: {e}")
-            
-            progress.advance(task)
+                progress.advance(task)
+        
+        return processed, errors
+    
+    # Run async processing
+    processed, errors = asyncio.run(process_images())
     
     # Summary
     console.print()
     if processed:
         console.print(
-            f"[green]✓ Successfully annotated {len(processed)} image(s)[/green]"
+            f"[green]✓ Successfully annotated "
+            f"{len(processed)} image(s)[/green]"
         )
     if errors:
         console.print(

@@ -82,7 +82,7 @@ meme-cli annotate ./my-memes --zip
 meme-cli annotate ./my-memes --output ./annotated
 
 # Use a specific model
-meme-cli annotate ./my-memes --model gpt-4o
+meme-cli annotate ./my-memes --model gpt-4.1
 ```
 
 ### 3. Import to Android App
@@ -109,9 +109,37 @@ meme-cli annotate <folder> [OPTIONS]
 Options:
   --zip              Bundle images and sidecars into a .meme.zip file
   --output, -o PATH  Output directory for sidecar files (default: same as input)
-  --model, -m TEXT   Model to use for analysis (default: gpt-4o)
+  --model, -m TEXT   Model to use for analysis (default: gpt-4.1)
+  --force, -f        Force regeneration of all sidecars, overwriting existing
+  --continue         Only process images without existing JSON sidecars
+  --add-new          Alias for --continue
   --dry-run          Show what would be processed without making changes
   --verbose, -v      Show detailed progress information
+```
+
+#### Processing Modes
+
+| Mode | Flag | Behavior |
+|------|------|----------|
+| **Default** | (none) | Skip images that already have sidecar files |
+| **Force** | `--force` / `-f` | Regenerate all sidecars, overwriting existing ones |
+| **Continue** | `--continue` | Explicitly skip images with existing sidecars |
+| **Add New** | `--add-new` | Alias for `--continue` |
+
+**Examples:**
+
+```bash
+# Default: only process new images (skip existing sidecars)
+meme-cli annotate ./my-memes
+
+# Force regenerate all metadata
+meme-cli annotate ./my-memes --force
+
+# Resume processing after interruption
+meme-cli annotate ./my-memes --continue
+
+# Preview what would be processed
+meme-cli annotate ./my-memes --dry-run
 ```
 
 ## Supported Image Formats
@@ -159,7 +187,15 @@ my-memes/
 
 ## Rate Limiting
 
-The SDK handles rate limiting automatically through the Copilot CLI backend.
+The CLI includes smart rate limiting with:
+
+- **Exponential backoff**: Automatically increases wait time after repeated 429 errors
+- **Retry-After support**: Respects server-specified wait times
+- **Adaptive throttling**: Slows down based on recent error rate
+- **Automatic retries**: Up to 5 retries per image with intelligent delays
+- **Jitter**: Random variation to prevent thundering herd problems
+
+You don't need to configure anything - the rate limiter handles it automatically.
 
 ## How It Works
 
