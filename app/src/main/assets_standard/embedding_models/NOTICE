@@ -1,0 +1,21 @@
+EmbeddingGemma Model Notice
+============================
+
+This application includes EmbeddingGemma, a machine learning model created by Google.
+
+Gemma is provided under and subject to the Gemma Terms of Use found at:
+<https://ai.google.dev/gemma/terms>
+
+Use of this model is subject to the Gemma Prohibited Use Policy:
+<https://ai.google.dev/gemma/prohibited_use_policy>
+
+Model Information:
+
+- Model: EmbeddingGemma 300M
+- Source: <https://huggingface.co/litert-community/embeddinggemma-300m>
+- Format: LiteRT (TensorFlow Lite)
+- Sequence Length: 512 tokens
+- Embedding Dimension: 768
+
+For more information about EmbeddingGemma:
+<https://ai.google.dev/gemma/docs/embeddinggemma>

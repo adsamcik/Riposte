@@ -67,20 +67,30 @@ git clone https://github.com/yourusername/meme-my-mood.git
 ./gradlew assembleDebug
 ```
 
-#### Architecture-Specific Builds
+#### Build Flavors
 
-The app supports architecture-specific builds to reduce APK size. See [BUILD_FLAVORS.md](docs/BUILD_FLAVORS.md) for details.
+The app uses **two product flavor dimensions** for optimizing APK size:
+
+**1. Embedding Models** (`lite`, `standard`, `qualcomm`, `mediatek`, `full`):
+- Controls which AI/ML embedding models are included (0-1200 MB impact)
+- **Recommended**: `standard` (generic model, works on all devices, ~175 MB)
+
+**2. Architecture** (`universal`, `arm64`, `arm`, `x86_64`, `x86`):
+- Controls native library architectures (~5-10% impact)
+- **Recommended**: `universal` for development, `arm64` for distribution
 
 ```bash
-# Universal build (all architectures)
-./gradlew assembleUniversalDebug
+# Quick development build (recommended)
+./gradlew assembleStandardUniversalDebug
 
-# ARM 64-bit (most modern devices)
-./gradlew assembleArm64Debug
+# Smallest build
+./gradlew assembleLiteArm64Debug
 
-# View all available build variants
-./gradlew tasks --group=build
+# Optimized for Qualcomm devices
+./gradlew assembleQualcommArm64Release
 ```
+
+See [BUILD_FLAVORS.md](docs/BUILD_FLAVORS.md) for complete details.
 
 ### Run
 

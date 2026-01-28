@@ -1,5 +1,6 @@
 package com.mememymood.feature.share.presentation
 
+import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
@@ -10,6 +11,7 @@ import com.mememymood.core.model.EmojiTag
 import com.mememymood.core.model.ImageFormat
 import com.mememymood.core.model.Meme
 import com.mememymood.core.model.ShareConfig
+import com.mememymood.feature.share.R
 import com.mememymood.feature.share.data.ImageProcessor
 import com.mememymood.feature.share.domain.BitmapLoader
 import com.mememymood.feature.share.domain.usecase.ShareUseCases
@@ -38,6 +40,7 @@ class ShareViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
 
+    private lateinit var context: Context
     private lateinit var savedStateHandle: SavedStateHandle
     private lateinit var shareUseCases: ShareUseCases
     private lateinit var imageProcessor: ImageProcessor
@@ -54,10 +57,16 @@ class ShareViewModelTest {
     fun setup() {
         Dispatchers.setMain(testDispatcher)
 
+        context = mockk(relaxed = true)
         savedStateHandle = SavedStateHandle(mapOf("memeId" to 1L))
         shareUseCases = mockk(relaxed = true)
         imageProcessor = mockk(relaxed = true)
         bitmapLoader = mockk(relaxed = true)
+
+        // Mock string resources
+        every { context.getString(R.string.share_error_meme_not_found) } returns "Meme not found"
+        every { context.getString(R.string.share_snackbar_saved_to_gallery) } returns "Saved to gallery"
+        every { context.getString(R.string.share_snackbar_save_failed) } returns "Save failed"
 
         // Default mock setup
         coEvery { shareUseCases.getMeme(1L) } returns testMeme
@@ -83,6 +92,7 @@ class ShareViewModelTest {
 
     private fun createViewModel(): ShareViewModel {
         return ShareViewModel(
+            context = context,
             savedStateHandle = savedStateHandle,
             shareUseCases = shareUseCases,
             imageProcessor = imageProcessor,
