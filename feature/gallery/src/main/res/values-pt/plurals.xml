@@ -8,8 +8,8 @@
 
     <!-- Delete confirmation plurals -->
     <plurals name="gallery_delete_count_title">
-        <item quantity="one">Excluir Meme</item>
-        <item quantity="other">Excluir Memes</item>
+        <item quantity="one">Excluir %d Meme</item>
+        <item quantity="other">Excluir %d Memes</item>
     </plurals>
 
     <plurals name="gallery_delete_count_message">

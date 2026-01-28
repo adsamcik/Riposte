@@ -10,10 +10,10 @@
 
     <!-- Delete confirmation plurals -->
     <plurals name="gallery_delete_count_title">
-        <item quantity="one">Smazat meme</item>
-        <item quantity="few">Smazat memy</item>
-        <item quantity="many">Smazat memů</item>
-        <item quantity="other">Smazat memů</item>
+        <item quantity="one">Smazat %d meme</item>
+        <item quantity="few">Smazat %d memy</item>
+        <item quantity="many">Smazat %d memů</item>
+        <item quantity="other">Smazat %d memů</item>
     </plurals>
 
     <plurals name="gallery_delete_count_message">

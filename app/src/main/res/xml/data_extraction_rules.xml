@@ -11,8 +11,7 @@
         <include domain="file" path="memes/" />
         <include domain="sharedpref" path="meme_my_mood_preferences.preferences_pb" />
         
-        <!-- Exclude temporary files -->
-        <exclude domain="cache" path="." />
+        <!-- Exclude temporary database files (cache is automatically excluded) -->
         <exclude domain="database" path="meme_my_mood.db-journal" />
         <exclude domain="database" path="meme_my_mood.db-wal" />
         <exclude domain="database" path="meme_my_mood.db-shm" />
@@ -24,7 +23,6 @@
         <include domain="file" path="memes/" />
         <include domain="sharedpref" path="meme_my_mood_preferences.preferences_pb" />
         
-        <exclude domain="cache" path="." />
         <exclude domain="database" path="meme_my_mood.db-journal" />
         <exclude domain="database" path="meme_my_mood.db-wal" />
         <exclude domain="database" path="meme_my_mood.db-shm" />

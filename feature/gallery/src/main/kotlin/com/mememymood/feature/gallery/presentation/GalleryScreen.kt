@@ -192,7 +192,7 @@ private fun GalleryScreenContent(
                 onShowDeleteDialogChange(false)
                 onIntent(GalleryIntent.CancelDelete)
             },
-            title = { Text(pluralStringResource(R.plurals.gallery_delete_count_title, deleteCount)) },
+            title = { Text(pluralStringResource(R.plurals.gallery_delete_count_title, deleteCount, deleteCount)) },
             text = { Text(pluralStringResource(R.plurals.gallery_delete_count_message, deleteCount, deleteCount)) },
             confirmButton = {
                 TextButton(
