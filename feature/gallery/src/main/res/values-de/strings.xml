@@ -29,6 +29,7 @@
     <string name="gallery_cd_clear">Leeren</string>
     <string name="gallery_cd_remove">Entfernen</string>
     <string name="gallery_cd_selected">Ausgewählt</string>
+    <string name="gallery_cd_meme_image">Meme-Bild: %s</string>
 
     <!-- Delete Dialog -->
     <string name="gallery_delete_title">Memes löschen</string>

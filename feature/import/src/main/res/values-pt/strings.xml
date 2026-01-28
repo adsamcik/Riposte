@@ -9,6 +9,8 @@
     <!-- Content Descriptions -->
     <string name="import_content_description_back">Voltar</string>
     <string name="import_content_description_remove">Remover</string>
+    <string name="import_content_description_image_to_import">Imagem para importar</string>
+    <string name="import_content_description_image_preview">Visualização da imagem</string>
 
     <!-- Empty State -->
     <string name="import_empty_icon">📥</string>
@@ -17,9 +19,13 @@
 
     <!-- Buttons -->
     <string name="import_button_select_images">Selecionar Imagens</string>
+    <string name="import_button_import_bundle">Importar Pacote (.meme.zip)</string>
     <string name="import_button_add_more">Adicionar Mais</string>
     <string name="import_button_done">Concluído</string>
     <string name="import_button_apply_all">Aplicar a Todos</string>
+
+    <!-- Bundle Import -->
+    <string name="import_bundle_hint">Importar pacotes de memes criados com a ferramenta CLI</string>
 
     <!-- Section Labels -->
     <string name="import_section_ai_suggested">Sugestões da IA</string>

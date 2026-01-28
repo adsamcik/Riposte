@@ -85,18 +85,22 @@ fun ShareScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
+    
+    // Hoist string resources for use in LaunchedEffect
+    val shareChooserTitle = stringResource(R.string.share_chooser_title)
+    val savedToGalleryMessage = stringResource(R.string.share_message_saved_to_gallery)
 
     LaunchedEffect(Unit) {
         viewModel.effects.collectLatest { effect ->
             when (effect) {
                 is ShareEffect.LaunchShareIntent -> {
-                    context.startActivity(android.content.Intent.createChooser(effect.intent, context.getString(R.string.share_chooser_title)))
+                    context.startActivity(android.content.Intent.createChooser(effect.intent, shareChooserTitle))
                 }
                 is ShareEffect.ShowSnackbar -> {
                     snackbarHostState.showSnackbar(effect.message)
                 }
                 is ShareEffect.SavedToGallery -> {
-                    snackbarHostState.showSnackbar(context.getString(R.string.share_message_saved_to_gallery))
+                    snackbarHostState.showSnackbar(savedToGalleryMessage)
                 }
                 is ShareEffect.NavigateBack -> {
                     onNavigateBack()

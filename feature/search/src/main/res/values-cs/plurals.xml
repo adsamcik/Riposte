@@ -3,18 +3,24 @@
     <!-- Search Results Count -->
     <plurals name="search_result_count">
         <item quantity="one">%1$d výsledek za %2$dms</item>
+        <item quantity="few">%1$d výsledky za %2$dms</item>
+        <item quantity="many">%1$d výsledků za %2$dms</item>
         <item quantity="other">%1$d výsledků za %2$dms</item>
     </plurals>
 
     <!-- Selected Emoji Filter Count -->
     <plurals name="search_filter_emoji_count">
         <item quantity="one">Vymazat (%1$d)</item>
+        <item quantity="few">Vymazat (%1$d)</item>
+        <item quantity="many">Vymazat (%1$d)</item>
         <item quantity="other">Vymazat (%1$d)</item>
     </plurals>
 
     <!-- More Emoji Tags -->
     <plurals name="search_result_more_emoji_tags">
         <item quantity="one">+%1$d</item>
+        <item quantity="few">+%1$d</item>
+        <item quantity="many">+%1$d</item>
         <item quantity="other">+%1$d</item>
     </plurals>
 </resources>

@@ -65,6 +65,7 @@ meme-my-mood/
 cd tools/meme-my-mood-cli
 scripts/setup.ps1  # or setup.sh
 meme-cli annotate <directory> --zip
+meme-cli annotate <directory> --languages en,cs --force
 ```
 
 ## Key Patterns
@@ -139,6 +140,8 @@ Navigation routes are defined as serializable objects in `core/common`:
 - **WorkManager + Hilt**: App implements `Configuration.Provider` for `HiltWorkerFactory`
 - **Type-safe navigation**: Use `@Serializable` route objects, not string routes
 - **Modifier parameter**: Always pass `modifier: Modifier = Modifier` as last param in composables
+- **ZIP import**: `.meme.zip` bundles contain `image.jpg` + `image.jpg.json` sidecar pairs
+- **Metadata schema**: v1.1 supports `primaryLanguage` and `localizations` for i18n
 - **CLI tool**: Uses GitHub Copilot SDK, requires `copilot auth login` first
 
 ## Agent Instructions
@@ -158,9 +161,11 @@ When working in this codebase:
 
 The Python CLI at `tools/meme-my-mood-cli/` annotates images with AI:
 - Uses GitHub Copilot SDK (`github-copilot-sdk`)
-- Outputs JSON sidecar files per image
+- Outputs JSON sidecar files per image (schema v1.1)
 - Rate limited with exponential backoff
 - Supports `--zip` to create importable ZIP bundles
+- Processing modes: `--force` (overwrite), `--continue` (skip existing), `--dry-run`
+- Multilingual: `--languages en,cs,de` for translations
 - No fallback behavior - errors propagate
 
 See `.github/copilot-instructions.md` for detailed CLI documentation.

@@ -162,6 +162,12 @@ fun SearchScreen(
                 .fillMaxSize()
                 .padding(paddingValues),
         ) {
+            // Hoist string resources for accessibility
+            val searchContentDescription = stringResource(R.string.search_content_description)
+            val closeSearchDescription = stringResource(R.string.search_action_close)
+            val voiceSearchDescription = stringResource(R.string.search_action_voice)
+            val clearSearchDescription = stringResource(R.string.search_action_clear)
+
             // Enhanced Search bar with voice search
             SearchBar(
                 query = uiState.query,
@@ -176,7 +182,7 @@ fun SearchScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = if (isSearchActive) 0.dp else 16.dp)
-                    .semantics { contentDescription = context.getString(R.string.search_content_description) },
+                    .semantics { contentDescription = searchContentDescription },
                 placeholder = { Text(stringResource(R.string.search_placeholder)) },
                 leadingIcon = {
                     if (isSearchActive) {
@@ -186,7 +192,7 @@ fun SearchScreen(
                                 focusManager.clearFocus()
                                 viewModel.onIntent(SearchIntent.ClearQuery)
                             },
-                            modifier = Modifier.semantics { contentDescription = context.getString(R.string.search_action_close) }
+                            modifier = Modifier.semantics { contentDescription = closeSearchDescription }
                         ) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
                         }
@@ -208,7 +214,7 @@ fun SearchScreen(
                         ) {
                             IconButton(
                                 onClick = { viewModel.onIntent(SearchIntent.StartVoiceSearch) },
-                                modifier = Modifier.semantics { contentDescription = context.getString(R.string.search_action_voice) }
+                                modifier = Modifier.semantics { contentDescription = voiceSearchDescription }
                             ) {
                                 Icon(
                                     Icons.Default.Mic,
@@ -229,7 +235,7 @@ fun SearchScreen(
                         ) {
                             IconButton(
                                 onClick = { viewModel.onIntent(SearchIntent.ClearQuery) },
-                                modifier = Modifier.semantics { contentDescription = context.getString(R.string.search_action_clear) }
+                                modifier = Modifier.semantics { contentDescription = clearSearchDescription }
                             ) {
                                 Icon(Icons.Default.Clear, contentDescription = null)
                             }
@@ -516,7 +522,7 @@ private fun EmojiFilterRow(
     onClearFilters: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
+    val clearFiltersDescription = stringResource(R.string.search_filter_emoji_clear_content_description, selectedEmojis.size)
     Column(modifier = modifier) {
         Row(
             modifier = Modifier
@@ -539,7 +545,7 @@ private fun EmojiFilterRow(
                 TextButton(
                     onClick = onClearFilters,
                     modifier = Modifier.semantics { 
-                        contentDescription = context.getString(R.string.search_filter_emoji_clear_content_description, selectedEmojis.size) 
+                        contentDescription = clearFiltersDescription 
                     }
                 ) {
                     Text(stringResource(R.string.search_filter_emoji_clear, selectedEmojis.size))
@@ -592,7 +598,6 @@ private fun SearchSuggestionsContent(
     onDeleteRecentSearch: (String) -> Unit,
     onClearRecentSearches: () -> Unit,
 ) {
-    val context = LocalContext.current
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
     ) {
@@ -644,6 +649,7 @@ private fun SearchSuggestionsContent(
                 }
             }
             items(recentSearches.take(5)) { search ->
+                val recentSearchDescription = stringResource(R.string.search_recent_item_content_description, search)
                 val dismissState = rememberSwipeToDismissBoxState(
                     confirmValueChange = { dismissValue ->
                         if (dismissValue == SwipeToDismissBoxValue.EndToStart) {
@@ -686,7 +692,7 @@ private fun SearchSuggestionsContent(
                             },
                             modifier = Modifier
                                 .clickable { onRecentSearchClick(search) }
-                                .semantics { contentDescription = context.getString(R.string.search_recent_item_content_description, search) },
+                                .semantics { contentDescription = recentSearchDescription },
                         )
                     }
                 }
@@ -704,7 +710,7 @@ private fun RecentSearchesSection(
     onClearAll: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
+    val clearAllDescription = stringResource(R.string.search_recent_clear_all_content_description)
     Column(modifier = modifier.padding(16.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -718,13 +724,14 @@ private fun RecentSearchesSection(
             )
             TextButton(
                 onClick = onClearAll,
-                modifier = Modifier.semantics { contentDescription = context.getString(R.string.search_recent_clear_all_content_description) }
+                modifier = Modifier.semantics { contentDescription = clearAllDescription }
             ) {
                 Text(stringResource(R.string.search_recent_clear_all))
             }
         }
         Spacer(Modifier.height(8.dp))
         recentSearches.forEach { search ->
+            val recentSearchDescription = stringResource(R.string.search_recent_item_content_description, search)
             val dismissState = rememberSwipeToDismissBoxState(
                 confirmValueChange = { dismissValue ->
                     if (dismissValue == SwipeToDismissBoxValue.EndToStart) {
@@ -772,7 +779,7 @@ private fun RecentSearchesSection(
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
                             .clickable { onSearchClick(search) }
-                            .semantics { contentDescription = context.getString(R.string.search_recent_item_content_description, search) },
+                            .semantics { contentDescription = recentSearchDescription },
                     )
                 }
             }

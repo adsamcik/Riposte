@@ -294,16 +294,25 @@ cd tools/meme-my-mood-cli
 # source .venv/bin/activate  # Linux/macOS
 
 # Check authentication
-meme-cli auth status
+meme-cli check
 
 # Annotate images in a folder
 meme-cli annotate /path/to/images
 
-# Continue a previous run (skip existing)
+# Continue a previous run (skip existing sidecars)
 meme-cli annotate /path/to/images --continue
+
+# Force regenerate all sidecars
+meme-cli annotate /path/to/images --force
+
+# Preview what would be processed
+meme-cli annotate /path/to/images --dry-run
 
 # Create ZIP bundle for import
 meme-cli annotate /path/to/images --zip
+
+# Multilingual output (English + Czech + German)
+meme-cli annotate /path/to/images --languages en,cs,de
 
 # Verbose output
 meme-cli annotate /path/to/images -v

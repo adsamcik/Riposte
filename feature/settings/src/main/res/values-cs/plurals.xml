@@ -3,6 +3,8 @@
     <!-- Import memes count -->
     <plurals name="settings_import_memes_count">
         <item quantity="one">Importován %1$d meme</item>
+        <item quantity="few">Importovány %1$d memy</item>
+        <item quantity="many">Importováno %1$d memů</item>
         <item quantity="other">Importováno %1$d memů</item>
     </plurals>
 </resources>

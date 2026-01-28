@@ -330,7 +330,9 @@ CREATE TABLE memes (
     embedding BLOB,               -- Legacy, migrated to meme_embeddings
     isFavorite INTEGER NOT NULL DEFAULT 0,
     createdAt INTEGER NOT NULL,
-    useCount INTEGER NOT NULL DEFAULT 0
+    useCount INTEGER NOT NULL DEFAULT 0,
+    primaryLanguage TEXT,         -- BCP 47 language code (v1.1)
+    localizationsJson TEXT        -- JSON object with translations (v1.1)
 );
 
 -- FTS virtual table for full-text search

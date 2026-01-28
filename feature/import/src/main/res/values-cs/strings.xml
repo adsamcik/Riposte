@@ -9,6 +9,8 @@
     <!-- Content Descriptions -->
     <string name="import_content_description_back">Zpět</string>
     <string name="import_content_description_remove">Odebrat</string>
+    <string name="import_content_description_image_to_import">Obrázek k importu</string>
+    <string name="import_content_description_image_preview">Náhled obrázku</string>
 
     <!-- Empty State -->
     <string name="import_empty_icon">📥</string>
@@ -17,9 +19,13 @@
 
     <!-- Buttons -->
     <string name="import_button_select_images">Vybrat obrázky</string>
+    <string name="import_button_import_bundle">Importovat balíček (.meme.zip)</string>
     <string name="import_button_add_more">Přidat další</string>
     <string name="import_button_done">Hotovo</string>
     <string name="import_button_apply_all">Použít na vše</string>
+
+    <!-- Bundle Import -->
+    <string name="import_bundle_hint">Importovat meme balíčky vytvořené CLI nástrojem</string>
 
     <!-- Section Labels -->
     <string name="import_section_ai_suggested">Navrženo AI</string>
