@@ -17,13 +17,14 @@ This project follows the 2026 Android best practices:
 
 | Component | Technology |
 |-----------|------------|
-| Language | Kotlin 2.1 |
-| UI | Jetpack Compose |
+| Language | Kotlin 2.3.0 |
+| UI | Jetpack Compose (BOM 2025.12.00) |
 | Architecture | Clean Architecture + MVI |
-| DI | Hilt |
-| Database | Room + FTS4 |
-| Async | Coroutines & Flow |
-| AI | ML Kit + TensorFlow Lite |
+| DI | Hilt 2.58 |
+| Database | Room 2.8.4 + FTS4 |
+| Async | Coroutines 1.10.1 & Flow |
+| AI | ML Kit + LiteRT (on-device) |
+| Image Loading | Coil 3.3.0 |
 | Build | Gradle Version Catalogs |
 
 ## Project Structure
@@ -137,12 +138,12 @@ Users can customize how memes are shared:
 All dependencies are managed via [gradle/libs.versions.toml](gradle/libs.versions.toml).
 
 Key dependencies:
-- Jetpack Compose BOM 2025.01.00
-- Hilt 2.53
-- Room 2.7.0
-- Coil 2.7.0
-- ML Kit Text Recognition 16.1.0
-- TensorFlow Lite 2.16.1
+- Jetpack Compose BOM 2025.12.00
+- Hilt 2.58
+- Room 2.8.4
+- Coil 3.3.0
+- ML Kit Text Recognition 16.0.1
+- LiteRT 1.4.1 (on-device AI)
 
 ## Contributing
 

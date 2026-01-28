@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Screen Title -->
+    <string name="share_title">Share Meme</string>
+
+    <!-- Navigation -->
+    <string name="share_navigation_back">Back</string>
+
+    <!-- Preview Section -->
+    <string name="share_preview_original">Original</string>
+    <string name="share_preview_processed">Processed</string>
+
+    <!-- File Size Info -->
+    <string name="share_size_estimated">Estimated Size</string>
+    <string name="share_size_original">Original: %1$s</string>
+    <string name="share_size_smaller">%1$d%% smaller</string>
+
+    <!-- Format Selector -->
+    <string name="share_format_label">Format</string>
+    <string name="share_format_jpeg">JPEG</string>
+    <string name="share_format_png">PNG</string>
+    <string name="share_format_webp">WEBP</string>
+
+    <!-- Quality Slider -->
+    <string name="share_quality_label">Quality</string>
+    <string name="share_quality_percentage">%1$d%%</string>
+
+    <!-- Size Presets -->
+    <string name="share_size_max_label">Max Size</string>
+    <string name="share_size_preset_small">Small</string>
+    <string name="share_size_preset_medium">Medium</string>
+    <string name="share_size_preset_large">Large</string>
+    <string name="share_size_preset_original">Original</string>
+
+    <!-- Settings Toggle -->
+    <string name="share_setting_keep_metadata_title">Keep Metadata</string>
+    <string name="share_setting_keep_metadata_description">Preserve emoji tags and other data</string>
+
+    <!-- Action Buttons -->
+    <string name="share_button_save">Save</string>
+    <string name="share_button_share">Share</string>
+
+    <!-- Content Descriptions -->
+    <string name="share_content_description_original_image">Original</string>
+    <string name="share_content_description_processed_image">Processed</string>
+
+    <!-- Intent Chooser -->
+    <string name="share_chooser_title">Share Meme</string>
+
+    <!-- Snackbar Messages -->
+    <string name="share_message_saved_to_gallery">Saved to gallery</string>
+
+    <!-- Error Messages -->
+    <string name="share_error_generic">Error</string>
+</resources>

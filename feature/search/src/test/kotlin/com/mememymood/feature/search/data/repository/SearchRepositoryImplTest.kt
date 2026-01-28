@@ -7,11 +7,11 @@ import com.mememymood.core.database.dao.MemeEmbeddingDao
 import com.mememymood.core.database.dao.MemeSearchDao
 import com.mememymood.core.database.entity.MemeEntity
 import com.mememymood.core.database.entity.MemeWithEmbeddingData
-import com.mememymood.core.datastore.AppPreferences
-import com.mememymood.core.datastore.DarkMode
 import com.mememymood.core.datastore.PreferencesDataStore
 import com.mememymood.core.ml.MemeWithEmbedding
 import com.mememymood.core.ml.SemanticSearchEngine
+import com.mememymood.core.model.AppPreferences
+import com.mememymood.core.model.DarkMode
 import com.mememymood.core.model.MatchType
 import com.mememymood.core.model.Meme
 import com.mememymood.core.model.SearchResult

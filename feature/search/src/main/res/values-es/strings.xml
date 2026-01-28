@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Search Bar -->
+    <string name="search_placeholder">Buscar memes por texto, emoji, o describe lo que quieres…</string>
+    <string name="search_content_description">Campo de búsqueda de memes</string>
+
+    <!-- Search Bar Actions -->
+    <string name="search_action_close">Cerrar búsqueda</string>
+    <string name="search_action_voice">Búsqueda por voz</string>
+    <string name="search_action_clear">Limpiar búsqueda</string>
+
+    <!-- Search Modes -->
+    <string name="search_mode_text">Texto</string>
+    <string name="search_mode_ai">IA</string>
+    <string name="search_mode_hybrid">Híbrido</string>
+    <string name="search_mode_content_description">Modo de búsqueda: %1$s</string>
+
+    <!-- Emoji Filter Section -->
+    <string name="search_filter_emoji_title">Filtrar por Emoji</string>
+    <string name="search_filter_emoji_clear">Limpiar (%1$d)</string>
+    <string name="search_filter_emoji_clear_content_description">Limpiar %1$d filtros de emoji seleccionados</string>
+    <string name="search_filter_emoji_content_description">Filtro de emoji %1$s</string>
+    <string name="search_filter_emoji_selected_content_description">Filtro de emoji %1$s, seleccionado</string>
+
+    <!-- Emoji Labels -->
+    <string name="search_emoji_joy">Alegría</string>
+    <string name="search_emoji_heart">Corazón</string>
+    <string name="search_emoji_fire">Fuego</string>
+    <string name="search_emoji_heart_eyes">Ojos de Corazón</string>
+    <string name="search_emoji_rofl">Muerto de Risa</string>
+    <string name="search_emoji_blush">Sonrojado</string>
+    <string name="search_emoji_pray">Rezar</string>
+    <string name="search_emoji_crying">Llorando</string>
+    <string name="search_emoji_kiss">Beso</string>
+    <string name="search_emoji_thumbs_up">Pulgar Arriba</string>
+    <string name="search_emoji_100">100</string>
+    <string name="search_emoji_party">Fiesta</string>
+    <string name="search_emoji_cool">Genial</string>
+    <string name="search_emoji_pleading">Suplicante</string>
+    <string name="search_emoji_sparkles">Destellos</string>
+
+    <!-- Quick Filters -->
+    <string name="search_quick_filter_favorites">Favoritos</string>
+    <string name="search_quick_filter_recent">Recientes</string>
+    <string name="search_quick_filter_trending">Tendencias</string>
+    <string name="search_quick_filter_funny">Gracioso</string>
+    <string name="search_quick_filter_love">Amor</string>
+    <string name="search_quick_filter_reactions">Reacciones</string>
+    <string name="search_quick_filter_content_description">Filtro %1$s</string>
+    <string name="search_quick_filter_selected_content_description">Filtro %1$s, seleccionado</string>
+
+    <!-- Suggestions Section -->
+    <string name="search_suggestions_title">Sugerencias</string>
+    <string name="search_suggestions_content_description">Sugerencia: %1$s</string>
+
+    <!-- Recent Searches Section -->
+    <string name="search_recent_title">Búsquedas Recientes</string>
+    <string name="search_recent_clear_all">Limpiar Todo</string>
+    <string name="search_recent_clear_all_content_description">Limpiar todas las búsquedas recientes</string>
+    <string name="search_recent_item_content_description">Búsqueda reciente: %1$s. Desliza a la izquierda para eliminar.</string>
+    <string name="search_recent_delete">Eliminar</string>
+
+    <!-- Results Toolbar -->
+    <string name="search_results_sort_content_description">Ordenar resultados por %1$s</string>
+    <string name="search_results_view_switch_list">Cambiar a vista de lista</string>
+    <string name="search_results_view_switch_grid">Cambiar a vista de cuadrícula</string>
+
+    <!-- Sort Order Labels -->
+    <string name="search_sort_relevance">Relevancia</string>
+    <string name="search_sort_newest">Más Reciente</string>
+    <string name="search_sort_oldest">Más Antiguo</string>
+    <string name="search_sort_most_used">Más Usado</string>
+
+    <!-- Result Summary -->
+    <string name="search_result_searching">Buscando…</string>
+    <string name="search_result_none">No se encontraron resultados</string>
+    <string name="search_result_summary">%1$d resultados en %2$dms</string>
+
+    <!-- Empty State -->
+    <string name="search_empty_icon">🔍</string>
+    <string name="search_empty_title">Busca Tus Memes</string>
+    <string name="search_empty_description">Encuentra memes por texto, descripción, o usa la búsqueda semántica con IA</string>
+
+    <!-- Search Tips -->
+    <string name="search_tips_title">💡 Consejos de Búsqueda</string>
+    <string name="search_tip_keywords">Usa palabras clave como \"gato\", \"gracioso\", \"reacción\"</string>
+    <string name="search_tip_ai_mode">Prueba el modo IA para lenguaje natural: \"meme sobre los lunes\"</string>
+    <string name="search_tip_emoji_filter">Filtra por emoji para reducir resultados</string>
+
+    <!-- No Results State -->
+    <string name="search_no_results_title">No Se Encontraron Resultados</string>
+    <string name="search_no_results_description">No se encontraron memes para \"%1$s\"</string>
+
+    <!-- No Results Suggestions -->
+    <string name="search_no_results_try_title">Intenta esto:</string>
+    <string name="search_no_results_tip_typos">Revisa errores de escritura en tu búsqueda</string>
+    <string name="search_no_results_tip_keywords">Prueba palabras clave más amplias o diferentes</string>
+    <string name="search_no_results_tip_ai_mode">Cambia al modo IA para coincidencia semántica</string>
+    <string name="search_no_results_tip_filters">Quita algunos filtros</string>
+    <string name="search_no_results_clear_filters">Limpiar Todos los Filtros</string>
+
+    <!-- Result Card -->
+    <string name="search_result_card_content_description">%1$s, %2$d%% relevante</string>
+    <string name="search_result_more_emojis">+%1$d</string>
+    <string name="search_result_relevance_percent">%1$d%%</string>
+</resources>

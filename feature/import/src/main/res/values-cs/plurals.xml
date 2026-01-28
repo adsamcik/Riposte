@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Import button label with count -->
+    <plurals name="import_button_import_memes">
+        <item quantity="one">Importovat %d meme</item>
+        <item quantity="other">Importovat %d memů</item>
+    </plurals>
+
+    <!-- Selected count for top bar -->
+    <plurals name="import_selected_count_plural">
+        <item quantity="one">%d vybráno</item>
+        <item quantity="other">%d vybráno</item>
+    </plurals>
+</resources>

@@ -3,9 +3,7 @@ package com.mememymood.feature.settings.presentation.component
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.AlertDialog
@@ -36,7 +34,7 @@ fun <T> DialogSettingItem(
     subtitle: String? = null,
     icon: ImageVector? = null,
     dialogTitle: String = title,
-    valueLabel: (T) -> String = { it.toString() },
+    valueLabel: @Composable (T) -> String,
     enabled: Boolean = true,
 ) {
     var showDialog by remember { mutableStateOf(false) }
@@ -59,6 +57,7 @@ fun <T> DialogSettingItem(
             text = {
                 Column {
                     values.forEach { value ->
+                        val label = valueLabel(value)
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
@@ -78,7 +77,7 @@ fun <T> DialogSettingItem(
                                 onClick = null,
                             )
                             Text(
-                                text = valueLabel(value),
+                                text = label,
                                 style = MaterialTheme.typography.bodyLarge,
                                 modifier = Modifier.padding(start = 16.dp),
                             )

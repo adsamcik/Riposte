@@ -52,6 +52,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -59,6 +70,7 @@ import com.mememymood.core.ui.component.EmptyState
 import com.mememymood.core.ui.component.ErrorState
 import com.mememymood.core.ui.component.LoadingScreen
 import com.mememymood.core.ui.component.MemeCardCompact
+import com.mememymood.feature.gallery.R
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -180,8 +192,8 @@ private fun GalleryScreenContent(
                 onShowDeleteDialogChange(false)
                 onIntent(GalleryIntent.CancelDelete)
             },
-            title = { Text("Delete Memes") },
-            text = { Text("Are you sure you want to delete $deleteCount meme(s)? This cannot be undone.") },
+            title = { Text(pluralStringResource(R.plurals.gallery_delete_count_title, deleteCount)) },
+            text = { Text(pluralStringResource(R.plurals.gallery_delete_count_message, deleteCount, deleteCount)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -189,7 +201,7 @@ private fun GalleryScreenContent(
                         onIntent(GalleryIntent.ConfirmDelete)
                     }
                 ) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.gallery_button_delete), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
@@ -199,7 +211,7 @@ private fun GalleryScreenContent(
                         onIntent(GalleryIntent.CancelDelete)
                     }
                 ) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.gallery_button_cancel))
                 }
             }
         )
@@ -212,44 +224,44 @@ private fun GalleryScreenContent(
                 title = {
                     Text(
                         text = if (uiState.isSelectionMode) {
-                            "${uiState.selectionCount} selected"
+                            pluralStringResource(R.plurals.gallery_selected_count, uiState.selectionCount, uiState.selectionCount)
                         } else {
-                            "Meme My Mood"
+                            stringResource(R.string.gallery_title)
                         }
                     )
                 },
                 navigationIcon = {
                     if (uiState.isSelectionMode) {
                         IconButton(onClick = { onIntent(GalleryIntent.ClearSelection) }) {
-                            Icon(Icons.Default.Close, contentDescription = "Cancel selection")
+                            Icon(Icons.Default.Close, contentDescription = stringResource(R.string.gallery_cd_cancel_selection))
                         }
                     }
                 },
                 actions = {
                     if (uiState.isSelectionMode) {
                         IconButton(onClick = { onIntent(GalleryIntent.SelectAll) }) {
-                            Icon(Icons.Default.SelectAll, contentDescription = "Select all")
+                            Icon(Icons.Default.SelectAll, contentDescription = stringResource(R.string.gallery_cd_select_all))
                         }
                     } else {
                         IconButton(onClick = onNavigateToSearch) {
-                            Icon(Icons.Default.Search, contentDescription = "Search")
+                            Icon(Icons.Default.Search, contentDescription = stringResource(R.string.gallery_cd_search))
                         }
                         IconButton(onClick = { onShowMenuChange(true) }) {
-                            Icon(Icons.Default.MoreVert, contentDescription = "More options")
+                            Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.gallery_cd_more_options))
                         }
                         DropdownMenu(
                             expanded = showMenu,
                             onDismissRequest = { onShowMenuChange(false) }
                         ) {
                             DropdownMenuItem(
-                                text = { Text("All Memes") },
+                                text = { Text(stringResource(R.string.gallery_menu_all_memes)) },
                                 onClick = {
                                     onIntent(GalleryIntent.SetFilter(GalleryFilter.All))
                                     onShowMenuChange(false)
                                 }
                             )
                             DropdownMenuItem(
-                                text = { Text("Favorites") },
+                                text = { Text(stringResource(R.string.gallery_menu_favorites)) },
                                 leadingIcon = { Icon(Icons.Outlined.FavoriteBorder, null) },
                                 onClick = {
                                     onIntent(GalleryIntent.SetFilter(GalleryFilter.Favorites))
@@ -257,7 +269,7 @@ private fun GalleryScreenContent(
                                 }
                             )
                             DropdownMenuItem(
-                                text = { Text("Settings") },
+                                text = { Text(stringResource(R.string.gallery_menu_settings)) },
                                 onClick = {
                                     onNavigateToSettings()
                                     onShowMenuChange(false)
@@ -278,12 +290,12 @@ private fun GalleryScreenContent(
                 BottomAppBar(
                     actions = {
                         IconButton(onClick = { onIntent(GalleryIntent.ShareSelected) }) {
-                            Icon(Icons.Default.Share, contentDescription = "Share")
+                            Icon(Icons.Default.Share, contentDescription = stringResource(R.string.gallery_cd_share))
                         }
                         IconButton(onClick = { onIntent(GalleryIntent.DeleteSelected) }) {
                             Icon(
                                 Icons.Default.Delete,
-                                contentDescription = "Delete",
+                                contentDescription = stringResource(R.string.gallery_cd_delete),
                                 tint = MaterialTheme.colorScheme.error
                             )
                         }
@@ -300,7 +312,7 @@ private fun GalleryScreenContent(
                 FloatingActionButton(
                     onClick = { onIntent(GalleryIntent.NavigateToImport) }
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = "Import memes")
+                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.gallery_cd_import_memes))
                 }
             }
         },
@@ -314,20 +326,24 @@ private fun GalleryScreenContent(
         ) {
             when {
                 uiState.isLoading -> {
-                    LoadingScreen(message = "Loading memes...")
+                    LoadingScreen(
+                        message = stringResource(R.string.gallery_loading_message),
+                        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                    )
                 }
                 uiState.error != null -> {
                     ErrorState(
                         message = uiState.error.orEmpty(),
-                        onRetry = { onIntent(GalleryIntent.LoadMemes) }
+                        onRetry = { onIntent(GalleryIntent.LoadMemes) },
+                        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Assertive },
                     )
                 }
                 uiState.isEmpty -> {
                     EmptyState(
                         emoji = "🖼️",
-                        title = "No memes yet",
-                        message = "Import some memes to get started!",
-                        actionLabel = "Import Memes",
+                        title = stringResource(R.string.gallery_empty_title),
+                        message = stringResource(R.string.gallery_empty_message),
+                        actionLabel = stringResource(R.string.gallery_button_import_memes),
                         onAction = { onIntent(GalleryIntent.NavigateToImport) }
                     )
                 }
@@ -343,12 +359,21 @@ private fun GalleryScreenContent(
                             key = { it.id }
                         ) { meme ->
                             val isSelected = meme.id in uiState.selectedMemeIds
+                            val memeDescription = meme.title ?: meme.fileName
 
                             Box(
-                                modifier = Modifier.combinedClickable(
-                                    onClick = { onIntent(GalleryIntent.OpenMeme(meme.id)) },
-                                    onLongClick = { onIntent(GalleryIntent.QuickShare(meme.id)) }
-                                )
+                                modifier = Modifier
+                                    .combinedClickable(
+                                        onClick = { onIntent(GalleryIntent.OpenMeme(meme.id)) },
+                                        onLongClick = { onIntent(GalleryIntent.QuickShare(meme.id)) },
+                                    )
+                                    .semantics(mergeDescendants = true) {
+                                        contentDescription = memeDescription
+                                        if (uiState.isSelectionMode) {
+                                            stateDescription = if (isSelected) "Selected" else "Not selected"
+                                            role = Role.Checkbox
+                                        }
+                                    },
                             ) {
                                 MemeCardCompact(
                                     meme = meme,

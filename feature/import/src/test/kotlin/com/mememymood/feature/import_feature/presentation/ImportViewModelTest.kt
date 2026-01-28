@@ -357,6 +357,17 @@ class ImportViewModelTest {
     }
 
     @Test
+    fun `PickZipBundle emits OpenFilePicker effect`() = runTest {
+        viewModel.effects.test {
+            viewModel.onIntent(ImportIntent.PickZipBundle)
+            advanceUntilIdle()
+            
+            val effect = awaitItem()
+            assertThat(effect).isEqualTo(ImportEffect.OpenFilePicker)
+        }
+    }
+
+    @Test
     fun `canImport is true when all images have emojis`() = runTest {
         val uri = mockk<Uri> { every { lastPathSegment } returns "meme.jpg" }
         val emoji = EmojiTag("😀", "happy")

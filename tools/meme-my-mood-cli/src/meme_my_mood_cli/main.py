@@ -12,12 +12,16 @@ from meme_my_mood_cli.commands.annotate import annotate
 def cli() -> None:
     """Meme My Mood CLI - AI-powered meme annotation tool.
     
-    Annotate meme images with emoji tags and metadata using GitHub Models API.
+    Annotate meme images with emoji tags and metadata using GitHub Copilot SDK.
     Generate JSON sidecar files compatible with the Meme My Mood Android app.
     
     Prerequisites:
-    - GitHub PAT with 'models' scope (https://github.com/settings/tokens)
-    - Run 'meme-cli auth login' to authenticate
+    - GitHub Copilot CLI installed (https://github.com/github/copilot-cli)
+    - Authenticated with Copilot CLI (run 'copilot auth login')
+    
+    Quick start:
+    - meme-cli auth status    Check CLI installation
+    - meme-cli annotate DIR   Annotate images in DIR
     """
     pass
 

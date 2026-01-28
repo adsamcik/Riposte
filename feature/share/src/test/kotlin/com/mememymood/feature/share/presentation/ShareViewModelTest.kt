@@ -1,6 +1,7 @@
 package com.mememymood.feature.share.presentation
 
 import android.content.Intent
+import android.graphics.Bitmap
 import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
@@ -10,6 +11,7 @@ import com.mememymood.core.model.ImageFormat
 import com.mememymood.core.model.Meme
 import com.mememymood.core.model.ShareConfig
 import com.mememymood.feature.share.data.ImageProcessor
+import com.mememymood.feature.share.domain.BitmapLoader
 import com.mememymood.feature.share.domain.usecase.ShareUseCases
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -39,12 +41,14 @@ class ShareViewModelTest {
     private lateinit var savedStateHandle: SavedStateHandle
     private lateinit var shareUseCases: ShareUseCases
     private lateinit var imageProcessor: ImageProcessor
+    private lateinit var bitmapLoader: BitmapLoader
     private lateinit var viewModel: ShareViewModel
 
     private val testMeme = createTestMeme(1L)
     private val defaultConfig = ShareConfig()
     private val mockUri: Uri = mockk()
     private val mockIntent: Intent = mockk()
+    private val mockBitmap: Bitmap = mockk(relaxed = true)
 
     @Before
     fun setup() {
@@ -53,11 +57,23 @@ class ShareViewModelTest {
         savedStateHandle = SavedStateHandle(mapOf("memeId" to 1L))
         shareUseCases = mockk(relaxed = true)
         imageProcessor = mockk(relaxed = true)
+        bitmapLoader = mockk(relaxed = true)
 
         // Default mock setup
         coEvery { shareUseCases.getMeme(1L) } returns testMeme
         coEvery { shareUseCases.getDefaultConfig() } returns defaultConfig
         coEvery { shareUseCases.estimateFileSize(any(), any()) } returns 1024L
+
+        // Mock bitmap loader - return mock bitmap and file size
+        coEvery { bitmapLoader.loadBitmap(any()) } returns mockBitmap
+        coEvery { bitmapLoader.getFileSize(any()) } returns 1024L
+
+        // Mock bitmap dimensions for resize calculations
+        every { mockBitmap.width } returns 1080
+        every { mockBitmap.height } returns 1920
+
+        // Mock image processor to return the same bitmap (no resize needed)
+        every { imageProcessor.resizeBitmap(any(), any(), any()) } returns mockBitmap
     }
 
     @After
@@ -70,6 +86,7 @@ class ShareViewModelTest {
             savedStateHandle = savedStateHandle,
             shareUseCases = shareUseCases,
             imageProcessor = imageProcessor,
+            bitmapLoader = bitmapLoader,
         )
     }
 

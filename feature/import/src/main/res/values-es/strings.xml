@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Screen Title -->
+    <string name="import_title">Importar Memes</string>
+
+    <!-- Top Bar Actions -->
+    <string name="import_selected_count">%d seleccionados</string>
+
+    <!-- Content Descriptions -->
+    <string name="import_content_description_back">Volver</string>
+    <string name="import_content_description_remove">Quitar</string>
+
+    <!-- Empty State -->
+    <string name="import_empty_icon">📥</string>
+    <string name="import_empty_title">Importa Tus Memes</string>
+    <string name="import_empty_message">Selecciona imágenes de tu galería para añadirlas a tu colección de memes</string>
+
+    <!-- Buttons -->
+    <string name="import_button_select_images">Seleccionar Imágenes</string>
+    <string name="import_button_add_more">Añadir Más</string>
+    <string name="import_button_done">Listo</string>
+    <string name="import_button_apply_all">Aplicar a Todos</string>
+
+    <!-- Section Labels -->
+    <string name="import_section_ai_suggested">Sugeridos por IA</string>
+    <string name="import_section_select_emojis">Seleccionar Emojis</string>
+
+    <!-- Input Field Labels -->
+    <string name="import_field_title">Título</string>
+    <string name="import_field_description">Descripción</string>
+
+    <!-- Progress Screen -->
+    <string name="import_progress_title">Importando Memes</string>
+    <string name="import_progress_count">%1$d de %2$d</string>
+
+    <!-- Emoji Overflow -->
+    <string name="import_emoji_overflow">+%d</string>
+</resources>

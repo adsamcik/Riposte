@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.Cached
 import androidx.compose.material.icons.filled.CleaningServices
 import androidx.compose.material.icons.filled.ColorLens
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.HighQuality
 import androidx.compose.material.icons.filled.History
@@ -44,6 +45,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import com.mememymood.feature.settings.R
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mememymood.core.model.DarkMode
@@ -126,16 +131,16 @@ fun SettingsScreen(
     if (uiState.showClearCacheDialog) {
         AlertDialog(
             onDismissRequest = { viewModel.onIntent(SettingsIntent.DismissDialog) },
-            title = { Text("Clear Cache") },
-            text = { Text("This will delete ${uiState.cacheSize} of cached data. This action cannot be undone.") },
+            title = { Text(stringResource(R.string.settings_clear_cache_dialog_title)) },
+            text = { Text(stringResource(R.string.settings_clear_cache_dialog_message, uiState.cacheSize)) },
             confirmButton = {
                 TextButton(onClick = { viewModel.onIntent(SettingsIntent.ConfirmClearCache) }) {
-                    Text("Clear")
+                    Text(stringResource(R.string.settings_clear_cache_dialog_confirm))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { viewModel.onIntent(SettingsIntent.DismissDialog) }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.settings_clear_cache_dialog_cancel))
                 }
             },
         )
@@ -144,10 +149,10 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Settings") },
+                title = { Text(stringResource(R.string.settings_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.settings_navigate_back))
                     }
                 },
             )
@@ -162,25 +167,49 @@ fun SettingsScreen(
         ) {
             // Appearance Section
             item {
-                SettingsSection(title = "Appearance") {
+                SettingsSection(title = stringResource(R.string.settings_section_appearance)) {
                     DialogSettingItem(
-                        title = "Theme",
+                        title = stringResource(R.string.settings_theme_title),
                         selectedValue = uiState.darkMode,
                         values = DarkMode.entries,
                         onValueChange = { viewModel.onIntent(SettingsIntent.SetDarkMode(it)) },
                         icon = Icons.Default.Brightness4,
                         valueLabel = { mode ->
                             when (mode) {
-                                DarkMode.SYSTEM -> "System default"
-                                DarkMode.LIGHT -> "Light"
-                                DarkMode.DARK -> "Dark"
+                                DarkMode.SYSTEM -> stringResource(R.string.settings_theme_system)
+                                DarkMode.LIGHT -> stringResource(R.string.settings_theme_light)
+                                DarkMode.DARK -> stringResource(R.string.settings_theme_dark)
                             }
                         },
                     )
 
+                    if (uiState.availableLanguages.isNotEmpty()) {
+                        val defaultLanguage = uiState.availableLanguages.first()
+                        DialogSettingItem(
+                            title = stringResource(R.string.settings_language_title),
+                            subtitle = stringResource(R.string.settings_language_subtitle),
+                            selectedValue = uiState.availableLanguages.find { it.code == uiState.currentLanguage }
+                                ?: defaultLanguage,
+                            values = uiState.availableLanguages,
+                            onValueChange = { viewModel.onIntent(SettingsIntent.SetLanguage(it.code)) },
+                            icon = Icons.Default.Language,
+                            valueLabel = { language ->
+                                when (language.code) {
+                                    null -> stringResource(R.string.settings_language_system)
+                                    "en" -> stringResource(R.string.settings_language_en)
+                                    "cs" -> stringResource(R.string.settings_language_cs)
+                                    "de" -> stringResource(R.string.settings_language_de)
+                                    "es" -> stringResource(R.string.settings_language_es)
+                                    "pt" -> stringResource(R.string.settings_language_pt)
+                                    else -> language.nativeName
+                                }
+                            },
+                        )
+                    }
+
                     SwitchSettingItem(
-                        title = "Dynamic Colors",
-                        subtitle = "Use colors from your wallpaper",
+                        title = stringResource(R.string.settings_dynamic_colors_title),
+                        subtitle = stringResource(R.string.settings_dynamic_colors_subtitle),
                         checked = uiState.dynamicColorsEnabled,
                         onCheckedChange = { viewModel.onIntent(SettingsIntent.SetDynamicColors(it)) },
                         icon = Icons.Default.ColorLens,
@@ -190,9 +219,9 @@ fun SettingsScreen(
 
             // Default Sharing Section
             item {
-                SettingsSection(title = "Default Sharing") {
+                SettingsSection(title = stringResource(R.string.settings_section_default_sharing)) {
                     DialogSettingItem(
-                        title = "Format",
+                        title = stringResource(R.string.settings_format_title),
                         selectedValue = uiState.defaultFormat,
                         values = listOf(ImageFormat.JPEG, ImageFormat.PNG, ImageFormat.WEBP),
                         onValueChange = { viewModel.onIntent(SettingsIntent.SetDefaultFormat(it)) },
@@ -201,35 +230,35 @@ fun SettingsScreen(
                     )
 
                     SliderSettingItem(
-                        title = "Quality",
+                        title = stringResource(R.string.settings_quality_title),
                         value = uiState.defaultQuality.toFloat(),
                         onValueChange = { viewModel.onIntent(SettingsIntent.SetDefaultQuality(it.toInt())) },
                         icon = Icons.Default.HighQuality,
                         valueRange = 10f..100f,
                         steps = 8,
-                        valueLabel = { "${it.toInt()}%" },
+                        valueLabel = { stringResource(R.string.settings_quality_value, it.toInt()) },
                     )
 
                     DialogSettingItem(
-                        title = "Max Size",
+                        title = stringResource(R.string.settings_max_size_title),
                         selectedValue = uiState.defaultMaxDimension,
                         values = listOf(480, 720, 1080, 2048),
                         onValueChange = { viewModel.onIntent(SettingsIntent.SetDefaultMaxDimension(it)) },
                         icon = Icons.Default.PhotoSizeSelectLarge,
                         valueLabel = { dimension ->
                             when (dimension) {
-                                480 -> "Small (480p)"
-                                720 -> "Medium (720p)"
-                                1080 -> "Large (1080p)"
-                                2048 -> "Original"
-                                else -> "${dimension}p"
+                                480 -> stringResource(R.string.settings_max_size_small)
+                                720 -> stringResource(R.string.settings_max_size_medium)
+                                1080 -> stringResource(R.string.settings_max_size_large)
+                                2048 -> stringResource(R.string.settings_max_size_original)
+                                else -> stringResource(R.string.settings_max_size_custom, dimension)
                             }
                         },
                     )
 
                     SwitchSettingItem(
-                        title = "Keep Metadata",
-                        subtitle = "Preserve emoji tags when sharing",
+                        title = stringResource(R.string.settings_keep_metadata_title),
+                        subtitle = stringResource(R.string.settings_keep_metadata_subtitle),
                         checked = uiState.keepMetadata,
                         onCheckedChange = { viewModel.onIntent(SettingsIntent.SetKeepMetadata(it)) },
                         icon = Icons.Default.Description,
@@ -239,18 +268,18 @@ fun SettingsScreen(
 
             // Search Section
             item {
-                SettingsSection(title = "Search") {
+                SettingsSection(title = stringResource(R.string.settings_section_search)) {
                     SwitchSettingItem(
-                        title = "Semantic Search",
-                        subtitle = "AI-powered search for similar memes",
+                        title = stringResource(R.string.settings_semantic_search_title),
+                        subtitle = stringResource(R.string.settings_semantic_search_subtitle),
                         checked = uiState.enableSemanticSearch,
                         onCheckedChange = { viewModel.onIntent(SettingsIntent.SetEnableSemanticSearch(it)) },
                         icon = Icons.Default.Psychology,
                     )
 
                     SwitchSettingItem(
-                        title = "Search History",
-                        subtitle = "Save recent searches",
+                        title = stringResource(R.string.settings_search_history_title),
+                        subtitle = stringResource(R.string.settings_search_history_subtitle),
                         checked = uiState.saveSearchHistory,
                         onCheckedChange = { viewModel.onIntent(SettingsIntent.SetSaveSearchHistory(it)) },
                         icon = Icons.Default.History,
@@ -260,25 +289,25 @@ fun SettingsScreen(
 
             // Storage Section
             item {
-                SettingsSection(title = "Storage") {
+                SettingsSection(title = stringResource(R.string.settings_section_storage)) {
                     ClickableSettingItem(
-                        title = "Clear Cache",
-                        subtitle = "Free up ${uiState.cacheSize}",
+                        title = stringResource(R.string.settings_clear_cache_title),
+                        subtitle = stringResource(R.string.settings_clear_cache_subtitle, uiState.cacheSize),
                         onClick = { viewModel.onIntent(SettingsIntent.ShowClearCacheDialog) },
                         icon = Icons.Default.CleaningServices,
                         showChevron = false,
                     )
 
                     ClickableSettingItem(
-                        title = "Export Data",
-                        subtitle = "Backup your memes and settings",
+                        title = stringResource(R.string.settings_export_data_title),
+                        subtitle = stringResource(R.string.settings_export_data_subtitle),
                         onClick = { viewModel.onIntent(SettingsIntent.ExportData) },
                         icon = Icons.Default.Upload,
                     )
 
                     ClickableSettingItem(
-                        title = "Import Data",
-                        subtitle = "Restore from backup",
+                        title = stringResource(R.string.settings_import_data_title),
+                        subtitle = stringResource(R.string.settings_import_data_subtitle),
                         onClick = { viewModel.onIntent(SettingsIntent.ImportData) },
                         icon = Icons.Default.Download,
                     )
@@ -287,9 +316,9 @@ fun SettingsScreen(
 
             // About Section
             item {
-                SettingsSection(title = "About") {
+                SettingsSection(title = stringResource(R.string.settings_section_about)) {
                     ClickableSettingItem(
-                        title = "Version",
+                        title = stringResource(R.string.settings_version_title),
                         subtitle = null,
                         onClick = { },
                         icon = Icons.Default.Info,
@@ -298,13 +327,13 @@ fun SettingsScreen(
                     )
 
                     ClickableSettingItem(
-                        title = "Open Source Licenses",
+                        title = stringResource(R.string.settings_open_source_licenses_title),
                         onClick = { viewModel.onIntent(SettingsIntent.OpenLicenses) },
                         icon = Icons.Default.Description,
                     )
 
                     ClickableSettingItem(
-                        title = "Privacy Policy",
+                        title = stringResource(R.string.settings_privacy_policy_title),
                         onClick = { viewModel.onIntent(SettingsIntent.OpenPrivacyPolicy) },
                         icon = Icons.Default.Policy,
                     )

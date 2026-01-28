@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- MemeCard Component -->
+    <string name="ui_meme_card_remove_from_favorites">Odebrat z oblíbených</string>
+    <string name="ui_meme_card_add_to_favorites">Přidat do oblíbených</string>
+
+    <!-- LoadingStates Component -->
+    <string name="ui_loading_error_title">Jejda!</string>
+    <string name="ui_loading_error_retry">Zkusit znovu</string>
+    <string name="ui_loading_no_results_title">Nic nenalezeno</string>
+    <string name="ui_loading_no_results_message">Nenašli jsme žádné memy odpovídající \"%1$s\"</string>
+    <string name="ui_loading_no_results_clear">Vymazat hledání</string>
+
+    <!-- SearchBar Component -->
+    <string name="ui_search_placeholder">Hledat memy…</string>
+    <string name="ui_search_icon_description">Hledat</string>
+    <string name="ui_search_clear_description">Vymazat hledání</string>
+</resources>

@@ -33,7 +33,7 @@
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
-            android:theme="@style/Theme.MemeMood"
+            android:theme="@style/Theme.MemeMood.Splash"
             android:windowSoftInputMode="adjustResize">
             
             <intent-filter>

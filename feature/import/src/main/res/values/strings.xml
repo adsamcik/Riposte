@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Screen Title -->
+    <string name="import_title">Import Memes</string>
+
+    <!-- Top Bar Actions -->
+    <string name="import_selected_count">%d selected</string>
+
+    <!-- Content Descriptions -->
+    <string name="import_content_description_back">Back</string>
+    <string name="import_content_description_remove">Remove</string>
+    <string name="import_content_description_image_to_import">Image to import</string>
+    <string name="import_content_description_image_preview">Image preview</string>
+
+    <!-- Empty State -->
+    <string name="import_empty_icon">📥</string>
+    <string name="import_empty_title">Import Your Memes</string>
+    <string name="import_empty_message">Select images from your gallery to add to your meme collection</string>
+
+    <!-- Buttons -->
+    <string name="import_button_select_images">Select Images</string>
+    <string name="import_button_import_bundle">Import Bundle (.meme.zip)</string>
+    <string name="import_button_add_more">Add More</string>
+    <string name="import_button_done">Done</string>
+    <string name="import_button_apply_all">Apply All</string>
+
+    <!-- Bundle Import -->
+    <string name="import_bundle_hint">Import meme bundles created with the CLI tool</string>
+
+    <!-- Section Labels -->
+    <string name="import_section_ai_suggested">AI Suggested</string>
+    <string name="import_section_select_emojis">Select Emojis</string>
+
+    <!-- Input Field Labels -->
+    <string name="import_field_title">Title</string>
+    <string name="import_field_description">Description</string>
+
+    <!-- Progress Screen -->
+    <string name="import_progress_title">Importing Memes</string>
+    <string name="import_progress_count">%1$d of %2$d</string>
+
+    <!-- Emoji Overflow -->
+    <string name="import_emoji_overflow">+%d</string>
+</resources>

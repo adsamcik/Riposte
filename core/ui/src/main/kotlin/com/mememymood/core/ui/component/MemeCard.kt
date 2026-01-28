@@ -30,9 +30,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import com.mememymood.core.ui.R
 import com.mememymood.core.model.EmojiTag
 import com.mememymood.core.model.Meme
 import com.mememymood.core.ui.theme.MoodShapes
@@ -50,10 +58,24 @@ fun MemeCard(
     showTitle: Boolean = true,
     showEmojis: Boolean = true
 ) {
+    val memeDescription = buildString {
+        append(meme.title ?: meme.fileName)
+        if (meme.emojiTags.isNotEmpty()) {
+            append(", tags: ")
+            append(meme.emojiTags.take(5).joinToString(", ") { it.name })
+        }
+        if (meme.isFavorite) {
+            append(", favorited")
+        }
+    }
+    
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .clickable(onClick = onClick)
+            .semantics(mergeDescendants = true) {
+                contentDescription = memeDescription
+            },
         shape = MoodShapes.MemeCard,
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
@@ -66,8 +88,10 @@ fun MemeCard(
             ) {
                 AsyncImage(
                     model = File(meme.filePath),
-                    contentDescription = meme.title ?: meme.fileName,
-                    modifier = Modifier.fillMaxSize(),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clearAndSetSemantics { },
                     contentScale = ContentScale.Crop
                 )
 
@@ -77,6 +101,10 @@ fun MemeCard(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .padding(4.dp)
+                        .semantics {
+                            role = Role.Button
+                            stateDescription = if (meme.isFavorite) "Favorited" else "Not favorited"
+                        }
                 ) {
                     Icon(
                         imageVector = if (meme.isFavorite) {
@@ -84,7 +112,11 @@ fun MemeCard(
                         } else {
                             Icons.Outlined.FavoriteBorder
                         },
-                        contentDescription = if (meme.isFavorite) "Remove from favorites" else "Add to favorites",
+                        contentDescription = if (meme.isFavorite) {
+                            stringResource(R.string.ui_meme_card_remove_from_favorites)
+                        } else {
+                            stringResource(R.string.ui_meme_card_add_to_favorites)
+                        },
                         tint = if (meme.isFavorite) Color.Red else Color.White
                     )
                 }
@@ -143,16 +175,32 @@ fun MemeCardCompact(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val memeDescription = buildString {
+        append(meme.title ?: meme.fileName)
+        if (meme.emojiTags.isNotEmpty()) {
+            append(", ")
+            append(meme.emojiTags.take(3).joinToString(" ") { it.emoji })
+        }
+        if (meme.isFavorite) {
+            append(", favorited")
+        }
+    }
+    
     Box(
         modifier = modifier
             .aspectRatio(1f)
             .clip(MoodShapes.MemeCard)
             .clickable(onClick = onClick)
+            .semantics(mergeDescendants = true) {
+                contentDescription = memeDescription
+            }
     ) {
         AsyncImage(
             model = File(meme.filePath),
-            contentDescription = meme.title ?: meme.fileName,
-            modifier = Modifier.fillMaxSize(),
+            contentDescription = null,
+            modifier = Modifier
+                .fillMaxSize()
+                .clearAndSetSemantics { },
             contentScale = ContentScale.Crop
         )
 

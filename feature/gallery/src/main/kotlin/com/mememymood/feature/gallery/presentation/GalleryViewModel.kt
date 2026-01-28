@@ -11,6 +11,7 @@ import com.mememymood.feature.gallery.domain.usecase.GetMemesUseCase
 import com.mememymood.feature.gallery.domain.usecase.ToggleFavoriteUseCase
 import com.mememymood.feature.share.domain.usecase.ShareUseCases
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -39,6 +40,9 @@ class GalleryViewModel @Inject constructor(
     val effects = _effects.receiveAsFlow()
 
     private var pendingDeleteIds: Set<Long> = emptySet()
+    
+    /** Job for the current memes loading flow, canceled when filter changes. */
+    private var memesJob: Job? = null
 
     init {
         loadPreferences()
@@ -74,7 +78,9 @@ class GalleryViewModel @Inject constructor(
     }
 
     private fun loadMemes() {
-        viewModelScope.launch {
+        // Cancel any previous memes loading job to prevent concurrent collections
+        memesJob?.cancel()
+        memesJob = viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
 
             val flow = when (val filter = _uiState.value.filter) {

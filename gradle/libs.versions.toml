@@ -29,8 +29,17 @@ coil = "3.3.0"
 mlkit-text-recognition = "16.0.1"
 mlkit-image-labeling = "17.0.9"
 
+# MediaPipe (On-device AI Tasks)
+mediapipe-tasks-text = "0.10.21"
+
 # LiteRT (Replaces TensorFlow Lite)
-litert = "2.1.0"
+litert = "1.4.1"
+
+# Google AI Edge RAG SDK (for EmbeddingGemma)
+ai-edge-rag = "0.3.0"
+
+# DJL (Deep Java Library) for HuggingFace tokenizers
+djl = "0.36.0"
 
 # WorkManager
 workmanager = "2.10.0"
@@ -57,6 +66,15 @@ benchmark-macro = "1.3.4"
 
 # Profile Installer
 profile-installer = "1.4.1"
+
+# Splash Screen
+core-splashscreen = "1.0.1"
+
+# Accessibility Testing
+accessibility-test-framework = "4.1.1"
+
+# AppCompat (for per-app language backward compatibility)
+appcompat = "1.7.0"
 
 [libraries]
 # Core AndroidX
@@ -113,8 +131,19 @@ coil-network = { group = "io.coil-kt.coil3", name = "coil-network-okhttp", versi
 mlkit-text-recognition = { group = "com.google.mlkit", name = "text-recognition", version.ref = "mlkit-text-recognition" }
 mlkit-image-labeling = { group = "com.google.mlkit", name = "image-labeling", version.ref = "mlkit-image-labeling" }
 
+# MediaPipe (On-device AI Tasks)
+mediapipe-tasks-text = { group = "com.google.mediapipe", name = "tasks-text", version.ref = "mediapipe-tasks-text" }
+
 # LiteRT (On-device AI Runtime - Replaces TensorFlow Lite)
 litert-runtime = { group = "com.google.ai.edge.litert", name = "litert", version.ref = "litert" }
+litert-support = { group = "com.google.ai.edge.litert", name = "litert-support", version.ref = "litert" }
+litert-gpu = { group = "com.google.ai.edge.litert", name = "litert-gpu", version.ref = "litert" }
+
+# Google AI Edge RAG SDK (for EmbeddingGemma)
+ai-edge-rag = { group = "com.google.ai.edge.localagents", name = "localagents-rag", version.ref = "ai-edge-rag" }
+
+# DJL (Deep Java Library) HuggingFace Tokenizers
+djl-tokenizers = { group = "ai.djl.huggingface", name = "tokenizers", version.ref = "djl" }
 
 # WorkManager
 workmanager-runtime = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workmanager" }
@@ -148,6 +177,16 @@ uiautomator = { group = "androidx.test.uiautomator", name = "uiautomator", versi
 benchmark-macro-junit4 = { group = "androidx.benchmark", name = "benchmark-macro-junit4", version.ref = "benchmark-macro" }
 profile-installer = { group = "androidx.profileinstaller", name = "profileinstaller", version.ref = "profile-installer" }
 
+# Splash Screen
+core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "core-splashscreen" }
+
+# Accessibility Testing
+accessibility-test-framework = { group = "com.google.android.apps.common.testing.accessibility.framework", name = "accessibility-test-framework", version.ref = "accessibility-test-framework" }
+compose-ui-test-accessibility = { group = "androidx.compose.ui", name = "ui-test-junit4-accessibility" }
+
+# AppCompat (for per-app language backward compatibility)
+appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+
 [bundles]
 compose = [
     "compose-ui",
@@ -161,7 +200,7 @@ compose-debug = ["compose-ui-tooling", "compose-ui-test-manifest"]
 lifecycle = ["lifecycle-runtime-compose", "lifecycle-viewmodel-compose"]
 room = ["room-runtime", "room-ktx"]
 mlkit = ["mlkit-text-recognition", "mlkit-image-labeling"]
-litert = ["litert-runtime"]
+litert = ["litert-runtime", "litert-support"]
 testing = ["junit", "coroutines-test", "mockk", "turbine", "truth"]
 android-testing = ["androidx-test-ext", "espresso-core", "compose-ui-test-junit4", "hilt-android-testing"]
 

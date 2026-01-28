@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App Bar -->
+    <string name="gallery_title">Meme My Mood</string>
+
+    <!-- Menu Items -->
+    <string name="gallery_menu_all_memes">Todos os Memes</string>
+    <string name="gallery_menu_favorites">Favoritos</string>
+    <string name="gallery_menu_settings">Configurações</string>
+
+    <!-- Selection Mode -->
+    <string name="gallery_selection_count">%d selecionado(s)</string>
+
+    <!-- Content Descriptions - Top Bar -->
+    <string name="gallery_cd_cancel_selection">Cancelar seleção</string>
+    <string name="gallery_cd_select_all">Selecionar tudo</string>
+    <string name="gallery_cd_search">Pesquisar</string>
+    <string name="gallery_cd_more_options">Mais opções</string>
+
+    <!-- Content Descriptions - Actions -->
+    <string name="gallery_cd_share">Compartilhar</string>
+    <string name="gallery_cd_delete">Excluir</string>
+    <string name="gallery_cd_import_memes">Importar memes</string>
+    <string name="gallery_cd_navigate_back">Voltar</string>
+    <string name="gallery_cd_favorite">Favoritar</string>
+    <string name="gallery_cd_edit">Editar</string>
+    <string name="gallery_cd_cancel_edit">Cancelar Edição</string>
+    <string name="gallery_cd_add_emoji">Adicionar Emoji</string>
+    <string name="gallery_cd_clear">Limpar</string>
+    <string name="gallery_cd_remove">Remover</string>
+    <string name="gallery_cd_selected">Selecionado</string>
+
+    <!-- Delete Dialog -->
+    <string name="gallery_delete_title">Excluir Memes</string>
+    <string name="gallery_delete_message">Tem certeza de que deseja excluir %d meme(s)? Esta ação não pode ser desfeita.</string>
+    <string name="gallery_delete_single_title">Excluir Meme?</string>
+    <string name="gallery_delete_single_message">Esta ação não pode ser desfeita.</string>
+
+    <!-- Button Labels -->
+    <string name="gallery_button_delete">Excluir</string>
+    <string name="gallery_button_cancel">Cancelar</string>
+    <string name="gallery_button_save">Salvar</string>
+    <string name="gallery_button_discard">Descartar</string>
+    <string name="gallery_button_done">Concluído</string>
+    <string name="gallery_button_import_memes">Importar Memes</string>
+
+    <!-- Empty State -->
+    <string name="gallery_empty_title">Nenhum meme ainda</string>
+    <string name="gallery_empty_message">Importe alguns memes para começar!</string>
+
+    <!-- Loading State -->
+    <string name="gallery_loading_message">Carregando memes…</string>
+
+    <!-- Error State -->
+    <string name="gallery_error_default">Erro</string>
+
+    <!-- Share -->
+    <string name="gallery_share_chooser_title">Compartilhar Meme</string>
+
+    <!-- Meme Detail - Labels -->
+    <string name="gallery_detail_label_title">Título</string>
+    <string name="gallery_detail_label_description">Descrição</string>
+    <string name="gallery_detail_label_emoji_tags">Tags de Emoji</string>
+    <string name="gallery_detail_label_imported">Importado: %s</string>
+    <string name="gallery_detail_label_extracted_text">Texto Extraído:</string>
+
+    <!-- Emoji Dialog -->
+    <string name="gallery_emoji_dialog_title">Editar Tags de Emoji</string>
+    <string name="gallery_emoji_search_label">Pesquisar emojis</string>
+    <string name="gallery_emoji_section_selected">Selecionados</string>
+    <string name="gallery_emoji_section_available">Disponíveis</string>
+    <string name="gallery_emoji_fallback_name">emoji</string>
+</resources>

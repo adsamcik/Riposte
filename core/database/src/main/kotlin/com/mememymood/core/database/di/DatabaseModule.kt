@@ -30,7 +30,8 @@ object DatabaseModule {
         )
             .addMigrations(
                 MemeDatabase.MIGRATION_1_2,
-                MemeDatabase.MIGRATION_2_3
+                MemeDatabase.MIGRATION_2_3,
+                MemeDatabase.MIGRATION_3_4
             )
             .build()
     }

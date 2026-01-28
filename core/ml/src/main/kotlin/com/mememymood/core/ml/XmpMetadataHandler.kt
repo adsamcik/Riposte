@@ -149,6 +149,19 @@ class XmpMetadataHandler @Inject constructor(
     }
 
     /**
+     * Escape special XML characters to prevent XML injection attacks.
+     * This must be applied to all user-provided content before embedding in XMP.
+     */
+    private fun escapeXml(text: String): String {
+        return text
+            .replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace("\"", "&quot;")
+            .replace("'", "&apos;")
+    }
+
+    /**
      * Generate a complete XMP packet from metadata.
      */
     private fun generateXmpPacket(metadata: MemeMetadata): String {
@@ -161,13 +174,13 @@ class XmpMetadataHandler @Inject constructor(
             appendLine("""      xmlns:dc="$DC_NAMESPACE">""")
             
             // Schema version
-            appendLine("""      <$XMP_PREFIX:schemaVersion>${metadata.schemaVersion}</$XMP_PREFIX:schemaVersion>""")
+            appendLine("""      <$XMP_PREFIX:schemaVersion>${escapeXml(metadata.schemaVersion)}</$XMP_PREFIX:schemaVersion>""")
             
             // Emojis
             appendLine("""      <$XMP_PREFIX:emojis>""")
             appendLine("""        <rdf:Bag>""")
             metadata.emojis.forEach { emoji ->
-                appendLine("""          <rdf:li>$emoji</rdf:li>""")
+                appendLine("""          <rdf:li>${escapeXml(emoji)}</rdf:li>""")
             }
             appendLine("""        </rdf:Bag>""")
             appendLine("""      </$XMP_PREFIX:emojis>""")
@@ -176,7 +189,7 @@ class XmpMetadataHandler @Inject constructor(
             metadata.title?.let { title ->
                 appendLine("""      <dc:title>""")
                 appendLine("""        <rdf:Alt>""")
-                appendLine("""          <rdf:li xml:lang="x-default">$title</rdf:li>""")
+                appendLine("""          <rdf:li xml:lang="x-default">${escapeXml(title)}</rdf:li>""")
                 appendLine("""        </rdf:Alt>""")
                 appendLine("""      </dc:title>""")
             }
@@ -185,28 +198,24 @@ class XmpMetadataHandler @Inject constructor(
             metadata.description?.let { description ->
                 appendLine("""      <dc:description>""")
                 appendLine("""        <rdf:Alt>""")
-                appendLine("""          <rdf:li xml:lang="x-default">$description</rdf:li>""")
+                appendLine("""          <rdf:li xml:lang="x-default">${escapeXml(description)}</rdf:li>""")
                 appendLine("""        </rdf:Alt>""")
                 appendLine("""      </dc:description>""")
             }
             
             // Timestamps
             metadata.createdAt?.let { createdAt ->
-                appendLine("""      <$XMP_PREFIX:createdAt>$createdAt</$XMP_PREFIX:createdAt>""")
+                appendLine("""      <$XMP_PREFIX:createdAt>${escapeXml(createdAt)}</$XMP_PREFIX:createdAt>""")
             }
             
             // App version
             metadata.appVersion?.let { version ->
-                appendLine("""      <$XMP_PREFIX:appVersion>$version</$XMP_PREFIX:appVersion>""")
+                appendLine("""      <$XMP_PREFIX:appVersion>${escapeXml(version)}</$XMP_PREFIX:appVersion>""")
             }
             
             // Source
             metadata.source?.let { source ->
-                val escapedSource = source
-                    .replace("&", "&amp;")
-                    .replace("<", "&lt;")
-                    .replace(">", "&gt;")
-                appendLine("""      <$XMP_PREFIX:source>$escapedSource</$XMP_PREFIX:source>""")
+                appendLine("""      <$XMP_PREFIX:source>${escapeXml(source)}</$XMP_PREFIX:source>""")
             }
             
             // Tags
@@ -214,11 +223,7 @@ class XmpMetadataHandler @Inject constructor(
                 appendLine("""      <$XMP_PREFIX:tags>""")
                 appendLine("""        <rdf:Bag>""")
                 metadata.tags.forEach { tag ->
-                    val escapedTag = tag
-                        .replace("&", "&amp;")
-                        .replace("<", "&lt;")
-                        .replace(">", "&gt;")
-                    appendLine("""          <rdf:li>$escapedTag</rdf:li>""")
+                    appendLine("""          <rdf:li>${escapeXml(tag)}</rdf:li>""")
                 }
                 appendLine("""        </rdf:Bag>""")
                 appendLine("""      </$XMP_PREFIX:tags>""")

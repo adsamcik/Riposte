@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Screen Title -->
+    <string name="settings_title">Einstellungen</string>
+    
+    <!-- Navigation -->
+    <string name="settings_navigate_back">Zurück</string>
+    
+    <!-- Section Headers -->
+    <string name="settings_section_appearance">Aussehen</string>
+    <string name="settings_section_default_sharing">Standard-Teilen</string>
+    <string name="settings_section_search">Suche</string>
+    <string name="settings_section_storage">Speicher</string>
+    <string name="settings_section_about">Über</string>
+    
+    <!-- Appearance Section -->
+    <string name="settings_theme_title">Design</string>
+    <string name="settings_theme_system">Systemstandard</string>
+    <string name="settings_theme_light">Hell</string>
+    <string name="settings_theme_dark">Dunkel</string>
+    <string name="settings_dynamic_colors_title">Dynamische Farben</string>
+    <string name="settings_dynamic_colors_subtitle">Farben aus deinem Hintergrundbild verwenden</string>
+    
+    <!-- Default Sharing Section -->
+    <string name="settings_format_title">Format</string>
+    <string name="settings_quality_title">Qualität</string>
+    <string name="settings_quality_value">%1$d%%</string>
+    <string name="settings_max_size_title">Max. Größe</string>
+    <string name="settings_max_size_small">Klein (480p)</string>
+    <string name="settings_max_size_medium">Mittel (720p)</string>
+    <string name="settings_max_size_large">Groß (1080p)</string>
+    <string name="settings_max_size_original">Original</string>
+    <string name="settings_max_size_custom">%1$dp</string>
+    <string name="settings_keep_metadata_title">Metadaten beibehalten</string>
+    <string name="settings_keep_metadata_subtitle">Emoji-Tags beim Teilen beibehalten</string>
+    
+    <!-- Search Section -->
+    <string name="settings_semantic_search_title">Semantische Suche</string>
+    <string name="settings_semantic_search_subtitle">KI-gestützte Suche nach ähnlichen Memes</string>
+    <string name="settings_search_history_title">Suchverlauf</string>
+    <string name="settings_search_history_subtitle">Letzte Suchen speichern</string>
+    
+    <!-- Storage Section -->
+    <string name="settings_clear_cache_title">Cache leeren</string>
+    <string name="settings_clear_cache_subtitle">%1$s freigeben</string>
+    <string name="settings_export_data_title">Daten exportieren</string>
+    <string name="settings_export_data_subtitle">Deine Memes und Einstellungen sichern</string>
+    <string name="settings_import_data_title">Daten importieren</string>
+    <string name="settings_import_data_subtitle">Aus Backup wiederherstellen</string>
+    
+    <!-- About Section -->
+    <string name="settings_version_title">Version</string>
+    <string name="settings_open_source_licenses_title">Open-Source-Lizenzen</string>
+    <string name="settings_privacy_policy_title">Datenschutzrichtlinie</string>
+    
+    <!-- Clear Cache Dialog -->
+    <string name="settings_clear_cache_dialog_title">Cache leeren</string>
+    <string name="settings_clear_cache_dialog_message">Hiermit werden %1$s an zwischengespeicherten Daten gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.</string>
+    <string name="settings_clear_cache_dialog_confirm">Leeren</string>
+    <string name="settings_clear_cache_dialog_cancel">Abbrechen</string>
+    
+    <!-- Language Section -->
+    <string name="settings_language_title">Sprache</string>
+    <string name="settings_language_subtitle">App-Sprache auswählen</string>
+    <string name="settings_language_system">Systemstandard</string>
+    <string name="settings_language_en">English</string>
+    <string name="settings_language_cs">Čeština</string>
+    <string name="settings_language_de">Deutsch</string>
+    <string name="settings_language_es">Español</string>
+    <string name="settings_language_pt">Português</string>
+    
+    <!-- Snackbar Messages -->
+    <string name="settings_export_complete">Exportiert nach %1$s</string>
+    <string name="settings_import_complete">%1$d Memes importiert</string>
+</resources>

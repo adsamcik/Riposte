@@ -1,7 +1,9 @@
 package com.mememymood.feature.settings.presentation
 
 import android.content.Context
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.pm.PackageInfoCompat
+import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mememymood.core.datastore.PreferencesDataStore
@@ -39,9 +41,30 @@ class SettingsViewModel @Inject constructor(
     private val _effects = Channel<SettingsEffect>(Channel.BUFFERED)
     val effects = _effects.receiveAsFlow()
 
+    private val supportedLanguages = listOf(
+        AppLanguage(code = null, displayName = "System default", nativeName = "System default"),
+        AppLanguage(code = "en", displayName = "English", nativeName = "English"),
+        AppLanguage(code = "cs", displayName = "Czech", nativeName = "Čeština"),
+        AppLanguage(code = "de", displayName = "German", nativeName = "Deutsch"),
+        AppLanguage(code = "es", displayName = "Spanish", nativeName = "Español"),
+        AppLanguage(code = "pt", displayName = "Portuguese", nativeName = "Português"),
+    )
+
     init {
         loadSettings()
         calculateCacheSize()
+        loadCurrentLanguage()
+    }
+
+    private fun loadCurrentLanguage() {
+        val locales = AppCompatDelegate.getApplicationLocales()
+        val currentCode = if (locales.isEmpty) null else locales.toLanguageTags().split(",").firstOrNull()
+        _uiState.update {
+            it.copy(
+                currentLanguage = currentCode,
+                availableLanguages = supportedLanguages,
+            )
+        }
     }
 
     private fun loadSettings() {
@@ -82,6 +105,7 @@ class SettingsViewModel @Inject constructor(
         when (intent) {
             // Appearance
             is SettingsIntent.SetDarkMode -> setDarkMode(intent.mode)
+            is SettingsIntent.SetLanguage -> setLanguage(intent.languageCode)
             is SettingsIntent.SetDynamicColors -> setDynamicColors(intent.enabled)
 
             // Sharing
@@ -119,6 +143,16 @@ class SettingsViewModel @Inject constructor(
             val current = preferencesDataStore.appPreferences.first()
             preferencesDataStore.updateAppPreferences(current.copy(dynamicColors = enabled))
         }
+    }
+
+    private fun setLanguage(languageCode: String?) {
+        val localeList = if (languageCode == null) {
+            LocaleListCompat.getEmptyLocaleList()
+        } else {
+            LocaleListCompat.forLanguageTags(languageCode)
+        }
+        AppCompatDelegate.setApplicationLocales(localeList)
+        _uiState.update { it.copy(currentLanguage = languageCode) }
     }
 
     private fun setEnableSemanticSearch(enabled: Boolean) {

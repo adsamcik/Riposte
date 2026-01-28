@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- MemeCard Component -->
+    <string name="ui_meme_card_remove_from_favorites">Aus Favoriten entfernen</string>
+    <string name="ui_meme_card_add_to_favorites">Zu Favoriten hinzufügen</string>
+
+    <!-- LoadingStates Component -->
+    <string name="ui_loading_error_title">Hoppla!</string>
+    <string name="ui_loading_error_retry">Erneut versuchen</string>
+    <string name="ui_loading_no_results_title">Keine Ergebnisse gefunden</string>
+    <string name="ui_loading_no_results_message">Wir konnten keine Memes finden, die zu \"%1$s\" passen</string>
+    <string name="ui_loading_no_results_clear">Suche leeren</string>
+
+    <!-- SearchBar Component -->
+    <string name="ui_search_placeholder">Memes suchen…</string>
+    <string name="ui_search_icon_description">Suchen</string>
+    <string name="ui_search_clear_description">Suche leeren</string>
+</resources>

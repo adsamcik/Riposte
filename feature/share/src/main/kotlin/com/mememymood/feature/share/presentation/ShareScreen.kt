@@ -57,8 +57,19 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.mememymood.feature.share.R
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mememymood.core.model.ImageFormat
@@ -79,13 +90,13 @@ fun ShareScreen(
         viewModel.effects.collectLatest { effect ->
             when (effect) {
                 is ShareEffect.LaunchShareIntent -> {
-                    context.startActivity(android.content.Intent.createChooser(effect.intent, "Share Meme"))
+                    context.startActivity(android.content.Intent.createChooser(effect.intent, context.getString(R.string.share_chooser_title)))
                 }
                 is ShareEffect.ShowSnackbar -> {
                     snackbarHostState.showSnackbar(effect.message)
                 }
                 is ShareEffect.SavedToGallery -> {
-                    snackbarHostState.showSnackbar("Saved to gallery")
+                    snackbarHostState.showSnackbar(context.getString(R.string.share_message_saved_to_gallery))
                 }
                 is ShareEffect.NavigateBack -> {
                     onNavigateBack()
@@ -100,10 +111,10 @@ fun ShareScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Share Meme") },
+                title = { Text(stringResource(R.string.share_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.share_navigation_back))
                     }
                 },
             )
@@ -120,11 +131,12 @@ fun ShareScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(paddingValues),
+                        .padding(paddingValues)
+                        .semantics { liveRegion = LiveRegionMode.Assertive },
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        text = uiState.errorMessage ?: "Error",
+                        text = uiState.errorMessage ?: stringResource(R.string.share_error_generic),
                         color = MaterialTheme.colorScheme.error,
                     )
                 }
@@ -198,8 +210,8 @@ private fun ShareContent(
 
         // Toggles
         SettingToggle(
-            title = "Keep Metadata",
-            description = "Preserve emoji tags and other data",
+            title = stringResource(R.string.share_setting_keep_metadata_title),
+            description = stringResource(R.string.share_setting_keep_metadata_description),
             checked = !uiState.config.stripMetadata,
             onCheckedChange = { onIntent(ShareIntent.SetStripMetadata(!it)) },
         )
@@ -218,7 +230,7 @@ private fun ShareContent(
             ) {
                 Icon(Icons.Default.Download, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
-                Text("Save")
+                Text(stringResource(R.string.share_button_save))
             }
 
             Button(
@@ -228,7 +240,7 @@ private fun ShareContent(
             ) {
                 Icon(Icons.Default.Share, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
-                Text("Share")
+                Text(stringResource(R.string.share_button_share))
             }
         }
     }
@@ -257,9 +269,10 @@ private fun PreviewSection(
                 modifier = Modifier.padding(8.dp),
             ) {
                 Text(
-                    text = "Original",
+                    text = stringResource(R.string.share_preview_original),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.semantics { heading() },
                 )
                 Spacer(Modifier.height(4.dp))
                 Box(
@@ -272,7 +285,7 @@ private fun PreviewSection(
                     originalBitmap?.let { bitmap ->
                         Image(
                             bitmap = bitmap.asImageBitmap(),
-                            contentDescription = "Original",
+                            contentDescription = stringResource(R.string.share_content_description_original_image),
                             contentScale = ContentScale.Fit,
                             modifier = Modifier.fillMaxSize(),
                         )
@@ -293,9 +306,10 @@ private fun PreviewSection(
                 modifier = Modifier.padding(8.dp),
             ) {
                 Text(
-                    text = "Processed",
+                    text = stringResource(R.string.share_preview_processed),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.semantics { heading() },
                 )
                 Spacer(Modifier.height(4.dp))
                 Box(
@@ -320,7 +334,7 @@ private fun PreviewSection(
                         processedBitmap?.let { bitmap ->
                             Image(
                                 bitmap = bitmap.asImageBitmap(),
-                                contentDescription = "Processed",
+                                contentDescription = stringResource(R.string.share_content_description_processed_image),
                                 contentScale = ContentScale.Fit,
                                 modifier = Modifier.fillMaxSize(),
                             )
@@ -354,7 +368,7 @@ private fun FileSizeInfo(
         ) {
             Column {
                 Text(
-                    text = "Estimated Size",
+                    text = stringResource(R.string.share_size_estimated),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
                 )
@@ -366,13 +380,13 @@ private fun FileSizeInfo(
             }
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    text = "Original: $originalSize",
+                    text = stringResource(R.string.share_size_original, originalSize),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
                 )
                 if (compressionRatio > 0 && compressionRatio < 1) {
                     Text(
-                        text = "${((1 - compressionRatio) * 100).toInt()}% smaller",
+                        text = stringResource(R.string.share_size_smaller, ((1 - compressionRatio) * 100).toInt()),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                     )
@@ -391,9 +405,10 @@ private fun FormatSelector(
 ) {
     Column(modifier = modifier) {
         Text(
-            text = "Format",
+            text = stringResource(R.string.share_format_label),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.semantics { heading() },
         )
         Spacer(Modifier.height(8.dp))
         SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
@@ -423,12 +438,12 @@ private fun QualitySlider(
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
-                text = "Quality",
+                text = stringResource(R.string.share_quality_label),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
-                text = "$quality%",
+                text = stringResource(R.string.share_quality_percentage, quality),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary,
             )
@@ -450,9 +465,10 @@ private fun SizePresets(
 ) {
     Column(modifier = modifier) {
         Text(
-            text = "Max Size",
+            text = stringResource(R.string.share_size_max_label),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.semantics { heading() },
         )
         Spacer(Modifier.height(8.dp))
         Row(
@@ -460,10 +476,10 @@ private fun SizePresets(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             val presets = listOf(
-                480 to "Small",
-                720 to "Medium",
-                1080 to "Large",
-                2048 to "Original",
+                480 to stringResource(R.string.share_size_preset_small),
+                720 to stringResource(R.string.share_size_preset_medium),
+                1080 to stringResource(R.string.share_size_preset_large),
+                2048 to stringResource(R.string.share_size_preset_original),
             )
             presets.forEach { (dimension, label) ->
                 FilterChip(
@@ -485,10 +501,16 @@ private fun SettingToggle(
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val stateText = if (checked) "On" else "Off"
+    
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
+            .padding(vertical = 8.dp)
+            .semantics(mergeDescendants = true) {
+                role = Role.Switch
+                stateDescription = stateText
+            },
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {

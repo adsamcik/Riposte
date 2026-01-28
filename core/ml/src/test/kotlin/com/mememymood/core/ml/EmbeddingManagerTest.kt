@@ -42,7 +42,7 @@ class EmbeddingManagerTest {
         memeEmbeddingDao = mockk(relaxed = true)
         versionManager = mockk()
 
-        every { versionManager.currentModelVersion } returns "litert_use:1.0.0"
+        every { versionManager.currentModelVersion } returns "mediapipe_use:1.0.0"
 
         embeddingManager = EmbeddingManager(
             context = context,
@@ -74,7 +74,7 @@ class EmbeddingManagerTest {
         val savedEntity = entitySlot.captured
         assertThat(savedEntity.memeId).isEqualTo(memeId)
         assertThat(savedEntity.dimension).isEqualTo(512)
-        assertThat(savedEntity.modelVersion).isEqualTo("litert_use:1.0.0")
+        assertThat(savedEntity.modelVersion).isEqualTo("mediapipe_use:1.0.0")
         assertThat(savedEntity.needsRegeneration).isFalse()
     }
 
@@ -154,7 +154,7 @@ class EmbeddingManagerTest {
         coEvery { memeEmbeddingDao.countMemesWithoutEmbeddings() } returns 20
         coEvery { memeEmbeddingDao.countEmbeddingsNeedingRegeneration() } returns 5
         coEvery { memeEmbeddingDao.getEmbeddingCountByModelVersion() } returns listOf(
-            com.mememymood.core.database.dao.EmbeddingVersionCount("litert_use:1.0.0", 80),
+            com.mememymood.core.database.dao.EmbeddingVersionCount("mediapipe_use:1.0.0", 80),
             com.mememymood.core.database.dao.EmbeddingVersionCount("simple_hash:1.0.0", 20)
         )
 
@@ -167,7 +167,7 @@ class EmbeddingManagerTest {
         assertThat(stats.regenerationNeededCount).isEqualTo(5)
         assertThat(stats.totalPendingWork).isEqualTo(25)
         assertThat(stats.isFullyIndexed).isFalse()
-        assertThat(stats.embeddingsByVersion).containsEntry("litert_use:1.0.0", 80)
+        assertThat(stats.embeddingsByVersion).containsEntry("mediapipe_use:1.0.0", 80)
     }
 
     @Test
@@ -180,7 +180,7 @@ class EmbeddingManagerTest {
         embeddingManager.checkAndHandleModelUpgrade()
 
         // Then
-        coVerify { memeEmbeddingDao.markOutdatedForRegeneration("litert_use:1.0.0") }
+        coVerify { memeEmbeddingDao.markOutdatedForRegeneration("mediapipe_use:1.0.0") }
         coVerify { versionManager.updateToCurrentVersion() }
     }
 

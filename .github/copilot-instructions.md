@@ -182,26 +182,56 @@ class ScreenViewModel @Inject constructor(
 The project includes a Python CLI tool at `tools/meme-my-mood-cli/` for batch annotating meme images with AI.
 
 ### Key Points
-- Uses **GitHub Models API** at `https://models.github.ai/inference/chat/completions`
-- NOT the Copilot SDK (which requires Copilot CLI backend)
-- Authentication: GitHub PAT with `models` scope
-- Model format: `openai/gpt-4.1` (provider prefix required)
+- Uses **GitHub Copilot SDK** (`github-copilot-sdk` package)
+- Requires GitHub Copilot CLI installed and in PATH
+- Authentication: Handled by Copilot CLI (`copilot auth login`)
+- Model: `gpt-4.1` (no provider prefix needed with SDK)
 - Outputs JSON sidecar files matching `MemeMetadata` schema
 - **No fallback behavior** - errors should propagate, not return placeholder data
 - **venv required** - run `scripts/setup.ps1` or `scripts/setup.sh`
+- **Multilingual support** - use `--languages` option (e.g., `--languages en,cs,de`)
 
-### Metadata Schema
+### Rate Limiting
+Based on GitHub Copilot SDK best practices (January 2026):
+- **1-second minimum delay** between requests (per SDK documentation)
+- Handles 429 (rate limit), 500, 502, 504 (server errors) with exponential backoff
+- Random jitter (25%) to prevent thundering herd
+- Adaptive throttling based on recent error rate
+- Server errors use shorter backoff (transient failures)
+- Up to 8 automatic retries per image before giving up
+
+### Metadata Schema (v1.1)
 ```json
 {
-  "schemaVersion": "1.0",
+  "schemaVersion": "1.1",
   "emojis": ["😂", "🔥"],
   "title": "Plain descriptive title",
   "description": "Brief description",
   "tags": ["tag1", "tag2"],
   "textContent": "Extracted text from image",
   "createdAt": "2026-01-25T12:00:00+00:00",
-  "appVersion": "cli-1.0.0"
+  "appVersion": "cli-1.0.0",
+  "primaryLanguage": "en",
+  "localizations": {
+    "cs": {
+      "title": "Jednoduchý popisný titul",
+      "description": "Stručný popis",
+      "tags": ["tag1", "tag2"]
+    }
+  }
 }
+```
+
+### Multilingual Usage
+```bash
+# English only (default)
+meme-cli annotate ./memes
+
+# English primary, with Czech and German translations
+meme-cli annotate ./memes --languages en,cs,de
+
+# Czech only
+meme-cli annotate ./memes --languages cs
 ```
 
 ### Title Guidelines

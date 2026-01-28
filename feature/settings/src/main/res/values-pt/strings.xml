@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Screen Title -->
+    <string name="settings_title">Configurações</string>
+    
+    <!-- Navigation -->
+    <string name="settings_navigate_back">Voltar</string>
+    
+    <!-- Section Headers -->
+    <string name="settings_section_appearance">Aparência</string>
+    <string name="settings_section_default_sharing">Compartilhamento Padrão</string>
+    <string name="settings_section_search">Pesquisa</string>
+    <string name="settings_section_storage">Armazenamento</string>
+    <string name="settings_section_about">Sobre</string>
+    
+    <!-- Appearance Section -->
+    <string name="settings_theme_title">Tema</string>
+    <string name="settings_theme_system">Padrão do sistema</string>
+    <string name="settings_theme_light">Claro</string>
+    <string name="settings_theme_dark">Escuro</string>
+    <string name="settings_dynamic_colors_title">Cores Dinâmicas</string>
+    <string name="settings_dynamic_colors_subtitle">Usar cores do seu papel de parede</string>
+    
+    <!-- Default Sharing Section -->
+    <string name="settings_format_title">Formato</string>
+    <string name="settings_quality_title">Qualidade</string>
+    <string name="settings_quality_value">%1$d%%</string>
+    <string name="settings_max_size_title">Tamanho Máximo</string>
+    <string name="settings_max_size_small">Pequeno (480p)</string>
+    <string name="settings_max_size_medium">Médio (720p)</string>
+    <string name="settings_max_size_large">Grande (1080p)</string>
+    <string name="settings_max_size_original">Original</string>
+    <string name="settings_max_size_custom">%1$dp</string>
+    <string name="settings_keep_metadata_title">Manter Metadados</string>
+    <string name="settings_keep_metadata_subtitle">Preservar tags de emoji ao compartilhar</string>
+    
+    <!-- Search Section -->
+    <string name="settings_semantic_search_title">Pesquisa Semântica</string>
+    <string name="settings_semantic_search_subtitle">Pesquisa com IA para memes semelhantes</string>
+    <string name="settings_search_history_title">Histórico de Pesquisa</string>
+    <string name="settings_search_history_subtitle">Salvar pesquisas recentes</string>
+    
+    <!-- Storage Section -->
+    <string name="settings_clear_cache_title">Limpar Cache</string>
+    <string name="settings_clear_cache_subtitle">Liberar %1$s</string>
+    <string name="settings_export_data_title">Exportar Dados</string>
+    <string name="settings_export_data_subtitle">Fazer backup dos seus memes e configurações</string>
+    <string name="settings_import_data_title">Importar Dados</string>
+    <string name="settings_import_data_subtitle">Restaurar do backup</string>
+    
+    <!-- About Section -->
+    <string name="settings_version_title">Versão</string>
+    <string name="settings_open_source_licenses_title">Licenças de Código Aberto</string>
+    <string name="settings_privacy_policy_title">Política de Privacidade</string>
+    
+    <!-- Clear Cache Dialog -->
+    <string name="settings_clear_cache_dialog_title">Limpar Cache</string>
+    <string name="settings_clear_cache_dialog_message">Isso excluirá %1$s de dados em cache. Esta ação não pode ser desfeita.</string>
+    <string name="settings_clear_cache_dialog_confirm">Limpar</string>
+    <string name="settings_clear_cache_dialog_cancel">Cancelar</string>
+    
+    <!-- Language Section -->
+    <string name="settings_language_title">Idioma</string>
+    <string name="settings_language_subtitle">Escolher idioma do app</string>
+    <string name="settings_language_system">Padrão do sistema</string>
+    <string name="settings_language_en">English</string>
+    <string name="settings_language_cs">Čeština</string>
+    <string name="settings_language_de">Deutsch</string>
+    <string name="settings_language_es">Español</string>
+    <string name="settings_language_pt">Português</string>
+    
+    <!-- Snackbar Messages -->
+    <string name="settings_export_complete">Exportado para %1$s</string>
+    <string name="settings_import_complete">Importado(s) %1$d meme(s)</string>
+</resources>

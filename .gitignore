@@ -39,3 +39,8 @@ Desktop.ini
 
 # Kotlin
 *.kotlin_module
+
+# ML Models - platform-specific variants (download with tools/download-embeddinggemma.ps1 -AllVariants)
+# Generic model + tokenizer are tracked via Git LFS
+app/src/main/assets/embedding_models/*.qualcomm.*.tflite
+app/src/main/assets/embedding_models/*.mediatek.*.tflite

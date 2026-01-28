@@ -39,8 +39,17 @@ dependencies {
     // ML Kit
     implementation(libs.bundles.mlkit)
 
+    // MediaPipe (for semantic text embeddings - legacy USE model)
+    implementation(libs.mediapipe.tasks.text)
+
+    // Google AI Edge RAG SDK (for EmbeddingGemma)
+    implementation(libs.ai.edge.rag)
+
     // LiteRT (for semantic embeddings - replaces TensorFlow Lite)
     implementation(libs.bundles.litert)
+
+    // DJL HuggingFace Tokenizers (for EmbeddingGemma tokenization)
+    implementation(libs.djl.tokenizers)
 
     // ExifInterface for metadata handling
     implementation(libs.exifinterface)

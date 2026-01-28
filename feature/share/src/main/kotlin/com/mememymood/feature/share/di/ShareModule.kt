@@ -1,6 +1,8 @@
 package com.mememymood.feature.share.di
 
+import com.mememymood.feature.share.data.DefaultBitmapLoader
 import com.mememymood.feature.share.data.ShareRepositoryImpl
+import com.mememymood.feature.share.domain.BitmapLoader
 import com.mememymood.feature.share.domain.repository.ShareRepository
 import dagger.Binds
 import dagger.Module
@@ -17,4 +19,10 @@ abstract class ShareModule {
     abstract fun bindShareRepository(
         impl: ShareRepositoryImpl,
     ): ShareRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindBitmapLoader(
+        impl: DefaultBitmapLoader,
+    ): BitmapLoader
 }

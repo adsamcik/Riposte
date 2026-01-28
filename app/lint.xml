@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+    <!-- Treat hardcoded text as error to enforce localization -->
+    <issue id="HardcodedText" severity="error" />
+    
+    <!-- Treat missing translations as error -->
+    <issue id="MissingTranslation" severity="error" />
+    
+    <!-- Ensure all strings have translations for configured locales -->
+    <issue id="ExtraTranslation" severity="warning" />
+    
+    <!-- Accessibility checks -->
+    <issue id="ContentDescription" severity="error" />
+    <issue id="LabelFor" severity="warning" />
+    
+    <!-- Known issues to ignore -->
+    <issue id="PropertyEscape" severity="ignore" />
+</lint>

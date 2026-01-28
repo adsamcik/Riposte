@@ -1,6 +1,7 @@
 package com.mememymood.feature.settings.presentation.component
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.Switch
@@ -8,6 +9,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 
 @Composable
 fun SwitchSettingItem(
@@ -19,6 +26,9 @@ fun SwitchSettingItem(
     icon: ImageVector? = null,
     enabled: Boolean = true,
 ) {
+    val stateText = if (checked) "On" else "Off"
+    val description = if (subtitle != null) "$title, $subtitle" else title
+    
     ListItem(
         headlineContent = { Text(title) },
         supportingContent = subtitle?.let { { Text(it) } },
@@ -28,12 +38,21 @@ fun SwitchSettingItem(
         trailingContent = {
             Switch(
                 checked = checked,
-                onCheckedChange = onCheckedChange,
+                onCheckedChange = null,
                 enabled = enabled,
+                modifier = Modifier.clearAndSetSemantics { },
             )
         },
-        modifier = modifier.clickable(enabled = enabled) {
-            onCheckedChange(!checked)
-        },
+        modifier = modifier
+            .toggleable(
+                value = checked,
+                enabled = enabled,
+                role = Role.Switch,
+                onValueChange = onCheckedChange,
+            )
+            .semantics {
+                contentDescription = description
+                stateDescription = stateText
+            },
     )
 }

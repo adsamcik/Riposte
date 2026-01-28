@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Meme My Mood</string>
+    
+    <!-- General -->
+    <string name="ok">OK</string>
+    <string name="cancel">Zrušit</string>
+    <string name="delete">Smazat</string>
+    <string name="share">Sdílet</string>
+    <string name="save">Uložit</string>
+    <string name="search">Hledat</string>
+    <string name="settings">Nastavení</string>
+    
+    <!-- Gallery -->
+    <string name="gallery_title">Meme My Mood</string>
+    <string name="gallery_empty_title">Zatím žádné memy</string>
+    <string name="gallery_empty_message">Importuj nějaké memy a můžeme začít!</string>
+    <string name="gallery_import_button">Importovat memy</string>
+    <string name="gallery_favorites">Oblíbené</string>
+    <string name="gallery_all_memes">Všechny memy</string>
+    
+    <!-- Import -->
+    <string name="import_title">Importovat memy</string>
+    <string name="import_select_images">Vybrat obrázky</string>
+    <string name="import_add_emojis">Přidat emoji</string>
+    <string name="import_processing">Zpracovávám…</string>
+    
+    <!-- Search -->
+    <string name="search_hint">Hledat memy…</string>
+    <string name="search_no_results">Žádné memy nenalezeny</string>
+    <string name="search_recent">Poslední hledání</string>
+    
+    <!-- Share -->
+    <string name="share_title">Sdílet meme</string>
+    <string name="share_format">Formát</string>
+    <string name="share_quality">Kvalita</string>
+    <string name="share_size">Max. velikost</string>
+    
+    <!-- Settings -->
+    <string name="settings_appearance">Vzhled</string>
+    <string name="settings_dark_mode">Tmavý režim</string>
+    <string name="settings_dynamic_colors">Dynamické barvy</string>
+    <string name="settings_sharing">Sdílení</string>
+    <string name="settings_default_format">Výchozí formát</string>
+    <string name="settings_default_quality">Výchozí kvalita</string>
+    <string name="settings_ai">AI funkce</string>
+    <string name="settings_semantic_search">Sémantické vyhledávání</string>
+    <string name="settings_auto_extract_text">Automatická extrakce textu</string>
+</resources>

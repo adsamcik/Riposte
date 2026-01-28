@@ -24,8 +24,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import com.mememymood.core.ui.R
 import com.mememymood.core.ui.theme.MoodShapes
 
 /**
@@ -37,11 +39,12 @@ fun SearchBar(
     onQueryChange: (String) -> Unit,
     onSearch: () -> Unit,
     modifier: Modifier = Modifier,
-    placeholder: String = "Search memes...",
+    placeholder: String? = null,
     autoFocus: Boolean = false
 ) {
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
+    val defaultPlaceholder = stringResource(R.string.ui_search_placeholder)
 
     LaunchedEffect(autoFocus) {
         if (autoFocus) {
@@ -56,12 +59,12 @@ fun SearchBar(
             .fillMaxWidth()
             .focusRequester(focusRequester),
         placeholder = {
-            Text(text = placeholder)
+            Text(text = placeholder ?: defaultPlaceholder)
         },
         leadingIcon = {
             Icon(
                 imageVector = Icons.Default.Search,
-                contentDescription = "Search",
+                contentDescription = stringResource(R.string.ui_search_icon_description),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         },
@@ -74,7 +77,7 @@ fun SearchBar(
                 IconButton(onClick = { onQueryChange("") }) {
                     Icon(
                         imageVector = Icons.Default.Clear,
-                        contentDescription = "Clear search",
+                        contentDescription = stringResource(R.string.ui_search_clear_description),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }

@@ -149,7 +149,7 @@ class EmbeddingGenerationWorker @AssistedInject constructor(
         const val WORK_NAME = "embedding_generation_work"
         const val BATCH_SIZE = 20
         const val MAX_RETRY_COUNT = 3
-        const val CURRENT_MODEL_VERSION = "litert_use:1.0.0"
+        const val CURRENT_MODEL_VERSION = "mediapipe_use:1.0.0"
         
         // Output data keys
         const val KEY_PROCESSED_COUNT = "processed_count"

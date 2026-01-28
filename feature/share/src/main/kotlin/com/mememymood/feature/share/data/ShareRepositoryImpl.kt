@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.core.content.FileProvider
+import com.mememymood.core.common.AppConstants
 import com.mememymood.core.database.dao.MemeDao
 import com.mememymood.core.datastore.PreferencesDataStore
 import com.mememymood.core.ml.XmpMetadataHandler
@@ -80,12 +81,12 @@ class ShareRepositoryImpl @Inject constructor(
                     // Embed XMP metadata if not stripping
                     if (!config.stripMetadata) {
                         val metadata = MemeMetadata(
-                            schemaVersion = "1.0",
+                            schemaVersion = AppConstants.METADATA_SCHEMA_VERSION,
                             emojis = meme.emojiTags.map { it.emoji },
                             title = meme.title,
                             description = meme.description,
                             createdAt = Instant.now().toString(),
-                            appVersion = "1.0.0",
+                            appVersion = AppConstants.APP_VERSION,
                         )
                         xmpMetadataHandler.writeMetadata(outputFile.absolutePath, metadata)
                     }
@@ -193,13 +194,36 @@ class ShareRepositoryImpl @Inject constructor(
     }
 
     private fun clearOldCacheFiles() {
-        val maxAge = 24 * 60 * 60 * 1000L // 24 hours
         val now = System.currentTimeMillis()
 
         shareCacheDir.listFiles()?.forEach { file ->
-            if (now - file.lastModified() > maxAge) {
+            if (now - file.lastModified() > CACHE_MAX_AGE_MS) {
                 file.delete()
             }
+        }
+    }
+
+    companion object {
+        /** Maximum age for cached share files before cleanup (24 hours). */
+        private const val CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000L
+    }
+
+    /**
+     * Parse emoji tags from the stored JSON string.
+     * Handles both comma-separated format and potential JSON array format for backwards compatibility.
+     */
+    private fun parseEmojiTags(emojiTagsJson: String): List<EmojiTag> {
+        if (emojiTagsJson.isBlank()) return emptyList()
+        
+        return try {
+            // Standard format: comma-separated emoji characters
+            emojiTagsJson.split(",")
+                .map { it.trim() }
+                .filter { it.isNotEmpty() }
+                .map { EmojiTag.fromEmoji(it) }
+        } catch (e: Exception) {
+            // If parsing fails, return empty list rather than crash
+            emptyList()
         }
     }
 
@@ -213,9 +237,7 @@ class ShareRepositoryImpl @Inject constructor(
             height = height,
             fileSizeBytes = fileSizeBytes,
             importedAt = importedAt,
-            emojiTags = emojiTagsJson.split(",")
-                .filter { it.isNotEmpty() }
-                .map { EmojiTag.fromEmoji(it.trim()) },
+            emojiTags = parseEmojiTags(emojiTagsJson),
             title = title,
             description = description,
             textContent = textContent,

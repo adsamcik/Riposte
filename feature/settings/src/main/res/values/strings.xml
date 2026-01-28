@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Screen Title -->
+    <string name="settings_title">Settings</string>
+    
+    <!-- Navigation -->
+    <string name="settings_navigate_back">Back</string>
+    
+    <!-- Section Headers -->
+    <string name="settings_section_appearance">Appearance</string>
+    <string name="settings_section_default_sharing">Default Sharing</string>
+    <string name="settings_section_search">Search</string>
+    <string name="settings_section_storage">Storage</string>
+    <string name="settings_section_about">About</string>
+    
+    <!-- Appearance Section -->
+    <string name="settings_theme_title">Theme</string>
+    <string name="settings_theme_system">System default</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_dynamic_colors_title">Dynamic Colors</string>
+    <string name="settings_dynamic_colors_subtitle">Use colors from your wallpaper</string>
+    
+    <!-- Default Sharing Section -->
+    <string name="settings_format_title">Format</string>
+    <string name="settings_quality_title">Quality</string>
+    <string name="settings_quality_value">%1$d%%</string>
+    <string name="settings_max_size_title">Max Size</string>
+    <string name="settings_max_size_small">Small (480p)</string>
+    <string name="settings_max_size_medium">Medium (720p)</string>
+    <string name="settings_max_size_large">Large (1080p)</string>
+    <string name="settings_max_size_original">Original</string>
+    <string name="settings_max_size_custom">%1$dp</string>
+    <string name="settings_keep_metadata_title">Keep Metadata</string>
+    <string name="settings_keep_metadata_subtitle">Preserve emoji tags when sharing</string>
+    
+    <!-- Search Section -->
+    <string name="settings_semantic_search_title">Semantic Search</string>
+    <string name="settings_semantic_search_subtitle">AI-powered search for similar memes</string>
+    <string name="settings_search_history_title">Search History</string>
+    <string name="settings_search_history_subtitle">Save recent searches</string>
+    
+    <!-- Storage Section -->
+    <string name="settings_clear_cache_title">Clear Cache</string>
+    <string name="settings_clear_cache_subtitle">Free up %1$s</string>
+    <string name="settings_export_data_title">Export Data</string>
+    <string name="settings_export_data_subtitle">Backup your memes and settings</string>
+    <string name="settings_import_data_title">Import Data</string>
+    <string name="settings_import_data_subtitle">Restore from backup</string>
+    
+    <!-- About Section -->
+    <string name="settings_version_title">Version</string>
+    <string name="settings_open_source_licenses_title">Open Source Licenses</string>
+    <string name="settings_privacy_policy_title">Privacy Policy</string>
+    
+    <!-- Clear Cache Dialog -->
+    <string name="settings_clear_cache_dialog_title">Clear Cache</string>
+    <string name="settings_clear_cache_dialog_message">This will delete %1$s of cached data. This action cannot be undone.</string>
+    <string name="settings_clear_cache_dialog_confirm">Clear</string>
+    <string name="settings_clear_cache_dialog_cancel">Cancel</string>
+    
+    <!-- Language Section -->
+    <string name="settings_language_title">Language</string>
+    <string name="settings_language_subtitle">Choose app language</string>
+    <string name="settings_language_system">System default</string>
+    <string name="settings_language_en">English</string>
+    <string name="settings_language_cs">Čeština</string>
+    <string name="settings_language_de">Deutsch</string>
+    <string name="settings_language_es">Español</string>
+    <string name="settings_language_pt">Português</string>
+    
+    <!-- Snackbar Messages -->
+    <string name="settings_export_complete">Exported to %1$s</string>
+    <string name="settings_import_complete">Imported %1$d memes</string>
+</resources>

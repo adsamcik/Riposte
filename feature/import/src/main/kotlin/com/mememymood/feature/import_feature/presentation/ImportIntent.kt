@@ -86,4 +86,9 @@ sealed interface ImportIntent {
      * Pick more images.
      */
     data object PickMoreImages : ImportIntent
+
+    /**
+     * Pick a .meme.zip bundle file to import.
+     */
+    data object PickZipBundle : ImportIntent
 }

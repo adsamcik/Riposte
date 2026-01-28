@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -26,6 +28,28 @@ android {
         }
     }
 
+    // Automatic per-app language support (AGP 8.1+)
+    androidResources {
+        generateLocaleConfig = true
+        // Only include supported locales in APK
+        localeFilters += setOf("en", "cs", "de", "es", "pt")
+    }
+
+    // Release signing configuration
+    signingConfigs {
+        create("release") {
+            val keystorePropertiesFile = rootProject.file("local.properties")
+            if (keystorePropertiesFile.exists()) {
+                val properties = Properties()
+                keystorePropertiesFile.inputStream().use { stream -> properties.load(stream) }
+                storeFile = properties.getProperty("RELEASE_STORE_FILE")?.let { path -> file(path) }
+                storePassword = properties.getProperty("RELEASE_STORE_PASSWORD")
+                keyAlias = properties.getProperty("RELEASE_KEY_ALIAS")
+                keyPassword = properties.getProperty("RELEASE_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
@@ -34,6 +58,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
         }
         debug {
             isDebuggable = true
@@ -59,7 +84,9 @@ android {
 
     lint {
         disable += "PropertyEscape"
-        abortOnError = false
+        abortOnError = true
+        checkReleaseBuilds = true
+        lintConfig = file("lint.xml")
     }
 }
 
@@ -82,6 +109,8 @@ dependencies {
     // Core Android
     implementation(libs.core.ktx)
     implementation(libs.activity.compose)
+    implementation(libs.appcompat)
+    implementation(libs.core.splashscreen)
 
     // Compose
     implementation(platform(libs.compose.bom))

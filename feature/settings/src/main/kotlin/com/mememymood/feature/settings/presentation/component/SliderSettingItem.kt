@@ -25,9 +25,11 @@ fun SliderSettingItem(
     icon: ImageVector? = null,
     valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
     steps: Int = 0,
-    valueLabel: ((Float) -> String)? = null,
+    valueLabel: @Composable ((Float) -> String)? = null,
     enabled: Boolean = true,
 ) {
+    val labelText = valueLabel?.invoke(value)
+    
     Column(modifier = modifier) {
         ListItem(
             headlineContent = {
@@ -35,9 +37,9 @@ fun SliderSettingItem(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(title, modifier = Modifier.weight(1f))
-                    valueLabel?.let { formatter ->
+                    labelText?.let { text ->
                         Text(
-                            text = formatter(value),
+                            text = text,
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.primary,
                         )

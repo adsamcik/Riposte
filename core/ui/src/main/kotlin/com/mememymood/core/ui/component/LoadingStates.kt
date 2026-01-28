@@ -18,9 +18,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mememymood.core.ui.R
 
 /**
  * Full-screen loading indicator.
@@ -114,10 +116,10 @@ fun ErrorState(
 ) {
     EmptyState(
         emoji = "😵",
-        title = "Oops!",
+        title = stringResource(R.string.ui_loading_error_title),
         message = message,
         modifier = modifier,
-        actionLabel = if (onRetry != null) "Try Again" else null,
+        actionLabel = if (onRetry != null) stringResource(R.string.ui_loading_error_retry) else null,
         onAction = onRetry
     )
 }
@@ -133,10 +135,10 @@ fun NoSearchResults(
 ) {
     EmptyState(
         emoji = "🔍",
-        title = "No results found",
-        message = "We couldn't find any memes matching \"$query\"",
+        title = stringResource(R.string.ui_loading_no_results_title),
+        message = stringResource(R.string.ui_loading_no_results_message, query),
         modifier = modifier,
-        actionLabel = if (onClearSearch != null) "Clear Search" else null,
+        actionLabel = if (onClearSearch != null) stringResource(R.string.ui_loading_no_results_clear) else null,
         onAction = onClearSearch
     )
 }

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Meme My Mood</string>
+    
+    <!-- General -->
+    <string name="ok">Aceptar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="delete">Eliminar</string>
+    <string name="share">Compartir</string>
+    <string name="save">Guardar</string>
+    <string name="search">Buscar</string>
+    <string name="settings">Ajustes</string>
+    
+    <!-- Gallery -->
+    <string name="gallery_title">Meme My Mood</string>
+    <string name="gallery_empty_title">Aún no hay memes</string>
+    <string name="gallery_empty_message">¡Importa algunos memes para empezar!</string>
+    <string name="gallery_import_button">Importar Memes</string>
+    <string name="gallery_favorites">Favoritos</string>
+    <string name="gallery_all_memes">Todos los Memes</string>
+    
+    <!-- Import -->
+    <string name="import_title">Importar Memes</string>
+    <string name="import_select_images">Seleccionar Imágenes</string>
+    <string name="import_add_emojis">Añadir Emojis</string>
+    <string name="import_processing">Procesando…</string>
+    
+    <!-- Search -->
+    <string name="search_hint">Buscar memes…</string>
+    <string name="search_no_results">No se encontraron memes</string>
+    <string name="search_recent">Búsquedas Recientes</string>
+    
+    <!-- Share -->
+    <string name="share_title">Compartir Meme</string>
+    <string name="share_format">Formato</string>
+    <string name="share_quality">Calidad</string>
+    <string name="share_size">Tamaño Máximo</string>
+    
+    <!-- Settings -->
+    <string name="settings_appearance">Apariencia</string>
+    <string name="settings_dark_mode">Modo Oscuro</string>
+    <string name="settings_dynamic_colors">Colores Dinámicos</string>
+    <string name="settings_sharing">Compartir</string>
+    <string name="settings_default_format">Formato Predeterminado</string>
+    <string name="settings_default_quality">Calidad Predeterminada</string>
+    <string name="settings_ai">Funciones de IA</string>
+    <string name="settings_semantic_search">Búsqueda Semántica</string>
+    <string name="settings_auto_extract_text">Extraer Texto Automáticamente</string>
+</resources>

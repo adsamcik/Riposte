@@ -93,9 +93,11 @@ class EmbeddingModelVersionManager @Inject constructor(
      */
     fun getCurrentEmbeddingDimension(): Int {
         return when {
+            currentModelVersion.startsWith("embeddinggemma") -> 768
+            currentModelVersion.startsWith("mediapipe_use") -> 512
             currentModelVersion.startsWith("litert_use") -> 512
             currentModelVersion.startsWith("simple_hash") -> 128
-            else -> 512
+            else -> 768
         }
     }
 
@@ -125,6 +127,10 @@ class EmbeddingModelVersionManager @Inject constructor(
 
     private fun getModelDescription(version: String): String {
         return when {
+            version.startsWith("embeddinggemma") ->
+                "EmbeddingGemma 300M via AI Edge RAG SDK for high-quality semantic embeddings (768 dims)"
+            version.startsWith("mediapipe_use") ->
+                "Universal Sentence Encoder via MediaPipe for semantic text embeddings"
             version.startsWith("litert_use") -> 
                 "Universal Sentence Encoder via LiteRT for semantic text embeddings"
             version.startsWith("simple_hash") -> 
@@ -138,10 +144,10 @@ class EmbeddingModelVersionManager @Inject constructor(
          * Current model version. 
          * UPDATE THIS when changing the embedding model.
          */
-        const val CURRENT_VERSION = "litert_use:1.0.0"
+        const val CURRENT_VERSION = "embeddinggemma:1.0.0"
         
         /**
-         * Fallback model version for when LiteRT is unavailable.
+         * Fallback model version for when EmbeddingGemma is unavailable.
          */
         const val FALLBACK_VERSION = "simple_hash:1.0.0"
 

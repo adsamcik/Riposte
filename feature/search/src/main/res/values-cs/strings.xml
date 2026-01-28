@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Search Bar -->
+    <string name="search_placeholder">Hledej memy podle textu, emoji nebo popiš, co hledáš…</string>
+    <string name="search_content_description">Pole pro vyhledávání memů</string>
+
+    <!-- Search Bar Actions -->
+    <string name="search_action_close">Zavřít vyhledávání</string>
+    <string name="search_action_voice">Hlasové vyhledávání</string>
+    <string name="search_action_clear">Vymazat hledaný výraz</string>
+
+    <!-- Search Modes -->
+    <string name="search_mode_text">Text</string>
+    <string name="search_mode_ai">AI</string>
+    <string name="search_mode_hybrid">Hybridní</string>
+    <string name="search_mode_content_description">Režim vyhledávání: %1$s</string>
+
+    <!-- Emoji Filter Section -->
+    <string name="search_filter_emoji_title">Filtrovat podle emoji</string>
+    <string name="search_filter_emoji_clear">Vymazat (%1$d)</string>
+    <string name="search_filter_emoji_clear_content_description">Vymazat %1$d vybraných emoji filtrů</string>
+    <string name="search_filter_emoji_content_description">Filtr emoji %1$s</string>
+    <string name="search_filter_emoji_selected_content_description">Filtr emoji %1$s, vybráno</string>
+
+    <!-- Emoji Labels -->
+    <string name="search_emoji_joy">Radost</string>
+    <string name="search_emoji_heart">Srdce</string>
+    <string name="search_emoji_fire">Oheň</string>
+    <string name="search_emoji_heart_eyes">Zamilované oči</string>
+    <string name="search_emoji_rofl">Válím se smíchy</string>
+    <string name="search_emoji_blush">Červenání</string>
+    <string name="search_emoji_pray">Modlení</string>
+    <string name="search_emoji_crying">Pláč</string>
+    <string name="search_emoji_kiss">Polibek</string>
+    <string name="search_emoji_thumbs_up">Palec nahoru</string>
+    <string name="search_emoji_100">100</string>
+    <string name="search_emoji_party">Párty</string>
+    <string name="search_emoji_cool">Frajer</string>
+    <string name="search_emoji_pleading">Prosící</string>
+    <string name="search_emoji_sparkles">Jiskry</string>
+
+    <!-- Quick Filters -->
+    <string name="search_quick_filter_favorites">Oblíbené</string>
+    <string name="search_quick_filter_recent">Nedávné</string>
+    <string name="search_quick_filter_trending">Populární</string>
+    <string name="search_quick_filter_funny">Vtipné</string>
+    <string name="search_quick_filter_love">Láska</string>
+    <string name="search_quick_filter_reactions">Reakce</string>
+    <string name="search_quick_filter_content_description">Filtr %1$s</string>
+    <string name="search_quick_filter_selected_content_description">Filtr %1$s, vybráno</string>
+
+    <!-- Suggestions Section -->
+    <string name="search_suggestions_title">Návrhy</string>
+    <string name="search_suggestions_content_description">Návrh: %1$s</string>
+
+    <!-- Recent Searches Section -->
+    <string name="search_recent_title">Poslední hledání</string>
+    <string name="search_recent_clear_all">Vymazat vše</string>
+    <string name="search_recent_clear_all_content_description">Vymazat všechna poslední hledání</string>
+    <string name="search_recent_item_content_description">Poslední hledání: %1$s. Přejeď doleva pro smazání.</string>
+    <string name="search_recent_delete">Smazat</string>
+
+    <!-- Results Toolbar -->
+    <string name="search_results_sort_content_description">Seřadit výsledky podle %1$s</string>
+    <string name="search_results_view_switch_list">Přepnout na seznam</string>
+    <string name="search_results_view_switch_grid">Přepnout na mřížku</string>
+
+    <!-- Sort Order Labels -->
+    <string name="search_sort_relevance">Relevance</string>
+    <string name="search_sort_newest">Nejnovější</string>
+    <string name="search_sort_oldest">Nejstarší</string>
+    <string name="search_sort_most_used">Nejpoužívanější</string>
+
+    <!-- Result Summary -->
+    <string name="search_result_searching">Hledám…</string>
+    <string name="search_result_none">Žádné výsledky</string>
+    <string name="search_result_summary">%1$d výsledků za %2$dms</string>
+
+    <!-- Empty State -->
+    <string name="search_empty_icon">🔍</string>
+    <string name="search_empty_title">Prohledej své memy</string>
+    <string name="search_empty_description">Najdi memy podle textu, popisu nebo použij AI sémantické vyhledávání</string>
+
+    <!-- Search Tips -->
+    <string name="search_tips_title">💡 Tipy pro vyhledávání</string>
+    <string name="search_tip_keywords">Použij klíčová slova jako \"kočka\", \"vtipné\", \"reakce\"</string>
+    <string name="search_tip_ai_mode">Zkus AI režim pro přirozený jazyk: \"meme o pondělcích\"</string>
+    <string name="search_tip_emoji_filter">Filtruj podle emoji pro zúžení výsledků</string>
+
+    <!-- No Results State -->
+    <string name="search_no_results_title">Nic nenalezeno</string>
+    <string name="search_no_results_description">Žádné memy pro \"%1$s\" nenalezeny</string>
+
+    <!-- No Results Suggestions -->
+    <string name="search_no_results_try_title">Zkus toto:</string>
+    <string name="search_no_results_tip_typos">Zkontroluj překlepy ve vyhledávání</string>
+    <string name="search_no_results_tip_keywords">Zkus širší nebo jiná klíčová slova</string>
+    <string name="search_no_results_tip_ai_mode">Přepni do AI režimu pro sémantické hledání</string>
+    <string name="search_no_results_tip_filters">Odeber některé filtry</string>
+    <string name="search_no_results_clear_filters">Vymazat všechny filtry</string>
+
+    <!-- Result Card -->
+    <string name="search_result_card_content_description">%1$s, %2$d%% shoda</string>
+    <string name="search_result_more_emojis">+%1$d</string>
+    <string name="search_result_relevance_percent">%1$d%%</string>
+</resources>

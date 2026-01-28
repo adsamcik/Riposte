@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.provider.OpenableColumns
+import com.mememymood.core.common.AppConstants
 import com.mememymood.core.database.dao.EmojiTagDao
 import com.mememymood.core.database.dao.MemeDao
 import com.mememymood.core.database.entity.EmojiTagEntity
@@ -88,12 +89,12 @@ class ImportRepositoryImpl @Inject constructor(
             // Create XMP metadata and embed in image
             val xmpMetadata = if (emojis.isNotEmpty()) {
                 MemeMetadata(
-                    schemaVersion = "1.0",
+                    schemaVersion = AppConstants.METADATA_SCHEMA_VERSION,
                     emojis = emojis,
                     title = title,
                     description = description,
                     createdAt = Instant.now().toString(),
-                    appVersion = "1.0.0",
+                    appVersion = AppConstants.APP_VERSION,
                 )
             } else null
             xmpMetadata?.let { xmpMetadataHandler.writeMetadata(imageFile.absolutePath, it) }

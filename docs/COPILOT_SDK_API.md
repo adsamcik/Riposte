@@ -3,15 +3,15 @@
 > **Last Updated:** January 25, 2026  
 > **SDK Status:** Technical Preview (v0.1.18)
 
-> ⚠️ **Note:** The meme-my-mood-cli does NOT use the Copilot SDK. It uses the GitHub Models API directly.
-> See [GITHUB_MODELS_API.md](./GITHUB_MODELS_API.md) for the actual implementation.
-> This document is kept for reference only.
-
 ## Overview
 
-The GitHub Copilot SDK enables programmatic access to GitHub Copilot's agentic capabilities. It exposes the same engine behind Copilot CLI: a production-tested agent runtime you can invoke programmatically.
+The **meme-my-mood-cli** now uses the GitHub Copilot SDK for image analysis. The SDK provides a clean Python API that communicates with the Copilot CLI via JSON-RPC.
 
-**Key Value Proposition:** No need to build your own orchestration—you define agent behavior, Copilot handles planning, tool invocation, file edits, and more.
+**Key Benefits:**
+- Automatic authentication via Copilot CLI
+- Built-in session and lifecycle management  
+- Image attachment support
+- Proper error handling and streaming
 
 ## Available SDKs
 
@@ -474,6 +474,69 @@ All models available via Copilot CLI are supported. The SDK exposes a method to 
 ### Is the SDK production-ready?
 
 The SDK is currently in **Technical Preview**. It's functional for development and testing but may not yet be suitable for production use.
+
+---
+
+## Rate Limiting Best Practices
+
+Based on the January 2026 SDK documentation, the following rate limiting strategies are recommended:
+
+### Key Principles
+
+1. **Minimum 1-second delay** between requests (per SDK documentation)
+2. **Handle multiple error types:**
+   - **429** - Rate limit exceeded
+   - **500/502/504** - Server errors (transient, can retry)
+3. **Exponential backoff** with random jitter to prevent thundering herd
+4. **Adaptive throttling** based on recent error rate
+
+### Implementation Pattern
+
+```python
+@dataclass
+class RateLimiter:
+    min_delay: float = 1.0  # Per SDK docs: at least 1 second
+    max_delay: float = 300.0  # 5 minute maximum
+    base_backoff: float = 2.0
+    jitter_factor: float = 0.25  # 25% random jitter
+    
+    async def wait_if_needed(self) -> None:
+        elapsed = time.monotonic() - self.last_request_time
+        if elapsed < self.current_delay:
+            await asyncio.sleep(self.current_delay - elapsed)
+        self.last_request_time = time.monotonic()
+    
+    def record_failure(self, is_server_error: bool = False) -> float:
+        # Server errors use shorter backoff (typically transient)
+        exponent = self.consecutive_failures
+        if is_server_error:
+            exponent = exponent * 0.5  # Half exponent for server errors
+        
+        base_wait = self.base_backoff ** min(exponent, 8)
+        jitter = base_wait * self.jitter_factor * random.uniform(-1, 1)
+        return min(base_wait + jitter, self.max_delay)
+```
+
+### Error Detection
+
+```python
+if "429" in error_message or "rate" in error_message.lower():
+    # Rate limit - use standard backoff
+    wait_time = rate_limiter.record_failure()
+
+elif any(code in error_message for code in ["500", "502", "504"]):
+    # Server error - use shorter backoff (transient)
+    wait_time = rate_limiter.record_failure(is_server_error=True)
+```
+
+### Recommendations
+
+| Strategy | Description |
+|----------|-------------|
+| **Task Queuing** | Process images one at a time, not in parallel |
+| **Adaptive Throttling** | Slow down if error rate exceeds 30% |
+| **Max Retries** | Up to 8 retries before giving up on an image |
+| **Timeout** | 120 seconds per request maximum |
 
 ---
 

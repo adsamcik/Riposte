@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Import button label with count -->
+    <plurals name="import_button_import_memes">
+        <item quantity="one">Import %d Meme</item>
+        <item quantity="other">Import %d Memes</item>
+    </plurals>
+
+    <!-- Selected count for top bar -->
+    <plurals name="import_selected_count_plural">
+        <item quantity="one">%d selected</item>
+        <item quantity="other">%d selected</item>
+    </plurals>
+</resources>

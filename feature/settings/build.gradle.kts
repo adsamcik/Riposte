@@ -49,6 +49,9 @@ dependencies {
     implementation(libs.coroutines.core)
     implementation(libs.coroutines.android)
 
+    // AppCompat for per-app language API
+    implementation(libs.appcompat)
+
     // Testing
     testImplementation(libs.bundles.testing)
     testImplementation(libs.robolectric)

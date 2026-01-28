@@ -95,6 +95,20 @@ data class MemeEntity(
      * Number of times this meme has been shared or used.
      */
     val useCount: Int = 0,
+    
+    /**
+     * BCP 47 language code of the primary content (title, description, tags).
+     * Examples: "en", "cs", "de", "zh-TW"
+     */
+    val primaryLanguage: String? = null,
+    
+    /**
+     * JSON object containing localized content for additional languages.
+     * Keys are BCP 47 language codes, values are objects with title, description,
+     * textContent, and tags fields.
+     * Example: {"cs": {"title": "...", "description": "...", "tags": [...]}}
+     */
+    val localizationsJson: String? = null,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -121,6 +135,8 @@ data class MemeEntity(
         if (isFavorite != other.isFavorite) return false
         if (createdAt != other.createdAt) return false
         if (useCount != other.useCount) return false
+        if (primaryLanguage != other.primaryLanguage) return false
+        if (localizationsJson != other.localizationsJson) return false
 
         return true
     }
@@ -142,6 +158,8 @@ data class MemeEntity(
         result = 31 * result + isFavorite.hashCode()
         result = 31 * result + createdAt.hashCode()
         result = 31 * result + useCount
+        result = 31 * result + (primaryLanguage?.hashCode() ?: 0)
+        result = 31 * result + (localizationsJson?.hashCode() ?: 0)
         return result
     }
 }

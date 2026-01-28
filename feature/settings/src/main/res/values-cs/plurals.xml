@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Import memes count -->
+    <plurals name="settings_import_memes_count">
+        <item quantity="one">Importován %1$d meme</item>
+        <item quantity="other">Importováno %1$d memů</item>
+    </plurals>
+</resources>

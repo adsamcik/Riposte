@@ -1,15 +1,14 @@
 package com.mememymood.feature.share.presentation
 
-import android.graphics.BitmapFactory
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mememymood.core.model.ImageFormat
 import com.mememymood.core.model.ShareConfig
 import com.mememymood.feature.share.data.ImageProcessor
+import com.mememymood.feature.share.domain.BitmapLoader
 import com.mememymood.feature.share.domain.usecase.ShareUseCases
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,7 +16,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
@@ -25,6 +23,7 @@ class ShareViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val shareUseCases: ShareUseCases,
     private val imageProcessor: ImageProcessor,
+    private val bitmapLoader: BitmapLoader,
 ) : ViewModel() {
 
     private val memeId: Long = savedStateHandle.get<Long>("memeId") ?: -1L
@@ -68,13 +67,8 @@ class ShareViewModel @Inject constructor(
                 }
 
                 // Load original bitmap for preview
-                val originalBitmap = withContext(Dispatchers.IO) {
-                    BitmapFactory.decodeFile(meme.filePath)
-                }
-
-                val originalFileSize = withContext(Dispatchers.IO) {
-                    java.io.File(meme.filePath).length()
-                }
+                val originalBitmap = bitmapLoader.loadBitmap(meme.filePath)
+                val originalFileSize = bitmapLoader.getFileSize(meme.filePath)
 
                 _uiState.update {
                     it.copy(
@@ -110,15 +104,15 @@ class ShareViewModel @Inject constructor(
             _uiState.update { it.copy(isProcessing = true) }
 
             try {
-                val processedBitmap = withContext(Dispatchers.IO) {
-                    val original = BitmapFactory.decodeFile(meme.filePath)
-                    val maxWidth = config.maxWidth ?: original.width
-                    val maxHeight = config.maxHeight ?: original.height
-                    val processed = imageProcessor.resizeBitmap(original, maxWidth, maxHeight)
-                    
-                    if (processed != original) original.recycle()
-                    processed
+                val original = bitmapLoader.loadBitmap(meme.filePath) ?: run {
+                    _uiState.update { it.copy(isProcessing = false) }
+                    return@launch
                 }
+                val maxWidth = config.maxWidth ?: original.width
+                val maxHeight = config.maxHeight ?: original.height
+                val processedBitmap = imageProcessor.resizeBitmap(original, maxWidth, maxHeight)
+                
+                if (processedBitmap != original) original.recycle()
 
                 _uiState.update {
                     it.copy(

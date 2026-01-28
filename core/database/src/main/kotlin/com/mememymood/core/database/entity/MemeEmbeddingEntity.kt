@@ -121,12 +121,13 @@ data class MemeEmbeddingEntity(
          * Current model version string.
          * Update this when the embedding model changes.
          */
-        const val CURRENT_MODEL_VERSION = "litert_use:1.0.0"
+        const val CURRENT_MODEL_VERSION = "embeddinggemma:1.0.0"
         
         /**
          * Default embedding dimension for the current model.
+         * EmbeddingGemma produces 768-dimensional embeddings.
          */
-        const val DEFAULT_DIMENSION = 512
+        const val DEFAULT_DIMENSION = 768
     }
 }
 

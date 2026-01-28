@@ -71,6 +71,16 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -79,6 +89,7 @@ import coil3.compose.AsyncImage
 import com.mememymood.core.model.EmojiTag
 import com.mememymood.core.ui.component.EmojiChip
 import com.mememymood.core.ui.component.LoadingScreen
+import com.mememymood.feature.gallery.R
 import com.mememymood.feature.gallery.presentation.component.EditEmojiDialog
 import kotlinx.coroutines.flow.collectLatest
 import java.time.format.DateTimeFormatter
@@ -174,16 +185,16 @@ private fun MemeDetailScreenContent(
     if (uiState.showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { onIntent(MemeDetailIntent.DismissDeleteDialog) },
-            title = { Text("Delete Meme?") },
-            text = { Text("This action cannot be undone.") },
+            title = { Text(stringResource(R.string.gallery_delete_single_title)) },
+            text = { Text(stringResource(R.string.gallery_delete_single_message)) },
             confirmButton = {
                 TextButton(onClick = { onIntent(MemeDetailIntent.ConfirmDelete) }) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.gallery_button_delete), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { onIntent(MemeDetailIntent.DismissDeleteDialog) }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.gallery_button_cancel))
                 }
             },
         )
@@ -210,16 +221,18 @@ private fun MemeDetailScreenContent(
 
     when {
         uiState.isLoading -> {
-            LoadingScreen()
+            LoadingScreen(modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
         }
 
         uiState.errorMessage != null -> {
             Box(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .semantics { liveRegion = LiveRegionMode.Assertive },
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = uiState.errorMessage.orEmpty().ifEmpty { "Error" },
+                    text = uiState.errorMessage.orEmpty().ifEmpty { stringResource(R.string.gallery_error_default) },
                     color = MaterialTheme.colorScheme.error,
                 )
             }
@@ -264,7 +277,10 @@ private fun MemeDetailScreenContent(
                     // Zoomable image
                     AsyncImage(
                         model = meme.filePath,
-                        contentDescription = meme.title,
+                        contentDescription = stringResource(
+                            R.string.gallery_cd_meme_image,
+                            meme.title ?: meme.fileName,
+                        ),
                         contentScale = ContentScale.Fit,
                         modifier = Modifier
                             .fillMaxSize()
@@ -294,7 +310,7 @@ private fun MemeDetailScreenContent(
                             IconButton(onClick = onNavigateBack) {
                                 Icon(
                                     Icons.AutoMirrored.Filled.ArrowBack,
-                                    contentDescription = "Navigate back",
+                                    contentDescription = stringResource(R.string.gallery_cd_navigate_back),
                                     tint = Color.White,
                                 )
                             }
@@ -310,7 +326,7 @@ private fun MemeDetailScreenContent(
                                     } else {
                                         Icons.Filled.FavoriteBorder
                                     },
-                                    contentDescription = "Favorite",
+                                    contentDescription = stringResource(R.string.gallery_cd_favorite),
                                     tint = if (meme.isFavorite) {
                                         MaterialTheme.colorScheme.error
                                     } else {
@@ -352,13 +368,13 @@ private fun MemeInfoSheet(
             ) {
                 Icon(
                     if (uiState.isEditMode) Icons.Default.Close else Icons.Default.Edit,
-                    contentDescription = if (uiState.isEditMode) "Cancel Edit" else "Edit",
+                    contentDescription = if (uiState.isEditMode) stringResource(R.string.gallery_cd_cancel_edit) else stringResource(R.string.gallery_cd_edit),
                 )
             }
             FilledTonalIconButton(
                 onClick = { onIntent(MemeDetailIntent.Share) },
             ) {
-                Icon(Icons.Default.Share, contentDescription = "Share")
+                Icon(Icons.Default.Share, contentDescription = stringResource(R.string.gallery_cd_share))
             }
             FilledTonalIconButton(
                 onClick = { onIntent(MemeDetailIntent.ToggleFavorite) },
@@ -369,10 +385,14 @@ private fun MemeInfoSheet(
                 } else {
                     IconButtonDefaults.filledTonalIconButtonColors()
                 },
+                modifier = Modifier.semantics {
+                    role = Role.Button
+                    stateDescription = if (meme.isFavorite) "Favorited" else "Not favorited"
+                },
             ) {
                 Icon(
                     if (meme.isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                    contentDescription = "Favorite",
+                    contentDescription = stringResource(R.string.gallery_cd_favorite),
                 )
             }
             FilledTonalIconButton(
@@ -381,7 +401,7 @@ private fun MemeInfoSheet(
                     containerColor = MaterialTheme.colorScheme.errorContainer,
                 ),
             ) {
-                Icon(Icons.Default.Delete, contentDescription = "Delete")
+                Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.gallery_cd_delete))
             }
         }
 
@@ -392,7 +412,7 @@ private fun MemeInfoSheet(
             OutlinedTextField(
                 value = uiState.editedTitle,
                 onValueChange = { onIntent(MemeDetailIntent.UpdateTitle(it)) },
-                label = { Text("Title") },
+                label = { Text(stringResource(R.string.gallery_detail_label_title)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -402,7 +422,7 @@ private fun MemeInfoSheet(
             OutlinedTextField(
                 value = uiState.editedDescription,
                 onValueChange = { onIntent(MemeDetailIntent.UpdateDescription(it)) },
-                label = { Text("Description") },
+                label = { Text(stringResource(R.string.gallery_detail_label_description)) },
                 minLines = 2,
                 maxLines = 4,
                 modifier = Modifier.fillMaxWidth(),
@@ -417,14 +437,14 @@ private fun MemeInfoSheet(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "Emoji Tags",
+                    text = stringResource(R.string.gallery_detail_label_emoji_tags),
                     style = MaterialTheme.typography.labelMedium,
                 )
                 IconButton(
                     onClick = { onIntent(MemeDetailIntent.ShowEmojiPicker) },
                     modifier = Modifier.size(32.dp),
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = "Add Emoji")
+                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.gallery_cd_add_emoji))
                 }
             }
 
@@ -448,7 +468,7 @@ private fun MemeInfoSheet(
                 horizontalArrangement = Arrangement.End,
             ) {
                 TextButton(onClick = { onIntent(MemeDetailIntent.DiscardChanges) }) {
-                    Text("Discard")
+                    Text(stringResource(R.string.gallery_button_discard))
                 }
                 Spacer(Modifier.width(8.dp))
                 TextButton(
@@ -457,7 +477,7 @@ private fun MemeInfoSheet(
                 ) {
                     Icon(Icons.Default.Check, contentDescription = null)
                     Spacer(Modifier.width(4.dp))
-                    Text("Save")
+                    Text(stringResource(R.string.gallery_button_save))
                 }
             }
         } else {
@@ -466,10 +486,12 @@ private fun MemeInfoSheet(
                 Text(
                     text = title,
                     style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.semantics { heading() },
                 )
             } ?: Text(
                 text = meme.fileName,
                 style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.semantics { heading() },
             )
 
             meme.description?.let { description ->
@@ -500,7 +522,7 @@ private fun MemeInfoSheet(
 
             // Metadata
             Text(
-                text = "Imported: ${java.time.Instant.ofEpochMilli(meme.importedAt).atZone(java.time.ZoneId.systemDefault()).format(dateFormatter)}",
+                text = stringResource(R.string.gallery_detail_label_imported, java.time.Instant.ofEpochMilli(meme.importedAt).atZone(java.time.ZoneId.systemDefault()).format(dateFormatter)),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -508,7 +530,7 @@ private fun MemeInfoSheet(
             meme.textContent?.takeIf { it.isNotBlank() }?.let { text ->
                 Spacer(Modifier.height(12.dp))
                 Text(
-                    text = "Extracted Text:",
+                    text = stringResource(R.string.gallery_detail_label_extracted_text),
                     style = MaterialTheme.typography.labelMedium,
                 )
                 Text(

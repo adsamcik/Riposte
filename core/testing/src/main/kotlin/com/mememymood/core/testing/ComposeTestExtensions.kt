@@ -183,3 +183,31 @@ fun ComposeContentTestRule.hasNodeWithTag(tag: String): Boolean =
  */
 fun ComposeContentTestRule.hasNodeWithText(text: String): Boolean =
     onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
+
+// ============ Accessibility Testing Extensions ============
+
+/**
+ * Enables accessibility checks for the test rule.
+ * Call this in @Before or at the start of tests to validate accessibility.
+ *
+ * Uses Compose 1.8+ accessibility testing framework which checks for:
+ * - Touch target size (minimum 48dp)
+ * - Content description presence
+ * - Color contrast
+ * - Text scaling support
+ * - And more WCAG 2.1 guidelines
+ *
+ * Example usage:
+ * ```kotlin
+ * @get:Rule
+ * val composeTestRule = createComposeRule()
+ *
+ * @Before
+ * fun setup() {
+ *     composeTestRule.enableAccessibilityChecks()
+ * }
+ * ```
+ */
+fun ComposeContentTestRule.enableAccessibilityChecks() {
+    this.enableAccessibilityChecks()
+}

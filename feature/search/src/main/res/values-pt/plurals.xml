@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Search Results Count -->
+    <plurals name="search_result_count">
+        <item quantity="one">%1$d resultado em %2$dms</item>
+        <item quantity="other">%1$d resultados em %2$dms</item>
+    </plurals>
+
+    <!-- Selected Emoji Filter Count -->
+    <plurals name="search_filter_emoji_count">
+        <item quantity="one">Limpar (%1$d)</item>
+        <item quantity="other">Limpar (%1$d)</item>
+    </plurals>
+
+    <!-- More Emoji Tags -->
+    <plurals name="search_result_more_emoji_tags">
+        <item quantity="one">+%1$d</item>
+        <item quantity="other">+%1$d</item>
+    </plurals>
+</resources>

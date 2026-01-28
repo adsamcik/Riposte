@@ -1,6 +1,6 @@
 # Meme My Mood - XMP Metadata Format Specification
 
-## Version 1.0
+## Version 1.1
 
 This document specifies the XMP metadata format used by Meme My Mood to embed meme information directly into image files.
 
@@ -21,7 +21,7 @@ Meme My Mood uses XMP (Extensible Metadata Platform) to store emoji associations
 ## Namespace
 
 ```
-Namespace URI: http://meme-my-mood.app/1.0/
+Namespace URI: http://meme-my-mood.app/1.1/
 Namespace Prefix: mmm
 ```
 
@@ -37,19 +37,21 @@ Namespace Prefix: dc
 
 | Field | Type | Description | Example |
 |-------|------|-------------|---------|
-| `mmm:schemaVersion` | String | Schema version for compatibility | `"1.0"` |
+| `mmm:schemaVersion` | String | Schema version for compatibility | `"1.1"` |
 | `mmm:emojis` | Bag (Array) | Unicode emoji characters | `["😂", "🔥", "💯"]` |
 
 ### Optional Fields
 
 | Field | Type | Description | Example |
 |-------|------|-------------|---------|
-| `dc:title` | String | Meme title | `"When the code works"` |
-| `dc:description` | String | Meme description | `"That feeling when..."` |
+| `dc:title` | String | Meme title (primary language) | `"When the code works"` |
+| `dc:description` | String | Meme description (primary language) | `"That feeling when..."` |
 | `mmm:createdAt` | String (ISO 8601) | Creation timestamp | `"2026-01-11T12:00:00Z"` |
 | `mmm:appVersion` | String | App version that created metadata | `"1.0.0"` |
 | `mmm:source` | String | Original source URL | `"https://example.com/meme.jpg"` |
 | `mmm:tags` | Bag (Array) | Additional search keywords | `["funny", "programming"]` |
+| `mmm:primaryLanguage` | String | BCP 47 language code of primary content | `"en"` |
+| `mmm:localizations` | Object | Localized content by language code | See below |
 
 ## JSON Representation
 
@@ -57,16 +59,53 @@ When storing or transmitting metadata outside of XMP, use this JSON format:
 
 ```json
 {
-  "schemaVersion": "1.0",
+  "schemaVersion": "1.1",
   "emojis": ["😂", "🔥"],
   "title": "When the code finally works",
   "description": "The moment of joy after hours of debugging",
   "createdAt": "2026-01-11T12:00:00Z",
   "appVersion": "1.0.0",
   "source": null,
-  "tags": ["programming", "developer", "coding"]
+  "tags": ["programming", "developer", "coding"],
+  "primaryLanguage": "en",
+  "localizations": {
+    "cs": {
+      "title": "Když kód konečně funguje",
+      "description": "Ten okamžik radosti po hodinách ladění",
+      "tags": ["programování", "vývojář", "kódování"]
+    },
+    "de": {
+      "title": "Wenn der Code endlich funktioniert",
+      "description": "Der Moment der Freude nach stundenlangem Debugging",
+      "tags": ["programmierung", "entwickler", "codierung"]
+    }
+  }
 }
 ```
+
+### Localization Object
+
+Each localization entry can contain:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `title` | String | Localized meme title |
+| `description` | String | Localized description |
+| `textContent` | String | Localized text content (if applicable) |
+| `tags` | Array | Localized search keywords |
+
+### Language Codes
+
+Use BCP 47 language tags:
+- `en` - English
+- `cs` - Czech
+- `de` - German
+- `es` - Spanish
+- `fr` - French
+- `ja` - Japanese
+- `ko` - Korean
+- `zh` - Chinese (Simplified)
+- `zh-TW` - Chinese (Traditional)
 
 ### JSON Schema
 
@@ -109,6 +148,44 @@ When storing or transmitting metadata outside of XMP, use this JSON format:
     "tags": {
       "type": "array",
       "items": { "type": "string" }
+    },
+    "textContent": {
+      "type": "string",
+      "description": "Pre-extracted text content from the image"
+    },
+    "primaryLanguage": {
+      "type": "string",
+      "pattern": "^[a-z]{2}(-[A-Z]{2})?$",
+      "description": "BCP 47 language code of the primary content"
+    },
+    "localizations": {
+      "type": "object",
+      "description": "Localized content by BCP 47 language code",
+      "additionalProperties": {
+        "$ref": "#/$defs/Localization"
+      }
+    }
+  },
+  "$defs": {
+    "Localization": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "textContent": {
+          "type": "string"
+        },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
     }
   }
 }
@@ -244,9 +321,10 @@ For formats that don't support embedded XMP (rare), use sidecar files:
 
 ## Version History
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0 | 2026-01 | Initial specification |
+| Version | Date    | Changes                                              |
+|---------|---------|------------------------------------------------------|
+| 1.1     | 2026-01 | Added multilingual support with `localizations` field, `primaryLanguage`, `textContent` in schema |
+| 1.0     | 2026-01 | Initial specification                                |
 
 ## References
 

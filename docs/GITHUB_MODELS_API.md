@@ -1,10 +1,20 @@
 # GitHub Models API Documentation
 
 > **Last Updated:** January 25, 2026
+> 
+> **⚠️ DEPRECATED:** The CLI now uses the **GitHub Copilot SDK** instead of direct API calls.
+> See `tools/meme-my-mood-cli/README.md` for current usage.
 
 ## Overview
 
-The **meme-my-mood-cli** tool uses the GitHub Models API directly for image analysis. This is different from the GitHub Copilot SDK, which requires the Copilot CLI backend.
+This document describes the direct GitHub Models API. The **meme-my-mood-cli** tool previously used this API but has been migrated to use the **GitHub Copilot SDK** (`github-copilot-sdk` package), which provides:
+
+- Automatic authentication via Copilot CLI
+- Built-in session management
+- Streaming support
+- Proper error handling
+
+## Direct API (for reference)
 
 ## API Endpoint
 

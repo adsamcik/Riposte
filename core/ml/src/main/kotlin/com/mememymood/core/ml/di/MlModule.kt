@@ -3,6 +3,8 @@ package com.mememymood.core.ml.di
 import android.content.Context
 import com.mememymood.core.ml.DefaultSemanticSearchEngine
 import com.mememymood.core.ml.EmbeddingGenerator
+import com.mememymood.core.ml.EmbeddingGemmaGenerator
+import com.mememymood.core.ml.MediaPipeEmbeddingGenerator
 import com.mememymood.core.ml.MlKitTextRecognizer
 import com.mememymood.core.ml.SemanticSearchEngine
 import com.mememymood.core.ml.SimpleEmbeddingGenerator
@@ -28,12 +30,13 @@ abstract class MlModule {
 
     /**
      * Bind the primary embedding generator.
-     * Uses hash-based embeddings for reliable cosine similarity search.
+     * Uses EmbeddingGemma via Google AI Edge RAG SDK for high-quality semantic embeddings.
+     * EmbeddingGemma (2025) provides 768-dimensional embeddings with excellent multilingual support.
      */
     @Binds
     @Singleton
     abstract fun bindEmbeddingGenerator(
-        impl: SimpleEmbeddingGenerator
+        impl: EmbeddingGemmaGenerator
     ): EmbeddingGenerator
 
     @Binds
@@ -53,6 +56,19 @@ abstract class MlModule {
             @ApplicationContext context: Context
         ): EmbeddingGenerator {
             return SimpleEmbeddingGenerator(context)
+        }
+
+        /**
+         * Provides MediaPipe-based embedding generator as legacy fallback.
+         * Uses Universal Sentence Encoder (USE-QA) - older model but proven reliable.
+         */
+        @Provides
+        @Singleton
+        @Named("mediapipe")
+        fun provideMediaPipeEmbeddingGenerator(
+            impl: MediaPipeEmbeddingGenerator
+        ): EmbeddingGenerator {
+            return impl
         }
     }
 }

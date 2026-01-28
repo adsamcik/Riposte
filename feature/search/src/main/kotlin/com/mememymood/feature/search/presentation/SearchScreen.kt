@@ -93,10 +93,20 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
+import com.mememymood.feature.search.R
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -126,6 +136,7 @@ fun SearchScreen(
     var isSearchActive by remember { mutableStateOf(false) }
     val hapticFeedback = LocalHapticFeedback.current
     val focusManager = LocalFocusManager.current
+    val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
@@ -165,8 +176,8 @@ fun SearchScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = if (isSearchActive) 0.dp else 16.dp)
-                    .semantics { contentDescription = "Search memes input field" },
-                placeholder = { Text("Search memes by text, emoji, or describe what you want...") },
+                    .semantics { contentDescription = context.getString(R.string.search_content_description) },
+                placeholder = { Text(stringResource(R.string.search_placeholder)) },
                 leadingIcon = {
                     if (isSearchActive) {
                         IconButton(
@@ -175,7 +186,7 @@ fun SearchScreen(
                                 focusManager.clearFocus()
                                 viewModel.onIntent(SearchIntent.ClearQuery)
                             },
-                            modifier = Modifier.semantics { contentDescription = "Close search" }
+                            modifier = Modifier.semantics { contentDescription = context.getString(R.string.search_action_close) }
                         ) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
                         }
@@ -197,7 +208,7 @@ fun SearchScreen(
                         ) {
                             IconButton(
                                 onClick = { viewModel.onIntent(SearchIntent.StartVoiceSearch) },
-                                modifier = Modifier.semantics { contentDescription = "Voice search" }
+                                modifier = Modifier.semantics { contentDescription = context.getString(R.string.search_action_voice) }
                             ) {
                                 Icon(
                                     Icons.Default.Mic,
@@ -218,7 +229,7 @@ fun SearchScreen(
                         ) {
                             IconButton(
                                 onClick = { viewModel.onIntent(SearchIntent.ClearQuery) },
-                                modifier = Modifier.semantics { contentDescription = "Clear search query" }
+                                modifier = Modifier.semantics { contentDescription = context.getString(R.string.search_action_clear) }
                             ) {
                                 Icon(Icons.Default.Clear, contentDescription = null)
                             }
@@ -267,9 +278,9 @@ fun SearchScreen(
                         ) {
                             Text(
                                 text = when (mode) {
-                                    SearchMode.TEXT -> "Text"
-                                    SearchMode.SEMANTIC -> "AI"
-                                    SearchMode.HYBRID -> "Hybrid"
+                                    SearchMode.TEXT -> stringResource(R.string.search_mode_text)
+                                    SearchMode.SEMANTIC -> stringResource(R.string.search_mode_ai)
+                                    SearchMode.HYBRID -> stringResource(R.string.search_mode_hybrid)
                                 },
                                 style = MaterialTheme.typography.labelMedium,
                             )
@@ -305,7 +316,9 @@ fun SearchScreen(
                     enter = expandVertically() + fadeIn(),
                     exit = shrinkVertically() + fadeOut()
                 ) {
-                    Column {
+                    Column(
+                        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                    ) {
                         LinearProgressIndicator(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -503,6 +516,7 @@ private fun EmojiFilterRow(
     onClearFilters: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
     Column(modifier = modifier) {
         Row(
             modifier = Modifier
@@ -512,9 +526,10 @@ private fun EmojiFilterRow(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = "Filter by Emoji",
+                text = stringResource(R.string.search_filter_emoji_title),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.semantics { heading() },
             )
             AnimatedVisibility(
                 visible = selectedEmojis.isNotEmpty(),
@@ -524,10 +539,10 @@ private fun EmojiFilterRow(
                 TextButton(
                     onClick = onClearFilters,
                     modifier = Modifier.semantics { 
-                        contentDescription = "Clear ${selectedEmojis.size} selected emoji filters" 
+                        contentDescription = context.getString(R.string.search_filter_emoji_clear_content_description, selectedEmojis.size) 
                     }
                 ) {
-                    Text("Clear (${selectedEmojis.size})")
+                    Text(stringResource(R.string.search_filter_emoji_clear, selectedEmojis.size))
                 }
             }
         }
@@ -577,16 +592,19 @@ private fun SearchSuggestionsContent(
     onDeleteRecentSearch: (String) -> Unit,
     onClearRecentSearches: () -> Unit,
 ) {
+    val context = LocalContext.current
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
     ) {
         if (suggestions.isNotEmpty()) {
             item {
                 Text(
-                    text = "Suggestions",
+                    text = stringResource(R.string.search_suggestions_title),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .semantics { heading() },
                 )
             }
             items(suggestions) { suggestion ->
@@ -616,12 +634,12 @@ private fun SearchSuggestionsContent(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = "Recent Searches",
+                        text = stringResource(R.string.search_recent_title),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     TextButton(onClick = onClearRecentSearches) {
-                        Text("Clear All")
+                        Text(stringResource(R.string.search_recent_clear_all))
                     }
                 }
             }
@@ -649,7 +667,7 @@ private fun SearchSuggestionsContent(
                         ) {
                             Icon(
                                 Icons.Default.Close,
-                                contentDescription = "Delete",
+                                contentDescription = stringResource(R.string.search_recent_delete),
                                 tint = MaterialTheme.colorScheme.onErrorContainer
                             )
                         }
@@ -668,7 +686,7 @@ private fun SearchSuggestionsContent(
                             },
                             modifier = Modifier
                                 .clickable { onRecentSearchClick(search) }
-                                .semantics { contentDescription = "Recent search: $search. Swipe left to delete." },
+                                .semantics { contentDescription = context.getString(R.string.search_recent_item_content_description, search) },
                         )
                     }
                 }
@@ -686,6 +704,7 @@ private fun RecentSearchesSection(
     onClearAll: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
     Column(modifier = modifier.padding(16.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -693,14 +712,15 @@ private fun RecentSearchesSection(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = "Recent Searches",
+                text = stringResource(R.string.search_recent_title),
                 style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.semantics { heading() },
             )
             TextButton(
                 onClick = onClearAll,
-                modifier = Modifier.semantics { contentDescription = "Clear all recent searches" }
+                modifier = Modifier.semantics { contentDescription = context.getString(R.string.search_recent_clear_all_content_description) }
             ) {
-                Text("Clear All")
+                Text(stringResource(R.string.search_recent_clear_all))
             }
         }
         Spacer(Modifier.height(8.dp))
@@ -729,7 +749,7 @@ private fun RecentSearchesSection(
                     ) {
                         Icon(
                             Icons.Default.Close,
-                            contentDescription = "Delete",
+                            contentDescription = stringResource(R.string.search_recent_delete),
                             tint = MaterialTheme.colorScheme.onErrorContainer
                         )
                     }
@@ -752,7 +772,7 @@ private fun RecentSearchesSection(
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
                             .clickable { onSearchClick(search) }
-                            .semantics { contentDescription = "Recent search: $search. Swipe left to delete." },
+                            .semantics { contentDescription = context.getString(R.string.search_recent_item_content_description, search) },
                     )
                 }
             }
@@ -771,18 +791,18 @@ private fun SearchEmptyPrompt(modifier: Modifier = Modifier) {
         verticalArrangement = Arrangement.Center,
     ) {
         Text(
-            text = "🔍",
+            text = stringResource(R.string.search_empty_icon),
             style = MaterialTheme.typography.displayLarge,
         )
         Spacer(Modifier.height(16.dp))
         Text(
-            text = "Search Your Memes",
+            text = stringResource(R.string.search_empty_title),
             style = MaterialTheme.typography.headlineSmall,
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            text = "Find memes by text, description, or use AI-powered semantic search",
+            text = stringResource(R.string.search_empty_description),
             style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -799,13 +819,14 @@ private fun SearchEmptyPrompt(modifier: Modifier = Modifier) {
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(
-                    text = "💡 Search Tips",
+                    text = stringResource(R.string.search_tips_title),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.semantics { heading() },
                 )
-                SearchTip("Use keywords like \"cat\", \"funny\", \"reaction\"")
-                SearchTip("Try AI mode for natural language: \"meme about Mondays\"")
-                SearchTip("Filter by emoji to narrow results")
+                SearchTip(stringResource(R.string.search_tip_keywords))
+                SearchTip(stringResource(R.string.search_tip_ai_mode))
+                SearchTip(stringResource(R.string.search_tip_emoji_filter))
             }
         }
     }
@@ -845,23 +866,18 @@ private fun NoResultsState(
         verticalArrangement = Arrangement.Center,
     ) {
         Text(
-            text = "🔍",
+            text = stringResource(R.string.search_empty_icon),
             style = MaterialTheme.typography.displayLarge,
         )
         Spacer(Modifier.height(16.dp))
         Text(
-            text = "No Results Found",
+            text = stringResource(R.string.search_no_results_title),
             style = MaterialTheme.typography.headlineSmall,
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            text = buildAnnotatedString {
-                append("No memes found for ")
-                withStyle(SpanStyle(fontWeight = FontWeight.SemiBold)) {
-                    append("\"$query\"")
-                }
-            },
+            text = stringResource(R.string.search_no_results_description, query),
             style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -878,15 +894,15 @@ private fun NoResultsState(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(
-                    text = "Try these:",
+                    text = stringResource(R.string.search_no_results_try_title),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
                 )
-                SearchTip("Check for typos in your search")
-                SearchTip("Try broader or different keywords")
-                SearchTip("Switch to AI mode for semantic matching")
+                SearchTip(stringResource(R.string.search_no_results_tip_typos))
+                SearchTip(stringResource(R.string.search_no_results_tip_keywords))
+                SearchTip(stringResource(R.string.search_no_results_tip_ai_mode))
                 if (hasFilters) {
-                    SearchTip("Remove some filters")
+                    SearchTip(stringResource(R.string.search_no_results_tip_filters))
                 }
             }
         }
@@ -894,7 +910,7 @@ private fun NoResultsState(
         if (hasFilters) {
             Spacer(Modifier.height(16.dp))
             TextButton(onClick = onClearFilters) {
-                Text("Clear All Filters")
+                Text(stringResource(R.string.search_no_results_clear_filters))
             }
         }
     }

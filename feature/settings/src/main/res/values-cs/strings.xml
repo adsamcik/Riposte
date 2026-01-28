@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Screen Title -->
+    <string name="settings_title">Nastavení</string>
+    
+    <!-- Navigation -->
+    <string name="settings_navigate_back">Zpět</string>
+    
+    <!-- Section Headers -->
+    <string name="settings_section_appearance">Vzhled</string>
+    <string name="settings_section_default_sharing">Výchozí sdílení</string>
+    <string name="settings_section_search">Vyhledávání</string>
+    <string name="settings_section_storage">Úložiště</string>
+    <string name="settings_section_about">O aplikaci</string>
+    
+    <!-- Appearance Section -->
+    <string name="settings_theme_title">Motiv</string>
+    <string name="settings_theme_system">Podle systému</string>
+    <string name="settings_theme_light">Světlý</string>
+    <string name="settings_theme_dark">Tmavý</string>
+    <string name="settings_dynamic_colors_title">Dynamické barvy</string>
+    <string name="settings_dynamic_colors_subtitle">Použít barvy z tapety</string>
+    
+    <!-- Default Sharing Section -->
+    <string name="settings_format_title">Formát</string>
+    <string name="settings_quality_title">Kvalita</string>
+    <string name="settings_quality_value">%1$d%%</string>
+    <string name="settings_max_size_title">Max. velikost</string>
+    <string name="settings_max_size_small">Malá (480p)</string>
+    <string name="settings_max_size_medium">Střední (720p)</string>
+    <string name="settings_max_size_large">Velká (1080p)</string>
+    <string name="settings_max_size_original">Původní</string>
+    <string name="settings_max_size_custom">%1$dp</string>
+    <string name="settings_keep_metadata_title">Zachovat metadata</string>
+    <string name="settings_keep_metadata_subtitle">Zachovat emoji štítky při sdílení</string>
+    
+    <!-- Search Section -->
+    <string name="settings_semantic_search_title">Sémantické vyhledávání</string>
+    <string name="settings_semantic_search_subtitle">AI vyhledávání podobných memů</string>
+    <string name="settings_search_history_title">Historie vyhledávání</string>
+    <string name="settings_search_history_subtitle">Ukládat poslední hledání</string>
+    
+    <!-- Storage Section -->
+    <string name="settings_clear_cache_title">Vymazat mezipaměť</string>
+    <string name="settings_clear_cache_subtitle">Uvolnit %1$s</string>
+    <string name="settings_export_data_title">Exportovat data</string>
+    <string name="settings_export_data_subtitle">Zálohovat memy a nastavení</string>
+    <string name="settings_import_data_title">Importovat data</string>
+    <string name="settings_import_data_subtitle">Obnovit ze zálohy</string>
+    
+    <!-- About Section -->
+    <string name="settings_version_title">Verze</string>
+    <string name="settings_open_source_licenses_title">Open source licence</string>
+    <string name="settings_privacy_policy_title">Zásady ochrany soukromí</string>
+    
+    <!-- Clear Cache Dialog -->
+    <string name="settings_clear_cache_dialog_title">Vymazat mezipaměť</string>
+    <string name="settings_clear_cache_dialog_message">Tímto smažeš %1$s dat v mezipaměti. Tuto akci nelze vrátit zpět.</string>
+    <string name="settings_clear_cache_dialog_confirm">Vymazat</string>
+    <string name="settings_clear_cache_dialog_cancel">Zrušit</string>
+    
+    <!-- Language Section -->
+    <string name="settings_language_title">Jazyk</string>
+    <string name="settings_language_subtitle">Vybrat jazyk aplikace</string>
+    <string name="settings_language_system">Podle systému</string>
+    <string name="settings_language_en">English</string>
+    <string name="settings_language_cs">Čeština</string>
+    <string name="settings_language_de">Deutsch</string>
+    <string name="settings_language_es">Español</string>
+    <string name="settings_language_pt">Português</string>
+    
+    <!-- Snackbar Messages -->
+    <string name="settings_export_complete">Exportováno do %1$s</string>
+    <string name="settings_import_complete">Importováno %1$d memů</string>
+</resources>

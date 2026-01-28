@@ -65,4 +65,8 @@ dependencies {
     api(platform(libs.compose.bom))
     api(libs.compose.ui.test.junit4)
     debugApi(libs.compose.ui.test.manifest)
+
+    // Compose Accessibility Testing (Compose 1.8+)
+    api(libs.compose.ui.test.accessibility)
+    api(libs.accessibility.test.framework)
 }

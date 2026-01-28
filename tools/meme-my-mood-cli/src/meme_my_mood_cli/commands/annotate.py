@@ -148,6 +148,8 @@ def create_sidecar_metadata(
     description: str | None = None,
     text_content: str | None = None,
     tags: list[str] | None = None,
+    primary_language: str | None = None,
+    localizations: dict[str, dict] | None = None,
 ) -> dict:
     """Create a metadata sidecar dictionary.
     
@@ -157,12 +159,14 @@ def create_sidecar_metadata(
         description: Optional description.
         text_content: Optional extracted text content.
         tags: Optional list of tags.
+        primary_language: BCP 47 language code of the primary content.
+        localizations: Optional dict of language code -> localized content.
         
     Returns:
         Metadata dictionary matching the schema.
     """
     metadata = {
-        "schemaVersion": "1.0",
+        "schemaVersion": "1.1",
         "emojis": emojis,
         "createdAt": datetime.now(timezone.utc).isoformat(),
         "appVersion": f"cli-{__version__}",
@@ -176,6 +180,10 @@ def create_sidecar_metadata(
         metadata["textContent"] = text_content
     if tags:
         metadata["tags"] = tags
+    if primary_language:
+        metadata["primaryLanguage"] = primary_language
+    if localizations:
+        metadata["localizations"] = localizations
     
     return metadata
 
@@ -223,6 +231,12 @@ def write_sidecar(image_path: Path, metadata: dict, output_dir: Path | None = No
     help="Model to use for analysis (default: gpt-4.1)",
 )
 @click.option(
+    "--languages", "-l",
+    default="en",
+    help="Comma-separated BCP 47 language codes (e.g., 'en,cs,de'). "
+         "First language is primary. Default: en",
+)
+@click.option(
     "--force", "-f",
     is_flag=True,
     help="Force regeneration of all sidecars, overwriting existing ones",
@@ -244,6 +258,7 @@ def annotate(
     create_zip: bool,
     output: Path | None,
     model: str,
+    languages: str,
     force: bool,
     continue_missing: bool,
     add_new: bool,
@@ -262,7 +277,24 @@ def annotate(
       --force:     Regenerate all sidecars (overwrites existing)
       --continue:  Same as default, explicitly skip existing
       --add-new:   Alias for --continue
+    
+    \b
+    Multilingual Support:
+      Use --languages to specify output languages (comma-separated).
+      First language is the primary language; additional languages
+      are stored in the "localizations" field.
+      
+      Examples:
+        --languages en           (English only, default)
+        --languages cs           (Czech only)
+        --languages en,cs,de     (English primary, with Czech and German)
     """
+    # Parse languages
+    language_list = [lang.strip() for lang in languages.split(",") if lang.strip()]
+    if not language_list:
+        language_list = ["en"]
+    
+    primary_language = language_list[0]
     # Validate mutually exclusive options
     if force and (continue_missing or add_new):
         console.print(
@@ -302,8 +334,20 @@ def annotate(
     
     console.print(f"\n{mode_desc}")
     console.print(f"Total images: {len(all_images)}")
+    
+    # Show language configuration
+    if len(language_list) == 1:
+        console.print(f"Language: {primary_language}")
+    else:
+        additional = ", ".join(language_list[1:])
+        console.print(
+            f"Languages: {primary_language} (primary), {additional}"
+        )
+    
     if skipped > 0:
-        console.print(f"[dim]Skipping {skipped} image(s) with existing sidecars[/dim]")
+        console.print(
+            f"[dim]Skipping {skipped} image(s) with existing sidecars[/dim]"
+        )
     console.print(f"[bold]Processing {len(images)} image(s)[/bold]\n")
     
     if not images:
@@ -350,6 +394,7 @@ def annotate(
                             image_path,
                             model=model,
                             verbose=verbose,
+                            languages=language_list,
                         )
                         
                         # Create sidecar metadata
@@ -359,6 +404,8 @@ def annotate(
                             description=result.get("description"),
                             text_content=result.get("textContent"),
                             tags=result.get("tags"),
+                            primary_language=primary_language,
+                            localizations=result.get("localizations"),
                         )
                         
                         # Write sidecar file

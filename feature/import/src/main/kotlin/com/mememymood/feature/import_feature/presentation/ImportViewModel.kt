@@ -52,6 +52,7 @@ class ImportViewModel @Inject constructor(
             is ImportIntent.CancelImport -> cancelImport()
             is ImportIntent.ClearAll -> clearAll()
             is ImportIntent.PickMoreImages -> pickMoreImages()
+            is ImportIntent.PickZipBundle -> pickZipBundle()
         }
     }
 
@@ -265,6 +266,12 @@ class ImportViewModel @Inject constructor(
     private fun pickMoreImages() {
         viewModelScope.launch {
             _effects.send(ImportEffect.OpenImagePicker)
+        }
+    }
+
+    private fun pickZipBundle() {
+        viewModelScope.launch {
+            _effects.send(ImportEffect.OpenFilePicker)
         }
     }
 }

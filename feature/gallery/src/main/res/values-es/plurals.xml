@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Selection count plurals -->
+    <plurals name="gallery_selected_count">
+        <item quantity="one">%d seleccionado</item>
+        <item quantity="other">%d seleccionados</item>
+    </plurals>
+
+    <!-- Delete confirmation plurals -->
+    <plurals name="gallery_delete_count_title">
+        <item quantity="one">Eliminar Meme</item>
+        <item quantity="other">Eliminar Memes</item>
+    </plurals>
+
+    <plurals name="gallery_delete_count_message">
+        <item quantity="one">¿Estás seguro de que quieres eliminar %d meme? Esta acción no se puede deshacer.</item>
+        <item quantity="other">¿Estás seguro de que quieres eliminar %d memes? Esta acción no se puede deshacer.</item>
+    </plurals>
+</resources>

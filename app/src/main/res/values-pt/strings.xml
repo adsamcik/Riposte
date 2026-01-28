@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Meme My Mood</string>
+    
+    <!-- General -->
+    <string name="ok">OK</string>
+    <string name="cancel">Cancelar</string>
+    <string name="delete">Excluir</string>
+    <string name="share">Compartilhar</string>
+    <string name="save">Salvar</string>
+    <string name="search">Pesquisar</string>
+    <string name="settings">Configurações</string>
+    
+    <!-- Gallery -->
+    <string name="gallery_title">Meme My Mood</string>
+    <string name="gallery_empty_title">Nenhum meme ainda</string>
+    <string name="gallery_empty_message">Importe alguns memes para começar!</string>
+    <string name="gallery_import_button">Importar Memes</string>
+    <string name="gallery_favorites">Favoritos</string>
+    <string name="gallery_all_memes">Todos os Memes</string>
+    
+    <!-- Import -->
+    <string name="import_title">Importar Memes</string>
+    <string name="import_select_images">Selecionar Imagens</string>
+    <string name="import_add_emojis">Adicionar Emojis</string>
+    <string name="import_processing">Processando…</string>
+    
+    <!-- Search -->
+    <string name="search_hint">Pesquisar memes…</string>
+    <string name="search_no_results">Nenhum meme encontrado</string>
+    <string name="search_recent">Pesquisas Recentes</string>
+    
+    <!-- Share -->
+    <string name="share_title">Compartilhar Meme</string>
+    <string name="share_format">Formato</string>
+    <string name="share_quality">Qualidade</string>
+    <string name="share_size">Tamanho Máximo</string>
+    
+    <!-- Settings -->
+    <string name="settings_appearance">Aparência</string>
+    <string name="settings_dark_mode">Modo Escuro</string>
+    <string name="settings_dynamic_colors">Cores Dinâmicas</string>
+    <string name="settings_sharing">Compartilhamento</string>
+    <string name="settings_default_format">Formato Padrão</string>
+    <string name="settings_default_quality">Qualidade Padrão</string>
+    <string name="settings_ai">Recursos de IA</string>
+    <string name="settings_semantic_search">Pesquisa Semântica</string>
+    <string name="settings_auto_extract_text">Extrair Texto Automaticamente</string>
+</resources>

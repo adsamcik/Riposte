@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Screen Title -->
+    <string name="import_title">Importovat memy</string>
+
+    <!-- Top Bar Actions -->
+    <string name="import_selected_count">%d vybráno</string>
+
+    <!-- Content Descriptions -->
+    <string name="import_content_description_back">Zpět</string>
+    <string name="import_content_description_remove">Odebrat</string>
+
+    <!-- Empty State -->
+    <string name="import_empty_icon">📥</string>
+    <string name="import_empty_title">Importuj své memy</string>
+    <string name="import_empty_message">Vyber obrázky z galerie a přidej je do své sbírky memů</string>
+
+    <!-- Buttons -->
+    <string name="import_button_select_images">Vybrat obrázky</string>
+    <string name="import_button_add_more">Přidat další</string>
+    <string name="import_button_done">Hotovo</string>
+    <string name="import_button_apply_all">Použít na vše</string>
+
+    <!-- Section Labels -->
+    <string name="import_section_ai_suggested">Navrženo AI</string>
+    <string name="import_section_select_emojis">Vyber emoji</string>
+
+    <!-- Input Field Labels -->
+    <string name="import_field_title">Název</string>
+    <string name="import_field_description">Popis</string>
+
+    <!-- Progress Screen -->
+    <string name="import_progress_title">Importuji memy</string>
+    <string name="import_progress_count">%1$d z %2$d</string>
+
+    <!-- Emoji Overflow -->
+    <string name="import_emoji_overflow">+%d</string>
+</resources>

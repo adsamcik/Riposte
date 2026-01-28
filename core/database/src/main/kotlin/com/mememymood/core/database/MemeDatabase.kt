@@ -23,7 +23,7 @@ import com.mememymood.core.database.entity.MemeFtsEntity
         EmojiTagEntity::class,
         MemeEmbeddingEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = true
 )
 abstract class MemeDatabase : RoomDatabase() {
@@ -95,6 +95,18 @@ abstract class MemeDatabase : RoomDatabase() {
                 db.execSQL("CREATE INDEX IF NOT EXISTS index_memes_isFavorite ON memes(isFavorite)")
                 // Add unique index on filePath for duplicate detection
                 db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_memes_filePath ON memes(filePath)")
+            }
+        }
+        
+        /**
+         * Migration from version 3 to 4: Add multilingual support columns.
+         */
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Add primaryLanguage column for the primary content language
+                db.execSQL("ALTER TABLE memes ADD COLUMN primaryLanguage TEXT DEFAULT NULL")
+                // Add localizationsJson column for storing additional language content
+                db.execSQL("ALTER TABLE memes ADD COLUMN localizationsJson TEXT DEFAULT NULL")
             }
         }
     }

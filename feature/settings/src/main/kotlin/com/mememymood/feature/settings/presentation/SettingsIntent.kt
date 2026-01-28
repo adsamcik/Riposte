@@ -6,6 +6,7 @@ import com.mememymood.core.model.ImageFormat
 sealed interface SettingsIntent {
     // Appearance
     data class SetDarkMode(val mode: DarkMode) : SettingsIntent
+    data class SetLanguage(val languageCode: String?) : SettingsIntent
     data class SetDynamicColors(val enabled: Boolean) : SettingsIntent
 
     // Sharing

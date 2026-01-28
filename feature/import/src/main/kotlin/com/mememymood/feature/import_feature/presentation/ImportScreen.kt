@@ -1,6 +1,9 @@
 package com.mememymood.feature.import_feature.presentation
 
 import android.net.Uri
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import com.mememymood.feature.import_feature.R
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -74,6 +77,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -103,6 +116,13 @@ fun ImportScreen(
         }
     )
 
+    val zipPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument(),
+        onResult = { uri ->
+            uri?.let { viewModel.onIntent(ImportIntent.ZipSelected(it)) }
+        }
+    )
+
     LaunchedEffect(Unit) {
         viewModel.effects.collectLatest { effect ->
             when (effect) {
@@ -112,7 +132,7 @@ fun ImportScreen(
                     )
                 }
                 is ImportEffect.OpenFilePicker -> {
-                    // TODO: Launch file picker for .meme.zip bundles
+                    zipPickerLauncher.launch(arrayOf("application/zip"))
                 }
                 is ImportEffect.ImportComplete -> {
                     onImportComplete()
@@ -182,16 +202,16 @@ fun ImportScreen(
         },
         topBar = {
             TopAppBar(
-                title = { Text("Import Memes") },
+                title = { Text(stringResource(R.string.import_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.import_content_description_back))
                     }
                 },
                 actions = {
                     if (uiState.selectedImages.isNotEmpty()) {
                         Text(
-                            text = "${uiState.selectedImages.size} selected",
+                            text = pluralStringResource(R.plurals.import_selected_count_plural, uiState.selectedImages.size, uiState.selectedImages.size),
                             style = MaterialTheme.typography.labelLarge,
                             modifier = Modifier.padding(end = 16.dp),
                         )
@@ -211,6 +231,7 @@ fun ImportScreen(
                         progress = uiState.importProgress,
                         total = uiState.selectedImages.size,
                         currentFileName = uiState.statusMessage,
+                        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
                     )
                 }
 
@@ -218,6 +239,9 @@ fun ImportScreen(
                     EmptyImportContent(
                         onSelectImages = {
                             viewModel.onIntent(ImportIntent.PickMoreImages)
+                        },
+                        onImportBundle = {
+                            viewModel.onIntent(ImportIntent.PickZipBundle)
                         },
                     )
                 }
@@ -249,7 +273,7 @@ fun ImportScreen(
                     ) {
                         Icon(Icons.Default.Check, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
-                        Text("Import ${uiState.selectedImages.size} Meme${if (uiState.selectedImages.size > 1) "s" else ""}")
+                        Text(pluralStringResource(R.plurals.import_button_import_memes, uiState.selectedImages.size, uiState.selectedImages.size))
                     }
                 }
             }
@@ -260,6 +284,7 @@ fun ImportScreen(
 @Composable
 private fun EmptyImportContent(
     onSelectImages: () -> Unit,
+    onImportBundle: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -270,18 +295,18 @@ private fun EmptyImportContent(
         verticalArrangement = Arrangement.Center,
     ) {
         Text(
-            text = "📥",
+            text = stringResource(R.string.import_empty_icon),
             style = MaterialTheme.typography.displayLarge,
         )
         Spacer(Modifier.height(16.dp))
         Text(
-            text = "Import Your Memes",
+            text = stringResource(R.string.import_empty_title),
             style = MaterialTheme.typography.headlineSmall,
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            text = "Select images from your gallery to add to your meme collection",
+            text = stringResource(R.string.import_empty_message),
             style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -290,8 +315,19 @@ private fun EmptyImportContent(
         Button(onClick = onSelectImages) {
             Icon(Icons.Default.Add, contentDescription = null)
             Spacer(Modifier.width(8.dp))
-            Text("Select Images")
+            Text(stringResource(R.string.import_button_select_images))
         }
+        Spacer(Modifier.height(12.dp))
+        OutlinedButton(onClick = onImportBundle) {
+            Text(stringResource(R.string.import_button_import_bundle))
+        }
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = stringResource(R.string.import_bundle_hint),
+            style = MaterialTheme.typography.bodySmall,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
@@ -361,7 +397,7 @@ private fun ImportImageCard(
         Box(modifier = Modifier.fillMaxSize()) {
             AsyncImage(
                 model = uri,
-                contentDescription = null,
+                contentDescription = stringResource(R.string.import_content_description_image_to_import),
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize(),
             )
@@ -380,7 +416,7 @@ private fun ImportImageCard(
             ) {
                 Icon(
                     Icons.Default.Close,
-                    contentDescription = "Remove",
+                    contentDescription = stringResource(R.string.import_content_description_remove),
                     modifier = Modifier.size(16.dp),
                 )
             }
@@ -405,7 +441,7 @@ private fun ImportImageCard(
                     }
                     if (emojis.size > 3) {
                         Text(
-                            text = "+${emojis.size - 3}",
+                            text = stringResource(R.string.import_emoji_overflow, emojis.size - 3),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -438,12 +474,12 @@ private fun AddMoreCard(
             ) {
                 Icon(
                     Icons.Default.Add,
-                    contentDescription = null,
+                    contentDescription = stringResource(R.string.import_button_add_more),
                     modifier = Modifier.size(32.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
-                    text = "Add More",
+                    text = stringResource(R.string.import_button_add_more),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -493,7 +529,7 @@ private fun EditImageSheet(
         // Image preview
         AsyncImage(
             model = imageUri,
-            contentDescription = null,
+            contentDescription = stringResource(R.string.import_content_description_image_preview),
             contentScale = ContentScale.Fit,
             modifier = Modifier
                 .fillMaxWidth()
@@ -507,7 +543,7 @@ private fun EditImageSheet(
         OutlinedTextField(
             value = title,
             onValueChange = onTitleChange,
-            label = { Text("Title") },
+            label = { Text(stringResource(R.string.import_field_title)) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )
@@ -518,7 +554,7 @@ private fun EditImageSheet(
         OutlinedTextField(
             value = description,
             onValueChange = onDescriptionChange,
-            label = { Text("Description") },
+            label = { Text(stringResource(R.string.import_field_description)) },
             minLines = 2,
             maxLines = 4,
             modifier = Modifier.fillMaxWidth(),
@@ -533,7 +569,7 @@ private fun EditImageSheet(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(
-                    text = "AI Suggested",
+                    text = stringResource(R.string.import_section_ai_suggested),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.primary,
                 )
@@ -542,7 +578,7 @@ private fun EditImageSheet(
                     onClick = onApplySuggestions,
                     contentPadding = PaddingValues(horizontal = 12.dp),
                 ) {
-                    Text("Apply All", style = MaterialTheme.typography.labelSmall)
+                    Text(stringResource(R.string.import_button_apply_all), style = MaterialTheme.typography.labelSmall)
                 }
             }
             Spacer(Modifier.height(8.dp))
@@ -563,8 +599,9 @@ private fun EditImageSheet(
 
         // Emoji selection
         Text(
-            text = "Select Emojis",
+            text = stringResource(R.string.import_section_select_emojis),
             style = MaterialTheme.typography.labelMedium,
+            modifier = Modifier.semantics { heading() },
         )
         Spacer(Modifier.height(8.dp))
 
@@ -588,7 +625,7 @@ private fun EditImageSheet(
             onClick = onDone,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text("Done")
+            Text(stringResource(R.string.import_button_done))
         }
 
         Spacer(Modifier.height(16.dp))
@@ -615,12 +652,12 @@ private fun ImportProgressContent(
         )
         Spacer(Modifier.height(24.dp))
         Text(
-            text = "Importing Memes",
+            text = stringResource(R.string.import_progress_title),
             style = MaterialTheme.typography.headlineSmall,
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            text = "$progressCount of $total",
+            text = stringResource(R.string.import_progress_count, progressCount, total),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
