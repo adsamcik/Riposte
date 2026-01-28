@@ -35,28 +35,26 @@ android {
         localeFilters += setOf("en", "cs", "de", "es", "pt")
     }
 
-    // Product flavors for embedding models and architectures
-    // Two dimensions: embedding models (ML) and native ABIs (architecture)
-    flavorDimensions += listOf("embedding", "abi")
+    // Product flavors for embedding models
+    // Single dimension: controls which EmbeddingGemma models are included
+    // Always builds universal (all architectures) for maximum compatibility
+    flavorDimensions += "embedding"
     
     productFlavors {
-        // ===== Embedding Model Dimension =====
-        // Controls which EmbeddingGemma models are included in the APK
-        // Generic + SOC-specific models = ~1.2 GB, reducing this saves significant space
-        
         create("lite") {
             dimension = "embedding"
             buildConfigField("boolean", "INCLUDE_EMBEDDINGGEMMA", "false")
             // No EmbeddingGemma models - uses MediaPipe USE or simple embeddings only
-            // APK impact: ~0 MB (smallest)
+            // APK size: ~177 MB (smallest)
         }
         
         create("standard") {
             dimension = "embedding"
             buildConfigField("boolean", "INCLUDE_EMBEDDINGGEMMA", "true")
             buildConfigField("String", "INCLUDED_SOC_MODELS", "\"none\"")
+            isDefault = true
             // Generic model only (~171 MB) - works on all devices
-            // APK impact: ~175 MB
+            // APK size: ~350 MB (RECOMMENDED)
         }
         
         create("qualcomm") {
@@ -64,7 +62,7 @@ android {
             buildConfigField("boolean", "INCLUDE_EMBEDDINGGEMMA", "true")
             buildConfigField("String", "INCLUDED_SOC_MODELS", "\"qualcomm\"")
             // Generic + all Qualcomm models (~850 MB)
-            // APK impact: ~860 MB
+            // APK size: ~880 MB
         }
         
         create("mediatek") {
@@ -72,7 +70,7 @@ android {
             buildConfigField("boolean", "INCLUDE_EMBEDDINGGEMMA", "true")
             buildConfigField("String", "INCLUDED_SOC_MODELS", "\"mediatek\"")
             // Generic + all MediaTek models (~525 MB)
-            // APK impact: ~535 MB
+            // APK size: ~555 MB
         }
         
         create("full") {
@@ -80,55 +78,18 @@ android {
             buildConfigField("boolean", "INCLUDE_EMBEDDINGGEMMA", "true")
             buildConfigField("String", "INCLUDED_SOC_MODELS", "\"all\"")
             // All models (~1.2 GB) - for development/testing
-            // APK impact: ~1.2 GB
-        }
-        
-        // ===== ABI Dimension =====
-        // Controls which native libraries are included
-        
-        create("universal") {
-            dimension = "abi"
-            // Include all ABIs - used for Play Store (App Bundle) and development
-        }
-        
-        create("arm64") {
-            dimension = "abi"
-            ndk {
-                abiFilters += "arm64-v8a"
-            }
-        }
-        
-        create("arm") {
-            dimension = "abi"
-            ndk {
-                abiFilters += "armeabi-v7a"
-            }
-        }
-        
-        create("x86_64") {
-            dimension = "abi"
-            ndk {
-                abiFilters += "x86_64"
-            }
-        }
-        
-        create("x86") {
-            dimension = "abi"
-            ndk {
-                abiFilters += "x86"
-            }
+            // APK size: ~1.3 GB
         }
     }
     
     // Configure source sets to include/exclude embedding models per flavor
     sourceSets {
-        // Lite flavor: no EmbeddingGemma models at all
-        // Only uses main assets (README.md, no embedding_models folder)
+        // Lite: no EmbeddingGemma models
         getByName("lite") {
             assets.setSrcDirs(listOf("src/main/assets"))
         }
         
-        // Standard flavor: generic model + tokenizer only
+        // Standard: generic model + tokenizer only (default)
         getByName("standard") {
             assets.setSrcDirs(listOf(
                 "src/main/assets",
@@ -136,7 +97,7 @@ android {
             ))
         }
         
-        // Qualcomm flavor: generic + Qualcomm models
+        // Qualcomm: generic + Qualcomm models
         getByName("qualcomm") {
             assets.setSrcDirs(listOf(
                 "src/main/assets",
@@ -145,7 +106,7 @@ android {
             ))
         }
         
-        // MediaTek flavor: generic + MediaTek models
+        // MediaTek: generic + MediaTek models
         getByName("mediatek") {
             assets.setSrcDirs(listOf(
                 "src/main/assets",
@@ -154,7 +115,7 @@ android {
             ))
         }
         
-        // Full flavor: all models
+        // Full: all models
         getByName("full") {
             assets.setSrcDirs(listOf(
                 "src/main/assets",

@@ -60,11 +60,11 @@ meme-my-mood/
 git clone https://github.com/yourusername/meme-my-mood.git
 cd meme-my-mood
 
-# Build debug APK (standard model, all architectures - recommended)
-./gradlew :app:assembleStandardUniversalDebug
+# Build debug APK (standard model - recommended)
+./gradlew :app:assembleStandardDebug
 
-# Build smallest APK (no models, arm64 only)
-./gradlew :app:assembleLiteArm64Debug
+# Build smallest APK (no models)
+./gradlew :app:assembleLiteDebug
 
 # Run all unit tests
 ./gradlew test
@@ -76,11 +76,14 @@ cd meme-my-mood
 ./gradlew connectedAndroidTest
 ```
 
-**Note**: The app uses two flavor dimensions:
-- **Embedding models**: `lite` (no models), `standard` (generic model), `qualcomm`/`mediatek` (SOC-optimized), `full` (all models)
-- **Architecture**: `universal` (all ABIs), `arm64`/`arm`/`x86_64`/`x86` (specific ABIs)
+**Note**: The app uses embedding model flavors to control APK size:
+- **lite**: No models (~177 MB)
+- **standard**: Generic model (~350 MB) - **default**
+- **qualcomm**: Qualcomm-optimized (~880 MB)
+- **mediatek**: MediaTek-optimized (~555 MB)
+- **full**: All models (~1.3 GB)
 
-See [BUILD_FLAVORS.md](docs/BUILD_FLAVORS.md) for complete details about flavors and APK size optimization.
+All builds target universal (all architectures). See [BUILD_FLAVORS.md](docs/BUILD_FLAVORS.md) for details.
 
 ### CLI Tool Setup
 

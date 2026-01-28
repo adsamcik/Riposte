@@ -69,25 +69,27 @@ git clone https://github.com/yourusername/meme-my-mood.git
 
 #### Build Flavors
 
-The app uses **two product flavor dimensions** for optimizing APK size:
+The app uses **product flavors** to control which embedding models are included:
 
-**1. Embedding Models** (`lite`, `standard`, `qualcomm`, `mediatek`, `full`):
-- Controls which AI/ML embedding models are included (0-1200 MB impact)
-- **Recommended**: `standard` (generic model, works on all devices, ~175 MB)
+| Flavor | Models | APK Size | Use Case |
+|--------|--------|----------|----------|
+| `lite` | None | ~177 MB | Minimal size, basic search |
+| `standard` | Generic only | ~350 MB | **Recommended** - works everywhere |
+| `qualcomm` | Generic + Qualcomm | ~880 MB | Optimized for Snapdragon |
+| `mediatek` | Generic + MediaTek | ~555 MB | Optimized for Dimensity |
+| `full` | All 7 models | ~1.3 GB | Development/testing |
 
-**2. Architecture** (`universal`, `arm64`, `arm`, `x86_64`, `x86`):
-- Controls native library architectures (~5-10% impact)
-- **Recommended**: `universal` for development, `arm64` for distribution
+All flavors build universal (all architectures) for maximum compatibility.
 
 ```bash
 # Quick development build (recommended)
-./gradlew assembleStandardUniversalDebug
+./gradlew assembleStandardDebug
 
 # Smallest build
-./gradlew assembleLiteArm64Debug
+./gradlew assembleLiteDebug
 
 # Optimized for Qualcomm devices
-./gradlew assembleQualcommArm64Release
+./gradlew assembleQualcommRelease
 ```
 
 See [BUILD_FLAVORS.md](docs/BUILD_FLAVORS.md) for complete details.

@@ -1,27 +1,24 @@
 # Android Build Flavors
 
-Meme My Mood uses product flavors to optimize APK size by targeting specific embedding models and device architectures.
+Meme My Mood uses product flavors to optimize APK size by controlling which embedding models are included.
 
 ## Overview
 
-The app has **two flavor dimensions**:
+The app has **one flavor dimension**: **`embedding`** - Controls which AI/ML models are included (0-1200 MB impact)
 
-1. **`embedding`** - Controls which AI/ML models are included (~0-1200 MB impact)
-2. **`abi`** - Controls which native libraries are included (~5-10% impact)
-
-These combine to create variants like `standardArm64Debug` or `liteUniversalRelease`.
+All flavors build **universal** (all CPU architectures) for maximum compatibility. This simplifies distribution while the embedding model selection provides the meaningful size optimization.
 
 ## Embedding Model Flavors
 
-The app uses EmbeddingGemma models for semantic search. These models are large (~170-180 MB each), and the app has 7 total models (generic + 6 SOC-specific). This dimension lets you choose which models to include.
+| Flavor | Models Included | APK Size | Use Case |
+|--------|----------------|----------|----------|
+| `lite` | None (MediaPipe USE fallback) | ~265 MB | Minimal size, basic search |
+| `standard` | Generic model only | ~440 MB | **Recommended** - works on all devices |
+| `qualcomm` | Generic + Qualcomm (4 models) | ~1.05 GB | Optimized for Snapdragon 8 Gen 2+ |
+| `mediatek` | Generic + MediaTek (2 models) | ~720 MB | Optimized for Dimensity 9300/9400 |
+| `full` | All models (7 total) | ~1.45 GB | Development/testing only |
 
-| Flavor | Models Included | Size | Use Case |
-|--------|----------------|------|----------|
-| `lite` | None (MediaPipe USE fallback) | ~0 MB | Minimal size, basic search |
-| `standard` | Generic model only | ~175 MB | **Recommended** - works on all devices |
-| `qualcomm` | Generic + Qualcomm (4 models) | ~860 MB | Optimized for Snapdragon 8 Gen 2+ |
-| `mediatek` | Generic + MediaTek (2 models) | ~535 MB | Optimized for Dimensity 9300/9400 |
-| `full` | All models (7 total) | ~1.2 GB | Development/testing only |
+*Debug build sizes. Release builds are ~40-50% smaller with minification and resource shrinking.*
 
 ### Model Details
 
@@ -52,86 +49,82 @@ The app automatically detects the device SOC at runtime and loads the best avail
 2. Else if generic model exists → use it (compatible)
 3. Else fall back to MediaPipe USE or simple embeddings
 
-## ABI (Architecture) Flavors
+## Why Universal (All Architectures)?
 
-Controls which CPU architectures' native libraries are included (for ML Kit, LiteRT, MediaPipe, DJL).
+All flavors include native libraries for all CPU architectures (arm64-v8a, armeabi-v7a, x86_64, x86):
 
-| Flavor | Architecture | Devices | Native Lib Reduction |
-|--------|--------------|---------|---------------------|
-| `universal` | All ABIs | All devices | None (default) |
-| `arm64` | arm64-v8a | Modern ARM (2014+) | ~5-10% smaller |
-| `arm` | armeabi-v7a | Older 32-bit ARM | ~5-10% smaller |
-| `x86_64` | x86_64 | 64-bit emulators/tablets | ~5-10% smaller |
-| `x86` | x86 | 32-bit emulators | ~5-10% smaller |
+- **Maximum compatibility**: Works on all Android devices
+- **Simpler distribution**: One APK per embedding flavor
+- **Google Play optimization**: Play Store automatically delivers the right architecture from App Bundles
+- **Modest size impact**: Native libs add ~80-90 MB compared to arm64-only
+- **Real optimization is models**: Embedding models (0-1200 MB) dwarf native lib sizes
+
+If you need absolute minimum size for direct APK distribution, you can manually configure ABI filters in `build.gradle.kts`.
 
 ## Build Examples
 
 ### Development Builds
 
 ```bash
-# Fastest build - standard model, all architectures
-.\gradlew assembleStandardUniversalDebug
+# Fastest build - standard model (recommended)
+.\gradlew assembleStandardDebug
 
-# Smallest build - no models, arm64 only
-.\gradlew assembleLiteArm64Debug
+# Smallest build - no models
+.\gradlew assembleLiteDebug
 
-# Qualcomm-optimized, arm64 only
-.\gradlew assembleQualcommArm64Debug
+# Qualcomm-optimized
+.\gradlew assembleQualcommDebug
 ```
 
 ### Release Builds
 
 ```bash
-# Recommended for most users - standard model, all architectures
-.\gradlew assembleStandardUniversalRelease
+# Recommended for most users - standard model
+.\gradlew assembleStandardRelease
 
-# Recommended for direct APK distribution - standard, arm64
-.\gradlew assembleStandardArm64Release
+# Qualcomm flagship devices
+.\gradlew assembleQualcommRelease
 
-# Qualcomm flagship devices - optimized models, arm64
-.\gradlew assembleQualcommArm64Release
-
-# MediaTek flagship devices - optimized models, arm64
-.\gradlew assembleMediatekArm64Release
+# MediaTek flagship devices
+.\gradlew assembleMediatekRelease
 
 # Development/testing with all models
-.\gradlew assembleFullUniversalRelease
+.\gradlew assembleFullRelease
 ```
 
 ### Google Play Store
 
-For Play Store, use App Bundle with **standard** + **universal**:
+For Play Store, use App Bundle with **standard** flavor:
 
 ```bash
-.\gradlew bundleStandardUniversalRelease
+.\gradlew bundleStandardRelease
 ```
 
-Google Play automatically delivers the correct architecture to each device.
+Google Play automatically delivers the correct architecture to each device from the App Bundle.
 
 ## APK Size Comparison
 
-| Variant | Model Size | Native Libs | Total APK (est.) |
-|---------|-----------|-------------|------------------|
-| `liteArm64` | ~0 MB | Single ABI | ~15-20 MB |
-| `standardArm64` | ~175 MB | Single ABI | ~190-210 MB |
-| `standardUniversal` | ~175 MB | All ABIs | ~200-220 MB |
-| `qualcommArm64` | ~860 MB | Single ABI | ~880-900 MB |
-| `mediatekArm64` | ~535 MB | Single ABI | ~555-575 MB |
-| `fullUniversal` | ~1.2 GB | All ABIs | ~1.25-1.3 GB |
+| Variant | APK Size (Debug) | Use Case |
+|---------|------------------|----------|
+| `liteDebug` | ~265 MB | Minimal size |
+| `standardDebug` | ~440 MB | **Recommended** |
+| `qualcommDebug` | ~1.05 GB | Qualcomm devices |
+| `mediatekDebug` | ~720 MB | MediaTek devices |
+| `fullDebug` | ~1.45 GB | Testing |
 
-*Sizes include app code, resources, and base dependencies (~20-25 MB)*
+*Release builds are significantly smaller with ProGuard/R8 and resource shrinking.*
 
 ## Recommended Distribution Strategy
 
 | Distribution Method | Recommended Variant |
 |---------------------|-------------------|
-| **Google Play Store** | `standardUniversal` (as App Bundle) |
-| **GitHub Releases** | `standardArm64` + `liteArm64` |
-| **F-Droid** | `standardUniversal` |
-| **Direct Download** | `standardArm64` (covers 95%+ devices) |
-| **Minimal Size** | `liteArm64` |
-| **Flagship Devices** | `qualcommArm64` or `mediatekArm64` |
-| **Testing/QA** | `fullUniversal` |
+| **Google Play Store** | `standard` (as App Bundle) |
+| **GitHub Releases** | `standard` + `lite` |
+| **F-Droid** | `standard` |
+| **Direct Download** | `standard` |
+| **Minimal Size** | `lite` |
+| **Flagship Devices** | `qualcomm` or `mediatek` |
+| **Testing/QA** | `full` |
 
 ## Device Compatibility
 
@@ -140,12 +133,12 @@ Google Play automatically delivers the correct architecture to each device.
 **Standard (recommended for most):**
 - Unknown device/chipset
 - Maximum compatibility
-- Reasonable size (~200 MB)
+- Good balance of size and performance (~440 MB)
 
 **Lite:**
 - Storage-constrained devices
 - Users who don't need semantic search
-- Smallest possible APK
+- Smallest possible APK (~265 MB)
 
 **Qualcomm:**
 - Samsung Galaxy S23/S24/S25
@@ -159,54 +152,46 @@ Google Play automatically delivers the correct architecture to each device.
 - Realme GT series
 - Devices with Dimensity 9300/9400
 
-### Which ABI Flavor?
-
-- **Most modern devices (2014+)**: `arm64`
-- **Older devices (2012-2014)**: `arm`
-- **Tablets/Chromebooks**: usually `x86_64` or `arm64`
-- **Emulators**: check settings (usually `x86_64`)
-- **Universal**: when unsure, or for App Bundle
-
 ## Build Output Locations
 
 ```
-app/build/outputs/apk/{embedding}{abi}/{buildType}/
+app/build/outputs/apk/{embedding}/{buildType}/app-{embedding}-{buildType}.apk
 ```
 
 Examples:
-- `app/build/outputs/apk/standardArm64/release/app-standard-arm64-release.apk`
-- `app/build/outputs/apk/liteUniversal/debug/app-lite-universal-debug.apk`
-- `app/build/outputs/apk/qualcommArm64/release/app-qualcomm-arm64-release.apk`
+- `app/build/outputs/apk/standard/release/app-standard-release.apk`
+- `app/build/outputs/apk/lite/debug/app-lite-debug.apk`
+- `app/build/outputs/apk/qualcomm/release/app-qualcomm-release.apk`
 
 ## Development Workflow
 
 ### Day-to-Day Development
 ```bash
-# Quick debug build (fastest compile)
-.\gradlew assembleStandardUniversalDebug
+# Quick debug build (default is standard)
+.\gradlew assembleDebug
 
-# Or even faster with lite
-.\gradlew assembleLiteUniversalDebug
+# Or explicitly
+.\gradlew assembleStandardDebug
 ```
 
 ### Testing Semantic Search
 ```bash
 # Test with standard model
-.\gradlew assembleStandardArm64Debug
-adb install -r app/build/outputs/apk/standardArm64/debug/app-standard-arm64-debug.apk
+.\gradlew assembleStandardDebug
+adb install -r app/build/outputs/apk/standard/debug/app-standard-debug.apk
 
 # Test with Qualcomm optimizations
-.\gradlew assembleQualcommArm64Debug
+.\gradlew assembleQualcommDebug
 ```
 
 ### Release Process
 ```bash
 # Build recommended variants
-.\gradlew assembleStandardArm64Release
-.\gradlew assembleLiteArm64Release
+.\gradlew assembleStandardRelease
+.\gradlew assembleLiteRelease
 
 # Create App Bundle for Play Store
-.\gradlew bundleStandardUniversalRelease
+.\gradlew bundleStandardRelease
 ```
 
 ## Troubleshooting
@@ -215,13 +200,13 @@ adb install -r app/build/outputs/apk/standardArm64/debug/app-standard-arm64-debu
 
 The app is trying to load a SOC-specific model that isn't included in your flavor:
 - **Solution**: Use `standard`, `qualcomm`, `mediatek`, or `full` flavor
-- Or the app will automatically fall back to generic model or MediaPipe
+- The app will automatically fall back to generic model or MediaPipe
 
 ### APK size too large
 
-- Use `lite` flavor (no models) - ~20 MB
+- Use `lite` flavor (no models) - ~265 MB
 - Use `standard` instead of `qualcomm`/`mediatek`/`full`
-- Use architecture-specific ABI (`arm64`) instead of `universal`
+- Release builds are ~40-50% smaller than debug
 
 ### Slow semantic search
 
@@ -230,12 +215,12 @@ Your flavor might not have the optimized model for your device:
 - MediaTek devices: use `mediatek` flavor
 - Or the app is using generic model - still fast, just not optimized
 
-### Build errors with flavors
+### Build errors
 
 ```bash
 # Clean and rebuild
 .\gradlew clean
-.\gradlew assembleStandardArm64Debug
+.\gradlew assembleStandardDebug
 ```
 
 ## View All Build Tasks
@@ -245,9 +230,9 @@ Your flavor might not have the optimized model for your device:
 .\gradlew tasks --group=build | Select-String "assemble"
 
 # Shows tasks like:
-# assembleStandardArm64Debug
-# assembleLiteUniversalRelease
-# assembleQualcommArm64Release
+# assembleStandardDebug
+# assembleLiteRelease
+# assembleQualcommRelease
 # etc.
 ```
 
