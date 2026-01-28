@@ -11,8 +11,8 @@ import pytest
 from meme_my_mood_cli.config import (
     get_access_token,
     get_config_dir,
-    load_credentials,
-    save_credentials,
+    load_config,
+    save_config,
 )
 
 
@@ -48,8 +48,8 @@ class TestCredentials:
                 "username": "testuser",
             }
             
-            save_credentials(credentials)
-            loaded = load_credentials()
+            save_config(credentials)
+            loaded = load_config()
             
             assert loaded is not None
             assert loaded["access_token"] == "test_token_123"
@@ -61,8 +61,8 @@ class TestCredentials:
             "meme_my_mood_cli.config.get_config_dir",
             return_value=tmp_path,
         ):
-            result = load_credentials()
-            assert result is None
+            result = load_config()
+            assert result == {}  # Returns empty dict, not None
 
     def test_get_access_token(self, tmp_path: Path) -> None:
         """Test getting access token from credentials."""
@@ -71,7 +71,7 @@ class TestCredentials:
             return_value=tmp_path,
         ):
             credentials = {"access_token": "my_secret_token"}
-            save_credentials(credentials)
+            save_config(credentials)
             
             token = get_access_token()
             assert token == "my_secret_token"

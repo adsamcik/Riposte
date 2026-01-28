@@ -10,6 +10,7 @@ import com.mememymood.core.model.AppPreferences
 import com.mememymood.core.model.DarkMode
 import com.mememymood.core.model.ImageFormat
 import com.mememymood.core.model.SharingPreferences
+import com.mememymood.feature.settings.R
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -498,6 +499,7 @@ class SettingsViewModelTest {
         every { testFile.isDirectory } returns false
         every { testFile.length() } returns 1024L
         every { testFile.delete() } returns true
+        every { context.getString(R.string.settings_snackbar_cache_cleared) } returns "Cache cleared successfully"
 
         viewModel = createViewModel()
         advanceUntilIdle()
@@ -526,6 +528,7 @@ class SettingsViewModelTest {
         every { cacheDir.listFiles() } returns arrayOf(testFile)
         every { testFile.isDirectory } returns false
         every { testFile.length() } returns 1024L
+        every { context.getString(R.string.settings_snackbar_cache_clear_failed) } returns "Failed to clear cache"
 
         viewModel = createViewModel()
         advanceUntilIdle()

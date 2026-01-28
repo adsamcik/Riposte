@@ -72,4 +72,13 @@
     <!-- Snackbar Messages -->
     <string name="settings_export_complete">Exportováno do %1$s</string>
     <string name="settings_import_complete">Importováno %1$d memů</string>
+
+    <!-- Additional Snackbar Messages -->
+    <string name="settings_snackbar_cache_cleared">Mezipaměť úspěšně vymazána</string>
+    <string name="settings_snackbar_cache_clear_failed">Nepodařilo se vymazat mezipaměť</string>
+    <string name="settings_snackbar_export_success">Data exportována do %1$s</string>
+    <string name="settings_snackbar_export_failed">Export selhal: %1$s</string>
+    <string name="settings_snackbar_import_failed">Import selhal: %1$s</string>
+    <string name="settings_snackbar_import_success">Nastavení úspěšně importováno</string>
+    <string name="settings_snackbar_invalid_backup">Neplatný formát zálohy</string>
 </resources>

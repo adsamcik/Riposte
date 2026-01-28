@@ -1,21 +1,19 @@
 package com.mememymood.feature.gallery.presentation
 
-import android.content.Intent
-import android.net.Uri
+import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
 import com.mememymood.core.model.EmojiTag
-import com.mememymood.core.model.ImageFormat
 import com.mememymood.core.model.Meme
-import com.mememymood.core.model.ShareConfig
 import com.mememymood.feature.gallery.domain.usecase.DeleteMemesUseCase
 import com.mememymood.feature.gallery.domain.usecase.GetMemeByIdUseCase
 import com.mememymood.feature.gallery.domain.usecase.ToggleFavoriteUseCase
 import com.mememymood.feature.gallery.domain.usecase.UpdateMemeUseCase
-import com.mememymood.feature.share.domain.usecase.ShareUseCases
+import com.mememymood.feature.gallery.R
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -43,23 +41,37 @@ class MemeDetailViewModelTest {
     private lateinit var updateMemeUseCase: UpdateMemeUseCase
     private lateinit var deleteMemeUseCase: DeleteMemesUseCase
     private lateinit var toggleFavoriteUseCase: ToggleFavoriteUseCase
-    private lateinit var shareUseCases: ShareUseCases
+    private lateinit var context: Context
     private lateinit var viewModel: MemeDetailViewModel
 
     private val testMeme = createTestMeme(1L)
-    private val mockUri: Uri = mockk()
-    private val mockIntent: Intent = mockk()
 
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
 
         savedStateHandle = SavedStateHandle(mapOf("memeId" to 1L))
+        context = mockk(relaxed = true)
+        // Mock string resources - generic fallbacks first, then specific overrides
+        every { context.getString(any()) } returns "Error occurred"
+        every { context.getString(any(), any()) } returns "Action completed"
+        // Error message mocks
+        every { context.getString(R.string.gallery_error_meme_not_found) } returns "Meme not found"
+        every { context.getString(R.string.gallery_error_invalid_meme_id) } returns "Invalid meme ID"
+        // Snackbar message mocks (must come after generic to take precedence)
+        every { context.getString(R.string.gallery_snackbar_added_to_favorites) } returns "Added to favorites"
+        every { context.getString(R.string.gallery_snackbar_removed_from_favorites) } returns "Removed from favorites"
+        every { context.getString(R.string.gallery_snackbar_unsaved_changes) } returns "You have unsaved changes"
+        every { context.getString(R.string.gallery_snackbar_meme_deleted) } returns "Meme deleted"
+        every { context.getString(R.string.gallery_snackbar_delete_failed) } returns "Failed to delete meme"
+        every { context.getString(R.string.gallery_snackbar_changes_saved) } returns "Changes saved"
+        every { context.getString(R.string.gallery_snackbar_save_failed) } returns "Failed to save changes"
+        every { context.getString(R.string.gallery_snackbar_favorite_failed) } returns "Failed to update favorite"
+        every { context.getString(R.string.gallery_snackbar_save_or_discard) } returns "Save or discard changes first"
         getMemeByIdUseCase = mockk()
         updateMemeUseCase = mockk()
         deleteMemeUseCase = mockk()
         toggleFavoriteUseCase = mockk()
-        shareUseCases = mockk(relaxed = true)
 
         // Default mock setup
         coEvery { getMemeByIdUseCase(1L) } returns testMeme
@@ -72,12 +84,12 @@ class MemeDetailViewModelTest {
 
     private fun createViewModel(): MemeDetailViewModel {
         return MemeDetailViewModel(
+            context = context,
             savedStateHandle = savedStateHandle,
             getMemeByIdUseCase = getMemeByIdUseCase,
             updateMemeUseCase = updateMemeUseCase,
             deleteMemeUseCase = deleteMemeUseCase,
             toggleFavoriteUseCase = toggleFavoriteUseCase,
-            shareUseCases = shareUseCases,
         )
     }
 
@@ -342,12 +354,7 @@ class MemeDetailViewModelTest {
     // region Share Tests
 
     @Test
-    fun `Share prepares and launches share intent`() = runTest {
-        val config = ShareConfig()
-        coEvery { shareUseCases.getDefaultConfig() } returns config
-        coEvery { shareUseCases.prepareForSharing(any(), any()) } returns Result.success(mockUri)
-        coEvery { shareUseCases.createShareIntent(any(), any()) } returns mockIntent
-
+    fun `Share navigates to share screen`() = runTest {
         viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -356,7 +363,8 @@ class MemeDetailViewModelTest {
             advanceUntilIdle()
 
             val effect = awaitItem()
-            assertThat(effect).isInstanceOf(MemeDetailEffect.LaunchShareIntent::class.java)
+            assertThat(effect).isInstanceOf(MemeDetailEffect.NavigateToShare::class.java)
+            assertThat((effect as MemeDetailEffect.NavigateToShare).memeId).isEqualTo(1L)
         }
     }
 

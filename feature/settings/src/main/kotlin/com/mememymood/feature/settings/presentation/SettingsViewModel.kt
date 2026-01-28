@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.mememymood.core.datastore.PreferencesDataStore
 import com.mememymood.core.model.DarkMode
 import com.mememymood.core.model.ImageFormat
+import com.mememymood.feature.settings.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.Channel
@@ -243,9 +244,9 @@ class SettingsViewModel @Inject constructor(
             try {
                 clearCacheDirectory(context.cacheDir)
                 calculateCacheSize()
-                _effects.send(SettingsEffect.ShowSnackbar("Cache cleared successfully"))
+                _effects.send(SettingsEffect.ShowSnackbar(context.getString(R.string.settings_snackbar_cache_cleared)))
             } catch (e: Exception) {
-                _effects.send(SettingsEffect.ShowSnackbar("Failed to clear cache"))
+                _effects.send(SettingsEffect.ShowSnackbar(context.getString(R.string.settings_snackbar_cache_clear_failed)))
             }
         }
     }
@@ -316,9 +317,9 @@ class SettingsViewModel @Inject constructor(
                 ))
                 
                 _effects.send(SettingsEffect.ExportComplete(exportFile.absolutePath))
-                _effects.send(SettingsEffect.ShowSnackbar("Data exported to ${exportFile.name}"))
+                _effects.send(SettingsEffect.ShowSnackbar(context.getString(R.string.settings_snackbar_export_success, exportFile.name)))
             } catch (e: Exception) {
-                _effects.send(SettingsEffect.ShowSnackbar("Export failed: ${e.message}"))
+                _effects.send(SettingsEffect.ShowSnackbar(context.getString(R.string.settings_snackbar_export_failed, e.message ?: "")))
             }
         }
     }
@@ -329,7 +330,7 @@ class SettingsViewModel @Inject constructor(
                 // Trigger file picker for import
                 _effects.send(SettingsEffect.LaunchImportPicker)
             } catch (e: Exception) {
-                _effects.send(SettingsEffect.ShowSnackbar("Import failed: ${e.message}"))
+                _effects.send(SettingsEffect.ShowSnackbar(context.getString(R.string.settings_snackbar_import_failed, e.message ?: "")))
             }
         }
     }
@@ -391,12 +392,12 @@ class SettingsViewModel @Inject constructor(
                         )
                     }
                     
-                    _effects.send(SettingsEffect.ShowSnackbar("Settings imported successfully"))
+                    _effects.send(SettingsEffect.ShowSnackbar(context.getString(R.string.settings_snackbar_import_success)))
                 } else {
-                    _effects.send(SettingsEffect.ShowSnackbar("Invalid backup file format"))
+                    _effects.send(SettingsEffect.ShowSnackbar(context.getString(R.string.settings_snackbar_invalid_backup)))
                 }
             } catch (e: Exception) {
-                _effects.send(SettingsEffect.ShowSnackbar("Import failed: ${e.message}"))
+                _effects.send(SettingsEffect.ShowSnackbar(context.getString(R.string.settings_snackbar_import_failed, e.message ?: "")))
             }
         }
     }

@@ -1,7 +1,10 @@
 package com.mememymood.feature.gallery.domain.usecase
 
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
 import com.mememymood.core.model.Meme
 import com.mememymood.feature.gallery.domain.repository.GalleryRepository
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
@@ -12,6 +15,20 @@ class GetMemesUseCase @Inject constructor(
     private val repository: GalleryRepository
 ) {
     operator fun invoke(): Flow<List<Meme>> = repository.getMemes()
+}
+
+/**
+ * Use case for getting paged memes for large collections.
+ */
+class GetPagedMemesUseCase @Inject constructor(
+    private val repository: GalleryRepository
+) {
+    /**
+     * Returns a Flow of PagingData for efficient pagination.
+     * @param scope CoroutineScope to cache the paging data in (typically viewModelScope)
+     */
+    operator fun invoke(scope: CoroutineScope): Flow<PagingData<Meme>> =
+        repository.getPagedMemes().cachedIn(scope)
 }
 
 /**
@@ -68,4 +85,13 @@ class GetMemesByEmojiUseCase @Inject constructor(
     private val repository: GalleryRepository
 ) {
     operator fun invoke(emoji: String): Flow<List<Meme>> = repository.getMemesByEmoji(emoji)
+}
+
+/**
+ * Use case for getting all meme IDs (for bulk operations like select all).
+ */
+class GetAllMemeIdsUseCase @Inject constructor(
+    private val repository: GalleryRepository
+) {
+    suspend operator fun invoke(): List<Long> = repository.getAllMemeIds()
 }

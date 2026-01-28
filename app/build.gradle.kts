@@ -35,6 +35,41 @@ android {
         localeFilters += setOf("en", "cs", "de", "es", "pt")
     }
 
+    // Product flavors by architecture (SOC)
+    // Reduces APK size by including only necessary native libraries
+    flavorDimensions += "abi"
+    productFlavors {
+        create("universal") {
+            dimension = "abi"
+            // Include all ABIs - used for development and Play Store (App Bundle)
+            // No filters = all architectures included
+        }
+        create("arm64") {
+            dimension = "abi"
+            ndk {
+                abiFilters += "arm64-v8a"
+            }
+        }
+        create("arm") {
+            dimension = "abi"
+            ndk {
+                abiFilters += "armeabi-v7a"
+            }
+        }
+        create("x86_64") {
+            dimension = "abi"
+            ndk {
+                abiFilters += "x86_64"
+            }
+        }
+        create("x86") {
+            dimension = "abi"
+            ndk {
+                abiFilters += "x86"
+            }
+        }
+    }
+
     // Release signing configuration
     signingConfigs {
         create("release") {

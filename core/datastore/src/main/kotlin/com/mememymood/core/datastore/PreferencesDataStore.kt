@@ -18,6 +18,8 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -53,8 +55,8 @@ class PreferencesDataStore @Inject constructor(
         val AUTO_EXTRACT_TEXT = booleanPreferencesKey("auto_extract_text")
         val SAVE_SEARCH_HISTORY = booleanPreferencesKey("save_search_history")
 
-        // Search preferences
-        val RECENT_SEARCHES = stringSetPreferencesKey("recent_searches")
+        // Search preferences - use string key with JSON to preserve order
+        val RECENT_SEARCHES = stringPreferencesKey("recent_searches_json")
     }
 
     /**
@@ -178,7 +180,13 @@ class PreferencesDataStore @Inject constructor(
             }
         }
         .map { prefs ->
-            prefs[PreferencesKeys.RECENT_SEARCHES]?.toList() ?: emptyList()
+            prefs[PreferencesKeys.RECENT_SEARCHES]?.let { json ->
+                try {
+                    Json.decodeFromString<List<String>>(json)
+                } catch (e: Exception) {
+                    emptyList()
+                }
+            } ?: emptyList()
         }
 
     /**
@@ -186,11 +194,18 @@ class PreferencesDataStore @Inject constructor(
      */
     suspend fun addRecentSearch(query: String) {
         context.dataStore.edit { prefs ->
-            val current = prefs[PreferencesKeys.RECENT_SEARCHES]?.toMutableList() ?: mutableListOf()
+            val currentJson = prefs[PreferencesKeys.RECENT_SEARCHES]
+            val current = currentJson?.let {
+                try {
+                    Json.decodeFromString<List<String>>(it).toMutableList()
+                } catch (e: Exception) {
+                    mutableListOf()
+                }
+            } ?: mutableListOf()
             current.remove(query) // Remove if exists to move to front
             current.add(0, query)
             // Keep only the 20 most recent
-            prefs[PreferencesKeys.RECENT_SEARCHES] = current.take(MAX_RECENT_SEARCHES).toSet()
+            prefs[PreferencesKeys.RECENT_SEARCHES] = Json.encodeToString(current.take(MAX_RECENT_SEARCHES))
         }
     }
 
@@ -199,9 +214,16 @@ class PreferencesDataStore @Inject constructor(
      */
     suspend fun deleteRecentSearch(query: String) {
         context.dataStore.edit { prefs ->
-            val current = prefs[PreferencesKeys.RECENT_SEARCHES]?.toMutableList() ?: mutableListOf()
+            val currentJson = prefs[PreferencesKeys.RECENT_SEARCHES]
+            val current = currentJson?.let {
+                try {
+                    Json.decodeFromString<List<String>>(it).toMutableList()
+                } catch (e: Exception) {
+                    mutableListOf()
+                }
+            } ?: mutableListOf()
             current.remove(query)
-            prefs[PreferencesKeys.RECENT_SEARCHES] = current.toSet()
+            prefs[PreferencesKeys.RECENT_SEARCHES] = Json.encodeToString(current)
         }
     }
 
@@ -211,6 +233,15 @@ class PreferencesDataStore @Inject constructor(
     suspend fun clearRecentSearches() {
         context.dataStore.edit { prefs ->
             prefs.remove(PreferencesKeys.RECENT_SEARCHES)
+        }
+    }
+
+    /**
+     * Clears all preferences. Primarily used for testing.
+     */
+    suspend fun clearAll() {
+        context.dataStore.edit { prefs ->
+            prefs.clear()
         }
     }
 

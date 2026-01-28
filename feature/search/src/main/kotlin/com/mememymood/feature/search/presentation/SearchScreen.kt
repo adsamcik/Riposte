@@ -279,7 +279,7 @@ fun SearchScreen(
                                 count = SearchMode.entries.size,
                             ),
                             modifier = Modifier.semantics { 
-                                contentDescription = "Search mode: ${mode.name.lowercase()}" 
+                                contentDescription = context.getString(R.string.search_mode_content_description, mode.name.lowercase())
                             }
                         ) {
                             Text(
@@ -399,6 +399,7 @@ private fun QuickFilterRow(
     onClearFilter: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
     LazyRow(
         modifier = modifier.fillMaxWidth(),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
@@ -421,7 +422,11 @@ private fun QuickFilterRow(
                     AssistChipDefaults.assistChipColors()
                 },
                 modifier = Modifier.semantics { 
-                    contentDescription = "${filter.label} filter${if (isSelected) ", selected" else ""}" 
+                    contentDescription = context.getString(
+                        if (isSelected) R.string.search_quick_filter_selected_content_description 
+                        else R.string.search_quick_filter_content_description,
+                        filter.label
+                    )
                 }
             )
         }
@@ -437,6 +442,7 @@ private fun SearchResultsToolbar(
     onViewModeChange: (SearchViewMode) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
     var showSortMenu by remember { mutableStateOf(false) }
     
     Row(
@@ -466,7 +472,7 @@ private fun SearchResultsToolbar(
             Box {
                 IconButton(
                     onClick = { showSortMenu = true },
-                    modifier = Modifier.semantics { contentDescription = "Sort results by ${sortOrder.label}" }
+                    modifier = Modifier.semantics { contentDescription = context.getString(R.string.search_results_sort_content_description, sortOrder.label) }
                 ) {
                     Icon(
                         Icons.AutoMirrored.Filled.Sort,
@@ -502,7 +508,10 @@ private fun SearchResultsToolbar(
                     onViewModeChange(if (isListMode) SearchViewMode.LIST else SearchViewMode.GRID)
                 },
                 modifier = Modifier.semantics { 
-                    contentDescription = "Switch to ${if (viewMode == SearchViewMode.GRID) "list" else "grid"} view" 
+                    contentDescription = context.getString(
+                        if (viewMode == SearchViewMode.GRID) R.string.search_results_view_switch_list 
+                        else R.string.search_results_view_switch_grid
+                    )
                 }
             ) {
                 Icon(
@@ -522,6 +531,7 @@ private fun EmojiFilterRow(
     onClearFilters: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
     val clearFiltersDescription = stringResource(R.string.search_filter_emoji_clear_content_description, selectedEmojis.size)
     Column(modifier = modifier) {
         Row(
@@ -580,7 +590,11 @@ private fun EmojiFilterRow(
                         FilterChipDefaults.filterChipColors()
                     },
                     modifier = Modifier.semantics { 
-                        contentDescription = "$description emoji filter${if (isSelected) ", selected" else ""}" 
+                        contentDescription = context.getString(
+                            if (isSelected) R.string.search_filter_emoji_selected_content_description 
+                            else R.string.search_filter_emoji_content_description,
+                            description
+                        )
                     }
                 )
             }
@@ -598,6 +612,7 @@ private fun SearchSuggestionsContent(
     onDeleteRecentSearch: (String) -> Unit,
     onClearRecentSearches: () -> Unit,
 ) {
+    val context = LocalContext.current
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
     ) {
@@ -624,7 +639,7 @@ private fun SearchSuggestionsContent(
                     },
                     modifier = Modifier
                         .clickable { onSuggestionClick(suggestion) }
-                        .semantics { contentDescription = "Suggestion: $suggestion" },
+                        .semantics { contentDescription = context.getString(R.string.search_suggestions_content_description, suggestion) },
                 )
             }
         }
@@ -1144,11 +1159,16 @@ private fun SearchResultCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
     val relevancePercent = (result.relevanceScore * 100).toInt()
     
     Box(
         modifier = modifier.semantics { 
-            contentDescription = "${result.meme.title ?: result.meme.fileName}, ${relevancePercent}% relevant"
+            contentDescription = context.getString(
+                R.string.search_result_card_content_description,
+                result.meme.title ?: result.meme.fileName,
+                relevancePercent
+            )
         }
     ) {
         MemeCardCompact(

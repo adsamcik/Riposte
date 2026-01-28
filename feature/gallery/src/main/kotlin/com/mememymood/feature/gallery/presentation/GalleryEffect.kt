@@ -35,6 +35,11 @@ sealed interface GalleryEffect {
     data class ShowError(val message: String) : GalleryEffect
 
     /**
+     * Navigate to share screen for a specific meme.
+     */
+    data class NavigateToShare(val memeId: Long) : GalleryEffect
+
+    /**
      * Launch share intent directly.
      */
     data class LaunchShareIntent(val intent: android.content.Intent) : GalleryEffect

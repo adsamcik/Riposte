@@ -35,9 +35,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mememymood.feature.gallery.R
 
 /**
  * Common emojis for quick selection.
@@ -102,7 +104,7 @@ fun EditEmojiDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Edit Emoji Tags") },
+        title = { Text(stringResource(R.string.gallery_emoji_dialog_title)) },
         text = {
             Column(
                 modifier = Modifier
@@ -113,14 +115,14 @@ fun EditEmojiDialog(
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    label = { Text("Search emojis") },
+                    label = { Text(stringResource(R.string.gallery_emoji_search_label)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     trailingIcon = {
                         if (searchQuery.isNotEmpty()) {
                             Icon(
                                 imageVector = Icons.Default.Close,
-                                contentDescription = "Clear",
+                                contentDescription = stringResource(R.string.gallery_cd_clear),
                                 modifier = Modifier.clickable { searchQuery = "" },
                             )
                         }
@@ -132,7 +134,7 @@ fun EditEmojiDialog(
                 // Selected emojis section
                 if (selectedEmojis.isNotEmpty()) {
                     Text(
-                        text = "Selected",
+                        text = stringResource(R.string.gallery_emoji_section_selected),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.primary,
                     )
@@ -157,7 +159,7 @@ fun EditEmojiDialog(
 
                 // Available emojis section
                 Text(
-                    text = "Available",
+                    text = stringResource(R.string.gallery_emoji_section_available),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -187,7 +189,7 @@ fun EditEmojiDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Done")
+                Text(stringResource(R.string.gallery_button_done))
             }
         },
         modifier = modifier,
@@ -235,14 +237,14 @@ private fun EmojiChip(
         if (isSelected && showRemove) {
             Icon(
                 imageVector = Icons.Default.Close,
-                contentDescription = "Remove",
+                contentDescription = stringResource(R.string.gallery_cd_remove),
                 modifier = Modifier.size(16.dp),
                 tint = MaterialTheme.colorScheme.error,
             )
         } else if (isSelected) {
             Icon(
                 imageVector = Icons.Default.Check,
-                contentDescription = "Selected",
+                contentDescription = stringResource(R.string.gallery_cd_selected),
                 modifier = Modifier.size(16.dp),
                 tint = MaterialTheme.colorScheme.primary,
             )

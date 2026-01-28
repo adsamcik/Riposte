@@ -1,5 +1,9 @@
 package com.mememymood.feature.gallery.data.repository
 
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import androidx.paging.map
 import com.mememymood.core.common.di.IoDispatcher
 import com.mememymood.core.database.dao.EmojiTagDao
 import com.mememymood.core.database.dao.MemeDao
@@ -25,10 +29,28 @@ class GalleryRepositoryImpl @Inject constructor(
     @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) : GalleryRepository {
 
+    companion object {
+        private const val PAGE_SIZE = 20
+        private const val PREFETCH_DISTANCE = 5
+    }
+
     override fun getMemes(): Flow<List<Meme>> {
         return memeDao.getAllMemes()
             .map { entities -> entities.map { it.toDomain() } }
             .flowOn(ioDispatcher)
+    }
+
+    override fun getPagedMemes(): Flow<PagingData<Meme>> {
+        return Pager(
+            config = PagingConfig(
+                pageSize = PAGE_SIZE,
+                prefetchDistance = PREFETCH_DISTANCE,
+                enablePlaceholders = false,
+            ),
+            pagingSourceFactory = { memeDao.getAllMemesPaged() }
+        ).flow.map { pagingData ->
+            pagingData.map { it.toDomain() }
+        }.flowOn(ioDispatcher)
     }
 
     override fun getFavorites(): Flow<List<Meme>> {
@@ -131,5 +153,9 @@ class GalleryRepositoryImpl @Inject constructor(
         return memeDao.getMemesByEmoji(emoji)
             .map { entities -> entities.map { it.toDomain() } }
             .flowOn(ioDispatcher)
+    }
+
+    override suspend fun getAllMemeIds(): List<Long> = withContext(ioDispatcher) {
+        memeDao.getAllMemeIds()
     }
 }

@@ -448,3 +448,114 @@ _uiState.update { current ->
     current.copy(isLoading = false, memes = newMemes)
 }
 ```
+## Security Patterns
+
+### FTS Query Sanitization
+
+Always sanitize user input before FTS4 MATCH queries:
+
+```kotlin
+private fun prepareFtsQuery(query: String): String {
+    return query
+        .replace(Regex("[\"*():]"), "")  // Remove special chars
+        .replace(Regex("\\b(OR|AND|NOT|NEAR)\\b", RegexOption.IGNORE_CASE), "")
+        .split(Regex("\\s+"))
+        .filter { it.isNotBlank() && it.length >= 2 }
+        .take(10)  // Limit terms
+        .joinToString(" OR ") { "\"$it\"*" }
+}
+```
+
+**Where to see it**:
+- `feature/search/data/SearchRepositoryImpl.kt`
+
+### ZIP Slip Prevention
+
+Validate file paths when extracting from ZIP archives:
+
+```kotlin
+private fun getSafeOutputFile(fileName: String): File? {
+    val outputFile = File(extractDir, fileName)
+    val canonicalExtractDir = extractDir.canonicalPath
+    val canonicalOutputPath = outputFile.canonicalPath
+
+    // Ensure output is within target directory
+    return if (canonicalOutputPath.startsWith(canonicalExtractDir + File.separator)) {
+        outputFile
+    } else {
+        null  // Path traversal attempt
+    }
+}
+```
+
+**Where to see it**:
+- `feature/import/data/ZipImporter.kt`
+
+### Network Security
+
+Block cleartext (HTTP) traffic in production:
+
+```xml
+<!-- res/xml/network_security_config.xml -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>
+```
+
+## Pagination Pattern
+
+Use Paging3 for large collections (1000+ items):
+
+### DAO Layer
+
+```kotlin
+@Query("SELECT * FROM memes ORDER BY importedAt DESC")
+fun getAllMemesPaged(): PagingSource<Int, MemeEntity>
+```
+
+### Repository Layer
+
+```kotlin
+fun getPagedMemes(): Flow<PagingData<Meme>> = Pager(
+    config = PagingConfig(
+        pageSize = 20,
+        prefetchDistance = 5,
+        enablePlaceholders = false,
+    ),
+    pagingSourceFactory = { memeDao.getAllMemesPaged() }
+).flow.map { pagingData -> pagingData.map { it.toDomain() } }
+```
+
+### ViewModel Layer
+
+```kotlin
+val pagedMemes: Flow<PagingData<Meme>> = getPagedMemesUseCase(viewModelScope)
+```
+
+### UI Layer
+
+```kotlin
+val pagedMemes = viewModel.pagedMemes.collectAsLazyPagingItems()
+
+LazyVerticalGrid(...) {
+    items(
+        count = pagedMemes.itemCount,
+        key = { index -> pagedMemes.peek(index)?.id ?: index }
+    ) { index ->
+        val meme = pagedMemes[index]
+        if (meme != null) {
+            MemeGridItem(meme = meme, ...)
+        }
+    }
+}
+```
+
+**Where to see it**:
+- `core/database/dao/MemeDao.kt`
+- `feature/gallery/data/repository/GalleryRepositoryImpl.kt`
+- `feature/gallery/presentation/GalleryViewModel.kt`
+- `feature/gallery/presentation/GalleryScreen.kt`

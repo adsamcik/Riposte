@@ -1,0 +1,210 @@
+name: PR Checks
+
+on:
+  pull_request:
+    types: [ opened, synchronize, reopened ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate PR
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate PR title
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            docs
+            style
+            refactor
+            perf
+            test
+            build
+            ci
+            chore
+            revert
+          requireScope: false
+          subjectPattern: ^[A-Z].+$
+          subjectPatternError: |
+            The subject "{subject}" found in the pull request title "{title}"
+            must start with an uppercase character.
+
+      - name: Check for merge conflicts
+        run: |
+          git fetch origin ${{ github.base_ref }}
+          git merge-base --is-ancestor origin/${{ github.base_ref }} HEAD || {
+            echo "::error::This PR is not up to date with the base branch"
+            exit 1
+          }
+
+      - name: Check file sizes
+        run: |
+          # Check for files larger than 1MB
+          large_files=$(find . -type f -size +1M -not -path "*/\.*" -not -path "*/build/*" -not -path "*/tools/*")
+          if [ -n "$large_files" ]; then
+            echo "::warning::Large files detected (>1MB):"
+            echo "$large_files"
+          fi
+
+      - name: Check for secrets
+        run: |
+          # Simple check for potential secrets (not comprehensive)
+          if grep -r -E "(api[_-]?key|secret|password|token)" --include="*.kt" --include="*.xml" --exclude-dir=build .; then
+            echo "::warning::Potential secrets detected. Please review."
+          fi
+
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      android: ${{ steps.filter.outputs.android }}
+      cli: ${{ steps.filter.outputs.cli }}
+      docs: ${{ steps.filter.outputs.docs }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for file changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            android:
+              - 'app/**'
+              - 'core/**'
+              - 'feature/**'
+              - 'baselineprofile/**'
+              - '*.gradle.kts'
+              - 'gradle/**'
+            cli:
+              - 'tools/meme-my-mood-cli/**'
+            docs:
+              - 'docs/**'
+              - '*.md'
+              - '.github/**'
+
+  android-checks:
+    name: Android Checks
+    needs: changes
+    if: needs.changes.outputs.android == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build and test
+        run: |
+          ./gradlew build --no-daemon
+          ./gradlew test --no-daemon
+
+  cli-checks:
+    name: CLI Checks
+    needs: changes
+    if: needs.changes.outputs.cli == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        working-directory: tools/meme-my-mood-cli
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Run type checking
+        working-directory: tools/meme-my-mood-cli
+        run: mypy src
+
+      - name: Run linting
+        working-directory: tools/meme-my-mood-cli
+        run: ruff check src tests
+
+      - name: Run tests
+        working-directory: tools/meme-my-mood-cli
+        run: pytest tests/ -v
+
+  size-report:
+    name: APK Size Report
+    needs: changes
+    if: needs.changes.outputs.android == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build release APK
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Get APK size
+        id: apk-size
+        run: |
+          SIZE=$(stat -c%s app/build/outputs/apk/release/app-release-unsigned.apk 2>/dev/null || echo "0")
+          SIZE_MB=$(echo "scale=2; $SIZE / 1048576" | bc)
+          echo "size=$SIZE_MB" >> $GITHUB_OUTPUT
+          echo "APK size: $SIZE_MB MB"
+
+      - name: Comment APK size
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const size = '${{ steps.apk-size.outputs.size }}';
+            const comment = `### 📦 APK Size Report\n\nRelease APK size: **${size} MB**`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });

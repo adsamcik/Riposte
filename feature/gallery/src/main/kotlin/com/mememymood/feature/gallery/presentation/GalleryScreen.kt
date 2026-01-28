@@ -10,12 +10,15 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.paging.LoadState
+import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.collectAsLazyPagingItems
+import com.mememymood.core.model.Meme
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
@@ -79,9 +82,11 @@ fun GalleryScreen(
     onNavigateToImport: () -> Unit,
     onNavigateToSearch: () -> Unit,
     onNavigateToSettings: () -> Unit,
+    onNavigateToShare: (Long) -> Unit = {},
     viewModel: GalleryViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val pagedMemes = viewModel.pagedMemes.collectAsLazyPagingItems()
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -107,6 +112,7 @@ fun GalleryScreen(
                     }
                 }
                 is GalleryEffect.ShowError -> snackbarHostState.showSnackbar(effect.message)
+                is GalleryEffect.NavigateToShare -> onNavigateToShare(effect.memeId)
                 is GalleryEffect.LaunchShareIntent -> {
                     context.startActivity(android.content.Intent.createChooser(effect.intent, "Share Meme"))
                 }
@@ -116,6 +122,7 @@ fun GalleryScreen(
 
     GalleryScreenContent(
         uiState = uiState,
+        pagedMemes = pagedMemes,
         onIntent = viewModel::onIntent,
         onNavigateToMeme = onNavigateToMeme,
         onNavigateToSearch = onNavigateToSearch,
@@ -143,6 +150,7 @@ fun GalleryScreen(
     onNavigateToSearch: () -> Unit,
     onNavigateToImport: () -> Unit,
     onNavigateToSettings: () -> Unit,
+    pagedMemes: LazyPagingItems<Meme>? = null,
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -151,6 +159,7 @@ fun GalleryScreen(
 
     GalleryScreenContent(
         uiState = uiState,
+        pagedMemes = pagedMemes,
         onIntent = onIntent,
         onNavigateToMeme = onNavigateToMeme,
         onNavigateToSearch = onNavigateToSearch,
@@ -170,6 +179,7 @@ fun GalleryScreen(
 @Composable
 private fun GalleryScreenContent(
     uiState: GalleryUiState,
+    pagedMemes: LazyPagingItems<Meme>? = null,
     onIntent: (GalleryIntent) -> Unit,
     onNavigateToMeme: (Long) -> Unit,
     onNavigateToSearch: () -> Unit,
@@ -316,8 +326,7 @@ private fun GalleryScreenContent(
                 }
             }
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        contentWindowInsets = WindowInsets(0, 0, 0, 0)
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         Box(
             modifier = Modifier
@@ -338,7 +347,7 @@ private fun GalleryScreenContent(
                         modifier = Modifier.semantics { liveRegion = LiveRegionMode.Assertive },
                     )
                 }
-                uiState.isEmpty -> {
+                uiState.isEmpty && !uiState.usePaging -> {
                     EmptyState(
                         emoji = "🖼️",
                         title = stringResource(R.string.gallery_empty_title),
@@ -347,7 +356,65 @@ private fun GalleryScreenContent(
                         onAction = { onIntent(GalleryIntent.NavigateToImport) }
                     )
                 }
+                uiState.usePaging && pagedMemes != null -> {
+                    // Handle paging load states
+                    val loadState = pagedMemes.loadState
+                    
+                    when {
+                        loadState.refresh is LoadState.Loading -> {
+                            LoadingScreen(
+                                message = stringResource(R.string.gallery_loading_message),
+                                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                            )
+                        }
+                        loadState.refresh is LoadState.Error -> {
+                            val error = (loadState.refresh as LoadState.Error).error
+                            ErrorState(
+                                message = error.message ?: "Failed to load memes",
+                                onRetry = { pagedMemes.retry() },
+                                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Assertive },
+                            )
+                        }
+                        pagedMemes.itemCount == 0 -> {
+                            EmptyState(
+                                emoji = "🖼️",
+                                title = stringResource(R.string.gallery_empty_title),
+                                message = stringResource(R.string.gallery_empty_message),
+                                actionLabel = stringResource(R.string.gallery_button_import_memes),
+                                onAction = { onIntent(GalleryIntent.NavigateToImport) }
+                            )
+                        }
+                        else -> {
+                            LazyVerticalGrid(
+                                columns = GridCells.Fixed(uiState.gridColumns),
+                                contentPadding = PaddingValues(8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                items(
+                                    count = pagedMemes.itemCount,
+                                    key = { index -> pagedMemes.peek(index)?.id ?: index }
+                                ) { index ->
+                                    val meme = pagedMemes[index]
+                                    if (meme != null) {
+                                        val isSelected = meme.id in uiState.selectedMemeIds
+                                        val memeDescription = meme.title ?: meme.fileName
+
+                                        MemeGridItem(
+                                            meme = meme,
+                                            isSelected = isSelected,
+                                            isSelectionMode = uiState.isSelectionMode,
+                                            memeDescription = memeDescription,
+                                            onIntent = onIntent,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
                 else -> {
+                    // Non-paged list view (Favorites, ByEmoji filters)
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(uiState.gridColumns),
                         contentPadding = PaddingValues(8.dp),
@@ -361,50 +428,71 @@ private fun GalleryScreenContent(
                             val isSelected = meme.id in uiState.selectedMemeIds
                             val memeDescription = meme.title ?: meme.fileName
 
-                            Box(
-                                modifier = Modifier
-                                    .combinedClickable(
-                                        onClick = { onIntent(GalleryIntent.OpenMeme(meme.id)) },
-                                        onLongClick = { onIntent(GalleryIntent.QuickShare(meme.id)) },
-                                    )
-                                    .semantics(mergeDescendants = true) {
-                                        contentDescription = memeDescription
-                                        if (uiState.isSelectionMode) {
-                                            stateDescription = if (isSelected) "Selected" else "Not selected"
-                                            role = Role.Checkbox
-                                        }
-                                    },
-                            ) {
-                                MemeCardCompact(
-                                    meme = meme,
-                                    onClick = { onIntent(GalleryIntent.OpenMeme(meme.id)) }
-                                )
-
-                                // Selection overlay
-                                if (uiState.isSelectionMode) {
-                                    androidx.compose.foundation.Canvas(
-                                        modifier = Modifier.matchParentSize()
-                                    ) {
-                                        if (isSelected) {
-                                            drawRect(
-                                                color = androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.3f)
-                                            )
-                                        }
-                                    }
-                                    
-                                    androidx.compose.material3.Checkbox(
-                                        checked = isSelected,
-                                        onCheckedChange = { onIntent(GalleryIntent.ToggleSelection(meme.id)) },
-                                        modifier = Modifier
-                                            .align(Alignment.TopStart)
-                                            .padding(4.dp)
-                                    )
-                                }
-                            }
+                            MemeGridItem(
+                                meme = meme,
+                                isSelected = isSelected,
+                                isSelectionMode = uiState.isSelectionMode,
+                                memeDescription = memeDescription,
+                                onIntent = onIntent,
+                            )
                         }
                     }
                 }
             }
+        }
+    }
+}
+
+/**
+ * Individual meme grid item with selection support.
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun MemeGridItem(
+    meme: Meme,
+    isSelected: Boolean,
+    isSelectionMode: Boolean,
+    memeDescription: String,
+    onIntent: (GalleryIntent) -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .combinedClickable(
+                onClick = { onIntent(GalleryIntent.OpenMeme(meme.id)) },
+                onLongClick = { onIntent(GalleryIntent.QuickShare(meme.id)) },
+            )
+            .semantics(mergeDescendants = true) {
+                contentDescription = memeDescription
+                if (isSelectionMode) {
+                    stateDescription = if (isSelected) "Selected" else "Not selected"
+                    role = Role.Checkbox
+                }
+            },
+    ) {
+        MemeCardCompact(
+            meme = meme,
+            onClick = { onIntent(GalleryIntent.OpenMeme(meme.id)) }
+        )
+
+        // Selection overlay
+        if (isSelectionMode) {
+            androidx.compose.foundation.Canvas(
+                modifier = Modifier.matchParentSize()
+            ) {
+                if (isSelected) {
+                    drawRect(
+                        color = androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.3f)
+                    )
+                }
+            }
+            
+            androidx.compose.material3.Checkbox(
+                checked = isSelected,
+                onCheckedChange = { onIntent(GalleryIntent.ToggleSelection(meme.id)) },
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(4.dp)
+            )
         }
     }
 }

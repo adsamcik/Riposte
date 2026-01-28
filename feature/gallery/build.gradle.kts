@@ -30,7 +30,6 @@ dependencies {
     implementation(project(":core:ui"))
     implementation(project(":core:database"))
     implementation(project(":core:datastore"))
-    implementation(project(":feature:share"))
 
     // Compose
     implementation(platform(libs.compose.bom))
@@ -49,6 +48,10 @@ dependencies {
     // Coroutines
     implementation(libs.coroutines.core)
     implementation(libs.coroutines.android)
+
+    // Paging
+    implementation(libs.paging.runtime)
+    implementation(libs.paging.compose)
 
     // Testing
     testImplementation(libs.bundles.testing)

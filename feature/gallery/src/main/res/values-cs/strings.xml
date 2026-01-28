@@ -71,4 +71,20 @@
     <string name="gallery_emoji_section_selected">Vybrané</string>
     <string name="gallery_emoji_section_available">Dostupné</string>
     <string name="gallery_emoji_fallback_name">emoji</string>
+
+    <!-- Error Messages -->
+    <string name="gallery_error_invalid_meme_id">Neplatné ID memu</string>
+    <string name="gallery_error_meme_not_found">Meme nenalezen</string>
+
+    <!-- Snackbar Messages -->
+    <string name="gallery_snackbar_deleted">%d mem(ů) smazáno</string>
+    <string name="gallery_snackbar_save_or_discard">Nejprve ulož nebo zahoď změny</string>
+    <string name="gallery_snackbar_favorite_failed">Nepodařilo se aktualizovat oblíbené</string>
+    <string name="gallery_snackbar_added_to_favorites">Přidáno do oblíbených</string>
+    <string name="gallery_snackbar_removed_from_favorites">Odebráno z oblíbených</string>
+    <string name="gallery_snackbar_meme_deleted">Meme smazán</string>
+    <string name="gallery_snackbar_delete_failed">Nepodařilo se smazat meme</string>
+    <string name="gallery_snackbar_changes_saved">Změny uloženy</string>
+    <string name="gallery_snackbar_save_failed">Nepodařilo se uložit změny</string>
+    <string name="gallery_snackbar_unsaved_changes">Máš neuložené změny</string>
 </resources>

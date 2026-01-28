@@ -145,12 +145,42 @@ class SearchRepositoryImpl @Inject constructor(
         preferencesDataStore.clearRecentSearches()
     }
 
+    /**
+     * Sanitize and prepare a query for FTS4 MATCH clause.
+     * Removes special characters and operators to prevent injection.
+     */
     private fun prepareFtsQuery(query: String): String {
-        return query
-            .replace("\"", "\"\"")
-            .split(" ")
-            .filter { it.isNotBlank() }
-            .joinToString(" OR ") { "$it*" }
+        // Remove FTS special characters and operators
+        val sanitized = query
+            .replace(Regex("[\"*():]"), "")  // Remove special chars
+            .replace(Regex("\\b(OR|AND|NOT|NEAR)\\b", RegexOption.IGNORE_CASE), "")  // Remove operators
+            .split(Regex("\\s+"))
+            .filter { it.isNotBlank() && it.length >= 2 }  // Filter short terms
+            .take(10)  // Limit terms to prevent DoS
+
+        if (sanitized.isEmpty()) return ""
+
+        // Quote each term for safety and add prefix wildcard
+        return sanitized.joinToString(" OR ") { "\"$it\"*" }
+    }
+
+    /**
+     * Prepare a query for title and description FTS search.
+     * Uses column-specific filtering.
+     */
+    private fun prepareTitleDescQuery(query: String): String {
+        val sanitized = query
+            .replace(Regex("[\"*():]"), "")
+            .replace(Regex("\\b(OR|AND|NOT|NEAR)\\b", RegexOption.IGNORE_CASE), "")
+            .split(Regex("\\s+"))
+            .filter { it.isNotBlank() && it.length >= 2 }
+            .take(10)
+
+        if (sanitized.isEmpty()) return ""
+
+        return sanitized.joinToString(" OR ") { term ->
+            "title:\"$term\"* OR description:\"$term\"*"
+        }
     }
 
     private fun determineMatchType(entity: com.mememymood.core.database.entity.MemeEntity, query: String): MatchType {

@@ -52,4 +52,9 @@
 
     <!-- Error Messages -->
     <string name="share_error_generic">Chyba</string>
+    <string name="share_error_meme_not_found">Meme nenalezen</string>
+
+    <!-- Snackbar Messages -->
+    <string name="share_snackbar_saved_to_gallery">Uloženo do galerie</string>
+    <string name="share_snackbar_save_failed">Uložení selhalo</string>
 </resources>

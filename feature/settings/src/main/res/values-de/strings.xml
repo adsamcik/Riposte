@@ -72,4 +72,13 @@
     <!-- Snackbar Messages -->
     <string name="settings_export_complete">Exportiert nach %1$s</string>
     <string name="settings_import_complete">%1$d Memes importiert</string>
+
+    <!-- Additional Snackbar Messages -->
+    <string name="settings_snackbar_cache_cleared">Cache erfolgreich geleert</string>
+    <string name="settings_snackbar_cache_clear_failed">Cache konnte nicht geleert werden</string>
+    <string name="settings_snackbar_export_success">Daten exportiert nach %1$s</string>
+    <string name="settings_snackbar_export_failed">Export fehlgeschlagen: %1$s</string>
+    <string name="settings_snackbar_import_failed">Import fehlgeschlagen: %1$s</string>
+    <string name="settings_snackbar_import_success">Einstellungen erfolgreich importiert</string>
+    <string name="settings_snackbar_invalid_backup">Ungültiges Backup-Format</string>
 </resources>

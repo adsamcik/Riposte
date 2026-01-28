@@ -55,14 +55,17 @@ interface MemeSearchDao {
 
     /**
      * Search only in title and description.
+     * 
+     * @param ftsQuery Pre-formatted FTS query with column filters (e.g., "title:\"term\"* OR description:\"term\"*").
+     *                 The caller must sanitize and prepare the query before passing it.
      */
     @Query("""
         SELECT m.* FROM memes m
         INNER JOIN memes_fts fts ON m.rowid = fts.rowid
-        WHERE memes_fts MATCH 'title:' || :query || '* OR description:' || :query || '*'
+        WHERE memes_fts MATCH :ftsQuery
         ORDER BY m.importedAt DESC
     """)
-    fun searchTitleAndDescription(query: String): Flow<List<MemeEntity>>
+    fun searchTitleAndDescription(ftsQuery: String): Flow<List<MemeEntity>>
 
     /**
      * Get search suggestions based on existing content.

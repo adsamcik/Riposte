@@ -52,6 +52,7 @@ Namespace Prefix: dc
 | `mmm:tags` | Bag (Array) | Additional search keywords | `["funny", "programming"]` |
 | `mmm:primaryLanguage` | String | BCP 47 language code of primary content | `"en"` |
 | `mmm:localizations` | Object | Localized content by language code | See below |
+| `mmm:contentHash` | String | SHA-256 hash of image content for deduplication | `"a1b2c3..."` |
 
 ## JSON Representation
 
@@ -67,6 +68,7 @@ When storing or transmitting metadata outside of XMP, use this JSON format:
   "appVersion": "1.0.0",
   "source": null,
   "tags": ["programming", "developer", "coding"],
+  "contentHash": "a1b2c3d4e5f6...",
   "primaryLanguage": "en",
   "localizations": {
     "cs": {
@@ -157,6 +159,11 @@ Use BCP 47 language tags:
       "type": "string",
       "pattern": "^[a-z]{2}(-[A-Z]{2})?$",
       "description": "BCP 47 language code of the primary content"
+    },
+    "contentHash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "description": "SHA-256 hash of image content for deduplication"
     },
     "localizations": {
       "type": "object",

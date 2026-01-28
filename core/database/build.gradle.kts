@@ -31,7 +31,11 @@ dependencies {
 
     // Room
     implementation(libs.bundles.room)
+    implementation(libs.room.paging)
     ksp(libs.room.compiler)
+
+    // Paging
+    implementation(libs.paging.common)
 
     // Hilt
     implementation(libs.hilt.android)

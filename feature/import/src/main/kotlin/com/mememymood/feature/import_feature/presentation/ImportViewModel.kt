@@ -1,13 +1,16 @@
 package com.mememymood.feature.import_feature.presentation
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mememymood.core.model.MemeMetadata
+import com.mememymood.feature.import_feature.R
 import com.mememymood.feature.import_feature.domain.usecase.ExtractTextUseCase
 import com.mememymood.feature.import_feature.domain.usecase.ImportImageUseCase
 import com.mememymood.feature.import_feature.domain.usecase.ImportZipBundleUseCase
 import com.mememymood.feature.import_feature.domain.usecase.SuggestEmojisUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,6 +23,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ImportViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val importImageUseCase: ImportImageUseCase,
     private val suggestEmojisUseCase: SuggestEmojisUseCase,
     private val extractTextUseCase: ExtractTextUseCase,
@@ -85,7 +89,7 @@ class ImportViewModel @Inject constructor(
                 it.copy(
                     isImporting = true,
                     importProgress = 0f,
-                    statusMessage = "Extracting bundle...",
+                    statusMessage = context.getString(R.string.import_status_extracting),
                 )
             }
 
@@ -98,13 +102,13 @@ class ImportViewModel @Inject constructor(
                 if (result.failureCount > 0) {
                     _effects.send(
                         ImportEffect.ShowSnackbar(
-                            "Imported ${result.successCount} memes, ${result.failureCount} failed",
+                            context.getString(R.string.import_status_imported_partial, result.successCount, result.failureCount),
                         ),
                     )
                 }
                 _effects.send(ImportEffect.NavigateToGallery)
             } else {
-                val errorMsg = result.errors.values.firstOrNull() ?: "Failed to import bundle"
+                val errorMsg = result.errors.values.firstOrNull() ?: context.getString(R.string.import_error_bundle_failed)
                 _effects.send(ImportEffect.ShowError(errorMsg))
             }
         }
@@ -248,7 +252,7 @@ class ImportViewModel @Inject constructor(
                 _effects.send(ImportEffect.ImportComplete(successCount))
                 _effects.send(ImportEffect.NavigateToGallery)
             } else {
-                _effects.send(ImportEffect.ShowError("Failed to import images"))
+                _effects.send(ImportEffect.ShowError(context.getString(R.string.import_error_images_failed)))
             }
         }
     }

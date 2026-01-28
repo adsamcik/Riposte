@@ -123,21 +123,32 @@ class ZipImporter @Inject constructor(
                             when {
                                 // JSON sidecar file (e.g., "image.jpg.json")
                                 entryName.endsWith(".json") -> {
-                                    val imageFileName = entryName.removeSuffix(".json")
-                                    val content = zipInput.readBytes().decodeToString()
-                                    val metadata = parseMetadataJson(content)
-                                    if (metadata != null) {
-                                        metadataMap[imageFileName] = metadata
+                                    val imageFileName = getSafeFileName(entryName.removeSuffix(".json"))
+                                    if (imageFileName != null) {
+                                        val content = zipInput.readBytes().decodeToString()
+                                        val metadata = parseMetadataJson(content)
+                                        if (metadata != null) {
+                                            metadataMap[imageFileName] = metadata
+                                        }
                                     }
                                 }
 
                                 // Image file
                                 isImageFile(entryName) -> {
-                                    val outputFile = File(extractDir, entryName)
-                                    FileOutputStream(outputFile).use { output ->
-                                        zipInput.copyTo(output)
+                                    val safeFileName = getSafeFileName(entryName)
+                                    if (safeFileName == null) {
+                                        errors[entryName] = "Path traversal attempt blocked"
+                                    } else {
+                                        val outputFile = getSafeOutputFile(safeFileName)
+                                        if (outputFile == null) {
+                                            errors[entryName] = "Path traversal attempt blocked"
+                                        } else {
+                                            FileOutputStream(outputFile).use { output ->
+                                                zipInput.copyTo(output)
+                                            }
+                                            extractedImages[safeFileName] = outputFile
+                                        }
                                     }
-                                    extractedImages[entryName] = outputFile
                                 }
                             }
                         } catch (e: Exception) {
@@ -177,6 +188,41 @@ class ZipImporter @Inject constructor(
      */
     fun cleanupExtractedFiles() {
         extractDir.listFiles()?.forEach { it.delete() }
+    }
+
+    /**
+     * Sanitize a file name to prevent path traversal attacks.
+     * Returns only the file name component, blocking any path components.
+     *
+     * @param entryName The original entry name from the ZIP.
+     * @return The sanitized file name, or null if the name is invalid.
+     */
+    private fun getSafeFileName(entryName: String): String? {
+        val fileName = File(entryName).name
+        if (fileName.isEmpty() || fileName.startsWith(".") || fileName.contains("..")) {
+            return null
+        }
+        return fileName
+    }
+
+    /**
+     * Create a file handle for output, validating that it's within the extract directory.
+     * Prevents ZIP Slip path traversal attacks.
+     *
+     * @param fileName The sanitized file name.
+     * @return A File within extractDir, or null if path would escape.
+     */
+    private fun getSafeOutputFile(fileName: String): File? {
+        val outputFile = File(extractDir, fileName)
+        val canonicalExtractDir = extractDir.canonicalPath
+        val canonicalOutputPath = outputFile.canonicalPath
+
+        // Ensure the output path is within the extract directory
+        return if (canonicalOutputPath.startsWith(canonicalExtractDir + File.separator)) {
+            outputFile
+        } else {
+            null
+        }
     }
 
     private fun isImageFile(fileName: String): Boolean {

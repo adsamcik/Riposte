@@ -1,15 +1,17 @@
 package com.mememymood.feature.gallery.presentation
 
+import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mememymood.core.model.EmojiTag
+import com.mememymood.feature.gallery.R
 import com.mememymood.feature.gallery.domain.usecase.DeleteMemesUseCase
 import com.mememymood.feature.gallery.domain.usecase.GetMemeByIdUseCase
 import com.mememymood.feature.gallery.domain.usecase.ToggleFavoriteUseCase
 import com.mememymood.feature.gallery.domain.usecase.UpdateMemeUseCase
-import com.mememymood.feature.share.domain.usecase.ShareUseCases
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -21,12 +23,12 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MemeDetailViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     savedStateHandle: SavedStateHandle,
     private val getMemeByIdUseCase: GetMemeByIdUseCase,
     private val updateMemeUseCase: UpdateMemeUseCase,
     private val deleteMemeUseCase: DeleteMemesUseCase,
     private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
-    private val shareUseCases: ShareUseCases,
 ) : ViewModel() {
 
     private val memeId: Long = savedStateHandle.get<Long>("memeId") ?: -1L
@@ -71,7 +73,7 @@ class MemeDetailViewModel @Inject constructor(
 
     private fun loadMeme() {
         if (memeId == -1L) {
-            _uiState.update { it.copy(isLoading = false, errorMessage = "Invalid meme ID") }
+            _uiState.update { it.copy(isLoading = false, errorMessage = context.getString(R.string.gallery_error_invalid_meme_id)) }
             return
         }
 
@@ -92,7 +94,7 @@ class MemeDetailViewModel @Inject constructor(
                         )
                     }
                 } else {
-                    _uiState.update { it.copy(isLoading = false, errorMessage = "Meme not found") }
+                    _uiState.update { it.copy(isLoading = false, errorMessage = context.getString(R.string.gallery_error_meme_not_found)) }
                 }
             } catch (e: Exception) {
                 _uiState.update { it.copy(isLoading = false, errorMessage = e.message) }
@@ -105,7 +107,7 @@ class MemeDetailViewModel @Inject constructor(
         if (currentState.isEditMode && currentState.hasUnsavedChanges) {
             // Ask to save changes before exiting edit mode
             viewModelScope.launch {
-                _effects.send(MemeDetailEffect.ShowSnackbar("Save or discard changes first"))
+                _effects.send(MemeDetailEffect.ShowSnackbar(context.getString(R.string.gallery_snackbar_save_or_discard)))
             }
         } else {
             _uiState.update {
@@ -155,13 +157,14 @@ class MemeDetailViewModel @Inject constructor(
                         _uiState.update { it.copy(meme = meme) }
                         _effects.send(
                             MemeDetailEffect.ShowSnackbar(
-                                if (meme.isFavorite) "Added to favorites" else "Removed from favorites"
+                                if (meme.isFavorite) context.getString(R.string.gallery_snackbar_added_to_favorites) 
+                                else context.getString(R.string.gallery_snackbar_removed_from_favorites)
                             )
                         )
                     }
                 }
                 .onFailure {
-                    _effects.send(MemeDetailEffect.ShowSnackbar("Failed to update favorite"))
+                    _effects.send(MemeDetailEffect.ShowSnackbar(context.getString(R.string.gallery_snackbar_favorite_failed)))
                 }
         }
     }
@@ -180,42 +183,20 @@ class MemeDetailViewModel @Inject constructor(
 
             deleteMemeUseCase(memeId)
                 .onSuccess {
-                    _effects.send(MemeDetailEffect.ShowSnackbar("Meme deleted"))
+                    _effects.send(MemeDetailEffect.ShowSnackbar(context.getString(R.string.gallery_snackbar_meme_deleted)))
                     _effects.send(MemeDetailEffect.NavigateBack)
                 }
                 .onFailure {
                     _uiState.update { it.copy(isLoading = false) }
-                    _effects.send(MemeDetailEffect.ShowSnackbar("Failed to delete meme"))
+                    _effects.send(MemeDetailEffect.ShowSnackbar(context.getString(R.string.gallery_snackbar_delete_failed)))
                 }
         }
     }
 
     private fun share() {
-        val meme = _uiState.value.meme ?: return
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-            
-            try {
-                // Get default share config from settings
-                val config = shareUseCases.getDefaultConfig()
-                
-                // Prepare the meme for sharing
-                val result = shareUseCases.prepareForSharing(meme, config)
-                result.fold(
-                    onSuccess = { uri ->
-                        val intent = shareUseCases.createShareIntent(uri, config.format.mimeType)
-                        _effects.send(MemeDetailEffect.LaunchShareIntent(intent))
-                    },
-                    onFailure = { error ->
-                        _effects.send(MemeDetailEffect.ShowError(error.message ?: "Failed to share"))
-                    }
-                )
-            } catch (e: Exception) {
-                _effects.send(MemeDetailEffect.ShowError(e.message ?: "Failed to share"))
-            } finally {
-                _uiState.update { it.copy(isLoading = false) }
-            }
-        }
+        // Delegate to share screen for consistent sharing experience
+        // This removes the feature:gallery -> feature:share dependency
+        openShareScreen()
     }
 
     private fun saveChanges() {
@@ -246,11 +227,11 @@ class MemeDetailViewModel @Inject constructor(
                             isSaving = false,
                         )
                     }
-                    _effects.send(MemeDetailEffect.ShowSnackbar("Changes saved"))
+                    _effects.send(MemeDetailEffect.ShowSnackbar(context.getString(R.string.gallery_snackbar_changes_saved)))
                 }
                 .onFailure {
                     _uiState.update { it.copy(isSaving = false) }
-                    _effects.send(MemeDetailEffect.ShowSnackbar("Failed to save changes"))
+                    _effects.send(MemeDetailEffect.ShowSnackbar(context.getString(R.string.gallery_snackbar_save_failed)))
                 }
         }
     }
@@ -278,7 +259,7 @@ class MemeDetailViewModel @Inject constructor(
     private fun dismiss() {
         viewModelScope.launch {
             if (_uiState.value.hasUnsavedChanges) {
-                _effects.send(MemeDetailEffect.ShowSnackbar("You have unsaved changes"))
+                _effects.send(MemeDetailEffect.ShowSnackbar(context.getString(R.string.gallery_snackbar_unsaved_changes)))
             } else {
                 _effects.send(MemeDetailEffect.NavigateBack)
             }

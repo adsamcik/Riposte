@@ -39,4 +39,7 @@ dependencies {
 
     // Testing
     testImplementation(libs.bundles.testing)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.test.core.ktx)
 }

@@ -1,5 +1,6 @@
 package com.mememymood.feature.gallery.domain.repository
 
+import androidx.paging.PagingData
 import com.mememymood.core.model.Meme
 import kotlinx.coroutines.flow.Flow
 
@@ -12,6 +13,11 @@ interface GalleryRepository {
      * Get all memes ordered by import date.
      */
     fun getMemes(): Flow<List<Meme>>
+
+    /**
+     * Get all memes as paged data for large collections.
+     */
+    fun getPagedMemes(): Flow<PagingData<Meme>>
 
     /**
      * Get favorite memes.
@@ -57,4 +63,9 @@ interface GalleryRepository {
      * Get memes by emoji filter.
      */
     fun getMemesByEmoji(emoji: String): Flow<List<Meme>>
+
+    /**
+     * Get all meme IDs for bulk operations.
+     */
+    suspend fun getAllMemeIds(): List<Long>
 }

@@ -1,5 +1,6 @@
 package com.mememymood.core.database.dao
 
+import androidx.paging.PagingSource
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
@@ -122,4 +123,17 @@ interface MemeDao {
      */
     @Query("SELECT EXISTS(SELECT 1 FROM memes WHERE filePath = :filePath)")
     suspend fun memeExistsByPath(filePath: String): Boolean
+
+    /**
+     * Get all memes as a PagingSource for efficient pagination.
+     * Used for large collections (1000+ memes).
+     */
+    @Query("SELECT * FROM memes ORDER BY importedAt DESC")
+    fun getAllMemesPaged(): PagingSource<Int, MemeEntity>
+
+    /**
+     * Get all meme IDs for bulk operations (e.g., select all).
+     */
+    @Query("SELECT id FROM memes ORDER BY importedAt DESC")
+    suspend fun getAllMemeIds(): List<Long>
 }

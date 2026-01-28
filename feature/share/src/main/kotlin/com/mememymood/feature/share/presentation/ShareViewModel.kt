@@ -1,14 +1,17 @@
 package com.mememymood.feature.share.presentation
 
+import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mememymood.core.model.ImageFormat
 import com.mememymood.core.model.ShareConfig
+import com.mememymood.feature.share.R
 import com.mememymood.feature.share.data.ImageProcessor
 import com.mememymood.feature.share.domain.BitmapLoader
 import com.mememymood.feature.share.domain.usecase.ShareUseCases
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,6 +23,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ShareViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     savedStateHandle: SavedStateHandle,
     private val shareUseCases: ShareUseCases,
     private val imageProcessor: ImageProcessor,
@@ -62,7 +66,7 @@ class ShareViewModel @Inject constructor(
                 val defaultConfig = shareUseCases.getDefaultConfig()
 
                 if (meme == null) {
-                    _uiState.update { it.copy(isLoading = false, errorMessage = "Meme not found") }
+                    _uiState.update { it.copy(isLoading = false, errorMessage = context.getString(R.string.share_error_meme_not_found)) }
                     return@launch
                 }
 
@@ -184,10 +188,10 @@ class ShareViewModel @Inject constructor(
                 result.fold(
                     onSuccess = { uri ->
                         _effects.send(ShareEffect.SavedToGallery(uri))
-                        _effects.send(ShareEffect.ShowSnackbar("Saved to gallery"))
+                        _effects.send(ShareEffect.ShowSnackbar(context.getString(R.string.share_snackbar_saved_to_gallery)))
                     },
                     onFailure = { error ->
-                        _effects.send(ShareEffect.ShowError(error.message ?: "Save failed"))
+                        _effects.send(ShareEffect.ShowError(error.message ?: context.getString(R.string.share_snackbar_save_failed)))
                     },
                 )
             } finally {

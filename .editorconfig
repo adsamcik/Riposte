@@ -1,0 +1,66 @@
+# EditorConfig for Meme My Mood
+# https://editorconfig.org
+
+root = true
+
+# All files
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+# Kotlin files
+[*.{kt,kts}]
+indent_size = 4
+max_line_length = 120
+ij_kotlin_allow_trailing_comma = true
+ij_kotlin_allow_trailing_comma_on_call_site = true
+ij_kotlin_packages_to_use_star_imports = unset
+ij_kotlin_name_count_to_use_star_import = 999
+ij_kotlin_name_count_to_use_star_import_for_members = 999
+ij_kotlin_imports_layout = *,java.**,javax.**,kotlin.**,^
+ij_kotlin_code_style_defaults = KOTLIN_OFFICIAL
+
+# XML files
+[*.xml]
+indent_size = 4
+max_line_length = 120
+
+# Gradle files
+[*.gradle.kts]
+indent_size = 4
+max_line_length = 120
+
+# TOML files
+[*.toml]
+indent_size = 2
+
+# JSON files
+[*.json]
+indent_size = 2
+
+# YAML files
+[*.{yml,yaml}]
+indent_size = 2
+
+# Markdown files
+[*.md]
+max_line_length = off
+trim_trailing_whitespace = false
+
+# Properties files
+[*.properties]
+end_of_line = unset
+insert_final_newline = unset
+trim_trailing_whitespace = unset
+
+# Shell scripts
+[*.sh]
+end_of_line = lf
+
+# Windows scripts
+[*.{cmd,bat,ps1}]
+end_of_line = crlf

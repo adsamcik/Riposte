@@ -7,23 +7,25 @@ A command-line tool for annotating meme images using the GitHub Copilot SDK. Gen
 - 🤖 **AI-Powered Annotation**: Uses GitHub Copilot's vision capabilities to analyze memes
 - 😀 **Emoji Suggestions**: Automatically suggests relevant emoji tags based on content
 - 📝 **Text Extraction**: Extracts visible text from memes
-- 📦 **ZIP Bundling**: Package images + metadata for easy import to the Android app
+- � **Smart Deduplication**: SHA-256 + perceptual hashing to skip duplicate images
+- �📦 **ZIP Bundling**: Package images + metadata for easy import to the Android app
 - 🔐 **Native Auth**: Uses Copilot CLI authentication (no separate login required)
 
 ## Prerequisites
 
 1. **GitHub Copilot CLI** - Required for SDK communication
-   - Install: https://docs.github.com/en/copilot/how-tos/set-up/install-copilot-cli
+   - Install: <https://docs.github.com/en/copilot/how-tos/set-up/install-copilot-cli>
    - Verify: `copilot --version`
 
 2. **Copilot Authentication**
+
    ```bash
    copilot auth login
    ```
 
 3. **Active GitHub Copilot Subscription**
    - Free tier includes limited usage
-   - See: https://github.com/features/copilot#pricing
+   - See: <https://github.com/features/copilot#pricing>
 
 ## Installation
 
@@ -107,24 +109,42 @@ Annotate images with AI-generated metadata.
 meme-cli annotate <folder> [OPTIONS]
 
 Options:
-  --zip              Bundle images and sidecars into a .meme.zip file
-  --output, -o PATH  Output directory for sidecar files (default: same as input)
-  --model, -m TEXT   Model to use for analysis (default: gpt-4.1)
-  --force, -f        Force regeneration of all sidecars, overwriting existing
-  --continue         Only process images without existing JSON sidecars
-  --add-new          Alias for --continue
-  --dry-run          Show what would be processed without making changes
-  --verbose, -v      Show detailed progress information
+  --zip                    Bundle images and sidecars into a .meme.zip file
+  --output, -o PATH        Output directory for sidecar files (default: same as input)
+  --model, -m TEXT         Model to use for analysis (default: gpt-4.1)
+  --languages, -l TEXT     Comma-separated BCP 47 language codes (default: en)
+  --force, -f              Force regeneration of all sidecars, overwriting existing
+  --continue               Only process images without existing JSON sidecars
+  --add-new                Alias for --continue
+  --no-dedup               Disable duplicate detection (skip hash-based deduplication)
+  --similarity-threshold N Max Hamming distance for near-duplicates (default: 10)
+  --dry-run                Show what would be processed without making changes
+  --verbose, -v            Show detailed progress information
 ```
 
 #### Processing Modes
 
-| Mode | Flag | Behavior |
-|------|------|----------|
-| **Default** | (none) | Skip images that already have sidecar files |
-| **Force** | `--force` / `-f` | Regenerate all sidecars, overwriting existing ones |
-| **Continue** | `--continue` | Explicitly skip images with existing sidecars |
-| **Add New** | `--add-new` | Alias for `--continue` |
+| Mode        | Flag               | Behavior                                           |
+| ----------- | ------------------ | -------------------------------------------------- |
+| **Default** | (none)             | Skip images that already have sidecar files        |
+| **Force**   | `--force` / `-f`   | Regenerate all sidecars, overwriting existing ones |
+| **Continue**| `--continue`       | Explicitly skip images with existing sidecars      |
+| **Add New** | `--add-new`        | Alias for `--continue`                             |
+
+#### Deduplication
+
+By default, the CLI uses content-based deduplication to avoid processing duplicate images:
+
+- **SHA-256 hashes** detect exact duplicates (identical files)
+- **Perceptual hashes (pHash)** detect near-duplicates (same image with different compression)
+- A hash manifest (`.meme-hashes.json`) is saved for faster subsequent runs
+
+| Option                       | Description                                                                           |
+| ---------------------------- | ------------------------------------------------------------------------------------- |
+| `--no-dedup`                 | Disable all deduplication checks                                                      |
+| `--similarity-threshold N`   | Adjust perceptual hash sensitivity (0-256, default: 10). Lower = stricter matching.   |
+
+The `contentHash` field (SHA-256) is included in each sidecar file for Android app deduplication.
 
 **Examples:**
 
@@ -140,21 +160,27 @@ meme-cli annotate ./my-memes --continue
 
 # Preview what would be processed
 meme-cli annotate ./my-memes --dry-run
+
+# Disable near-duplicate detection (only exact matches)
+meme-cli annotate ./my-memes --similarity-threshold 0
+
+# Disable all deduplication
+meme-cli annotate ./my-memes --no-dedup
 ```
 
 ## Supported Image Formats
 
-| Format | Extensions | Notes |
-|--------|------------|-------|
-| JPEG | `.jpg`, `.jpeg` | Full support |
-| PNG | `.png` | Full support |
-| WebP | `.webp` | Full support |
-| GIF | `.gif` | First frame analyzed |
-| BMP | `.bmp` | Full support |
-| TIFF | `.tiff`, `.tif` | Full support |
-| HEIC/HEIF | `.heic`, `.heif` | Requires `pillow-heif` |
-| AVIF | `.avif` | Requires `pillow-avif-plugin` |
-| JPEG XL | `.jxl` | Requires `pillow-jxl-plugin` |
+| Format    | Extensions          | Notes                         |
+| --------- | ------------------- | ----------------------------- |
+| JPEG      | `.jpg`, `.jpeg`     | Full support                  |
+| PNG       | `.png`              | Full support                  |
+| WebP      | `.webp`             | Full support                  |
+| GIF       | `.gif`              | First frame analyzed          |
+| BMP       | `.bmp`              | Full support                  |
+| TIFF      | `.tiff`, `.tif`     | Full support                  |
+| HEIC/HEIF | `.heic`, `.heif`    | Requires `pillow-heif`        |
+| AVIF      | `.avif`             | Requires `pillow-avif-plugin` |
+| JPEG XL   | `.jxl`              | Requires `pillow-jxl-plugin`  |
 
 Unsupported formats are skipped with a warning.
 
@@ -162,7 +188,7 @@ Unsupported formats are skipped with a warning.
 
 For each image, a JSON sidecar file is created:
 
-```
+```text
 my-memes/
 ├── funny-cat.jpg
 ├── funny-cat.jpg.json    # ← Generated sidecar
@@ -201,7 +227,7 @@ You don't need to configure anything - the rate limiter handles it automatically
 
 The CLI uses the GitHub Copilot SDK which communicates with the Copilot CLI via JSON-RPC:
 
-```
+```text
 meme-cli → Copilot SDK → Copilot CLI (server mode)
 ```
 

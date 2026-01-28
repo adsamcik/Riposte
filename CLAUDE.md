@@ -18,7 +18,7 @@ Meme My Mood is a multi-module Android application for organizing, searching, an
 
 ## Project Structure
 
-```
+```text
 meme-my-mood/
 ├── app/                    # Main application, wires modules together
 ├── core/
@@ -73,6 +73,7 @@ meme-cli annotate <directory> --languages en,cs --force
 ### MVI (Model-View-Intent)
 
 Each feature screen has:
+
 - **UiState**: Single immutable data class holding all screen state
 - **Intent**: Sealed interface representing user actions
 - **Effect**: Sealed interface for one-time side effects (navigation, snackbars)
@@ -97,6 +98,7 @@ sealed interface GalleryEffect {
 ### Use Cases
 
 Business logic lives in single-purpose Use Case classes:
+
 ```kotlin
 class GetMemesUseCase @Inject constructor(
     private val repository: MemeRepository
@@ -108,6 +110,7 @@ class GetMemesUseCase @Inject constructor(
 ### Type-Safe Navigation
 
 Navigation routes are defined as serializable objects in `core/common`:
+
 ```kotlin
 @Serializable data object GalleryRoute
 @Serializable data class MemeDetailRoute(val memeId: Long)
@@ -119,10 +122,26 @@ Navigation routes are defined as serializable objects in `core/common`:
 - Implementations in data layer with `@Inject constructor`
 - Bound via Hilt `@Binds` in modules
 
+### Pagination (Paging3)
+
+Gallery uses Paging3 for large meme collections (1000+):
+
+```kotlin
+// DAO returns PagingSource
+@Query("SELECT * FROM memes ORDER BY importedAt DESC")
+fun getAllMemesPaged(): PagingSource<Int, MemeEntity>
+
+// Repository wraps in Pager
+Pager(config = PagingConfig(pageSize = 20)) { ... }.flow
+
+// ViewModel caches with cachedIn(viewModelScope)
+// UI collects with collectAsLazyPagingItems()
+```
+
 ## Important Files
 
 | File | Purpose |
-|------|---------|
+| ---- | ------- |
 | `gradle/libs.versions.toml` | All dependency versions |
 | `core/database/MemeDatabase.kt` | Room database with migrations |
 | `core/ml/SemanticSearchEngine.kt` | Hybrid FTS + vector search |
@@ -136,13 +155,16 @@ Navigation routes are defined as serializable objects in `core/common`:
 
 - **Kotlin source dirs**: Use `src/main/kotlin/` not `src/main/java/`
 - **FTS sync**: `MemeFtsEntity` must be kept in sync with `MemeEntity` updates
+- **FTS query sanitization**: Always sanitize user input before FTS MATCH clauses
 - **Embedding regeneration**: When ML model version changes, embeddings are marked `needsRegeneration`
 - **WorkManager + Hilt**: App implements `Configuration.Provider` for `HiltWorkerFactory`
 - **Type-safe navigation**: Use `@Serializable` route objects, not string routes
 - **Modifier parameter**: Always pass `modifier: Modifier = Modifier` as last param in composables
-- **ZIP import**: `.meme.zip` bundles contain `image.jpg` + `image.jpg.json` sidecar pairs
+- **ZIP import**: Validates paths to prevent ZIP Slip attacks (canonical path validation)
+- **Feature module isolation**: Feature modules must NOT depend on other features (use navigation)
 - **Metadata schema**: v1.1 supports `primaryLanguage` and `localizations` for i18n
 - **CLI tool**: Uses GitHub Copilot SDK, requires `copilot auth login` first
+- **Paging for All filter**: Use `usePaging=true` for All memes, regular lists for filtered views
 
 ## Agent Instructions
 
@@ -154,12 +176,15 @@ When working in this codebase:
 4. **Prefer Flow** over suspend for data streams, use `collectAsStateWithLifecycle` in Compose
 5. **Add tests** - unit tests for ViewModels/UseCases using MockK + Turbine
 6. **Use version catalog** - add new dependencies to `libs.versions.toml`
-7. **Run tests** before completing work: `./gradlew test`
-8. **Lint** before PRs: `./gradlew lint`
+7. **Sanitize user input** - especially for FTS queries and file paths
+8. **Keep features isolated** - no feature-to-feature dependencies
+9. **Run tests** before completing work: `./gradlew test`
+10. **Lint** before PRs: `./gradlew lint`
 
 ## CLI Tool Notes
 
 The Python CLI at `tools/meme-my-mood-cli/` annotates images with AI:
+
 - Uses GitHub Copilot SDK (`github-copilot-sdk`)
 - Outputs JSON sidecar files per image (schema v1.1)
 - Rate limited with exponential backoff

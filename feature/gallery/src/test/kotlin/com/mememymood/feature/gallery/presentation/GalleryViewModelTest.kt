@@ -1,5 +1,6 @@
 package com.mememymood.feature.gallery.presentation
 
+import android.content.Context
 import app.cash.turbine.test
 import app.cash.turbine.turbineScope
 import com.google.common.truth.Truth.assertThat
@@ -9,11 +10,12 @@ import com.mememymood.core.model.DarkMode
 import com.mememymood.core.model.EmojiTag
 import com.mememymood.core.model.Meme
 import com.mememymood.feature.gallery.domain.usecase.DeleteMemesUseCase
+import com.mememymood.feature.gallery.domain.usecase.GetAllMemeIdsUseCase
 import com.mememymood.feature.gallery.domain.usecase.GetFavoritesUseCase
 import com.mememymood.feature.gallery.domain.usecase.GetMemesByEmojiUseCase
 import com.mememymood.feature.gallery.domain.usecase.GetMemesUseCase
+import com.mememymood.feature.gallery.domain.usecase.GetPagedMemesUseCase
 import com.mememymood.feature.gallery.domain.usecase.ToggleFavoriteUseCase
-import com.mememymood.feature.share.domain.usecase.ShareUseCases
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -38,12 +40,14 @@ class GalleryViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
 
     private lateinit var getMemesUseCase: GetMemesUseCase
+    private lateinit var getPagedMemesUseCase: GetPagedMemesUseCase
     private lateinit var getFavoritesUseCase: GetFavoritesUseCase
     private lateinit var getMemesByEmojiUseCase: GetMemesByEmojiUseCase
     private lateinit var deleteMemesUseCase: DeleteMemesUseCase
     private lateinit var toggleFavoriteUseCase: ToggleFavoriteUseCase
+    private lateinit var getAllMemeIdsUseCase: GetAllMemeIdsUseCase
     private lateinit var preferencesDataStore: PreferencesDataStore
-    private lateinit var shareUseCases: ShareUseCases
+    private lateinit var context: Context
 
     private lateinit var viewModel: GalleryViewModel
 
@@ -67,18 +71,23 @@ class GalleryViewModelTest {
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         
+        context = mockk(relaxed = true)
+        every { context.getString(any(), any()) } returns "1 meme deleted"
+        every { context.getString(any()) } returns "Error"
         getMemesUseCase = mockk()
+        getPagedMemesUseCase = mockk(relaxed = true)
         getFavoritesUseCase = mockk()
         getMemesByEmojiUseCase = mockk()
         deleteMemesUseCase = mockk()
         toggleFavoriteUseCase = mockk()
+        getAllMemeIdsUseCase = mockk()
         preferencesDataStore = mockk()
-        shareUseCases = mockk()
 
         every { getMemesUseCase() } returns flowOf(testMemes)
         every { getFavoritesUseCase() } returns flowOf(testMemes.filter { it.isFavorite })
         every { getMemesByEmojiUseCase(any()) } returns flowOf(emptyList())
         every { preferencesDataStore.appPreferences } returns flowOf(defaultPreferences)
+        coEvery { getAllMemeIdsUseCase() } returns testMemes.map { it.id }
     }
 
     @After
@@ -88,24 +97,28 @@ class GalleryViewModelTest {
 
     private fun createViewModel(): GalleryViewModel {
         return GalleryViewModel(
+            context = context,
             getMemesUseCase = getMemesUseCase,
+            getPagedMemesUseCase = getPagedMemesUseCase,
             getFavoritesUseCase = getFavoritesUseCase,
             getMemesByEmojiUseCase = getMemesByEmojiUseCase,
             deleteMemeUseCase = deleteMemesUseCase,
             toggleFavoriteUseCase = toggleFavoriteUseCase,
+            getAllMemeIdsUseCase = getAllMemeIdsUseCase,
             preferencesDataStore = preferencesDataStore,
-            shareUseCases = shareUseCases
         )
     }
 
     // region Initialization Tests
 
     @Test
-    fun `initial state shows loading`() = runTest {
+    fun `initial state with paging sets usePaging true`() = runTest {
         viewModel = createViewModel()
 
         val state = viewModel.uiState.value
-        assertThat(state.isLoading).isTrue()
+        // With paging for All filter, isLoading is false immediately
+        assertThat(state.isLoading).isFalse()
+        assertThat(state.usePaging).isTrue()
         assertThat(state.memes).isEmpty()
     }
 
@@ -116,7 +129,8 @@ class GalleryViewModelTest {
 
         val state = viewModel.uiState.value
         assertThat(state.isLoading).isFalse()
-        assertThat(state.memes).hasSize(3)
+        // With paging mode, memes list is empty - data comes from pagedMemes flow
+        assertThat(state.usePaging).isTrue()
         assertThat(state.error).isNull()
     }
 
@@ -143,19 +157,21 @@ class GalleryViewModelTest {
         viewModel.onIntent(GalleryIntent.LoadMemes)
         advanceUntilIdle()
 
-        verify(atLeast = 2) { getMemesUseCase() }
+        // With paging enabled for All filter, usePaging should be true
+        assertThat(viewModel.uiState.value.usePaging).isTrue()
     }
 
     @Test
-    fun `LoadMemes with empty list results in empty state`() = runTest {
+    fun `LoadMemes with empty list results in paging mode`() = runTest {
         every { getMemesUseCase() } returns flowOf(emptyList())
         
         viewModel = createViewModel()
         advanceUntilIdle()
 
         val state = viewModel.uiState.value
+        // With paging, memes list is empty but data comes from pagedMemes flow
+        assertThat(state.usePaging).isTrue()
         assertThat(state.memes).isEmpty()
-        assertThat(state.isEmpty).isTrue()
     }
 
     // endregion
@@ -426,7 +442,8 @@ class GalleryViewModelTest {
         viewModel.onIntent(GalleryIntent.SetFilter(GalleryFilter.All))
         advanceUntilIdle()
 
-        verify(atLeast = 2) { getMemesUseCase() }
+        // With paging, data comes from pagedMemes flow, not getMemesUseCase
+        assertThat(viewModel.uiState.value.usePaging).isTrue()
         assertThat(viewModel.uiState.value.filter).isEqualTo(GalleryFilter.All)
     }
 
@@ -568,12 +585,15 @@ class GalleryViewModelTest {
     }
 
     @Test
-    fun `isEmpty returns true when no memes and not loading`() = runTest {
+    fun `isEmpty returns false when using paging mode`() = runTest {
         every { getMemesUseCase() } returns flowOf(emptyList())
         viewModel = createViewModel()
         advanceUntilIdle()
 
-        assertThat(viewModel.uiState.value.isEmpty).isTrue()
+        // With paging enabled, isEmpty is false because data comes from pagedMemes flow
+        assertThat(viewModel.uiState.value.usePaging).isTrue()
+        // isEmpty only applies when not using paging
+        assertThat(viewModel.uiState.value.isEmpty).isFalse()
     }
 
     // endregion

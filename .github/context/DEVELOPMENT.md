@@ -3,7 +3,7 @@
 ## Prerequisites
 
 | Requirement | Version | Notes |
-|-------------|---------|-------|
+| ----------- | ------- | ----- |
 | Android Studio | Ladybug (2024.2.1)+ | Required for Compose previews |
 | JDK | 17 | Set in `gradle.properties` |
 | Android SDK | 35 | Target and compile SDK |
@@ -11,10 +11,11 @@
 | Gradle | 8.x | Via wrapper |
 
 For CLI tool:
-| Requirement | Version | Notes |
-|-------------|---------|-------|
-| Python | 3.11+ | For meme-my-mood-cli |
-| GitHub Copilot CLI | Latest | Authentication for AI |
+
+| Requirement         | Version | Notes                 |
+| ------------------- | ------- | --------------------- |
+| Python              | 3.11+   | For meme-my-mood-cli  |
+| GitHub Copilot CLI  | Latest  | Authentication for AI |
 
 ## Setup
 
@@ -51,18 +52,19 @@ copilot auth login
 
 ## Environment Variables
 
-| Variable | Purpose | Required | Default |
-|----------|---------|----------|---------|
-| `ANDROID_HOME` | Android SDK location | Yes | - |
-| `JAVA_HOME` | JDK 17 location | Yes | - |
+| Variable       | Purpose              | Required | Default |
+| -------------- | -------------------- | -------- | ------- |
+| `ANDROID_HOME` | Android SDK location | Yes      | -       |
+| `JAVA_HOME`    | JDK 17 location      | Yes      | -       |
 
 For CI/CD:
-| Variable | Purpose | Required |
-|----------|---------|----------|
-| `KEYSTORE_FILE` | Release signing keystore | For release builds |
-| `KEYSTORE_PASSWORD` | Keystore password | For release builds |
-| `KEY_ALIAS` | Key alias | For release builds |
-| `KEY_PASSWORD` | Key password | For release builds |
+
+| Variable             | Purpose                     | Required           |
+| -------------------- | --------------------------- | ------------------ |
+| `KEYSTORE_FILE`      | Release signing keystore    | For release builds |
+| `KEYSTORE_PASSWORD`  | Keystore password           | For release builds |
+| `KEY_ALIAS`          | Key alias                   | For release builds |
+| `KEY_PASSWORD`       | Key password                | For release builds |
 
 ## Development Workflow
 
@@ -114,16 +116,19 @@ For CI/CD:
 ### Debugging
 
 **Android Studio**:
+
 1. Set breakpoints in Kotlin code
 2. Click Debug (🐞) instead of Run
 3. Use Logcat for runtime logs
 
 **Compose UI**:
+
 1. Use Layout Inspector (View → Tool Windows → Layout Inspector)
 2. Add `@Preview` functions for component isolation
 3. Use `Modifier.border()` to debug layout issues
 
 **Database**:
+
 1. Use App Inspection (View → Tool Windows → App Inspection)
 2. Select Database Inspector tab
 3. Query and browse Room tables
@@ -168,9 +173,10 @@ keytool -genkey -v -keystore release.keystore -alias release -keyalg RSA -keysiz
 ### Adding a New Feature Module
 
 1. Create module directory structure:
-```
-feature/
-  newfeature/
+
+   ```text
+   feature/
+     newfeature/
     build.gradle.kts
     src/
       main/
@@ -196,16 +202,18 @@ feature/
         kotlin/com/mememymood/feature/newfeature/
           presentation/
             NewFeatureViewModelTest.kt
-```
+   ```
 
-2. Add to `settings.gradle.kts`:
-```kotlin
-include(":feature:newfeature")
-```
+1. Add to `settings.gradle.kts`:
 
-3. Create `build.gradle.kts`:
-```kotlin
-plugins {
+   ```kotlin
+   include(":feature:newfeature")
+   ```
+
+1. Create `build.gradle.kts`:
+
+   ```kotlin
+   plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.ksp)
@@ -226,64 +234,70 @@ dependencies {
     implementation(project(":core:database"))
     // ... standard dependencies
 }
-```
+   ```
 
-4. Add navigation in app module's `MemeMoodNavHost.kt`
+1. Add navigation in app module's `MemeMoodNavHost.kt`
 
 ### Adding a New Dependency
 
 1. Add version to `gradle/libs.versions.toml`:
-```toml
-[versions]
-newlib = "1.0.0"
 
-[libraries]
-newlib-core = { group = "com.example", name = "newlib", version.ref = "newlib" }
-```
+   ```toml
+   [versions]
+   newlib = "1.0.0"
 
-2. Use in module's `build.gradle.kts`:
-```kotlin
-dependencies {
+   [libraries]
+   newlib-core = { group = "com.example", name = "newlib", version.ref = "newlib" }
+   ```
+
+1. Use in module's `build.gradle.kts`:
+
+   ```kotlin
+   dependencies {
     implementation(libs.newlib.core)
 }
-```
+   ```
 
 ### Adding a Database Migration
 
 1. Increment version in `MemeDatabase.kt`:
-```kotlin
-@Database(
-    entities = [...],
-    version = 4,  // Increment
-    exportSchema = true
-)
-```
 
-2. Add migration object:
-```kotlin
-companion object {
-    val MIGRATION_3_4 = object : Migration(3, 4) {
-        override fun migrate(db: SupportSQLiteDatabase) {
-            db.execSQL("ALTER TABLE memes ADD COLUMN newColumn TEXT")
-        }
-    }
-}
-```
+   ```kotlin
+   @Database(
+       entities = [...],
+       version = 4,  // Increment
+       exportSchema = true
+   )
+   ```
 
-3. Register in `DatabaseModule.kt`:
-```kotlin
-.addMigrations(
-    MemeDatabase.MIGRATION_1_2,
-    MemeDatabase.MIGRATION_2_3,
-    MemeDatabase.MIGRATION_3_4,  // Add new migration
-)
-```
+1. Add migration object:
 
-4. Export schema for testing:
-```bash
-./gradlew :core:database:kspDebugKotlin
-# Schema JSON appears in core/database/schemas/
-```
+   ```kotlin
+   companion object {
+       val MIGRATION_3_4 = object : Migration(3, 4) {
+           override fun migrate(db: SupportSQLiteDatabase) {
+               db.execSQL("ALTER TABLE memes ADD COLUMN newColumn TEXT")
+           }
+       }
+   }
+   ```
+
+1. Register in `DatabaseModule.kt`:
+
+   ```kotlin
+   .addMigrations(
+       MemeDatabase.MIGRATION_1_2,
+       MemeDatabase.MIGRATION_2_3,
+       MemeDatabase.MIGRATION_3_4,  // Add new migration
+   )
+   ```
+
+1. Export schema for testing:
+
+   ```bash
+   ./gradlew :core:database:kspDebugKotlin
+   # Schema JSON appears in core/database/schemas/
+   ```
 
 ### Running the CLI Tool
 
@@ -321,7 +335,7 @@ meme-cli annotate /path/to/images -v
 ## Troubleshooting
 
 | Issue | Solution |
-|-------|----------|
+| --- | --- |
 | Gradle sync fails | Check `local.properties` has correct SDK path |
 | Compose preview broken | Rebuild project, check Compose BOM version |
 | Hilt errors | Run `./gradlew clean` then rebuild |

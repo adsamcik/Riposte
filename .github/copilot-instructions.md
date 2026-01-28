@@ -16,6 +16,7 @@ This is a multi-module Android application following Clean Architecture with MVI
 | Dependency Injection | Hilt | 2.58 |
 | Database | Room + FTS4 | 2.8.4 |
 | Async | Coroutines & Flow | 1.10.1 |
+| Paging | Paging 3 | 3.3.6 |
 | AI/ML | ML Kit + LiteRT | Latest |
 | Image Loading | Coil 3 | 3.3.0 |
 | Navigation | Type-safe Navigation Compose | 2.9.6 |
@@ -92,6 +93,13 @@ meme-my-mood/
 - Define entities in the database module
 - Use type converters for complex types
 - Follow FTS4 patterns for full-text search
+- **Sanitize FTS queries** - remove special chars (`"*():`), operators (`OR`, `AND`, `NOT`)
+
+### Security Patterns
+- Validate ZIP entry paths before extraction (prevent ZIP Slip)
+- Use canonical path validation for file operations
+- Block cleartext HTTP traffic via `network_security_config.xml`
+- Sanitize user input before FTS MATCH clauses
 
 ### Coroutines & Flow
 - Use `viewModelScope` in ViewModels
@@ -118,11 +126,13 @@ meme-my-mood/
 - Optimize Compose recomposition with stable types
 - Use `@Stable` and `@Immutable` annotations appropriately
 - Lazy load images with Coil
-- Implement pagination for large lists
+- Implement pagination for large lists (Paging3 for 1000+ items)
+- Use `PagingSource` from Room, `cachedIn(viewModelScope)` in ViewModel
 
 ## Module Dependencies
 
 - Feature modules depend on `core` modules only
+- **Feature modules must NOT depend on other features** (use navigation/intents)
 - Core modules should not depend on feature modules
 - `app` module wires everything together
 - Use API/implementation separation in Gradle
@@ -176,6 +186,9 @@ class ScreenViewModel @Inject constructor(
 - Don't create God classes/objects
 - Don't mix UI logic with business logic
 - Don't use platform-specific code in shared modules
+- Don't concatenate user input into FTS queries
+- Don't trust file paths from ZIP entries without validation
+- Don't create feature-to-feature dependencies
 
 ## CLI Tool (meme-my-mood-cli)
 

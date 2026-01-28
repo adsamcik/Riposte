@@ -52,4 +52,9 @@
 
     <!-- Error Messages -->
     <string name="share_error_generic">Error</string>
+    <string name="share_error_meme_not_found">Meme not found</string>
+
+    <!-- Snackbar Messages -->
+    <string name="share_snackbar_saved_to_gallery">Saved to gallery</string>
+    <string name="share_snackbar_save_failed">Save failed</string>
 </resources>

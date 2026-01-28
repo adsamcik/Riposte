@@ -28,6 +28,12 @@ from meme_my_mood_cli.copilot import (
     RateLimitError,
     ServerError,
 )
+from meme_my_mood_cli.hashing import (
+    deduplicate_images,
+    get_image_hash,
+    load_hash_manifest,
+    save_hash_manifest,
+)
 
 console = Console()
 
@@ -150,6 +156,7 @@ def create_sidecar_metadata(
     tags: list[str] | None = None,
     primary_language: str | None = None,
     localizations: dict[str, dict] | None = None,
+    content_hash: str | None = None,
 ) -> dict:
     """Create a metadata sidecar dictionary.
     
@@ -161,6 +168,7 @@ def create_sidecar_metadata(
         tags: Optional list of tags.
         primary_language: BCP 47 language code of the primary content.
         localizations: Optional dict of language code -> localized content.
+        content_hash: SHA-256 hash of the image content for deduplication.
         
     Returns:
         Metadata dictionary matching the schema.
@@ -184,6 +192,8 @@ def create_sidecar_metadata(
         metadata["primaryLanguage"] = primary_language
     if localizations:
         metadata["localizations"] = localizations
+    if content_hash:
+        metadata["contentHash"] = content_hash
     
     return metadata
 
@@ -251,6 +261,17 @@ def write_sidecar(image_path: Path, metadata: dict, output_dir: Path | None = No
     is_flag=True,
     help="Alias for --continue: only add new images without metadata",
 )
+@click.option(
+    "--no-dedup",
+    is_flag=True,
+    help="Disable duplicate detection (skip hash-based deduplication)",
+)
+@click.option(
+    "--similarity-threshold",
+    type=int,
+    default=10,
+    help="Max Hamming distance for near-duplicate detection (0-256, default: 10)",
+)
 @click.option("--dry-run", is_flag=True, help="Show what would be processed")
 @click.option("--verbose", "-v", is_flag=True, help="Show detailed progress")
 def annotate(
@@ -262,6 +283,8 @@ def annotate(
     force: bool,
     continue_missing: bool,
     add_new: bool,
+    no_dedup: bool,
+    similarity_threshold: int,
     dry_run: bool,
     verbose: bool,
 ) -> None:
@@ -277,6 +300,15 @@ def annotate(
       --force:     Regenerate all sidecars (overwrites existing)
       --continue:  Same as default, explicitly skip existing
       --add-new:   Alias for --continue
+    
+    \b
+    Deduplication:
+      By default, images are hashed (SHA-256 + perceptual hash) and
+      duplicates are skipped. Hash manifest is saved to .meme-hashes.json
+      for faster subsequent runs.
+      
+      Use --no-dedup to disable deduplication.
+      Use --similarity-threshold to adjust near-duplicate sensitivity.
     
     \b
     Multilingual Support:
@@ -326,11 +358,39 @@ def annotate(
         all_images, output_dir, force=force, only_missing=only_missing
     )
     
+    # Load hash manifest and perform deduplication
+    manifest = load_hash_manifest(output_dir)
+    dedup_result = None
+    exact_dupes = 0
+    near_dupes = 0
+    
+    if not no_dedup and images:
+        console.print("[dim]Checking for duplicates...[/dim]")
+        dedup_result = deduplicate_images(
+            images,
+            manifest,
+            output_dir,
+            detect_near_duplicates=True,
+            similarity_threshold=similarity_threshold,
+            verbose=verbose,
+        )
+        
+        exact_dupes = len(dedup_result.exact_duplicates)
+        near_dupes = len(dedup_result.near_duplicates)
+        images = dedup_result.unique_images
+        
+        # Save manifest with new hashes
+        save_hash_manifest(output_dir, manifest)
+    
     # Show mode and counts
     if force:
-        mode_desc = "[bold red]Force mode[/bold red] - regenerating all sidecars"
+        mode_desc = (
+            "[bold red]Force mode[/bold red] - regenerating all sidecars"
+        )
     else:
-        mode_desc = "[bold]Incremental mode[/bold] - skipping existing sidecars"
+        mode_desc = (
+            "[bold]Incremental mode[/bold] - skipping existing sidecars"
+        )
     
     console.print(f"\n{mode_desc}")
     console.print(f"Total images: {len(all_images)}")
@@ -347,6 +407,16 @@ def annotate(
     if skipped > 0:
         console.print(
             f"[dim]Skipping {skipped} image(s) with existing sidecars[/dim]"
+        )
+    if exact_dupes > 0:
+        console.print(
+            f"[dim]Skipping {exact_dupes} exact duplicate(s) "
+            "(identical content hash)[/dim]"
+        )
+    if near_dupes > 0:
+        console.print(
+            f"[dim]Skipping {near_dupes} near-duplicate(s) "
+            "(similar perceptual hash)[/dim]"
         )
     console.print(f"[bold]Processing {len(images)} image(s)[/bold]\n")
     
@@ -397,6 +467,9 @@ def annotate(
                             languages=language_list,
                         )
                         
+                        # Get content hash for deduplication
+                        content_hash = get_image_hash(image_path)
+                        
                         # Create sidecar metadata
                         metadata = create_sidecar_metadata(
                             emojis=result["emojis"],
@@ -406,6 +479,7 @@ def annotate(
                             tags=result.get("tags"),
                             primary_language=primary_language,
                             localizations=result.get("localizations"),
+                            content_hash=content_hash,
                         )
                         
                         # Write sidecar file
@@ -430,7 +504,7 @@ def annotate(
                         )
                         sys.exit(1)
                     except RateLimitError as e:
-                        wait_time = e.retry_after or rate_limiter.record_failure()
+                        wait_time = e.retry_after or 1.0  # Use retry_after, fallback to 1s
                         if rate_limiter.should_give_up():
                             console.print(
                                 f"\n[red]Too many rate limits. "

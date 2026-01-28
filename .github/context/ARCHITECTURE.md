@@ -2,7 +2,7 @@
 
 ## System Overview
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                                    App                                       │
 │  ┌─────────────────────────────────────────────────────────────────────┐    │
@@ -50,7 +50,7 @@
 
 ## Module Dependencies
 
-```
+```text
 app
  ├── feature:gallery
  ├── feature:import
@@ -90,6 +90,7 @@ core:testing
 **Location**: `core/database/src/main/kotlin/com/mememymood/core/database/`
 
 **Key Files**:
+
 - `MemeDatabase.kt` - Room database definition with migrations
 - `dao/MemeDao.kt` - CRUD operations for memes
 - `dao/MemeSearchDao.kt` - FTS4 search queries
@@ -110,6 +111,7 @@ core:testing
 **Location**: `core/ml/src/main/kotlin/com/mememymood/core/ml/`
 
 **Key Files**:
+
 - `SemanticSearchEngine.kt` - Hybrid FTS + vector search interface
 - `DefaultSemanticSearchEngine.kt` - Implementation with cosine similarity
 - `MediaPipeEmbeddingGenerator.kt` - 512-dim embeddings via Universal Sentence Encoder
@@ -130,6 +132,7 @@ core:testing
 **Location**: `core/model/src/main/kotlin/com/mememymood/core/model/`
 
 **Key Files**:
+
 - `Meme.kt` - Primary meme model with emojis, metadata, search content
 - `EmojiTag.kt` - Emoji representation with codepoint
 - `MemeMetadata.kt` - XMP metadata structure
@@ -146,6 +149,7 @@ core:testing
 **Location**: `core/ui/src/main/kotlin/com/mememymood/core/ui/`
 
 **Key Files**:
+
 - `theme/Theme.kt` - Dynamic color theme setup
 - `theme/Color.kt` - Color palette
 - `theme/Typography.kt` - Text styles
@@ -162,6 +166,7 @@ core:testing
 **Location**: `core/common/src/main/kotlin/com/mememymood/core/common/`
 
 **Key Files**:
+
 - `navigation/Routes.kt` - Type-safe navigation route definitions
 - `result/Result.kt` - Result wrapper for operations
 - `extension/` - Kotlin extension functions
@@ -176,6 +181,7 @@ core:testing
 **Location**: `feature/gallery/src/main/kotlin/com/mememymood/feature/gallery/`
 
 **Key Files**:
+
 - `presentation/GalleryScreen.kt` - Grid composable
 - `presentation/GalleryViewModel.kt` - MVI state management
 - `presentation/GalleryUiState.kt` - UI state data class
@@ -198,6 +204,7 @@ core:testing
 **Location**: `feature/search/src/main/kotlin/com/mememymood/feature/search/`
 
 **Key Files**:
+
 - `presentation/SearchScreen.kt` - Search UI with results
 - `presentation/SearchViewModel.kt` - Search state management
 - `domain/usecase/SearchUseCases.kt` - Hybrid search logic
@@ -212,6 +219,7 @@ core:testing
 **Location**: `feature/import/src/main/kotlin/com/mememymood/feature/import_feature/`
 
 **Key Files**:
+
 - `presentation/ImportScreen.kt` - Import UI
 - `presentation/ImportViewModel.kt` - Import state management
 - `domain/usecase/ImportZipBundleUseCase.kt` - ZIP import with sidecar JSON
@@ -226,6 +234,7 @@ core:testing
 **Location**: `feature/share/src/main/kotlin/com/mememymood/feature/share/`
 
 **Key Files**:
+
 - `presentation/ShareScreen.kt` - Share options UI
 - `presentation/ShareViewModel.kt` - Sharing state
 - `domain/usecase/ShareUseCases.kt` - Image processing and sharing
@@ -240,6 +249,7 @@ core:testing
 **Location**: `feature/settings/src/main/kotlin/com/mememymood/feature/settings/`
 
 **Key Files**:
+
 - `presentation/SettingsScreen.kt` - Settings UI
 - `presentation/SettingsViewModel.kt` - Preferences management
 - `presentation/component/` - Reusable setting item components
@@ -250,7 +260,7 @@ core:testing
 
 ### Meme Import Flow
 
-```
+```text
 User selects images → ImportViewModel.onIntent(SelectImages)
     │
     ├── Process each image:
@@ -266,7 +276,7 @@ User selects images → ImportViewModel.onIntent(SelectImages)
 
 ### Search Flow
 
-```
+```text
 User types query → SearchViewModel.onIntent(UpdateQuery)
     │
     └── HybridSearchUseCase.invoke(query)
@@ -284,7 +294,7 @@ User types query → SearchViewModel.onIntent(UpdateQuery)
 
 ### Share Flow
 
-```
+```text
 User taps share → ShareViewModel.onIntent(Share)
     │
     ├── Load ShareConfig from preferences
@@ -303,7 +313,7 @@ User taps share → ShareViewModel.onIntent(Share)
 ## External Integrations
 
 | Service | Purpose | Module |
-|---------|---------|--------|
+| ------- | ------- | ------ |
 | ML Kit Text Recognition | OCR on meme images | core:ml |
 | ML Kit Image Labeling | Generate image labels for search | core:ml |
 | MediaPipe Text Embedder | Semantic embeddings (USE model) | core:ml |

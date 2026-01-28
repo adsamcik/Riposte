@@ -39,7 +39,13 @@ data class GalleryUiState(
     /**
      * Number of grid columns.
      */
-    val gridColumns: Int = 2
+    val gridColumns: Int = 2,
+
+    /**
+     * Whether using paging for this view.
+     * True for "All" filter with large datasets, false for filtered views.
+     */
+    val usePaging: Boolean = true
 ) {
     /**
      * Whether any memes are selected.
@@ -53,8 +59,9 @@ data class GalleryUiState(
 
     /**
      * Whether the gallery is empty (no memes).
+     * Note: For paged data, emptiness is determined in the UI layer via LazyPagingItems.
      */
-    val isEmpty: Boolean get() = memes.isEmpty() && !isLoading
+    val isEmpty: Boolean get() = !usePaging && memes.isEmpty() && !isLoading
 }
 
 /**

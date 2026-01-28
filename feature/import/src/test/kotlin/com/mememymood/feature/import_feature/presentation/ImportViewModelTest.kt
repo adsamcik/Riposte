@@ -1,5 +1,6 @@
 package com.mememymood.feature.import_feature.presentation
 
+import android.content.Context
 import android.net.Uri
 import app.cash.turbine.test
 import com.mememymood.core.model.EmojiTag
@@ -30,6 +31,7 @@ class ImportViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
     
+    private lateinit var context: Context
     private lateinit var importImageUseCase: ImportImageUseCase
     private lateinit var suggestEmojisUseCase: SuggestEmojisUseCase
     private lateinit var extractTextUseCase: ExtractTextUseCase
@@ -39,15 +41,17 @@ class ImportViewModelTest {
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
+        context = mockk(relaxed = true)
         importImageUseCase = mockk(relaxed = true)
         suggestEmojisUseCase = mockk(relaxed = true)
         extractTextUseCase = mockk(relaxed = true)
         importZipBundleUseCase = mockk(relaxed = true)
         viewModel = ImportViewModel(
-            importImageUseCase,
-            suggestEmojisUseCase,
-            extractTextUseCase,
-            importZipBundleUseCase,
+            context = context,
+            importImageUseCase = importImageUseCase,
+            suggestEmojisUseCase = suggestEmojisUseCase,
+            extractTextUseCase = extractTextUseCase,
+            importZipBundleUseCase = importZipBundleUseCase,
         )
     }
 

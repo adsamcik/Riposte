@@ -67,6 +67,21 @@ git clone https://github.com/yourusername/meme-my-mood.git
 ./gradlew assembleDebug
 ```
 
+#### Architecture-Specific Builds
+
+The app supports architecture-specific builds to reduce APK size. See [BUILD_FLAVORS.md](docs/BUILD_FLAVORS.md) for details.
+
+```bash
+# Universal build (all architectures)
+./gradlew assembleUniversalDebug
+
+# ARM 64-bit (most modern devices)
+./gradlew assembleArm64Debug
+
+# View all available build variants
+./gradlew tasks --group=build
+```
+
 ### Run
 
 1. Open the project in Android Studio

@@ -115,10 +115,10 @@ fun SettingsScreen(
                     importLauncher.launch(arrayOf("application/json"))
                 }
                 is SettingsEffect.ExportComplete -> {
-                    snackbarHostState.showSnackbar("Exported to ${effect.path}")
+                    snackbarHostState.showSnackbar(context.getString(R.string.settings_export_complete, effect.path))
                 }
                 is SettingsEffect.ImportComplete -> {
-                    snackbarHostState.showSnackbar("Imported ${effect.count} memes")
+                    snackbarHostState.showSnackbar(context.getString(R.string.settings_import_complete, effect.count))
                 }
                 is SettingsEffect.ShowError -> {
                     snackbarHostState.showSnackbar(effect.message)

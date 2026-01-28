@@ -71,4 +71,20 @@
     <string name="gallery_emoji_section_selected">Selecionados</string>
     <string name="gallery_emoji_section_available">Disponíveis</string>
     <string name="gallery_emoji_fallback_name">emoji</string>
+
+    <!-- Error Messages -->
+    <string name="gallery_error_invalid_meme_id">ID de meme inválido</string>
+    <string name="gallery_error_meme_not_found">Meme não encontrado</string>
+
+    <!-- Snackbar Messages -->
+    <string name="gallery_snackbar_deleted">%d meme(s) excluído(s)</string>
+    <string name="gallery_snackbar_save_or_discard">Salve ou descarte as alterações primeiro</string>
+    <string name="gallery_snackbar_favorite_failed">Não foi possível atualizar favorito</string>
+    <string name="gallery_snackbar_added_to_favorites">Adicionado aos favoritos</string>
+    <string name="gallery_snackbar_removed_from_favorites">Removido dos favoritos</string>
+    <string name="gallery_snackbar_meme_deleted">Meme excluído</string>
+    <string name="gallery_snackbar_delete_failed">Não foi possível excluir o meme</string>
+    <string name="gallery_snackbar_changes_saved">Alterações salvas</string>
+    <string name="gallery_snackbar_save_failed">Não foi possível salvar as alterações</string>
+    <string name="gallery_snackbar_unsaved_changes">Você tem alterações não salvas</string>
 </resources>
