@@ -9,6 +9,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -23,7 +24,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SelectAll
@@ -61,7 +61,6 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
@@ -70,9 +69,13 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mememymood.core.ui.component.EmptyState
+import com.mememymood.core.ui.component.EmojiFilterRail
 import com.mememymood.core.ui.component.ErrorState
 import com.mememymood.core.ui.component.LoadingScreen
 import com.mememymood.core.ui.component.MemeCardCompact
+import com.mememymood.core.ui.component.QuickAccessSection
+import com.mememymood.core.ui.modifier.animatedPressScale
+import com.mememymood.core.ui.theme.rememberGridColumns
 import com.mememymood.feature.gallery.R
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -194,6 +197,8 @@ private fun GalleryScreenContent(
     onShowMenuChange: (Boolean) -> Unit,
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+    val columns = rememberGridColumns()
+    var activeEmojiFilters by remember { mutableStateOf(emptySet<String>()) }
 
     // Delete confirmation dialog
     if (showDeleteDialog) {
@@ -349,11 +354,11 @@ private fun GalleryScreenContent(
                 }
                 uiState.isEmpty && !uiState.usePaging -> {
                     EmptyState(
-                        emoji = "🖼️",
+                        icon = "🖼️",
                         title = stringResource(R.string.gallery_empty_title),
                         message = stringResource(R.string.gallery_empty_message),
                         actionLabel = stringResource(R.string.gallery_button_import_memes),
-                        onAction = { onIntent(GalleryIntent.NavigateToImport) }
+                        onAction = { onIntent(GalleryIntent.NavigateToImport) },
                     )
                 }
                 uiState.usePaging && pagedMemes != null -> {
@@ -377,36 +382,91 @@ private fun GalleryScreenContent(
                         }
                         pagedMemes.itemCount == 0 -> {
                             EmptyState(
-                                emoji = "🖼️",
+                                icon = "🖼️",
                                 title = stringResource(R.string.gallery_empty_title),
                                 message = stringResource(R.string.gallery_empty_message),
                                 actionLabel = stringResource(R.string.gallery_button_import_memes),
-                                onAction = { onIntent(GalleryIntent.NavigateToImport) }
+                                onAction = { onIntent(GalleryIntent.NavigateToImport) },
                             )
                         }
                         else -> {
-                            LazyVerticalGrid(
-                                columns = GridCells.Fixed(uiState.gridColumns),
-                                contentPadding = PaddingValues(8.dp),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                items(
-                                    count = pagedMemes.itemCount,
-                                    key = { index -> pagedMemes.peek(index)?.id ?: index }
-                                ) { index ->
-                                    val meme = pagedMemes[index]
-                                    if (meme != null) {
-                                        val isSelected = meme.id in uiState.selectedMemeIds
-                                        val memeDescription = meme.title ?: meme.fileName
+                            // Extract quick access memes (first 5) and unique emojis
+                            val quickAccessMemes = remember(pagedMemes.itemSnapshotList) {
+                                pagedMemes.itemSnapshotList.items.take(5)
+                            }
+                            val uniqueEmojis = remember(pagedMemes.itemSnapshotList) {
+                                pagedMemes.itemSnapshotList.items
+                                    .flatMap { it.emojis }
+                                    .groupingBy { it }
+                                    .eachCount()
+                                    .toList()
+                                    .sortedByDescending { it.second }
+                            }
+                            // Filter memes based on active emoji filters
+                            val filteredMemeIndices = remember(pagedMemes.itemSnapshotList, activeEmojiFilters) {
+                                if (activeEmojiFilters.isEmpty()) {
+                                    (0 until pagedMemes.itemCount).toList()
+                                } else {
+                                    (0 until pagedMemes.itemCount).filter { index ->
+                                        val meme = pagedMemes.peek(index)
+                                        meme != null && meme.emojis.any { it in activeEmojiFilters }
+                                    }
+                                }
+                            }
 
-                                        MemeGridItem(
-                                            meme = meme,
-                                            isSelected = isSelected,
-                                            isSelectionMode = uiState.isSelectionMode,
-                                            memeDescription = memeDescription,
-                                            onIntent = onIntent,
-                                        )
+                            Column {
+                                // Quick Access Section
+                                if (quickAccessMemes.isNotEmpty() && !uiState.isSelectionMode) {
+                                    QuickAccessSection(
+                                        memes = quickAccessMemes,
+                                        onQuickShare = { memeId -> onIntent(GalleryIntent.QuickShare(memeId)) },
+                                        onLongPress = { memeId -> onIntent(GalleryIntent.OpenMeme(memeId)) },
+                                        onSettingsClick = onNavigateToSettings,
+                                    )
+                                }
+
+                                // Emoji Filter Rail
+                                if (uniqueEmojis.isNotEmpty() && !uiState.isSelectionMode) {
+                                    EmojiFilterRail(
+                                        emojis = uniqueEmojis,
+                                        activeFilters = activeEmojiFilters,
+                                        onEmojiToggle = { emoji ->
+                                            activeEmojiFilters = if (emoji in activeEmojiFilters) {
+                                                activeEmojiFilters - emoji
+                                            } else {
+                                                activeEmojiFilters + emoji
+                                            }
+                                        },
+                                    )
+                                }
+
+                                LazyVerticalGrid(
+                                    columns = GridCells.Fixed(columns),
+                                    contentPadding = PaddingValues(8.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    items(
+                                        count = filteredMemeIndices.size,
+                                        key = { filteredIndex -> 
+                                            val index = filteredMemeIndices[filteredIndex]
+                                            pagedMemes.peek(index)?.id ?: index 
+                                        },
+                                    ) { filteredIndex ->
+                                        val index = filteredMemeIndices[filteredIndex]
+                                        val meme = pagedMemes[index]
+                                        if (meme != null) {
+                                            val isSelected = meme.id in uiState.selectedMemeIds
+                                            val memeDescription = meme.title ?: meme.fileName
+
+                                            MemeGridItem(
+                                                meme = meme,
+                                                isSelected = isSelected,
+                                                isSelectionMode = uiState.isSelectionMode,
+                                                memeDescription = memeDescription,
+                                                onIntent = onIntent,
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -415,26 +475,76 @@ private fun GalleryScreenContent(
                 }
                 else -> {
                     // Non-paged list view (Favorites, ByEmoji filters)
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(uiState.gridColumns),
-                        contentPadding = PaddingValues(8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        items(
-                            items = uiState.memes,
-                            key = { it.id }
-                        ) { meme ->
-                            val isSelected = meme.id in uiState.selectedMemeIds
-                            val memeDescription = meme.title ?: meme.fileName
+                    // Extract quick access memes and unique emojis
+                    val quickAccessMemes = remember(uiState.memes) {
+                        uiState.memes.take(5)
+                    }
+                    val uniqueEmojis = remember(uiState.memes) {
+                        uiState.memes
+                            .flatMap { it.emojis }
+                            .groupingBy { it }
+                            .eachCount()
+                            .toList()
+                            .sortedByDescending { it.second }
+                    }
+                    // Filter memes based on active emoji filters
+                    val filteredMemes = remember(uiState.memes, activeEmojiFilters) {
+                        if (activeEmojiFilters.isEmpty()) {
+                            uiState.memes
+                        } else {
+                            uiState.memes.filter { meme -> 
+                                meme.emojis.any { it in activeEmojiFilters }
+                            }
+                        }
+                    }
 
-                            MemeGridItem(
-                                meme = meme,
-                                isSelected = isSelected,
-                                isSelectionMode = uiState.isSelectionMode,
-                                memeDescription = memeDescription,
-                                onIntent = onIntent,
+                    Column {
+                        // Quick Access Section
+                        if (quickAccessMemes.isNotEmpty() && !uiState.isSelectionMode) {
+                            QuickAccessSection(
+                                memes = quickAccessMemes,
+                                onQuickShare = { memeId -> onIntent(GalleryIntent.QuickShare(memeId)) },
+                                onLongPress = { memeId -> onIntent(GalleryIntent.OpenMeme(memeId)) },
+                                onSettingsClick = onNavigateToSettings,
                             )
+                        }
+
+                        // Emoji Filter Rail
+                        if (uniqueEmojis.isNotEmpty() && !uiState.isSelectionMode) {
+                            EmojiFilterRail(
+                                emojis = uniqueEmojis,
+                                activeFilters = activeEmojiFilters,
+                                onEmojiToggle = { emoji ->
+                                    activeEmojiFilters = if (emoji in activeEmojiFilters) {
+                                        activeEmojiFilters - emoji
+                                    } else {
+                                        activeEmojiFilters + emoji
+                                    }
+                                },
+                            )
+                        }
+
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(columns),
+                            contentPadding = PaddingValues(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            items(
+                                items = filteredMemes,
+                                key = { it.id },
+                            ) { meme ->
+                                val isSelected = meme.id in uiState.selectedMemeIds
+                                val memeDescription = meme.title ?: meme.fileName
+
+                                MemeGridItem(
+                                    meme = meme,
+                                    isSelected = isSelected,
+                                    isSelectionMode = uiState.isSelectionMode,
+                                    memeDescription = memeDescription,
+                                    onIntent = onIntent,
+                                )
+                            }
                         }
                     }
                 }
@@ -457,6 +567,7 @@ private fun MemeGridItem(
 ) {
     Box(
         modifier = Modifier
+            .animatedPressScale()
             .combinedClickable(
                 onClick = { onIntent(GalleryIntent.OpenMeme(meme.id)) },
                 onLongClick = { onIntent(GalleryIntent.QuickShare(meme.id)) },
