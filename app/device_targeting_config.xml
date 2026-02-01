@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<config:device-targeting-config
+    xmlns:config="http://schemas.android.com/apk/config">
+
+    <!-- Qualcomm Snapdragon 8 Gen 2 (sm8550) -->
+    <config:device-group name="qualcomm_sm8550">
+        <config:device-selector>
+            <config:system-on-chip manufacturer="QTI" model="SM8550"/>
+        </config:device-selector>
+    </config:device-group>
+
+    <!-- Qualcomm Snapdragon 8 Gen 3 (sm8650) -->
+    <config:device-group name="qualcomm_sm8650">
+        <config:device-selector>
+            <config:system-on-chip manufacturer="QTI" model="SM8650"/>
+        </config:device-selector>
+    </config:device-group>
+
+    <!-- Qualcomm Snapdragon 8s Gen 3 (sm8750) -->
+    <config:device-group name="qualcomm_sm8750">
+        <config:device-selector>
+            <config:system-on-chip manufacturer="QTI" model="SM8750"/>
+        </config:device-selector>
+    </config:device-group>
+
+    <!-- Qualcomm Snapdragon 8 Elite (sm8850) -->
+    <config:device-group name="qualcomm_sm8850">
+        <config:device-selector>
+            <config:system-on-chip manufacturer="QTI" model="SM8850"/>
+        </config:device-selector>
+    </config:device-group>
+
+    <!-- MediaTek Dimensity 9300 (mt6991) -->
+    <config:device-group name="mediatek_mt6991">
+        <config:device-selector>
+            <config:system-on-chip manufacturer="MediaTek" model="MT6991"/>
+        </config:device-selector>
+    </config:device-group>
+
+    <!-- MediaTek Dimensity 9400 (mt6993) -->
+    <config:device-group name="mediatek_mt6993">
+        <config:device-selector>
+            <config:system-on-chip manufacturer="MediaTek" model="MT6993"/>
+        </config:device-selector>
+    </config:device-group>
+
+</config:device-targeting-config>
