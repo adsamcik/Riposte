@@ -39,8 +39,9 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -58,8 +59,6 @@ import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconToggleButton
@@ -68,7 +67,6 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SearchBar
-import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -120,8 +118,12 @@ import coil3.compose.AsyncImage
 import com.mememymood.core.model.EmojiTag
 import com.mememymood.core.model.SearchResult
 import com.mememymood.core.ui.component.EmojiChip
+import com.mememymood.core.ui.component.EmojiFilterRail
 import com.mememymood.core.ui.component.EmptyState
 import com.mememymood.core.ui.component.MemeCardCompact
+import com.mememymood.core.ui.modifier.animatedPressScale
+import com.mememymood.core.ui.modifier.relevanceOpacity
+import com.mememymood.core.ui.theme.rememberGridColumns
 import kotlinx.coroutines.flow.collectLatest
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -295,10 +297,17 @@ fun SearchScreen(
                 }
 
                 // Emoji filters
-                EmojiFilterRow(
-                    selectedEmojis = uiState.selectedEmojiFilters,
+                EmojiFilterRail(
+                    emojis = listOf(
+                        "😂" to 0, "❤️" to 0, "🔥" to 0,
+                        "😍" to 0, "🤣" to 0, "😊" to 0,
+                        "🙏" to 0, "😭" to 0, "😘" to 0,
+                        "👍" to 0, "💯" to 0, "🎉" to 0,
+                        "😎" to 0, "🥺" to 0, "✨" to 0,
+                    ),
+                    activeFilters = uiState.selectedEmojiFilters.toSet(),
                     onEmojiToggle = { viewModel.onIntent(SearchIntent.ToggleEmojiFilter(it)) },
-                    onClearFilters = { viewModel.onIntent(SearchIntent.ClearEmojiFilters) },
+                    modifier = Modifier.padding(vertical = 8.dp),
                 )
 
                 // Results toolbar with sort/view options
@@ -361,13 +370,24 @@ fun SearchScreen(
                             SearchEmptyPrompt()
                         }
                         isEmpty -> {
-                            NoResultsState(
-                                query = uiState.query,
-                                hasFilters = uiState.hasActiveFilters,
-                                onClearFilters = { 
-                                    viewModel.onIntent(SearchIntent.ClearEmojiFilters)
-                                    viewModel.onIntent(SearchIntent.ClearQuickFilter)
+                            EmptyState(
+                                icon = "🔍",
+                                title = stringResource(R.string.search_no_results_title),
+                                message = stringResource(R.string.search_no_results_description, uiState.query),
+                                actionLabel = if (uiState.hasActiveFilters) {
+                                    stringResource(R.string.search_no_results_clear_filters)
+                                } else {
+                                    null
                                 },
+                                onAction = if (uiState.hasActiveFilters) {
+                                    {
+                                        viewModel.onIntent(SearchIntent.ClearEmojiFilters)
+                                        viewModel.onIntent(SearchIntent.ClearQuickFilter)
+                                    }
+                                } else {
+                                    null
+                                },
+                                modifier = Modifier.fillMaxSize(),
                             )
                         }
                         else -> {
@@ -518,84 +538,6 @@ private fun SearchResultsToolbar(
                     if (viewMode == SearchViewMode.LIST) Icons.Default.GridView else Icons.Default.ViewList,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun EmojiFilterRow(
-    selectedEmojis: List<String>,
-    onEmojiToggle: (String) -> Unit,
-    onClearFilters: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val context = LocalContext.current
-    val clearFiltersDescription = stringResource(R.string.search_filter_emoji_clear_content_description, selectedEmojis.size)
-    Column(modifier = modifier) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = stringResource(R.string.search_filter_emoji_title),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.semantics { heading() },
-            )
-            AnimatedVisibility(
-                visible = selectedEmojis.isNotEmpty(),
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically()
-            ) {
-                TextButton(
-                    onClick = onClearFilters,
-                    modifier = Modifier.semantics { 
-                        contentDescription = clearFiltersDescription 
-                    }
-                ) {
-                    Text(stringResource(R.string.search_filter_emoji_clear, selectedEmojis.size))
-                }
-            }
-        }
-
-        val commonEmojis = listOf(
-            "😂" to "Joy", "❤️" to "Heart", "🔥" to "Fire",
-            "😍" to "Heart Eyes", "🤣" to "ROFL", "😊" to "Blush",
-            "🙏" to "Pray", "😭" to "Crying", "😘" to "Kiss",
-            "👍" to "Thumbs Up", "💯" to "100", "🎉" to "Party",
-            "😎" to "Cool", "🥺" to "Pleading", "✨" to "Sparkles"
-        )
-
-        LazyRow(
-            contentPadding = PaddingValues(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            items(commonEmojis) { (emoji, description) ->
-                val isSelected = emoji in selectedEmojis
-                FilterChip(
-                    selected = isSelected,
-                    onClick = { onEmojiToggle(emoji) },
-                    label = { Text(emoji) },
-                    colors = if (isSelected) {
-                        FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        )
-                    } else {
-                        FilterChipDefaults.filterChipColors()
-                    },
-                    modifier = Modifier.semantics { 
-                        contentDescription = context.getString(
-                            if (isSelected) R.string.search_filter_emoji_selected_content_description 
-                            else R.string.search_filter_emoji_content_description,
-                            description
-                        )
-                    }
                 )
             }
         }
@@ -874,74 +816,10 @@ private fun SearchTip(text: String) {
 }
 
 @Composable
-private fun NoResultsState(
-    query: String,
-    hasFilters: Boolean,
-    onClearFilters: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Text(
-            text = stringResource(R.string.search_empty_icon),
-            style = MaterialTheme.typography.displayLarge,
-        )
-        Spacer(Modifier.height(16.dp))
-        Text(
-            text = stringResource(R.string.search_no_results_title),
-            style = MaterialTheme.typography.headlineSmall,
-            textAlign = TextAlign.Center,
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            text = stringResource(R.string.search_no_results_description, query),
-            style = MaterialTheme.typography.bodyMedium,
-            textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(Modifier.height(16.dp))
-        
-        // Suggestions
-        Surface(
-            shape = RoundedCornerShape(12.dp),
-            tonalElevation = 2.dp,
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Text(
-                    text = stringResource(R.string.search_no_results_try_title),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                )
-                SearchTip(stringResource(R.string.search_no_results_tip_typos))
-                SearchTip(stringResource(R.string.search_no_results_tip_keywords))
-                SearchTip(stringResource(R.string.search_no_results_tip_ai_mode))
-                if (hasFilters) {
-                    SearchTip(stringResource(R.string.search_no_results_tip_filters))
-                }
-            }
-        }
-        
-        if (hasFilters) {
-            Spacer(Modifier.height(16.dp))
-            TextButton(onClick = onClearFilters) {
-                Text(stringResource(R.string.search_no_results_clear_filters))
-            }
-        }
-    }
-}
-
-@Composable
 private fun ShimmerSearchResults(
     modifier: Modifier = Modifier,
 ) {
+    val columns = rememberGridColumns()
     val infiniteTransition = rememberInfiniteTransition(label = "shimmer")
     val shimmerProgress by infiniteTransition.animateFloat(
         initialValue = 0f,
@@ -966,14 +844,14 @@ private fun ShimmerSearchResults(
     )
     
     LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
+        columns = GridCells.Fixed(columns),
         contentPadding = PaddingValues(16.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier.height(400.dp),
         userScrollEnabled = false,
     ) {
-        items(6) {
+        items(columns * 2) {
             ShimmerCard(brush = brush)
         }
     }
@@ -1028,19 +906,28 @@ private fun SearchResultsGrid(
     onMemeClick: (SearchResult) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val columns = rememberGridColumns()
+    val totalResults = results.size
+    
     LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
+        columns = GridCells.Fixed(columns),
         contentPadding = PaddingValues(16.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier.fillMaxSize(),
     ) {
-        items(results, key = { it.meme.id }) { result ->
+        itemsIndexed(
+            items = results,
+            key = { _, result -> result.meme.id },
+        ) { index, result ->
             SearchResultCard(
                 result = result,
                 query = query,
                 onClick = { onMemeClick(result) },
-                modifier = Modifier.animateItem()
+                modifier = Modifier
+                    .animateItem()
+                    .relevanceOpacity(rank = index, total = totalResults)
+                    .animatedPressScale(),
             )
         }
     }
@@ -1053,17 +940,24 @@ private fun SearchResultsList(
     onMemeClick: (SearchResult) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val totalResults = results.size
+    
     LazyColumn(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier.fillMaxSize(),
     ) {
-        items(results, key = { it.meme.id }) { result ->
+        itemsIndexed(
+            items = results,
+            key = { _, result -> result.meme.id },
+        ) { index, result ->
             SearchResultListItem(
                 result = result,
                 query = query,
                 onClick = { onMemeClick(result) },
-                modifier = Modifier.animateItem()
+                modifier = Modifier
+                    .animateItem()
+                    .relevanceOpacity(rank = index, total = totalResults),
             )
         }
     }
