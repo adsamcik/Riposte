@@ -51,6 +51,7 @@
     <string name="share_message_saved_to_gallery">Saved to gallery</string>
 
     <!-- Error Messages -->
+    <string name="share_error_title">Something went wrong</string>
     <string name="share_error_generic">Error</string>
     <string name="share_error_meme_not_found">Meme not found</string>
 

@@ -73,7 +73,9 @@ import com.mememymood.feature.share.R
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mememymood.core.model.ImageFormat
+import com.mememymood.core.ui.component.EmptyState
 import com.mememymood.core.ui.component.LoadingScreen
+import com.mememymood.core.ui.modifier.animatedPressScale
 import kotlinx.coroutines.flow.collectLatest
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -139,9 +141,10 @@ fun ShareScreen(
                         .semantics { liveRegion = LiveRegionMode.Assertive },
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(
-                        text = uiState.errorMessage ?: stringResource(R.string.share_error_generic),
-                        color = MaterialTheme.colorScheme.error,
+                    EmptyState(
+                        icon = "⚠️",
+                        title = stringResource(R.string.share_error_title),
+                        message = uiState.errorMessage ?: stringResource(R.string.share_error_generic),
                     )
                 }
             }
@@ -230,7 +233,9 @@ private fun ShareContent(
             FilledTonalButton(
                 onClick = { onIntent(ShareIntent.SaveToGallery) },
                 enabled = !uiState.isProcessing,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .animatedPressScale(),
             ) {
                 Icon(Icons.Default.Download, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
@@ -240,7 +245,9 @@ private fun ShareContent(
             Button(
                 onClick = { onIntent(ShareIntent.Share) },
                 enabled = !uiState.isProcessing,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .animatedPressScale(),
             ) {
                 Icon(Icons.Default.Share, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
