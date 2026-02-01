@@ -10,13 +10,6 @@ import com.mememymood.core.common.navigation.MemeDetailRoute
 import com.mememymood.feature.gallery.presentation.GalleryScreen
 import com.mememymood.feature.gallery.presentation.MemeDetailScreen
 
-// Legacy route constants for backward compatibility
-@Deprecated("Use GalleryRoute object for type-safe navigation")
-const val GALLERY_ROUTE = "gallery"
-@Deprecated("Use MemeDetailRoute for type-safe navigation")
-const val MEME_DETAIL_ROUTE = "gallery/{memeId}"
-const val MEME_ID_ARG = "memeId"
-
 fun NavController.navigateToGallery(navOptions: NavOptions? = null) {
     navigate(GalleryRoute, navOptions)
 }

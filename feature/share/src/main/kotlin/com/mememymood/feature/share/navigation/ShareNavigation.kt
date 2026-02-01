@@ -8,11 +8,6 @@ import androidx.navigation.toRoute
 import com.mememymood.core.common.navigation.ShareRoute
 import com.mememymood.feature.share.presentation.ShareScreen
 
-// Legacy route constants for backward compatibility
-@Deprecated("Use ShareRoute for type-safe navigation")
-const val SHARE_ROUTE = "share"
-const val SHARE_MEME_ID_ARG = "memeId"
-
 fun NavController.navigateToShare(memeId: Long, navOptions: NavOptions? = null) {
     navigate(ShareRoute(memeId), navOptions)
 }

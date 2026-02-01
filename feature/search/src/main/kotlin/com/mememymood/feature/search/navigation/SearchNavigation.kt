@@ -7,10 +7,6 @@ import androidx.navigation.compose.composable
 import com.mememymood.core.common.navigation.SearchRoute
 import com.mememymood.feature.search.presentation.SearchScreen
 
-// Legacy route constant for backward compatibility
-@Deprecated("Use SearchRoute object for type-safe navigation")
-const val SEARCH_ROUTE = "search"
-
 fun NavController.navigateToSearch(navOptions: NavOptions? = null) {
     navigate(SearchRoute, navOptions)
 }

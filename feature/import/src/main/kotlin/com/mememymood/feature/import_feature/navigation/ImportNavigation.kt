@@ -7,10 +7,6 @@ import androidx.navigation.compose.composable
 import com.mememymood.core.common.navigation.ImportRoute
 import com.mememymood.feature.import_feature.presentation.ImportScreen
 
-// Legacy route constant for backward compatibility
-@Deprecated("Use ImportRoute object for type-safe navigation")
-const val IMPORT_ROUTE = "import"
-
 fun NavController.navigateToImport(navOptions: NavOptions? = null) {
     navigate(ImportRoute, navOptions)
 }
