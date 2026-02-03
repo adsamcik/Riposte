@@ -11,9 +11,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.mememymood.core.ui.theme.MemeMyMoodTheme
+import com.mememymood.core.ui.theme.MemeMoodTheme
 
 private val MoreChipShape = RoundedCornerShape(18.dp)
 
@@ -33,10 +35,13 @@ fun MoreChip(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val description = "$count more emoji filters available"
+    
     Surface(
         modifier = modifier
             .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
-            .clickable(onClick = onClick),
+            .clickable(onClick = onClick)
+            .semantics { contentDescription = description },
         shape = MoreChipShape,
         color = MaterialTheme.colorScheme.surfaceContainerHighest,
     ) {
@@ -55,7 +60,7 @@ fun MoreChip(
 @Preview(name = "MoreChip - Small Count", showBackground = true)
 @Composable
 private fun MoreChipSmallCountPreview() {
-    MemeMyMoodTheme {
+    MemeMoodTheme {
         MoreChip(
             count = 5,
             onClick = {},
@@ -66,7 +71,7 @@ private fun MoreChipSmallCountPreview() {
 @Preview(name = "MoreChip - Large Count", showBackground = true)
 @Composable
 private fun MoreChipLargeCountPreview() {
-    MemeMyMoodTheme {
+    MemeMoodTheme {
         MoreChip(
             count = 42,
             onClick = {},

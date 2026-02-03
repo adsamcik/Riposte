@@ -1,8 +1,18 @@
 package com.mememymood.core.ui.component
 
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -25,8 +35,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -35,22 +51,40 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.mememymood.core.model.EmojiTag
 import com.mememymood.core.model.Meme
-import com.mememymood.core.ui.theme.MemeMyMoodTheme
+import com.mememymood.core.ui.theme.MemeMoodTheme
 import com.mememymood.core.ui.theme.ThumbnailSizes
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.io.File
+
+/**
+ * Duration in milliseconds for the hold-to-share gesture.
+ * The progress indicator fills over this duration.
+ */
+private const val HOLD_TO_SHARE_DURATION_MS = 600L
+
+/**
+ * Delay before starting the hold progress animation.
+ * Allows distinguishing between tap and hold gestures.
+ */
+private const val HOLD_START_DELAY_MS = 150L
 
 /**
  * Quick Access section displaying frequently used memes in a horizontal row.
  *
  * This is the most prominent section in the gallery, designed for instant access
  * to the user's most-used stickers. Single tap triggers immediate sharing.
+ * Hold gesture shows a circular progress indicator; completing the hold also
+ * triggers sharing (useful for visual feedback before sharing).
  *
  * @param memes List of memes to display in the quick access row.
- * @param onQuickShare Callback invoked when a meme is tapped for quick sharing.
- * @param onLongPress Callback invoked when a meme is long-pressed for additional options.
+ * @param onQuickShare Callback invoked when a meme is tapped or hold completes for quick sharing.
+ * @param onLongPress Deprecated: No longer used. Hold gesture now triggers [onQuickShare] with visual feedback.
  * @param onSettingsClick Callback invoked when the settings icon is clicked.
  * @param modifier Modifier for the section container.
  */
+@Suppress("UNUSED_PARAMETER")
 @Composable
 fun QuickAccessSection(
     memes: List<Meme>,
@@ -111,8 +145,8 @@ fun QuickAccessSection(
                 ) { meme ->
                     QuickAccessItem(
                         meme = meme,
-                        onClick = { onQuickShare(meme.id) },
-                        onLongClick = { onLongPress(meme.id) },
+                        onTap = { onQuickShare(meme.id) },
+                        onHoldComplete = { onQuickShare(meme.id) },
                     )
                 }
             }
@@ -121,42 +155,106 @@ fun QuickAccessSection(
 }
 
 /**
- * Individual meme item in the Quick Access row.
+ * Individual meme item in the Quick Access row with hold-to-share gesture.
+ *
+ * Single tap triggers immediate sharing. Hold gesture shows a circular progress
+ * indicator that fills over [HOLD_TO_SHARE_DURATION_MS]; releasing before completion
+ * cancels the action.
  *
  * @param meme The meme to display.
- * @param onClick Callback for single tap (quick share).
- * @param onLongClick Callback for long press (additional options).
+ * @param onTap Callback for single tap (quick share).
+ * @param onHoldComplete Callback when hold gesture completes (instant share with progress).
  * @param modifier Modifier for the item.
  */
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun QuickAccessItem(
     meme: Meme,
-    onClick: () -> Unit,
-    onLongClick: () -> Unit,
+    onTap: () -> Unit,
+    onHoldComplete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val itemDescription = "${meme.title ?: meme.fileName}, sticker. Double-tap to share, hold for options"
+    val itemDescription = "${meme.title ?: meme.fileName}, sticker. Tap to share, hold for instant share"
+    val scope = rememberCoroutineScope()
 
-    Surface(
+    val holdProgress = remember { Animatable(0f) }
+    var isHolding by remember { mutableStateOf(false) }
+    var holdJob by remember { mutableStateOf<Job?>(null) }
+
+    Box(
         modifier = modifier
             .height(ThumbnailSizes.QUICK_ACCESS_HEIGHT)
             .widthIn(max = ThumbnailSizes.QUICK_ACCESS_MAX_WIDTH)
             .semantics { contentDescription = itemDescription },
-        shape = RoundedCornerShape(ThumbnailSizes.THUMBNAIL_CORNER_RADIUS),
-        shadowElevation = 2.dp,
+        contentAlignment = Alignment.Center,
     ) {
-        AsyncImage(
-            model = File(meme.filePath),
-            contentDescription = null, // Handled by parent semantics
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .fillMaxSize()
-                .combinedClickable(
-                    onClick = onClick,
-                    onLongClick = onLongClick,
-                ),
-        )
+        Surface(
+            shape = RoundedCornerShape(ThumbnailSizes.THUMBNAIL_CORNER_RADIUS),
+            shadowElevation = 2.dp,
+            modifier = Modifier.fillMaxSize(),
+        ) {
+            AsyncImage(
+                model = File(meme.filePath),
+                contentDescription = null, // Handled by parent semantics
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .pointerInput(Unit) {
+                        awaitEachGesture {
+                            val down = awaitFirstDown(requireUnconsumed = false)
+                            down.consume()
+
+                            // Start hold detection
+                            holdJob = scope.launch {
+                                delay(HOLD_START_DELAY_MS)
+                                isHolding = true
+                                holdProgress.animateTo(
+                                    targetValue = 1f,
+                                    animationSpec = tween(
+                                        durationMillis = HOLD_TO_SHARE_DURATION_MS.toInt(),
+                                        easing = LinearEasing,
+                                    ),
+                                )
+                            }
+
+                            val up = waitForUpOrCancellation()
+
+                            // Cancel or complete
+                            holdJob?.cancel()
+                            holdJob = null
+
+                            if (up != null) {
+                                up.consume()
+                                if (holdProgress.value >= 1f) {
+                                    // Hold completed - trigger share
+                                    onHoldComplete()
+                                } else if (!isHolding) {
+                                    // Released before hold started - treat as tap
+                                    onTap()
+                                }
+                                // If holding but not complete, just cancel (do nothing)
+                            }
+
+                            // Reset state
+                            isHolding = false
+                            scope.launch {
+                                holdProgress.snapTo(0f)
+                            }
+                        }
+                    },
+            )
+        }
+
+        // Hold-to-share progress overlay
+        AnimatedVisibility(
+            visible = isHolding,
+            enter = fadeIn() + scaleIn(initialScale = 0.8f),
+            exit = fadeOut() + scaleOut(targetScale = 0.8f),
+        ) {
+            HoldToShareProgress(
+                progress = holdProgress.value,
+                onComplete = { /* Handled in gesture detection */ },
+            )
+        }
     }
 }
 
@@ -165,7 +263,7 @@ private fun QuickAccessItem(
 @Preview(showBackground = true)
 @Composable
 private fun QuickAccessSectionPreview() {
-    MemeMyMoodTheme {
+    MemeMoodTheme {
         QuickAccessSection(
             memes = sampleMemes,
             onQuickShare = {},
@@ -178,7 +276,7 @@ private fun QuickAccessSectionPreview() {
 @Preview(showBackground = true, name = "Empty State")
 @Composable
 private fun QuickAccessSectionEmptyPreview() {
-    MemeMyMoodTheme {
+    MemeMoodTheme {
         QuickAccessSection(
             memes = emptyList(),
             onQuickShare = {},

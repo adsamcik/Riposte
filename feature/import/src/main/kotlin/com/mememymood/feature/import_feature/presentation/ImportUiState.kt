@@ -40,11 +40,14 @@ data class ImportUiState(
     /**
      * Whether in emoji picker mode.
      */
-    val showEmojiPicker: Boolean = false
+    val showEmojiPicker: Boolean = false,
 ) {
     val hasImages: Boolean get() = selectedImages.isNotEmpty()
     val canImport: Boolean get() = hasImages && !isImporting && selectedImages.all { it.emojis.isNotEmpty() }
     val editingImage: ImportImage? get() = editingImageIndex?.let { selectedImages.getOrNull(it) }
+
+    /** True when progress is indeterminate (streaming ZIP import). */
+    val isProgressIndeterminate: Boolean get() = importProgress < 0f
 }
 
 /**

@@ -108,6 +108,24 @@ interface MemeDao {
     suspend fun getMemeCount(): Int
 
     /**
+     * Observe the total count of memes as a Flow.
+     */
+    @Query("SELECT COUNT(*) FROM memes")
+    fun observeMemeCount(): Flow<Int>
+
+    /**
+     * Get the count of favorite memes.
+     */
+    @Query("SELECT COUNT(*) FROM memes WHERE isFavorite = 1")
+    suspend fun getFavoriteCount(): Int
+
+    /**
+     * Observe the count of favorite memes as a Flow.
+     */
+    @Query("SELECT COUNT(*) FROM memes WHERE isFavorite = 1")
+    fun observeFavoriteCount(): Flow<Int>
+
+    /**
      * Get memes by emoji tag.
      */
     @Query("""

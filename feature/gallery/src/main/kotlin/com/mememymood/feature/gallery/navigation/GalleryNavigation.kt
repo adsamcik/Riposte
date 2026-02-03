@@ -22,14 +22,16 @@ fun NavGraphBuilder.galleryScreen(
     onNavigateToMeme: (Long) -> Unit,
     onNavigateToImport: () -> Unit,
     onNavigateToSearch: () -> Unit,
-    onNavigateToSettings: () -> Unit
+    onNavigateToSettings: () -> Unit,
+    onNavigateToShare: (Long) -> Unit,
 ) {
     composable<GalleryRoute> {
         GalleryScreen(
             onNavigateToMeme = onNavigateToMeme,
             onNavigateToImport = onNavigateToImport,
             onNavigateToSearch = onNavigateToSearch,
-            onNavigateToSettings = onNavigateToSettings
+            onNavigateToSettings = onNavigateToSettings,
+            onNavigateToShare = onNavigateToShare,
         )
     }
 }

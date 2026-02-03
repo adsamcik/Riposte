@@ -131,10 +131,13 @@ android {
             if (keystorePropertiesFile.exists()) {
                 val properties = Properties()
                 keystorePropertiesFile.inputStream().use { stream -> properties.load(stream) }
-                storeFile = properties.getProperty("RELEASE_STORE_FILE")?.let { path -> file(path) }
-                storePassword = properties.getProperty("RELEASE_STORE_PASSWORD")
-                keyAlias = properties.getProperty("RELEASE_KEY_ALIAS")
-                keyPassword = properties.getProperty("RELEASE_KEY_PASSWORD")
+                val storeFilePath = properties.getProperty("RELEASE_STORE_FILE")
+                if (storeFilePath != null && file(storeFilePath).exists()) {
+                    storeFile = file(storeFilePath)
+                    storePassword = properties.getProperty("RELEASE_STORE_PASSWORD")
+                    keyAlias = properties.getProperty("RELEASE_KEY_ALIAS")
+                    keyPassword = properties.getProperty("RELEASE_KEY_PASSWORD")
+                }
             }
         }
     }
@@ -147,7 +150,13 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("release")
+            // Use release signing if configured, otherwise fall back to debug
+            val releaseConfig = signingConfigs.getByName("release")
+            signingConfig = if (releaseConfig.storeFile != null) {
+                releaseConfig
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
         debug {
             isDebuggable = true

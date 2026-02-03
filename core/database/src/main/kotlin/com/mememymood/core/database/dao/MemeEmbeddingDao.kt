@@ -197,6 +197,22 @@ interface MemeEmbeddingDao {
     @Query("SELECT COUNT(*) FROM meme_embeddings WHERE needsRegeneration = 0")
     suspend fun countValidEmbeddings(): Int
 
+    /**
+     * Observe the count of valid embeddings as a Flow.
+     */
+    @Query("SELECT COUNT(*) FROM meme_embeddings WHERE needsRegeneration = 0")
+    fun observeValidEmbeddingsCount(): Flow<Int>
+
+    /**
+     * Observe the count of memes without embeddings as a Flow.
+     */
+    @Query("""
+        SELECT COUNT(*) FROM memes m
+        LEFT JOIN meme_embeddings e ON m.id = e.memeId
+        WHERE e.id IS NULL
+    """)
+    fun observeMemesWithoutEmbeddingsCount(): Flow<Int>
+
     // ============ Statistics ============
 
     /**

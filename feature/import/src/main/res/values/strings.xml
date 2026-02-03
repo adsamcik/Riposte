@@ -44,6 +44,8 @@
 
     <!-- Status Messages -->
     <string name="import_status_extracting">Extracting bundle…</string>
+    <string name="import_status_streaming">Importing… %1$d memes processed</string>
+    <string name="import_status_streaming_with_errors">Importing… %1$d processed, %2$d errors</string>
     <string name="import_status_imported_partial">Imported %1$d memes, %2$d failed</string>
     <string name="import_error_bundle_failed">Failed to import bundle</string>
     <string name="import_error_images_failed">Failed to import images</string>

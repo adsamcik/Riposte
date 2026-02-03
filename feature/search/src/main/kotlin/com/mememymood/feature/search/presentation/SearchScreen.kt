@@ -121,6 +121,7 @@ import com.mememymood.core.ui.component.EmojiChip
 import com.mememymood.core.ui.component.EmojiFilterRail
 import com.mememymood.core.ui.component.EmptyState
 import com.mememymood.core.ui.component.MemeCardCompact
+import com.mememymood.core.ui.component.SearchResultsHeader
 import com.mememymood.core.ui.modifier.animatedPressScale
 import com.mememymood.core.ui.modifier.relevanceOpacity
 import com.mememymood.core.ui.theme.rememberGridColumns
@@ -298,15 +299,10 @@ fun SearchScreen(
 
                 // Emoji filters
                 EmojiFilterRail(
-                    emojis = listOf(
-                        "😂" to 0, "❤️" to 0, "🔥" to 0,
-                        "😍" to 0, "🤣" to 0, "😊" to 0,
-                        "🙏" to 0, "😭" to 0, "😘" to 0,
-                        "👍" to 0, "💯" to 0, "🎉" to 0,
-                        "😎" to 0, "🥺" to 0, "✨" to 0,
-                    ),
+                    emojis = uiState.emojiCounts,
                     activeFilters = uiState.selectedEmojiFilters.toSet(),
                     onEmojiToggle = { viewModel.onIntent(SearchIntent.ToggleEmojiFilter(it)) },
+                    onClearAll = { viewModel.onIntent(SearchIntent.ClearEmojiFilters) },
                     modifier = Modifier.padding(vertical = 8.dp),
                 )
 
@@ -391,17 +387,23 @@ fun SearchScreen(
                             )
                         }
                         else -> {
-                            when (uiState.viewMode) {
-                                SearchViewMode.GRID -> SearchResultsGrid(
-                                    results = uiState.results,
+                            Column(modifier = Modifier.fillMaxSize()) {
+                                SearchResultsHeader(
                                     query = uiState.query,
-                                    onMemeClick = { viewModel.onIntent(SearchIntent.MemeClicked(it.meme)) },
+                                    resultCount = uiState.results.size,
                                 )
-                                SearchViewMode.LIST -> SearchResultsList(
-                                    results = uiState.results,
-                                    query = uiState.query,
-                                    onMemeClick = { viewModel.onIntent(SearchIntent.MemeClicked(it.meme)) },
-                                )
+                                when (uiState.viewMode) {
+                                    SearchViewMode.GRID -> SearchResultsGrid(
+                                        results = uiState.results,
+                                        query = uiState.query,
+                                        onMemeClick = { viewModel.onIntent(SearchIntent.MemeClicked(it.meme)) },
+                                    )
+                                    SearchViewMode.LIST -> SearchResultsList(
+                                        results = uiState.results,
+                                        query = uiState.query,
+                                        onMemeClick = { viewModel.onIntent(SearchIntent.MemeClicked(it.meme)) },
+                                    )
+                                }
                             }
                         }
                     }

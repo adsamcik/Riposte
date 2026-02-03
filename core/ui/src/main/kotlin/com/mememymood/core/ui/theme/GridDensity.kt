@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
+import com.mememymood.core.model.UserDensityPreference
 
 /**
  * Grid density configuration for adaptive layouts per VISUAL_DESIGN_SPEC.md Section 1.
@@ -32,24 +33,6 @@ object GridDensity {
 }
 
 /**
- * User preference for grid density override.
- * AUTO uses adaptive columns based on screen width.
- */
-enum class UserDensityPreference {
-    /** Adaptive columns based on screen width */
-    AUTO,
-
-    /** Always 3 columns (larger thumbnails) */
-    COMPACT,
-
-    /** Always 4 columns */
-    STANDARD,
-
-    /** Always 5 columns (smaller thumbnails) */
-    DENSE,
-}
-
-/**
  * Calculates the optimal number of grid columns based on screen width and user preference.
  *
  * @param userPreference User's density override setting
@@ -74,6 +57,46 @@ fun rememberGridColumns(
             UserDensityPreference.COMPACT -> GridDensity.COLUMNS_COMPACT
             UserDensityPreference.STANDARD -> GridDensity.COLUMNS_MEDIUM
             UserDensityPreference.DENSE -> GridDensity.COLUMNS_EXPANDED
+        }
+    }
+}
+
+/**
+ * Quick Access item count breakpoints (screen width in dp).
+ */
+object QuickAccessDensity {
+    const val PHONE_LANDSCAPE_MIN = 480
+    const val MEDIUM_TABLET_MIN = 600
+    const val LARGE_TABLET_MIN = 840
+
+    const val ITEMS_PHONE_PORTRAIT = 5
+    const val ITEMS_PHONE_LANDSCAPE = 6
+    const val ITEMS_MEDIUM_TABLET = 8
+    const val ITEMS_LARGE_TABLET = 10
+}
+
+/**
+ * Calculates the optimal number of Quick Access items based on screen width.
+ *
+ * Breakpoints per design spec:
+ * - Phone portrait: 5 items
+ * - Phone landscape / small tablet (>= 480dp): 6 items
+ * - Medium tablet (>= 600dp): 8 items
+ * - Large tablet (>= 840dp): 10 items
+ *
+ * @return Number of Quick Access items to display
+ */
+@Composable
+fun rememberQuickAccessCount(): Int {
+    val configuration = LocalConfiguration.current
+    val screenWidthDp = configuration.screenWidthDp
+
+    return remember(screenWidthDp) {
+        when {
+            screenWidthDp >= QuickAccessDensity.LARGE_TABLET_MIN -> QuickAccessDensity.ITEMS_LARGE_TABLET
+            screenWidthDp >= QuickAccessDensity.MEDIUM_TABLET_MIN -> QuickAccessDensity.ITEMS_MEDIUM_TABLET
+            screenWidthDp >= QuickAccessDensity.PHONE_LANDSCAPE_MIN -> QuickAccessDensity.ITEMS_PHONE_LANDSCAPE
+            else -> QuickAccessDensity.ITEMS_PHONE_PORTRAIT
         }
     }
 }

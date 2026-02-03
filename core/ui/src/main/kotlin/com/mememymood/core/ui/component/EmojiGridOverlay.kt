@@ -25,7 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.mememymood.core.model.EmojiTag
-import com.mememymood.core.ui.theme.MemeMyMoodTheme
+import com.mememymood.core.ui.theme.MemeMoodTheme
 
 /**
  * A modal bottom sheet overlay displaying all emojis in a grid layout.
@@ -102,7 +102,7 @@ fun EmojiGridOverlay(
 @Preview(name = "EmojiGridOverlay", showBackground = true)
 @Composable
 private fun EmojiGridOverlayPreview() {
-    MemeMyMoodTheme {
+    MemeMoodTheme {
         EmojiGridOverlay(
             emojis = listOf(
                 "😂" to 42,

@@ -49,6 +49,10 @@
     <string name="gallery_empty_title">Zatím žádné memy</string>
     <string name="gallery_empty_message">Importuj nějaké memy a můžeme začít!</string>
 
+    <!-- Section Headers -->
+    <string name="gallery_section_quick_access">Rychlý přístup</string>
+    <string name="gallery_section_all_memes">Všechny memy</string>
+
     <!-- Loading State -->
     <string name="gallery_loading_message">Načítám memy…</string>
 

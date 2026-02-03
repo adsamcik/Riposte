@@ -2,6 +2,7 @@ package com.mememymood.feature.settings.presentation
 
 import com.mememymood.core.model.DarkMode
 import com.mememymood.core.model.ImageFormat
+import com.mememymood.core.model.UserDensityPreference
 
 /**
  * Represents a selectable app language option.
@@ -25,6 +26,9 @@ data class SettingsUiState(
     val currentLanguage: String? = null,
     val availableLanguages: List<AppLanguage> = emptyList(),
     val dynamicColorsEnabled: Boolean = true,
+
+    // Display
+    val gridDensityPreference: UserDensityPreference = UserDensityPreference.AUTO,
 
     // Sharing defaults
     val defaultFormat: ImageFormat = ImageFormat.JPEG,

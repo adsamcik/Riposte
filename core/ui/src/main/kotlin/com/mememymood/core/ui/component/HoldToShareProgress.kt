@@ -11,9 +11,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.mememymood.core.ui.theme.MemeMyMoodTheme
+import com.mememymood.core.ui.theme.MemeMoodTheme
 
 /**
  * Circular progress indicator for hold-to-share gesture feedback.
@@ -44,9 +48,16 @@ fun HoldToShareProgress(
         }
     }
 
+    val progressPercent = (progress.coerceIn(0f, 1f) * 100).toInt()
+
     CircularProgressIndicator(
         progress = { progress.coerceIn(0f, 1f) },
-        modifier = modifier.size(48.dp),
+        modifier = modifier
+            .size(48.dp)
+            .semantics {
+                contentDescription = "Hold to share, $progressPercent percent"
+                liveRegion = LiveRegionMode.Polite
+            },
         color = MaterialTheme.colorScheme.primary,
     )
 }
@@ -54,7 +65,7 @@ fun HoldToShareProgress(
 @Preview(showBackground = true)
 @Composable
 private fun HoldToShareProgressPreview() {
-    MemeMyMoodTheme {
+    MemeMoodTheme {
         HoldToShareProgress(
             progress = 0.6f,
             onComplete = {},
@@ -65,7 +76,7 @@ private fun HoldToShareProgressPreview() {
 @Preview(showBackground = true, name = "Empty Progress")
 @Composable
 private fun HoldToShareProgressEmptyPreview() {
-    MemeMyMoodTheme {
+    MemeMoodTheme {
         HoldToShareProgress(
             progress = 0f,
             onComplete = {},
@@ -76,7 +87,7 @@ private fun HoldToShareProgressEmptyPreview() {
 @Preview(showBackground = true, name = "Full Progress")
 @Composable
 private fun HoldToShareProgressFullPreview() {
-    MemeMyMoodTheme {
+    MemeMoodTheme {
         HoldToShareProgress(
             progress = 1f,
             onComplete = {},

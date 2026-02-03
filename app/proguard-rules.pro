@@ -55,6 +55,27 @@
 -dontwarn org.tensorflow.lite.**
 -keepclassmembers class * implements org.tensorflow.lite.InterpreterApi { *; }
 
+# Local Agents RAG (GenKit AI)
+-keep class com.google.ai.edge.localagents.** { *; }
+-dontwarn com.google.ai.edge.localagents.**
+
+# ============================================================
+# PROTOBUF
+# ============================================================
+
+# Protobuf - used by LocalAgents/LiteRT
+-keep class com.google.protobuf.** { *; }
+-dontwarn com.google.protobuf.**
+
+# ============================================================
+# JAVAX ANNOTATIONS (Compile-time only)
+# ============================================================
+
+# These are compile-time annotation processors, not needed at runtime
+-dontwarn javax.lang.model.**
+-dontwarn autovalue.shaded.**
+-dontwarn com.google.auto.value.**
+
 # ============================================================
 # IMAGE LOADING (Coil 3)
 # ============================================================

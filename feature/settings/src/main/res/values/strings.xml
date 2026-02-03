@@ -8,6 +8,7 @@
     
     <!-- Section Headers -->
     <string name="settings_section_appearance">Appearance</string>
+    <string name="settings_section_display">Display</string>
     <string name="settings_section_default_sharing">Default Sharing</string>
     <string name="settings_section_search">Search</string>
     <string name="settings_section_storage">Storage</string>
@@ -20,6 +21,14 @@
     <string name="settings_theme_dark">Dark</string>
     <string name="settings_dynamic_colors_title">Dynamic Colors</string>
     <string name="settings_dynamic_colors_subtitle">Use colors from your wallpaper</string>
+    
+    <!-- Display Section -->
+    <string name="settings_grid_density_title">Grid Density</string>
+    <string name="settings_grid_density_subtitle">Thumbnail size in gallery</string>
+    <string name="settings_grid_density_auto">Auto (adapts to screen)</string>
+    <string name="settings_grid_density_compact">Compact (3 columns)</string>
+    <string name="settings_grid_density_standard">Normal (4 columns)</string>
+    <string name="settings_grid_density_dense">Comfortable (5 columns)</string>
     
     <!-- Default Sharing Section -->
     <string name="settings_format_title">Format</string>

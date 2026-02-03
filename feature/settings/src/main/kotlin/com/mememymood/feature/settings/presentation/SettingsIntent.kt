@@ -2,12 +2,16 @@ package com.mememymood.feature.settings.presentation
 
 import com.mememymood.core.model.DarkMode
 import com.mememymood.core.model.ImageFormat
+import com.mememymood.core.model.UserDensityPreference
 
 sealed interface SettingsIntent {
     // Appearance
     data class SetDarkMode(val mode: DarkMode) : SettingsIntent
     data class SetLanguage(val languageCode: String?) : SettingsIntent
     data class SetDynamicColors(val enabled: Boolean) : SettingsIntent
+
+    // Display
+    data class SetGridDensity(val preference: UserDensityPreference) : SettingsIntent
 
     // Sharing
     data class SetDefaultFormat(val format: ImageFormat) : SettingsIntent

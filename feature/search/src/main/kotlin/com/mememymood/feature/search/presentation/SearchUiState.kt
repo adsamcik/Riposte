@@ -10,6 +10,7 @@ data class SearchUiState(
     val recentSearches: List<String> = emptyList(),
     val suggestions: List<String> = emptyList(),
     val selectedEmojiFilters: List<String> = emptyList(),
+    val emojiCounts: List<Pair<String, Int>> = emptyList(),
     val isSearching: Boolean = false,
     val hasSearched: Boolean = false,
     val errorMessage: String? = null,

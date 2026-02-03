@@ -14,10 +14,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.mememymood.core.ui.theme.MemeMyMoodTheme
+import com.mememymood.core.ui.theme.MemeMoodTheme
 
 /**
  * Section header component for organizing content into visual groups.
@@ -57,6 +59,7 @@ fun SectionHeader(
             style = MaterialTheme.typography.titleSmall,
             color = accentColor,
             fontWeight = FontWeight.Medium,
+            modifier = Modifier.semantics { heading() },
         )
         Spacer(modifier = Modifier.weight(1f))
         trailingAction?.invoke()
@@ -66,7 +69,7 @@ fun SectionHeader(
 @Preview(showBackground = true)
 @Composable
 private fun SectionHeaderPreview() {
-    MemeMyMoodTheme {
+    MemeMoodTheme {
         SectionHeader(
             title = "Quick Access",
         )
@@ -76,7 +79,7 @@ private fun SectionHeaderPreview() {
 @Preview(showBackground = true)
 @Composable
 private fun SectionHeaderWithIconPreview() {
-    MemeMyMoodTheme {
+    MemeMoodTheme {
         SectionHeader(
             title = "Quick Access",
             icon = "🔥",
@@ -87,7 +90,7 @@ private fun SectionHeaderWithIconPreview() {
 @Preview(showBackground = true)
 @Composable
 private fun SectionHeaderWithTrailingActionPreview() {
-    MemeMyMoodTheme {
+    MemeMoodTheme {
         SectionHeader(
             title = "Recent",
             icon = "🕐",
@@ -106,7 +109,7 @@ private fun SectionHeaderWithTrailingActionPreview() {
 @Preview(showBackground = true)
 @Composable
 private fun SectionHeaderPinnedPreview() {
-    MemeMyMoodTheme {
+    MemeMoodTheme {
         SectionHeader(
             title = "Pinned",
             icon = "📌",
@@ -118,7 +121,7 @@ private fun SectionHeaderPinnedPreview() {
 @Preview(showBackground = true)
 @Composable
 private fun SectionHeaderNewImportsPreview() {
-    MemeMyMoodTheme {
+    MemeMoodTheme {
         SectionHeader(
             title = "New Imports",
             icon = "✨",

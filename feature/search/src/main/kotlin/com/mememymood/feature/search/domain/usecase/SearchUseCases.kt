@@ -101,6 +101,13 @@ class SearchUseCases @Inject constructor(
     }
 
     /**
+     * Get emoji usage counts for filter rail.
+     */
+    fun getEmojiCounts(): Flow<List<Pair<String, Int>>> {
+        return repository.getEmojiCounts()
+    }
+
+    /**
      * Get recent search queries.
      */
     fun getRecentSearches(): Flow<List<String>> {

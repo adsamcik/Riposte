@@ -74,8 +74,10 @@ import com.mememymood.core.ui.component.ErrorState
 import com.mememymood.core.ui.component.LoadingScreen
 import com.mememymood.core.ui.component.MemeCardCompact
 import com.mememymood.core.ui.component.QuickAccessSection
+import com.mememymood.core.ui.component.SectionHeader
 import com.mememymood.core.ui.modifier.animatedPressScale
 import com.mememymood.core.ui.theme.rememberGridColumns
+import com.mememymood.core.ui.theme.rememberQuickAccessCount
 import com.mememymood.feature.gallery.R
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -390,13 +392,16 @@ private fun GalleryScreenContent(
                             )
                         }
                         else -> {
-                            // Extract quick access memes (first 5) and unique emojis
-                            val quickAccessMemes = remember(pagedMemes.itemSnapshotList) {
-                                pagedMemes.itemSnapshotList.items.take(5)
+                            // Extract quick access memes (top N by usage) and unique emojis
+                            val quickAccessCount = rememberQuickAccessCount()
+                            val quickAccessMemes = remember(pagedMemes.itemSnapshotList, quickAccessCount) {
+                                pagedMemes.itemSnapshotList.items
+                                    .sortedByDescending { it.useCount }
+                                    .take(quickAccessCount)
                             }
                             val uniqueEmojis = remember(pagedMemes.itemSnapshotList) {
                                 pagedMemes.itemSnapshotList.items
-                                    .flatMap { it.emojis }
+                                    .flatMap { meme -> meme.emojiTags.map { it.emoji } }
                                     .groupingBy { it }
                                     .eachCount()
                                     .toList()
@@ -409,7 +414,7 @@ private fun GalleryScreenContent(
                                 } else {
                                     (0 until pagedMemes.itemCount).filter { index ->
                                         val meme = pagedMemes.peek(index)
-                                        meme != null && meme.emojis.any { it in activeEmojiFilters }
+                                        meme != null && meme.emojiTags.any { it.emoji in activeEmojiFilters }
                                     }
                                 }
                             }
@@ -417,6 +422,10 @@ private fun GalleryScreenContent(
                             Column {
                                 // Quick Access Section
                                 if (quickAccessMemes.isNotEmpty() && !uiState.isSelectionMode) {
+                                    SectionHeader(
+                                        title = stringResource(R.string.gallery_section_quick_access),
+                                        icon = "🔥",
+                                    )
                                     QuickAccessSection(
                                         memes = quickAccessMemes,
                                         onQuickShare = { memeId -> onIntent(GalleryIntent.QuickShare(memeId)) },
@@ -437,8 +446,15 @@ private fun GalleryScreenContent(
                                                 activeEmojiFilters + emoji
                                             }
                                         },
+                                        onClearAll = { activeEmojiFilters = emptySet() },
                                     )
                                 }
+
+                                // All Memes section header
+                                SectionHeader(
+                                    title = stringResource(R.string.gallery_section_all_memes),
+                                    icon = "📱",
+                                )
 
                                 LazyVerticalGrid(
                                     columns = GridCells.Fixed(columns),
@@ -475,13 +491,16 @@ private fun GalleryScreenContent(
                 }
                 else -> {
                     // Non-paged list view (Favorites, ByEmoji filters)
-                    // Extract quick access memes and unique emojis
-                    val quickAccessMemes = remember(uiState.memes) {
-                        uiState.memes.take(5)
+                    // Extract quick access memes (top N by usage) and unique emojis
+                    val quickAccessCount = rememberQuickAccessCount()
+                    val quickAccessMemes = remember(uiState.memes, quickAccessCount) {
+                        uiState.memes
+                            .sortedByDescending { it.useCount }
+                            .take(quickAccessCount)
                     }
                     val uniqueEmojis = remember(uiState.memes) {
                         uiState.memes
-                            .flatMap { it.emojis }
+                            .flatMap { meme -> meme.emojiTags.map { it.emoji } }
                             .groupingBy { it }
                             .eachCount()
                             .toList()
@@ -493,7 +512,7 @@ private fun GalleryScreenContent(
                             uiState.memes
                         } else {
                             uiState.memes.filter { meme -> 
-                                meme.emojis.any { it in activeEmojiFilters }
+                                meme.emojiTags.any { it.emoji in activeEmojiFilters }
                             }
                         }
                     }
@@ -501,6 +520,10 @@ private fun GalleryScreenContent(
                     Column {
                         // Quick Access Section
                         if (quickAccessMemes.isNotEmpty() && !uiState.isSelectionMode) {
+                            SectionHeader(
+                                title = stringResource(R.string.gallery_section_quick_access),
+                                icon = "🔥",
+                            )
                             QuickAccessSection(
                                 memes = quickAccessMemes,
                                 onQuickShare = { memeId -> onIntent(GalleryIntent.QuickShare(memeId)) },
@@ -521,8 +544,15 @@ private fun GalleryScreenContent(
                                         activeEmojiFilters + emoji
                                     }
                                 },
+                                onClearAll = { activeEmojiFilters = emptySet() },
                             )
                         }
+
+                        // All Memes section header
+                        SectionHeader(
+                            title = stringResource(R.string.gallery_section_all_memes),
+                            icon = "📱",
+                        )
 
                         LazyVerticalGrid(
                             columns = GridCells.Fixed(columns),

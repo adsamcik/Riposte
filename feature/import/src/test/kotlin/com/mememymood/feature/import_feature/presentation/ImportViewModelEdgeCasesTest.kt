@@ -6,12 +6,11 @@ import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
 import com.mememymood.core.model.EmojiTag
 import com.mememymood.core.model.Meme
-import com.mememymood.core.model.MemeMetadata
 import com.mememymood.feature.import_feature.domain.usecase.ExtractTextUseCase
 import com.mememymood.feature.import_feature.domain.usecase.ImportImageUseCase
 import com.mememymood.feature.import_feature.domain.usecase.ImportZipBundleStreamingUseCase
 import com.mememymood.feature.import_feature.domain.usecase.SuggestEmojisUseCase
-import com.mememymood.feature.import_feature.domain.usecase.ZipBundleImportProgress
+import com.mememymood.feature.import_feature.domain.usecase.ZipImportEvent
 import com.mememymood.feature.import_feature.domain.usecase.ZipImportResult
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -19,9 +18,7 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
@@ -223,9 +220,9 @@ class ImportViewModelEdgeCasesTest {
     fun `ZipSelected shows error for invalid bundle`() = runTest {
         val zipUri = mockk<Uri>()
 
-        coEvery { importZipBundleStreamingUseCase(zipUri) } returns flowOf(
-            ZipBundleImportProgress.Error("bundle", "Not a valid .meme.zip bundle"),
-            ZipBundleImportProgress.Complete(
+        every { importZipBundleStreamingUseCase(zipUri) } returns flowOf(
+            ZipImportEvent.Error("bundle", "Not a valid .meme.zip bundle"),
+            ZipImportEvent.Complete(
                 ZipImportResult(
                     successCount = 0,
                     failureCount = 1,
@@ -250,10 +247,9 @@ class ImportViewModelEdgeCasesTest {
         val zipUri = mockk<Uri>()
         val meme = mockk<Meme>()
 
-        coEvery { importZipBundleStreamingUseCase(zipUri) } returns flowOf(
-            ZipBundleImportProgress.TotalDiscovered(1),
-            ZipBundleImportProgress.MemeImported(meme, 1, 1),
-            ZipBundleImportProgress.Complete(
+        every { importZipBundleStreamingUseCase(zipUri) } returns flowOf(
+            ZipImportEvent.MemeImported(meme),
+            ZipImportEvent.Complete(
                 ZipImportResult(
                     successCount = 1,
                     failureCount = 0,
@@ -270,6 +266,10 @@ class ImportViewModelEdgeCasesTest {
             // Should receive success effect - ImportComplete triggers navigation via callback
             val effect1 = awaitItem()
             assertThat(effect1).isInstanceOf(ImportEffect.ImportComplete::class.java)
+
+            // Should receive NavigateToGallery
+            val effect2 = awaitItem()
+            assertThat(effect2).isInstanceOf(ImportEffect.NavigateToGallery::class.java)
         }
     }
 
@@ -278,8 +278,15 @@ class ImportViewModelEdgeCasesTest {
         val zipUri = mockk<Uri>()
         val meme = mockk<Meme>()
 
-        coEvery { importZipBundleStreamingUseCase(zipUri) } returns flowOf(
-            ZipBundleImportProgress.Complete(
+        every { importZipBundleStreamingUseCase(zipUri) } returns flowOf(
+            ZipImportEvent.MemeImported(meme),
+            ZipImportEvent.MemeImported(meme),
+            ZipImportEvent.MemeImported(meme),
+            ZipImportEvent.MemeImported(meme),
+            ZipImportEvent.MemeImported(meme),
+            ZipImportEvent.Error("img1.jpg", "Failed"),
+            ZipImportEvent.Error("img2.jpg", "Failed"),
+            ZipImportEvent.Complete(
                 ZipImportResult(
                     successCount = 5,
                     failureCount = 2,
@@ -300,6 +307,10 @@ class ImportViewModelEdgeCasesTest {
             // Second effect: ShowSnackbar for partial success
             val effect2 = awaitItem()
             assertThat(effect2).isInstanceOf(ImportEffect.ShowSnackbar::class.java)
+
+            // Third effect: NavigateToGallery
+            val effect3 = awaitItem()
+            assertThat(effect3).isInstanceOf(ImportEffect.NavigateToGallery::class.java)
         }
     }
 

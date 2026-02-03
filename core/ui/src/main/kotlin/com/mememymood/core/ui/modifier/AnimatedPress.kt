@@ -1,6 +1,7 @@
 package com.mememymood.core.ui.modifier
 
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.sizeIn
@@ -25,12 +26,17 @@ import com.mememymood.core.ui.util.LocalReducedMotion
  * - Enforces minimum 48dp touch target per Material 3 guidelines
  * - Uses [MotionTokens.PressedScale] spring for natural feel
  *
+ * @param interactionSource The interaction source to observe for press state.
+ *                          If null, creates an internal source (won't detect presses
+ *                          unless used with a clickable that shares the same source).
  * @return Modifier with press scale animation applied.
  */
-fun Modifier.animatedPressScale(): Modifier = composed {
+fun Modifier.animatedPressScale(
+    interactionSource: InteractionSource? = null,
+): Modifier = composed {
     val reducedMotion = LocalReducedMotion.current
-    val interactionSource = remember { MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
+    val source = interactionSource ?: remember { MutableInteractionSource() }
+    val isPressed by source.collectIsPressedAsState()
 
     val scale by animateFloatAsState(
         targetValue = if (isPressed && !reducedMotion) 0.96f else 1f,

@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.Cached
 import androidx.compose.material.icons.filled.CleaningServices
 import androidx.compose.material.icons.filled.ColorLens
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.HighQuality
@@ -53,6 +54,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mememymood.core.model.DarkMode
 import com.mememymood.core.model.ImageFormat
+import com.mememymood.core.model.UserDensityPreference
 import com.mememymood.feature.settings.presentation.component.ClickableSettingItem
 import com.mememymood.feature.settings.presentation.component.DialogSettingItem
 import com.mememymood.feature.settings.presentation.component.SettingsSection
@@ -213,6 +215,28 @@ fun SettingsScreen(
                         checked = uiState.dynamicColorsEnabled,
                         onCheckedChange = { viewModel.onIntent(SettingsIntent.SetDynamicColors(it)) },
                         icon = Icons.Default.ColorLens,
+                    )
+                }
+            }
+
+            // Display Section
+            item {
+                SettingsSection(title = stringResource(R.string.settings_section_display)) {
+                    DialogSettingItem(
+                        title = stringResource(R.string.settings_grid_density_title),
+                        subtitle = stringResource(R.string.settings_grid_density_subtitle),
+                        selectedValue = uiState.gridDensityPreference,
+                        values = UserDensityPreference.entries,
+                        onValueChange = { viewModel.onIntent(SettingsIntent.SetGridDensity(it)) },
+                        icon = Icons.Default.GridView,
+                        valueLabel = { preference ->
+                            when (preference) {
+                                UserDensityPreference.AUTO -> stringResource(R.string.settings_grid_density_auto)
+                                UserDensityPreference.COMPACT -> stringResource(R.string.settings_grid_density_compact)
+                                UserDensityPreference.STANDARD -> stringResource(R.string.settings_grid_density_standard)
+                                UserDensityPreference.DENSE -> stringResource(R.string.settings_grid_density_dense)
+                            }
+                        },
                     )
                 }
             }

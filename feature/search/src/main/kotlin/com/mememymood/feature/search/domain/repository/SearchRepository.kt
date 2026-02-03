@@ -77,4 +77,11 @@ interface SearchRepository {
      * Clear recent searches.
      */
     suspend fun clearRecentSearches()
+
+    /**
+     * Get all unique emojis with their usage counts.
+     *
+     * @return Flow of emoji-count pairs sorted by frequency descending.
+     */
+    fun getEmojiCounts(): Flow<List<Pair<String, Int>>>
 }

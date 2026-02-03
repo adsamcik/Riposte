@@ -16,7 +16,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.mememymood.core.ui.theme.MemeMyMoodTheme
+import com.mememymood.core.ui.theme.MemeMoodTheme
 
 /**
  * Empty state composable for displaying when no content is available.
@@ -50,7 +50,7 @@ fun EmptyState(
         Text(
             text = icon,
             style = MaterialTheme.typography.displayMedium,
-            modifier = Modifier.alpha(0.75f),
+            modifier = Modifier.alpha(0.6f),
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
@@ -79,7 +79,7 @@ fun EmptyState(
 @Preview(showBackground = true)
 @Composable
 private fun EmptyStateNewUserPreview() {
-    MemeMyMoodTheme {
+    MemeMoodTheme {
         EmptyState(
             icon = "📱",
             title = "Your sticker collection is waiting!",
@@ -93,7 +93,7 @@ private fun EmptyStateNewUserPreview() {
 @Preview(showBackground = true)
 @Composable
 private fun EmptyStateNoSearchResultsPreview() {
-    MemeMyMoodTheme {
+    MemeMoodTheme {
         EmptyState(
             icon = "🔍",
             title = "No stickers found for \"your query\"",
@@ -107,7 +107,7 @@ private fun EmptyStateNoSearchResultsPreview() {
 @Preview(showBackground = true)
 @Composable
 private fun EmptyStateNoEmojiTagMatchesPreview() {
-    MemeMyMoodTheme {
+    MemeMoodTheme {
         EmptyState(
             icon = "😶",
             title = "No 😩 stickers yet",

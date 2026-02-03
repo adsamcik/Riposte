@@ -5,6 +5,9 @@ import android.net.Uri
 import com.mememymood.core.model.MemeMetadata
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import java.io.File
@@ -33,6 +36,42 @@ data class ZipExtractionResult(
     val extractedMemes: List<ExtractedMeme>,
     val errors: Map<String, String>,
 )
+
+/**
+ * Events emitted during streaming ZIP extraction.
+ */
+sealed interface ZipExtractionEvent {
+    /**
+     * Progress update with count of processed entries.
+     * @property processed Number of entries processed so far.
+     * @property currentEntry Name of the entry being processed.
+     */
+    data class Progress(val processed: Int, val currentEntry: String) : ZipExtractionEvent
+
+    /**
+     * A meme was successfully extracted and is ready for import.
+     * @property extractedMeme The extracted meme data.
+     * @property tempFile The temporary file that should be deleted after import.
+     */
+    data class MemeExtracted(
+        val extractedMeme: ExtractedMeme,
+        val tempFile: File,
+    ) : ZipExtractionEvent
+
+    /**
+     * Error occurred processing a specific entry.
+     * @property entryName Name of the ZIP entry that failed.
+     * @property message Error description.
+     */
+    data class Error(val entryName: String, val message: String) : ZipExtractionEvent
+
+    /**
+     * Extraction completed.
+     * @property totalProcessed Total number of entries processed.
+     * @property totalErrors Number of errors encountered.
+     */
+    data class Complete(val totalProcessed: Int, val totalErrors: Int) : ZipExtractionEvent
+}
 
 /**
  * Handles extraction and processing of .meme.zip bundles created by the meme-my-mood-cli.
@@ -73,6 +112,21 @@ class ZipImporter @Inject constructor(
             ".bmp", ".tiff", ".tif", ".heic", ".heif",
             ".avif", ".jxl",
         )
+
+        /**
+         * Maximum number of entries allowed in a ZIP file (ZIP bomb protection).
+         */
+        const val MAX_ENTRY_COUNT = 10_000
+
+        /**
+         * Maximum size for a single extracted file (50 MB).
+         */
+        const val MAX_SINGLE_FILE_SIZE = 50L * 1024 * 1024
+
+        /**
+         * Maximum size for a JSON sidecar file (1 MB).
+         */
+        const val MAX_JSON_SIZE = 1L * 1024 * 1024
     }
 
     /**
@@ -108,8 +162,17 @@ class ZipImporter @Inject constructor(
         try {
             context.contentResolver.openInputStream(zipUri)?.use { inputStream ->
                 ZipInputStream(inputStream).use { zipInput ->
+                    var entryCount = 0
                     var entry = zipInput.nextEntry
                     while (entry != null) {
+                        entryCount++
+
+                        // ZIP bomb protection: too many entries
+                        if (entryCount > MAX_ENTRY_COUNT) {
+                            errors["bundle"] = "Too many entries in ZIP (limit: $MAX_ENTRY_COUNT)"
+                            break
+                        }
+
                         val entryName = entry.name
 
                         // Skip directories and hidden files
@@ -123,30 +186,47 @@ class ZipImporter @Inject constructor(
                             when {
                                 // JSON sidecar file (e.g., "image.jpg.json")
                                 entryName.endsWith(".json") -> {
-                                    val imageFileName = getSafeFileName(entryName.removeSuffix(".json"))
-                                    if (imageFileName != null) {
-                                        val content = zipInput.readBytes().decodeToString()
-                                        val metadata = parseMetadataJson(content)
-                                        if (metadata != null) {
-                                            metadataMap[imageFileName] = metadata
+                                    // Check JSON size limit
+                                    val declaredSize = entry.size
+                                    if (declaredSize > MAX_JSON_SIZE) {
+                                        errors[entryName] = "JSON size limit exceeded (max: ${MAX_JSON_SIZE / 1024}KB)"
+                                    } else {
+                                        val imageFileName = getSafeFileName(entryName.removeSuffix(".json"))
+                                        if (imageFileName != null) {
+                                            val content = readBytesWithLimit(zipInput, MAX_JSON_SIZE, entryName, errors)
+                                            if (content != null) {
+                                                val metadata = parseMetadataJson(content.decodeToString())
+                                                if (metadata != null) {
+                                                    metadataMap[imageFileName] = metadata
+                                                }
+                                            }
                                         }
                                     }
                                 }
 
                                 // Image file
                                 isImageFile(entryName) -> {
-                                    val safeFileName = getSafeFileName(entryName)
-                                    if (safeFileName == null) {
-                                        errors[entryName] = "Path traversal attempt blocked"
+                                    // Check file size limit
+                                    val declaredSize = entry.size
+                                    if (declaredSize > MAX_SINGLE_FILE_SIZE) {
+                                        errors[entryName] = "File size limit exceeded (max: ${MAX_SINGLE_FILE_SIZE / 1024 / 1024}MB)"
                                     } else {
-                                        val outputFile = getSafeOutputFile(safeFileName)
-                                        if (outputFile == null) {
+                                        val safeFileName = getSafeFileName(entryName)
+                                        if (safeFileName == null) {
                                             errors[entryName] = "Path traversal attempt blocked"
                                         } else {
-                                            FileOutputStream(outputFile).use { output ->
-                                                zipInput.copyTo(output)
+                                            val outputFile = getSafeOutputFile(safeFileName)
+                                            if (outputFile == null) {
+                                                errors[entryName] = "Path traversal attempt blocked"
+                                            } else {
+                                                val written = copyWithLimit(zipInput, outputFile, MAX_SINGLE_FILE_SIZE)
+                                                if (written < 0) {
+                                                    errors[entryName] = "File size limit exceeded (max: ${MAX_SINGLE_FILE_SIZE / 1024 / 1024}MB)"
+                                                    outputFile.delete()
+                                                } else {
+                                                    extractedImages[safeFileName] = outputFile
+                                                }
                                             }
-                                            extractedImages[safeFileName] = outputFile
                                         }
                                     }
                                 }
@@ -184,10 +264,222 @@ class ZipImporter @Inject constructor(
     }
 
     /**
+     * Extract images and metadata from a .meme.zip bundle as a streaming Flow.
+     *
+     * Each meme is emitted as soon as it's extracted, allowing the consumer to:
+     * - Import to database immediately
+     * - Delete temp files after import
+     * - Update UI progress incrementally
+     *
+     * @param zipUri URI pointing to the ZIP file.
+     * @return Flow of extraction events.
+     */
+    fun extractBundleStream(zipUri: Uri): Flow<ZipExtractionEvent> = flow {
+        var processedCount = 0
+        var errorCount = 0
+
+        // Maps image filename -> parsed metadata (for JSON arriving before image)
+        val pendingMetadata = mutableMapOf<String, MemeMetadata>()
+        // Track which images have been emitted (for JSON arriving after image)
+        val emittedImages = mutableSetOf<String>()
+
+        try {
+            context.contentResolver.openInputStream(zipUri)?.use { inputStream ->
+                ZipInputStream(inputStream).use { zipInput ->
+                    var entryCount = 0
+                    var entry = zipInput.nextEntry
+
+                    while (entry != null) {
+                        entryCount++
+
+                        // ZIP bomb protection
+                        if (entryCount > MAX_ENTRY_COUNT) {
+                            emit(ZipExtractionEvent.Error("bundle", "Too many entries in ZIP (limit: $MAX_ENTRY_COUNT)"))
+                            errorCount++
+                            break
+                        }
+
+                        val entryName = entry.name
+                        emit(ZipExtractionEvent.Progress(processedCount, entryName))
+
+                        // Skip directories and hidden files
+                        if (entry.isDirectory || entryName.startsWith(".") || entryName.contains("/")) {
+                            zipInput.closeEntry()
+                            entry = zipInput.nextEntry
+                            continue
+                        }
+
+                        try {
+                            when {
+                                // JSON sidecar file
+                                entryName.endsWith(".json") -> {
+                                    val declaredSize = entry.size
+                                    if (declaredSize > MAX_JSON_SIZE) {
+                                        emit(ZipExtractionEvent.Error(entryName, "JSON size limit exceeded"))
+                                        errorCount++
+                                    } else {
+                                        val imageFileName = getSafeFileName(entryName.removeSuffix(".json"))
+                                        if (imageFileName != null) {
+                                            val content = readBytesWithLimitStream(zipInput, MAX_JSON_SIZE)
+                                            if (content != null) {
+                                                val metadata = parseMetadataJson(content.decodeToString())
+                                                if (metadata != null) {
+                                                    pendingMetadata[imageFileName] = metadata
+                                                }
+                                            } else {
+                                                emit(ZipExtractionEvent.Error(entryName, "JSON size limit exceeded"))
+                                                errorCount++
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // Image file
+                                isImageFile(entryName) -> {
+                                    val declaredSize = entry.size
+                                    if (declaredSize > MAX_SINGLE_FILE_SIZE) {
+                                        emit(ZipExtractionEvent.Error(entryName, "File size limit exceeded"))
+                                        errorCount++
+                                    } else {
+                                        val safeFileName = getSafeFileName(entryName)
+                                        if (safeFileName == null) {
+                                            emit(ZipExtractionEvent.Error(entryName, "Path traversal attempt blocked"))
+                                            errorCount++
+                                        } else {
+                                            val outputFile = getSafeOutputFile(safeFileName)
+                                            if (outputFile == null) {
+                                                emit(ZipExtractionEvent.Error(entryName, "Path traversal attempt blocked"))
+                                                errorCount++
+                                            } else {
+                                                val written = copyWithLimit(zipInput, outputFile, MAX_SINGLE_FILE_SIZE)
+                                                if (written < 0) {
+                                                    emit(ZipExtractionEvent.Error(entryName, "File size limit exceeded"))
+                                                    errorCount++
+                                                    outputFile.delete()
+                                                } else {
+                                                    // Get metadata if available
+                                                    val metadata = pendingMetadata.remove(safeFileName)
+                                                    emittedImages.add(safeFileName)
+
+                                                    emit(
+                                                        ZipExtractionEvent.MemeExtracted(
+                                                            extractedMeme = ExtractedMeme(
+                                                                imageUri = Uri.fromFile(outputFile),
+                                                                metadata = metadata,
+                                                            ),
+                                                            tempFile = outputFile,
+                                                        ),
+                                                    )
+                                                    processedCount++
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        } catch (e: Exception) {
+                            emit(ZipExtractionEvent.Error(entryName, e.message ?: "Unknown error"))
+                            errorCount++
+                        }
+
+                        zipInput.closeEntry()
+                        entry = zipInput.nextEntry
+                    }
+                }
+            } ?: run {
+                emit(ZipExtractionEvent.Error("bundle", "Could not open ZIP file"))
+                errorCount++
+            }
+        } catch (e: Exception) {
+            emit(ZipExtractionEvent.Error("bundle", "Failed to extract ZIP: ${e.message}"))
+            errorCount++
+        }
+
+        emit(ZipExtractionEvent.Complete(processedCount, errorCount))
+    }.flowOn(Dispatchers.IO)
+
+    /**
      * Clean up extracted files after import is complete.
      */
     fun cleanupExtractedFiles() {
         extractDir.listFiles()?.forEach { it.delete() }
+    }
+
+    /**
+     * Read bytes from input stream with a size limit.
+     * Returns null and adds error if limit is exceeded.
+     */
+    private fun readBytesWithLimit(
+        input: ZipInputStream,
+        maxSize: Long,
+        entryName: String,
+        errors: MutableMap<String, String>,
+    ): ByteArray? {
+        val buffer = ByteArray(8192)
+        val output = java.io.ByteArrayOutputStream()
+        var totalRead = 0L
+        var bytesRead: Int
+
+        while (input.read(buffer).also { bytesRead = it } != -1) {
+            totalRead += bytesRead
+            if (totalRead > maxSize) {
+                errors[entryName] = "JSON size limit exceeded (max: ${maxSize / 1024}KB)"
+                return null
+            }
+            output.write(buffer, 0, bytesRead)
+        }
+
+        return output.toByteArray()
+    }
+
+    /**
+     * Read bytes from input stream with size limit for streaming.
+     * Returns null if limit exceeded.
+     */
+    private fun readBytesWithLimitStream(
+        input: ZipInputStream,
+        maxSize: Long,
+    ): ByteArray? {
+        val buffer = ByteArray(8192)
+        val output = java.io.ByteArrayOutputStream()
+        var totalRead = 0L
+        var bytesRead: Int
+
+        while (input.read(buffer).also { bytesRead = it } != -1) {
+            totalRead += bytesRead
+            if (totalRead > maxSize) {
+                return null
+            }
+            output.write(buffer, 0, bytesRead)
+        }
+
+        return output.toByteArray()
+    }
+
+    /**
+     * Copy from input stream to file with a size limit.
+     * Returns bytes written, or -1 if limit exceeded.
+     */
+    private fun copyWithLimit(
+        input: ZipInputStream,
+        outputFile: File,
+        maxSize: Long,
+    ): Long {
+        val buffer = ByteArray(8192)
+        var totalWritten = 0L
+
+        FileOutputStream(outputFile).use { output ->
+            var bytesRead: Int
+            while (input.read(buffer).also { bytesRead = it } != -1) {
+                totalWritten += bytesRead
+                if (totalWritten > maxSize) {
+                    return -1
+                }
+                output.write(buffer, 0, bytesRead)
+            }
+        }
+
+        return totalWritten
     }
 
     /**

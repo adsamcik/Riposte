@@ -2,6 +2,7 @@ package com.mememymood.core.ui.component
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -22,12 +23,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mememymood.core.model.EmojiTag
 import com.mememymood.core.ui.theme.EmojiCardBackgrounds
-import com.mememymood.core.ui.theme.MemeMyMoodTheme
+import com.mememymood.core.ui.theme.MemeMoodTheme
 import com.mememymood.core.ui.theme.MoodShapes
 
 private val EmojiChipShape = RoundedCornerShape(18.dp)
@@ -69,18 +72,23 @@ fun EmojiChip(
     Surface(
         modifier = modifier
             .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
-            .scale(scale)
+            .semantics {
+                contentDescription = "${emojiTag.emoji} filter, ${if (isSelected) "active" else "inactive"}"
+            }
             .then(
                 if (onClick != null) {
                     Modifier.clickable(
                         interactionSource = interactionSource,
-                        indication = null,
+                        indication = LocalIndication.current,
                         onClick = onClick,
                     )
                 } else {
                     Modifier
                 },
-            ),
+            )
+            .height(36.dp)
+            .sizeIn(minWidth = 36.dp)
+            .scale(scale),
         shape = EmojiChipShape,
         color = bgColor,
     ) {
@@ -114,7 +122,7 @@ fun EmojiChip(
 @Preview(name = "EmojiChip - Unselected", showBackground = true)
 @Composable
 private fun EmojiChipUnselectedPreview() {
-    MemeMyMoodTheme {
+    MemeMoodTheme {
         EmojiChip(
             emojiTag = EmojiTag(emoji = "😂", name = "joy"),
             onClick = {},
@@ -126,7 +134,7 @@ private fun EmojiChipUnselectedPreview() {
 @Preview(name = "EmojiChip - Selected", showBackground = true)
 @Composable
 private fun EmojiChipSelectedPreview() {
-    MemeMyMoodTheme {
+    MemeMoodTheme {
         EmojiChip(
             emojiTag = EmojiTag(emoji = "🔥", name = "fire"),
             onClick = {},
@@ -138,7 +146,7 @@ private fun EmojiChipSelectedPreview() {
 @Preview(name = "EmojiChip - With Name", showBackground = true)
 @Composable
 private fun EmojiChipWithNamePreview() {
-    MemeMyMoodTheme {
+    MemeMoodTheme {
         EmojiChip(
             emojiTag = EmojiTag(emoji = "💀", name = "skull"),
             onClick = {},

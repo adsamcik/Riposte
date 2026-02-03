@@ -1,5 +1,6 @@
 package com.mememymood.feature.search.data
 
+import com.mememymood.core.database.dao.EmojiTagDao
 import com.mememymood.core.database.dao.MemeDao
 import com.mememymood.core.database.dao.MemeEmbeddingDao
 import com.mememymood.core.database.dao.MemeSearchDao
@@ -20,6 +21,7 @@ class SearchRepositoryImpl @Inject constructor(
     private val memeDao: MemeDao,
     private val memeSearchDao: MemeSearchDao,
     private val memeEmbeddingDao: MemeEmbeddingDao,
+    private val emojiTagDao: EmojiTagDao,
     private val semanticSearchEngine: SemanticSearchEngine,
     private val preferencesDataStore: PreferencesDataStore,
 ) : SearchRepository {
@@ -253,6 +255,12 @@ class SearchRepositoryImpl @Inject constructor(
             createdAt = createdAt,
             useCount = useCount,
         )
+    }
+
+    override fun getEmojiCounts(): Flow<List<Pair<String, Int>>> {
+        return emojiTagDao.getAllEmojisWithCounts().map { stats ->
+            stats.map { it.emoji to it.count }
+        }
     }
 
     companion object {

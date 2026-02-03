@@ -37,6 +37,7 @@ class SearchViewModel @Inject constructor(
 
     init {
         loadRecentSearches()
+        loadEmojiCounts()
         observeQueryChanges()
     }
 
@@ -96,6 +97,15 @@ class SearchViewModel @Inject constructor(
             searchUseCases.getRecentSearches()
                 .collectLatest { searches ->
                     _uiState.update { it.copy(recentSearches = searches) }
+                }
+        }
+    }
+
+    private fun loadEmojiCounts() {
+        viewModelScope.launch {
+            searchUseCases.getEmojiCounts()
+                .collectLatest { counts ->
+                    _uiState.update { it.copy(emojiCounts = counts) }
                 }
         }
     }

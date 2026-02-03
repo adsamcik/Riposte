@@ -14,6 +14,7 @@ import com.mememymood.core.model.AppPreferences
 import com.mememymood.core.model.DarkMode
 import com.mememymood.core.model.ImageFormat
 import com.mememymood.core.model.SharingPreferences
+import com.mememymood.core.model.UserDensityPreference
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -54,6 +55,7 @@ class PreferencesDataStore @Inject constructor(
         val ENABLE_SEMANTIC_SEARCH = booleanPreferencesKey("enable_semantic_search")
         val AUTO_EXTRACT_TEXT = booleanPreferencesKey("auto_extract_text")
         val SAVE_SEARCH_HISTORY = booleanPreferencesKey("save_search_history")
+        val USER_DENSITY_PREFERENCE = stringPreferencesKey("user_density_preference")
 
         // Search preferences - use string key with JSON to preserve order
         val RECENT_SEARCHES = stringPreferencesKey("recent_searches_json")
@@ -131,7 +133,10 @@ class PreferencesDataStore @Inject constructor(
                 showEmojiNames = prefs[PreferencesKeys.SHOW_EMOJI_NAMES] ?: false,
                 enableSemanticSearch = prefs[PreferencesKeys.ENABLE_SEMANTIC_SEARCH] ?: true,
                 autoExtractText = prefs[PreferencesKeys.AUTO_EXTRACT_TEXT] ?: true,
-                saveSearchHistory = prefs[PreferencesKeys.SAVE_SEARCH_HISTORY] ?: true
+                saveSearchHistory = prefs[PreferencesKeys.SAVE_SEARCH_HISTORY] ?: true,
+                userDensityPreference = prefs[PreferencesKeys.USER_DENSITY_PREFERENCE]?.let {
+                    UserDensityPreference.valueOf(it)
+                } ?: UserDensityPreference.AUTO,
             )
         }
 
@@ -147,6 +152,7 @@ class PreferencesDataStore @Inject constructor(
             prefs[PreferencesKeys.ENABLE_SEMANTIC_SEARCH] = preferences.enableSemanticSearch
             prefs[PreferencesKeys.AUTO_EXTRACT_TEXT] = preferences.autoExtractText
             prefs[PreferencesKeys.SAVE_SEARCH_HISTORY] = preferences.saveSearchHistory
+            prefs[PreferencesKeys.USER_DENSITY_PREFERENCE] = preferences.userDensityPreference.name
         }
     }
 

@@ -9,7 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.mememymood.core.ui.theme.MemeMyMoodTheme
+import com.mememymood.core.ui.theme.MemeMoodTheme
 
 /**
  * Header component for search results display.
@@ -51,7 +51,7 @@ fun SearchResultsHeader(
 @Preview(showBackground = true)
 @Composable
 private fun SearchResultsHeaderPreview() {
-    MemeMyMoodTheme {
+    MemeMoodTheme {
         SearchResultsHeader(
             query = "funny cat",
             resultCount = 42,
@@ -62,7 +62,7 @@ private fun SearchResultsHeaderPreview() {
 @Preview(showBackground = true, name = "Empty Query")
 @Composable
 private fun SearchResultsHeaderEmptyQueryPreview() {
-    MemeMyMoodTheme {
+    MemeMoodTheme {
         SearchResultsHeader(
             query = "",
             resultCount = 100,
@@ -73,7 +73,7 @@ private fun SearchResultsHeaderEmptyQueryPreview() {
 @Preview(showBackground = true, name = "Zero Results")
 @Composable
 private fun SearchResultsHeaderZeroResultsPreview() {
-    MemeMyMoodTheme {
+    MemeMoodTheme {
         SearchResultsHeader(
             query = "nonexistent",
             resultCount = 0,

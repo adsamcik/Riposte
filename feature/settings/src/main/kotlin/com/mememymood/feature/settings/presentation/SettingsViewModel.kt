@@ -77,6 +77,7 @@ class SettingsViewModel @Inject constructor(
                 _uiState.value.copy(
                     darkMode = appPrefs.darkMode,
                     dynamicColorsEnabled = appPrefs.dynamicColors,
+                    gridDensityPreference = appPrefs.userDensityPreference,
                     defaultFormat = sharingPrefs.defaultFormat,
                     defaultQuality = sharingPrefs.defaultQuality,
                     defaultMaxDimension = sharingPrefs.maxWidth, // Using maxWidth as the max dimension setting
@@ -108,6 +109,9 @@ class SettingsViewModel @Inject constructor(
             is SettingsIntent.SetDarkMode -> setDarkMode(intent.mode)
             is SettingsIntent.SetLanguage -> setLanguage(intent.languageCode)
             is SettingsIntent.SetDynamicColors -> setDynamicColors(intent.enabled)
+
+            // Display
+            is SettingsIntent.SetGridDensity -> setGridDensity(intent.preference)
 
             // Sharing
             is SettingsIntent.SetDefaultFormat -> setDefaultFormat(intent.format)
@@ -143,6 +147,13 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             val current = preferencesDataStore.appPreferences.first()
             preferencesDataStore.updateAppPreferences(current.copy(dynamicColors = enabled))
+        }
+    }
+
+    private fun setGridDensity(preference: com.mememymood.core.model.UserDensityPreference) {
+        viewModelScope.launch {
+            val current = preferencesDataStore.appPreferences.first()
+            preferencesDataStore.updateAppPreferences(current.copy(userDensityPreference = preference))
         }
     }
 

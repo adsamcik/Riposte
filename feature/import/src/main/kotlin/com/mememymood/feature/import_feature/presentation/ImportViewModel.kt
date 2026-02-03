@@ -7,8 +7,9 @@ import com.mememymood.core.model.MemeMetadata
 import com.mememymood.feature.import_feature.R
 import com.mememymood.feature.import_feature.domain.usecase.ExtractTextUseCase
 import com.mememymood.feature.import_feature.domain.usecase.ImportImageUseCase
-import com.mememymood.feature.import_feature.domain.usecase.ImportZipBundleUseCase
+import com.mememymood.feature.import_feature.domain.usecase.ImportZipBundleStreamingUseCase
 import com.mememymood.feature.import_feature.domain.usecase.SuggestEmojisUseCase
+import com.mememymood.feature.import_feature.domain.usecase.ZipImportEvent
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.Channel
@@ -27,7 +28,7 @@ class ImportViewModel @Inject constructor(
     private val importImageUseCase: ImportImageUseCase,
     private val suggestEmojisUseCase: SuggestEmojisUseCase,
     private val extractTextUseCase: ExtractTextUseCase,
-    private val importZipBundleUseCase: ImportZipBundleUseCase,
+    private val importZipBundleStreamingUseCase: ImportZipBundleStreamingUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ImportUiState())
@@ -84,32 +85,74 @@ class ImportViewModel @Inject constructor(
     }
 
     private fun handleZipSelected(intent: ImportIntent.ZipSelected) {
-        viewModelScope.launch {
+        importJob = viewModelScope.launch {
             _uiState.update {
                 it.copy(
                     isImporting = true,
-                    importProgress = 0f,
+                    importProgress = -1f, // -1 indicates indeterminate progress
                     statusMessage = context.getString(R.string.import_status_extracting),
                 )
             }
 
-            val result = importZipBundleUseCase(intent.uri)
+            var processedCount = 0
+            var errorCount = 0
 
-            _uiState.update { it.copy(isImporting = false, statusMessage = null) }
+            importZipBundleStreamingUseCase(intent.uri).collect { event ->
+                when (event) {
+                    is ZipImportEvent.Progress -> {
+                        processedCount = event.imported
+                        errorCount = event.errors
+                        _uiState.update {
+                            it.copy(
+                                statusMessage = if (errorCount > 0) {
+                                    context.getString(
+                                        R.string.import_status_streaming_with_errors,
+                                        processedCount,
+                                        errorCount,
+                                    )
+                                } else {
+                                    context.getString(
+                                        R.string.import_status_streaming,
+                                        processedCount,
+                                    )
+                                },
+                            )
+                        }
+                    }
 
-            if (result.successCount > 0) {
-                _effects.send(ImportEffect.ImportComplete(result.successCount))
-                if (result.failureCount > 0) {
-                    _effects.send(
-                        ImportEffect.ShowSnackbar(
-                            context.getString(R.string.import_status_imported_partial, result.successCount, result.failureCount),
-                        ),
-                    )
+                    is ZipImportEvent.MemeImported -> {
+                        // Progress is already tracked via Progress events
+                    }
+
+                    is ZipImportEvent.Error -> {
+                        // Errors are accumulated and shown in final result
+                    }
+
+                    is ZipImportEvent.Complete -> {
+                        _uiState.update { it.copy(isImporting = false, statusMessage = null) }
+
+                        val result = event.result
+                        if (result.successCount > 0) {
+                            _effects.send(ImportEffect.ImportComplete(result.successCount))
+                            if (result.failureCount > 0) {
+                                _effects.send(
+                                    ImportEffect.ShowSnackbar(
+                                        context.getString(
+                                            R.string.import_status_imported_partial,
+                                            result.successCount,
+                                            result.failureCount,
+                                        ),
+                                    ),
+                                )
+                            }
+                            _effects.send(ImportEffect.NavigateToGallery)
+                        } else {
+                            val errorMsg = result.errors.values.firstOrNull()
+                                ?: context.getString(R.string.import_error_bundle_failed)
+                            _effects.send(ImportEffect.ShowError(errorMsg))
+                        }
+                    }
                 }
-                _effects.send(ImportEffect.NavigateToGallery)
-            } else {
-                val errorMsg = result.errors.values.firstOrNull() ?: context.getString(R.string.import_error_bundle_failed)
-                _effects.send(ImportEffect.ShowError(errorMsg))
             }
         }
     }
@@ -218,9 +261,11 @@ class ImportViewModel @Inject constructor(
     }
 
     private fun startImport() {
-        importJob = viewModelScope.launch {
-            _uiState.update { it.copy(isImporting = true, importProgress = 0f) }
+        // Guard against duplicate imports - check and set synchronously
+        if (_uiState.value.isImporting) return
+        _uiState.update { it.copy(isImporting = true, importProgress = 0f) }
 
+        importJob = viewModelScope.launch {
             val images = _uiState.value.selectedImages
             var successCount = 0
 

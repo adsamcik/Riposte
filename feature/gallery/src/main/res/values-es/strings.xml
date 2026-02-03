@@ -49,6 +49,10 @@
     <string name="gallery_empty_title">Aún no hay memes</string>
     <string name="gallery_empty_message">¡Importa algunos memes para empezar!</string>
 
+    <!-- Section Headers -->
+    <string name="gallery_section_quick_access">Acceso Rápido</string>
+    <string name="gallery_section_all_memes">Todos los Memes</string>
+
     <!-- Loading State -->
     <string name="gallery_loading_message">Cargando memes…</string>
 
