@@ -48,6 +48,7 @@ app/src/main/assets/embedding_models/*.mediatek.*.tflite
 # ML Models in flavor-specific asset directories (managed via Play Asset Delivery)
 # Download with: tools/download-embeddinggemma.ps1 -AllVariants
 app/src/main/assets_full/embedding_models/
+app/src/main/assets_standard/embedding_models/*.tflite
 app/src/main/assets_mediatek/embedding_models/
 app/src/main/assets_qualcomm/embedding_models/
 
