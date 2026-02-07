@@ -52,6 +52,8 @@ class GetSimilarMemesUseCase @Inject constructor(
             }
         }
 
+    // Mirrors EmbeddingManager.decodeEmbedding — kept here to avoid N+1 queries
+    // when batch-decoding candidate embeddings from the DAO result.
     private fun decodeEmbedding(bytes: ByteArray): FloatArray {
         val floatArray = FloatArray(bytes.size / 4)
         ByteBuffer.wrap(bytes)

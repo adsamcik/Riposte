@@ -5,7 +5,9 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navOptions
 import com.mememymood.core.common.navigation.GalleryRoute
+import com.mememymood.core.common.navigation.MemeDetailRoute
 import com.mememymood.feature.gallery.navigation.galleryScreen
 import com.mememymood.feature.gallery.navigation.memeDetailScreen
 import com.mememymood.feature.gallery.navigation.navigateToMemeDetail
@@ -62,7 +64,13 @@ fun MemeMoodNavHost(
                 navController.navigateToShare(memeId)
             },
             onNavigateToMeme = { memeId ->
-                navController.navigateToMemeDetail(memeId)
+                navController.navigateToMemeDetail(
+                    memeId,
+                    navOptions {
+                        launchSingleTop = true
+                        popUpTo<MemeDetailRoute> { inclusive = true }
+                    },
+                )
             },
         )
 
