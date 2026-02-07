@@ -91,4 +91,29 @@ sealed interface ImportIntent {
      * Pick a .meme.zip bundle file to import.
      */
     data object PickZipBundle : ImportIntent
+
+    /**
+     * Import anyway despite duplicates.
+     */
+    data object ImportDuplicatesAnyway : ImportIntent
+
+    /**
+     * Skip all duplicate images.
+     */
+    data object SkipDuplicates : ImportIntent
+
+    /**
+     * Dismiss the duplicate dialog.
+     */
+    data object DismissDuplicateDialog : ImportIntent
+
+    /**
+     * Retry failed imports from the result summary.
+     */
+    data object RetryFailedImports : ImportIntent
+
+    /**
+     * Dismiss the import result summary.
+     */
+    data object DismissImportResult : ImportIntent
 }

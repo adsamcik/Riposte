@@ -5,11 +5,12 @@ import com.mememymood.core.model.Meme
 import com.mememymood.core.model.MemeMetadata
 import com.mememymood.feature.import_feature.data.ExtractedMeme
 import com.mememymood.feature.import_feature.data.ZipExtractionResult
-import com.mememymood.feature.import_feature.data.ZipImporter
+import com.mememymood.feature.import_feature.domain.ZipImporter
 import com.mememymood.feature.import_feature.domain.repository.ImportRepository
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -105,5 +106,46 @@ class ImportZipBundleUseCaseTest {
         assertEquals(0, result.successCount)
         assertEquals(1, result.failureCount)
         assertEquals("Failed to extract", result.errors["corrupt.jpg"])
+    }
+
+    @Test
+    fun `cleans up temp files after successful import`() = runTest {
+        val zipUri = mockk<Uri>()
+        val imageUri = mockk<Uri>()
+        val meme = mockk<Meme>()
+
+        every { zipImporter.isMemeZipBundle(zipUri) } returns true
+        coEvery { zipImporter.extractBundle(zipUri) } returns ZipExtractionResult(
+            extractedMemes = listOf(ExtractedMeme(imageUri, null)),
+            errors = emptyMap(),
+        )
+        coEvery { repository.importImage(imageUri, null) } returns Result.success(meme)
+        every { zipImporter.cleanupExtractedFiles() } returns Unit
+
+        useCase(zipUri)
+
+        verify { zipImporter.cleanupExtractedFiles() }
+    }
+
+    @Test
+    fun `cleans up temp files even when import throws exception`() = runTest {
+        val zipUri = mockk<Uri>()
+        val imageUri = mockk<Uri>()
+
+        every { zipImporter.isMemeZipBundle(zipUri) } returns true
+        coEvery { zipImporter.extractBundle(zipUri) } returns ZipExtractionResult(
+            extractedMemes = listOf(ExtractedMeme(imageUri, null)),
+            errors = emptyMap(),
+        )
+        coEvery { repository.importImage(imageUri, null) } throws RuntimeException("Unexpected error")
+        every { zipImporter.cleanupExtractedFiles() } returns Unit
+
+        try {
+            useCase(zipUri)
+        } catch (_: RuntimeException) {
+            // Expected
+        }
+
+        verify { zipImporter.cleanupExtractedFiles() }
     }
 }

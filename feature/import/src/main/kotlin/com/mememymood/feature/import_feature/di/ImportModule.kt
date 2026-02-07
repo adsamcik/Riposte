@@ -1,6 +1,8 @@
 package com.mememymood.feature.import_feature.di
 
+import com.mememymood.feature.import_feature.data.DefaultZipImporter
 import com.mememymood.feature.import_feature.data.ImportRepositoryImpl
+import com.mememymood.feature.import_feature.domain.ZipImporter
 import com.mememymood.feature.import_feature.domain.repository.ImportRepository
 import dagger.Binds
 import dagger.Module
@@ -17,4 +19,9 @@ abstract class ImportModule {
     abstract fun bindImportRepository(
         impl: ImportRepositoryImpl
     ): ImportRepository
+
+    @Binds
+    abstract fun bindZipImporter(
+        impl: DefaultZipImporter
+    ): ZipImporter
 }

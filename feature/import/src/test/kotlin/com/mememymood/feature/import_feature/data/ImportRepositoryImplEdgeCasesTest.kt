@@ -121,7 +121,8 @@ class ImportRepositoryImplEdgeCasesTest {
 
         every { mockContext.contentResolver } returns mockContentResolver
         every { mockContext.filesDir } returns tempFolder.newFolder("files")
-        every { mockContentResolver.getType(any()) } throws SecurityException("Permission denied")
+        every { mockContentResolver.getType(any()) } returns "image/jpeg"
+        every { mockContentResolver.openInputStream(any()) } throws SecurityException("Permission denied")
 
         val repoWithMock = ImportRepositoryImpl(
             context = mockContext,
@@ -136,8 +137,7 @@ class ImportRepositoryImplEdgeCasesTest {
         val result = repoWithMock.importImage(uri, null)
 
         assertThat(result.isFailure).isTrue()
-        assertThat(result.exceptionOrNull()).isInstanceOf(SecurityException::class.java)
-        assertThat(result.exceptionOrNull()?.message).contains("Permission denied")
+        assertThat(result.exceptionOrNull()?.message).contains("Failed to load image")
     }
 
     @Test

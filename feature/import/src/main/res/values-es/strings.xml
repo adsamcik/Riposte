@@ -13,7 +13,6 @@
     <string name="import_content_description_image_preview">Vista previa de imagen</string>
 
     <!-- Empty State -->
-    <string name="import_empty_icon">📥</string>
     <string name="import_empty_title">Importa Tus Memes</string>
     <string name="import_empty_message">Selecciona imágenes de tu galería para añadirlas a tu colección de memes</string>
 
@@ -44,6 +43,8 @@
 
     <!-- Status Messages -->
     <string name="import_status_extracting">Extrayendo paquete…</string>
+    <string name="import_status_streaming">Importando… %1$d memes procesados</string>
+    <string name="import_status_streaming_with_errors">Importando… %1$d procesados, %2$d errores</string>
     <string name="import_status_imported_partial">%1$d memes importados, %2$d fallidos</string>
     <string name="import_error_bundle_failed">No se pudo importar el paquete</string>
     <string name="import_error_images_failed">No se pudieron importar las imágenes</string>

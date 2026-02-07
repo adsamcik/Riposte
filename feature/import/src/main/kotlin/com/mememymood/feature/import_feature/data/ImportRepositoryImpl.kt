@@ -119,6 +119,7 @@ class ImportRepositoryImpl @Inject constructor(
                 description = description,
                 textContent = extractedText,
                 embedding = null, // Embeddings now stored in separate table
+                fileHash = fileHash,
             )
 
             // Insert meme
@@ -289,10 +290,21 @@ class ImportRepositoryImpl @Inject constructor(
     }
 
     override suspend fun isDuplicate(uri: Uri): Boolean = withContext(Dispatchers.IO) {
-        // Note: Currently no hash-based duplicate detection available in MemeDao.
-        // This would require adding getMemeByHash to MemeDao in core:database module.
-        // For now, return false to indicate no duplicate found.
-        false
+        try {
+            val bitmap = loadAndResizeBitmap(uri) ?: return@withContext false
+            val tempFile = File.createTempFile("dup_check_", ".jpg", context.cacheDir)
+            try {
+                FileOutputStream(tempFile).use { out ->
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
+                }
+                val hash = calculateFileHash(tempFile)
+                memeDao.memeExistsByHash(hash)
+            } finally {
+                tempFile.delete()
+            }
+        } catch (e: Exception) {
+            false
+        }
     }
 
     private suspend fun loadAndResizeBitmap(uri: Uri): Bitmap? = withContext(Dispatchers.IO) {

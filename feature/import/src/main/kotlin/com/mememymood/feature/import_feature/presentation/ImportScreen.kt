@@ -1,5 +1,6 @@
 package com.mememymood.feature.import_feature.presentation
 
+import android.content.res.Configuration
 import android.net.Uri
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -21,6 +22,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -44,6 +46,9 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.outlined.AddPhotoAlternate
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -63,6 +68,7 @@ import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
@@ -78,6 +84,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -87,6 +94,7 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -108,6 +116,7 @@ fun ImportScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    val uriHandler = LocalUriHandler.current
 
     val multiplePhotoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickMultipleVisualMedia(maxItems = 20),
@@ -226,11 +235,24 @@ fun ImportScreen(
                 .padding(paddingValues),
         ) {
             when {
+                uiState.importResult != null -> {
+                    ImportResultSummary(
+                        result = uiState.importResult!!,
+                        onRetry = { viewModel.onIntent(ImportIntent.RetryFailedImports) },
+                        onDone = { viewModel.onIntent(ImportIntent.DismissImportResult) },
+                    )
+                }
+
                 uiState.isImporting -> {
                     ImportProgressContent(
                         progress = uiState.importProgress,
                         total = uiState.selectedImages.size,
                         currentFileName = uiState.statusMessage,
+                        isIndeterminate = uiState.isProgressIndeterminate,
+                        onCancel = { viewModel.onIntent(ImportIntent.CancelImport) },
+                        onLearnMoreClick = {
+                            uriHandler.openUri("https://github.com/user/meme-my-mood/tree/main/tools/meme-my-mood-cli")
+                        },
                         modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
                     )
                 }
@@ -278,13 +300,40 @@ fun ImportScreen(
                 }
             }
         }
+
+        // Duplicate detection dialog
+        if (uiState.showDuplicateDialog) {
+            AlertDialog(
+                onDismissRequest = { viewModel.onIntent(ImportIntent.DismissDuplicateDialog) },
+                title = { Text(stringResource(R.string.import_duplicate_dialog_title)) },
+                text = {
+                    Text(
+                        stringResource(
+                            R.string.import_duplicate_dialog_message,
+                            uiState.duplicateIndices.size,
+                        ),
+                    )
+                },
+                confirmButton = {
+                    TextButton(onClick = { viewModel.onIntent(ImportIntent.ImportDuplicatesAnyway) }) {
+                        Text(stringResource(R.string.import_duplicate_import_anyway))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { viewModel.onIntent(ImportIntent.SkipDuplicates) }) {
+                        Text(stringResource(R.string.import_duplicate_skip))
+                    }
+                },
+            )
+        }
     }
 }
 
 @Composable
-private fun EmptyImportContent(
-    onSelectImages: () -> Unit,
-    onImportBundle: () -> Unit,
+private fun ImportResultSummary(
+    result: ImportResult,
+    onRetry: () -> Unit,
+    onDone: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -295,8 +344,54 @@ private fun EmptyImportContent(
         verticalArrangement = Arrangement.Center,
     ) {
         Text(
-            text = stringResource(R.string.import_empty_icon),
+            text = if (result.failureCount == 0) "✅" else "⚠️",
             style = MaterialTheme.typography.displayLarge,
+        )
+        Spacer(Modifier.height(16.dp))
+        Text(
+            text = stringResource(R.string.import_result_title),
+            style = MaterialTheme.typography.headlineSmall,
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = stringResource(R.string.import_result_summary, result.successCount, result.failureCount),
+            style = MaterialTheme.typography.bodyLarge,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(24.dp))
+        Button(onClick = onDone) {
+            Text(stringResource(R.string.import_result_done))
+        }
+        if (result.failureCount > 0) {
+            Spacer(Modifier.height(12.dp))
+            OutlinedButton(onClick = onRetry) {
+                Text(stringResource(R.string.import_result_retry, result.failureCount))
+            }
+        }
+    }
+}
+
+@Composable
+internal fun EmptyImportContent(
+    onSelectImages: () -> Unit,
+    onImportBundle: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Top,
+    ) {
+        Spacer(Modifier.fillMaxHeight(0.25f))
+        Icon(
+            imageVector = Icons.Outlined.AddPhotoAlternate,
+            contentDescription = null,
+            modifier = Modifier.size(72.dp),
+            tint = MaterialTheme.colorScheme.primary,
         )
         Spacer(Modifier.height(16.dp))
         Text(
@@ -317,7 +412,19 @@ private fun EmptyImportContent(
             Spacer(Modifier.width(8.dp))
             Text(stringResource(R.string.import_button_select_images))
         }
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = stringResource(R.string.import_hint_max_images),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = stringResource(R.string.import_tip_emoji_tagging),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(24.dp))
         OutlinedButton(onClick = onImportBundle) {
             Text(stringResource(R.string.import_button_import_bundle))
         }
@@ -358,6 +465,7 @@ private fun ImportGridContent(
                 uri = image.uri,
                 emojis = image.emojis.map { it.emoji },
                 isSelected = index == editingIndex,
+                hasError = image.error != null,
                 onClick = { onImageClick(index) },
                 onRemove = { onRemoveImage(index) },
             )
@@ -374,6 +482,7 @@ private fun ImportImageCard(
     uri: Uri,
     emojis: List<String>,
     isSelected: Boolean,
+    hasError: Boolean,
     onClick: () -> Unit,
     onRemove: () -> Unit,
     modifier: Modifier = Modifier,
@@ -382,13 +491,19 @@ private fun ImportImageCard(
         modifier = modifier
             .aspectRatio(1f)
             .then(
-                if (isSelected) {
-                    Modifier.border(
+                when {
+                    hasError -> Modifier.border(
+                        width = 3.dp,
+                        color = MaterialTheme.colorScheme.error,
+                        shape = RoundedCornerShape(12.dp),
+                    )
+                    isSelected -> Modifier.border(
                         width = 3.dp,
                         color = MaterialTheme.colorScheme.primary,
                         shape = RoundedCornerShape(12.dp),
                     )
-                } else Modifier
+                    else -> Modifier
+                }
             ),
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
@@ -407,8 +522,6 @@ private fun ImportImageCard(
                 onClick = onRemove,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(4.dp)
-                    .size(24.dp)
                     .background(
                         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
                         shape = CircleShape,
@@ -417,7 +530,19 @@ private fun ImportImageCard(
                 Icon(
                     Icons.Default.Close,
                     contentDescription = stringResource(R.string.import_content_description_remove),
-                    modifier = Modifier.size(16.dp),
+                    modifier = Modifier.size(18.dp),
+                )
+            }
+
+            // Error indicator
+            if (hasError) {
+                Icon(
+                    Icons.Default.Warning,
+                    contentDescription = stringResource(R.string.import_content_description_error),
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .size(32.dp),
                 )
             }
 
@@ -633,10 +758,13 @@ private fun EditImageSheet(
 }
 
 @Composable
-private fun ImportProgressContent(
+internal fun ImportProgressContent(
     progress: Float,
     total: Int,
     currentFileName: String?,
+    isIndeterminate: Boolean,
+    onCancel: () -> Unit,
+    onLearnMoreClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val progressCount = (progress * total).toInt()
@@ -656,16 +784,24 @@ private fun ImportProgressContent(
             style = MaterialTheme.typography.headlineSmall,
         )
         Spacer(Modifier.height(8.dp))
-        Text(
-            text = stringResource(R.string.import_progress_count, progressCount, total),
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        if (!isIndeterminate) {
+            Text(
+                text = stringResource(R.string.import_progress_count, progressCount, total),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         Spacer(Modifier.height(16.dp))
-        LinearProgressIndicator(
-            progress = { progress },
-            modifier = Modifier.fillMaxWidth(),
-        )
+        if (isIndeterminate) {
+            LinearProgressIndicator(
+                modifier = Modifier.fillMaxWidth(),
+            )
+        } else {
+            LinearProgressIndicator(
+                progress = { progress },
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
         currentFileName?.let { fileName ->
             Spacer(Modifier.height(8.dp))
             Text(
@@ -676,5 +812,93 @@ private fun ImportProgressContent(
                 overflow = TextOverflow.Ellipsis,
             )
         }
+        Spacer(Modifier.height(24.dp))
+        OutlinedButton(onClick = onCancel) {
+            Text(stringResource(R.string.import_button_cancel))
+        }
+        Spacer(Modifier.height(24.dp))
+        CliDiscoveryCard(onLearnMoreClick = onLearnMoreClick)
     }
 }
+
+@Composable
+private fun CliDiscoveryCard(
+    onLearnMoreClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+        ),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.import_cli_did_you_know),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onTertiaryContainer,
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = stringResource(R.string.import_cli_description),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onTertiaryContainer,
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = stringResource(R.string.import_cli_learn_more),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.tertiary,
+                modifier = Modifier.clickable(onClick = onLearnMoreClick),
+            )
+        }
+    }
+}
+
+// region Previews
+
+@Preview(name = "Empty Import", showBackground = true)
+@Preview(name = "Empty Import Dark", showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun EmptyImportContentPreview() {
+    com.mememymood.core.ui.theme.MemeMoodTheme {
+        EmptyImportContent(
+            onSelectImages = {},
+            onImportBundle = {},
+        )
+    }
+}
+
+@Preview(name = "Importing", showBackground = true)
+@Composable
+private fun ImportProgressContentPreview() {
+    com.mememymood.core.ui.theme.MemeMoodTheme {
+        ImportProgressContent(
+            progress = 0.45f,
+            total = 5,
+            currentFileName = "funny_cat.jpg",
+            isIndeterminate = false,
+            onCancel = {},
+            onLearnMoreClick = {},
+        )
+    }
+}
+
+@Preview(name = "Indeterminate Progress", showBackground = true)
+@Composable
+private fun ImportProgressIndeterminatePreview() {
+    com.mememymood.core.ui.theme.MemeMoodTheme {
+        ImportProgressContent(
+            progress = 0f,
+            total = 0,
+            currentFileName = "Extracting ZIP bundle...",
+            isIndeterminate = true,
+            onCancel = {},
+            onLearnMoreClick = {},
+        )
+    }
+}
+
+// endregion

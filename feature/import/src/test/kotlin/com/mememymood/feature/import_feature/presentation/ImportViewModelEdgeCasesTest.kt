@@ -6,12 +6,12 @@ import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
 import com.mememymood.core.model.EmojiTag
 import com.mememymood.core.model.Meme
+import com.mememymood.core.datastore.PreferencesDataStore
+import com.mememymood.feature.import_feature.domain.usecase.CheckDuplicateUseCase
 import com.mememymood.feature.import_feature.domain.usecase.ExtractTextUseCase
+import com.mememymood.feature.import_feature.domain.usecase.ExtractZipForPreviewUseCase
 import com.mememymood.feature.import_feature.domain.usecase.ImportImageUseCase
-import com.mememymood.feature.import_feature.domain.usecase.ImportZipBundleStreamingUseCase
 import com.mememymood.feature.import_feature.domain.usecase.SuggestEmojisUseCase
-import com.mememymood.feature.import_feature.domain.usecase.ZipImportEvent
-import com.mememymood.feature.import_feature.domain.usecase.ZipImportResult
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -43,7 +43,9 @@ class ImportViewModelEdgeCasesTest {
     private lateinit var importImageUseCase: ImportImageUseCase
     private lateinit var suggestEmojisUseCase: SuggestEmojisUseCase
     private lateinit var extractTextUseCase: ExtractTextUseCase
-    private lateinit var importZipBundleStreamingUseCase: ImportZipBundleStreamingUseCase
+    private lateinit var extractZipForPreviewUseCase: ExtractZipForPreviewUseCase
+    private lateinit var checkDuplicateUseCase: CheckDuplicateUseCase
+    private lateinit var preferencesDataStore: PreferencesDataStore
     private lateinit var viewModel: ImportViewModel
 
     @Before
@@ -53,14 +55,20 @@ class ImportViewModelEdgeCasesTest {
         importImageUseCase = mockk(relaxed = true)
         suggestEmojisUseCase = mockk(relaxed = true)
         extractTextUseCase = mockk(relaxed = true)
-        importZipBundleStreamingUseCase = mockk(relaxed = true)
+        extractZipForPreviewUseCase = mockk(relaxed = true)
+        checkDuplicateUseCase = mockk(relaxed = true)
+        preferencesDataStore = mockk(relaxed = true) {
+            every { hasShownEmojiTip } returns flowOf(false)
+        }
         viewModel = ImportViewModel(
             context = context,
             importImageUseCase = importImageUseCase,
             suggestEmojisUseCase = suggestEmojisUseCase,
             extractTextUseCase = extractTextUseCase,
-            importZipBundleStreamingUseCase = importZipBundleStreamingUseCase,
+            extractZipForPreviewUseCase = extractZipForPreviewUseCase,
+            checkDuplicateUseCase = checkDuplicateUseCase,
             userActionTracker = mockk(relaxed = true),
+            preferencesDataStore = preferencesDataStore,
         )
     }
 
@@ -74,10 +82,10 @@ class ImportViewModelEdgeCasesTest {
     @Test
     fun `CancelImport resets importing state`() = runTest {
         val uri = mockk<Uri> { every { lastPathSegment } returns "meme.jpg" }
-        val emoji = EmojiTag("😀", "happy")
 
         coEvery { suggestEmojisUseCase(any()) } returns emptyList()
         coEvery { extractTextUseCase(any()) } returns null
+        coEvery { checkDuplicateUseCase(any()) } returns false
         // Slow import to allow cancellation
         coEvery { importImageUseCase(any(), any()) } coAnswers {
             delay(10_000)
@@ -85,12 +93,6 @@ class ImportViewModelEdgeCasesTest {
         }
 
         viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uri)))
-        advanceUntilIdle()
-        viewModel.onIntent(ImportIntent.EditImage(0))
-        advanceUntilIdle()
-        viewModel.onIntent(ImportIntent.AddEmoji(emoji))
-        advanceUntilIdle()
-        viewModel.onIntent(ImportIntent.CloseEditor)
         advanceUntilIdle()
 
         // Start import
@@ -111,20 +113,14 @@ class ImportViewModelEdgeCasesTest {
     @Test
     fun `Multiple StartImport calls only process once`() = runTest {
         val uri = mockk<Uri> { every { lastPathSegment } returns "meme.jpg" }
-        val emoji = EmojiTag("😀", "happy")
         val meme = mockk<Meme>()
 
         coEvery { suggestEmojisUseCase(any()) } returns emptyList()
         coEvery { extractTextUseCase(any()) } returns null
         coEvery { importImageUseCase(any(), any()) } returns Result.success(meme)
+        coEvery { checkDuplicateUseCase(any()) } returns false
 
         viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uri)))
-        advanceUntilIdle()
-        viewModel.onIntent(ImportIntent.EditImage(0))
-        advanceUntilIdle()
-        viewModel.onIntent(ImportIntent.AddEmoji(emoji))
-        advanceUntilIdle()
-        viewModel.onIntent(ImportIntent.CloseEditor)
         advanceUntilIdle()
 
         // Call StartImport multiple times rapidly
@@ -221,16 +217,9 @@ class ImportViewModelEdgeCasesTest {
     fun `ZipSelected shows error for invalid bundle`() = runTest {
         val zipUri = mockk<Uri>()
 
-        every { importZipBundleStreamingUseCase(zipUri) } returns flowOf(
-            ZipImportEvent.Error("bundle", "Not a valid .meme.zip bundle"),
-            ZipImportEvent.Complete(
-                ZipImportResult(
-                    successCount = 0,
-                    failureCount = 1,
-                    importedMemes = emptyList(),
-                    errors = mapOf("bundle" to "Not a valid .meme.zip bundle"),
-                ),
-            ),
+        coEvery { extractZipForPreviewUseCase(zipUri) } returns com.mememymood.feature.import_feature.data.ZipExtractionResult(
+            extractedMemes = emptyList(),
+            errors = mapOf("bundle" to "Not a valid .meme.zip bundle"),
         )
 
         viewModel.effects.test {
@@ -244,74 +233,58 @@ class ImportViewModelEdgeCasesTest {
     }
 
     @Test
-    fun `ZipSelected navigates to gallery on success`() = runTest {
+    fun `ZipSelected populates preview grid with extracted memes`() = runTest {
         val zipUri = mockk<Uri>()
-        val meme = mockk<Meme>()
-
-        every { importZipBundleStreamingUseCase(zipUri) } returns flowOf(
-            ZipImportEvent.MemeImported(meme),
-            ZipImportEvent.Complete(
-                ZipImportResult(
-                    successCount = 1,
-                    failureCount = 0,
-                    importedMemes = listOf(meme),
-                    errors = emptyMap(),
-                ),
-            ),
+        val imageUri = mockk<Uri> { every { lastPathSegment } returns "meme1.jpg" }
+        val metadata = com.mememymood.core.model.MemeMetadata(
+            emojis = listOf("😂"),
+            title = "Test Meme",
+            description = "Test desc",
         )
 
-        viewModel.effects.test {
-            viewModel.onIntent(ImportIntent.ZipSelected(zipUri))
-            advanceUntilIdle()
+        coEvery { extractZipForPreviewUseCase(zipUri) } returns com.mememymood.feature.import_feature.data.ZipExtractionResult(
+            extractedMemes = listOf(
+                com.mememymood.feature.import_feature.data.ExtractedMeme(
+                    imageUri = imageUri,
+                    metadata = metadata,
+                ),
+            ),
+            errors = emptyMap(),
+        )
 
-            // Should receive success effect - ImportComplete triggers navigation via callback
-            val effect1 = awaitItem()
-            assertThat(effect1).isInstanceOf(ImportEffect.ImportComplete::class.java)
+        viewModel.onIntent(ImportIntent.ZipSelected(zipUri))
+        advanceUntilIdle()
 
-            // Should receive NavigateToGallery
-            val effect2 = awaitItem()
-            assertThat(effect2).isInstanceOf(ImportEffect.NavigateToGallery::class.java)
+        viewModel.uiState.test {
+            val state = awaitItem()
+            assertThat(state.selectedImages).hasSize(1)
+            assertThat(state.selectedImages[0].title).isEqualTo("Test Meme")
+            assertThat(state.selectedImages[0].emojis).hasSize(1)
+            assertThat(state.isImporting).isFalse()
         }
     }
 
     @Test
-    fun `ZipSelected shows partial success message`() = runTest {
+    fun `ZipSelected shows snackbar for extraction errors`() = runTest {
         val zipUri = mockk<Uri>()
-        val meme = mockk<Meme>()
+        val imageUri = mockk<Uri> { every { lastPathSegment } returns "good.jpg" }
 
-        every { importZipBundleStreamingUseCase(zipUri) } returns flowOf(
-            ZipImportEvent.MemeImported(meme),
-            ZipImportEvent.MemeImported(meme),
-            ZipImportEvent.MemeImported(meme),
-            ZipImportEvent.MemeImported(meme),
-            ZipImportEvent.MemeImported(meme),
-            ZipImportEvent.Error("img1.jpg", "Failed"),
-            ZipImportEvent.Error("img2.jpg", "Failed"),
-            ZipImportEvent.Complete(
-                ZipImportResult(
-                    successCount = 5,
-                    failureCount = 2,
-                    importedMemes = listOf(meme, meme, meme, meme, meme),
-                    errors = mapOf("img1.jpg" to "Failed", "img2.jpg" to "Failed"),
+        coEvery { extractZipForPreviewUseCase(zipUri) } returns com.mememymood.feature.import_feature.data.ZipExtractionResult(
+            extractedMemes = listOf(
+                com.mememymood.feature.import_feature.data.ExtractedMeme(
+                    imageUri = imageUri,
+                    metadata = null,
                 ),
             ),
+            errors = mapOf("bad.jpg" to "Corrupt file", "bad2.jpg" to "Too large"),
         )
 
         viewModel.effects.test {
             viewModel.onIntent(ImportIntent.ZipSelected(zipUri))
             advanceUntilIdle()
 
-            // First effect: ImportComplete - triggers navigation via callback
-            val effect1 = awaitItem()
-            assertThat(effect1).isInstanceOf(ImportEffect.ImportComplete::class.java)
-
-            // Second effect: ShowSnackbar for partial success
-            val effect2 = awaitItem()
-            assertThat(effect2).isInstanceOf(ImportEffect.ShowSnackbar::class.java)
-
-            // Third effect: NavigateToGallery
-            val effect3 = awaitItem()
-            assertThat(effect3).isInstanceOf(ImportEffect.NavigateToGallery::class.java)
+            val effect = awaitItem()
+            assertThat(effect).isInstanceOf(ImportEffect.ShowSnackbar::class.java)
         }
     }
 
@@ -344,32 +317,17 @@ class ImportViewModelEdgeCasesTest {
     fun `Import failure for one image continues with others`() = runTest {
         val uri1 = mockk<Uri> { every { lastPathSegment } returns "meme1.jpg" }
         val uri2 = mockk<Uri> { every { lastPathSegment } returns "meme2.jpg" }
-        val emoji = EmojiTag("😀", "happy")
         val meme = mockk<Meme>()
 
         coEvery { suggestEmojisUseCase(any()) } returns emptyList()
         coEvery { extractTextUseCase(any()) } returns null
+        coEvery { checkDuplicateUseCase(any()) } returns false
 
         // First fails, second succeeds
         coEvery { importImageUseCase(uri1, any()) } returns Result.failure(Exception("Failed"))
         coEvery { importImageUseCase(uri2, any()) } returns Result.success(meme)
 
         viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uri1, uri2)))
-        advanceUntilIdle()
-
-        // Add emoji to both
-        viewModel.onIntent(ImportIntent.EditImage(0))
-        advanceUntilIdle()
-        viewModel.onIntent(ImportIntent.AddEmoji(emoji))
-        advanceUntilIdle()
-        viewModel.onIntent(ImportIntent.CloseEditor)
-        advanceUntilIdle()
-
-        viewModel.onIntent(ImportIntent.EditImage(1))
-        advanceUntilIdle()
-        viewModel.onIntent(ImportIntent.AddEmoji(emoji))
-        advanceUntilIdle()
-        viewModel.onIntent(ImportIntent.CloseEditor)
         advanceUntilIdle()
 
         viewModel.onIntent(ImportIntent.StartImport)
@@ -468,6 +426,169 @@ class ImportViewModelEdgeCasesTest {
             assertThat(state.showEmojiPicker).isFalse()
             assertThat(state.isImporting).isFalse()
             assertThat(state.error).isNull()
+        }
+    }
+
+    // ==================== Import Without Emojis ====================
+
+    @Test
+    fun `import allowed without any emoji tags`() = runTest {
+        val uri = mockk<Uri> { every { lastPathSegment } returns "meme.jpg" }
+        val meme = mockk<Meme>()
+
+        coEvery { suggestEmojisUseCase(any()) } returns emptyList()
+        coEvery { extractTextUseCase(any()) } returns null
+        coEvery { importImageUseCase(any(), any()) } returns Result.success(meme)
+        coEvery { checkDuplicateUseCase(any()) } returns false
+
+        viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uri)))
+        advanceUntilIdle()
+
+        // Verify canImport is true without emojis
+        viewModel.uiState.test {
+            val state = awaitItem()
+            assertThat(state.canImport).isTrue()
+            assertThat(state.selectedImages[0].emojis).isEmpty()
+        }
+
+        // Import should succeed without emojis
+        viewModel.onIntent(ImportIntent.StartImport)
+        advanceUntilIdle()
+
+        coVerify { importImageUseCase(any(), any()) }
+    }
+
+    // ==================== Duplicate Detection Tests ====================
+
+    @Test
+    fun `StartImport shows duplicate dialog when duplicates found`() = runTest {
+        val uri = mockk<Uri> { every { lastPathSegment } returns "meme.jpg" }
+
+        coEvery { suggestEmojisUseCase(any()) } returns emptyList()
+        coEvery { extractTextUseCase(any()) } returns null
+        coEvery { checkDuplicateUseCase(uri) } returns true
+
+        viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uri)))
+        advanceUntilIdle()
+
+        viewModel.onIntent(ImportIntent.StartImport)
+        advanceUntilIdle()
+
+        viewModel.uiState.test {
+            val state = awaitItem()
+            assertThat(state.showDuplicateDialog).isTrue()
+            assertThat(state.duplicateIndices).containsExactly(0)
+            assertThat(state.isImporting).isFalse()
+        }
+    }
+
+    @Test
+    fun `ImportDuplicatesAnyway imports all including duplicates`() = runTest {
+        val uri = mockk<Uri> { every { lastPathSegment } returns "meme.jpg" }
+        val meme = mockk<Meme>()
+
+        coEvery { suggestEmojisUseCase(any()) } returns emptyList()
+        coEvery { extractTextUseCase(any()) } returns null
+        coEvery { checkDuplicateUseCase(uri) } returns true
+        coEvery { importImageUseCase(any(), any()) } returns Result.success(meme)
+
+        viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uri)))
+        advanceUntilIdle()
+
+        viewModel.onIntent(ImportIntent.StartImport)
+        advanceUntilIdle()
+
+        viewModel.onIntent(ImportIntent.ImportDuplicatesAnyway)
+        advanceUntilIdle()
+
+        coVerify { importImageUseCase(any(), any()) }
+        viewModel.uiState.test {
+            val state = awaitItem()
+            assertThat(state.showDuplicateDialog).isFalse()
+        }
+    }
+
+    @Test
+    fun `SkipDuplicates removes duplicate images and imports rest`() = runTest {
+        val uri1 = mockk<Uri> { every { lastPathSegment } returns "dupe.jpg" }
+        val uri2 = mockk<Uri> { every { lastPathSegment } returns "new.jpg" }
+        val meme = mockk<Meme>()
+
+        coEvery { suggestEmojisUseCase(any()) } returns emptyList()
+        coEvery { extractTextUseCase(any()) } returns null
+        coEvery { checkDuplicateUseCase(uri1) } returns true
+        coEvery { checkDuplicateUseCase(uri2) } returns false
+        coEvery { importImageUseCase(any(), any()) } returns Result.success(meme)
+
+        viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uri1, uri2)))
+        advanceUntilIdle()
+
+        viewModel.onIntent(ImportIntent.StartImport)
+        advanceUntilIdle()
+
+        viewModel.onIntent(ImportIntent.SkipDuplicates)
+        advanceUntilIdle()
+
+        // Only non-duplicate should be imported
+        coVerify(exactly = 1) { importImageUseCase(uri2, any()) }
+        coVerify(exactly = 0) { importImageUseCase(uri1, any()) }
+    }
+
+    // ==================== Import Result Summary Tests ====================
+
+    @Test
+    fun `import result shows summary with failure count`() = runTest {
+        val uri1 = mockk<Uri> { every { lastPathSegment } returns "good.jpg" }
+        val uri2 = mockk<Uri> { every { lastPathSegment } returns "bad.jpg" }
+        val meme = mockk<Meme>()
+
+        coEvery { suggestEmojisUseCase(any()) } returns emptyList()
+        coEvery { extractTextUseCase(any()) } returns null
+        coEvery { checkDuplicateUseCase(any()) } returns false
+        coEvery { importImageUseCase(uri1, any()) } returns Result.success(meme)
+        coEvery { importImageUseCase(uri2, any()) } returns Result.failure(Exception("Failed"))
+
+        viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uri1, uri2)))
+        advanceUntilIdle()
+
+        viewModel.onIntent(ImportIntent.StartImport)
+        advanceUntilIdle()
+
+        viewModel.uiState.test {
+            val state = awaitItem()
+            assertThat(state.importResult).isNotNull()
+            assertThat(state.importResult?.successCount).isEqualTo(1)
+            assertThat(state.importResult?.failureCount).isEqualTo(1)
+            assertThat(state.importResult?.failedImages).hasSize(1)
+        }
+    }
+
+    @Test
+    fun `RetryFailedImports reloads failed images for retry`() = runTest {
+        val uri1 = mockk<Uri> { every { lastPathSegment } returns "good.jpg" }
+        val uri2 = mockk<Uri> { every { lastPathSegment } returns "bad.jpg" }
+        val meme = mockk<Meme>()
+
+        coEvery { suggestEmojisUseCase(any()) } returns emptyList()
+        coEvery { extractTextUseCase(any()) } returns null
+        coEvery { checkDuplicateUseCase(any()) } returns false
+        coEvery { importImageUseCase(uri1, any()) } returns Result.success(meme)
+        coEvery { importImageUseCase(uri2, any()) } returns Result.failure(Exception("Failed"))
+
+        viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uri1, uri2)))
+        advanceUntilIdle()
+
+        viewModel.onIntent(ImportIntent.StartImport)
+        advanceUntilIdle()
+
+        viewModel.onIntent(ImportIntent.RetryFailedImports)
+        advanceUntilIdle()
+
+        viewModel.uiState.test {
+            val state = awaitItem()
+            assertThat(state.importResult).isNull()
+            assertThat(state.selectedImages).hasSize(1)
+            assertThat(state.selectedImages[0].fileName).isEqualTo("bad.jpg")
         }
     }
 }

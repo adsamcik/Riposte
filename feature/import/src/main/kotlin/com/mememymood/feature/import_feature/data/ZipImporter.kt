@@ -13,6 +13,7 @@ import kotlinx.serialization.json.Json
 import java.io.File
 import java.io.FileOutputStream
 import java.util.zip.ZipInputStream
+import com.mememymood.feature.import_feature.domain.ZipImporter
 import javax.inject.Inject
 
 /**
@@ -92,9 +93,9 @@ sealed interface ZipExtractionEvent {
  * }
  * ```
  */
-class ZipImporter @Inject constructor(
-    @ApplicationContext private val context: Context,
-) {
+class DefaultZipImporter @Inject constructor(
+    @param:ApplicationContext private val context: Context,
+) : ZipImporter {
 
     private val json = Json {
         ignoreUnknownKeys = true
@@ -135,7 +136,7 @@ class ZipImporter @Inject constructor(
      * @param uri URI to check.
      * @return True if the URI appears to be a meme bundle.
      */
-    fun isMemeZipBundle(uri: Uri): Boolean {
+    override fun isMemeZipBundle(uri: Uri): Boolean {
         val fileName = getFileNameFromUri(uri)?.lowercase() ?: return false
         return fileName.endsWith(MEME_ZIP_EXTENSION) ||
             (fileName.endsWith(".zip") && context.contentResolver.getType(uri) == "application/zip")
@@ -147,7 +148,7 @@ class ZipImporter @Inject constructor(
      * @param zipUri URI pointing to the ZIP file.
      * @return Extraction result with images and any errors.
      */
-    suspend fun extractBundle(zipUri: Uri): ZipExtractionResult = withContext(Dispatchers.IO) {
+    override suspend fun extractBundle(zipUri: Uri): ZipExtractionResult = withContext(Dispatchers.IO) {
         val extractedMemes = mutableListOf<ExtractedMeme>()
         val errors = mutableMapOf<String, String>()
 
@@ -274,7 +275,7 @@ class ZipImporter @Inject constructor(
      * @param zipUri URI pointing to the ZIP file.
      * @return Flow of extraction events.
      */
-    fun extractBundleStream(zipUri: Uri): Flow<ZipExtractionEvent> = flow {
+    override fun extractBundleStream(zipUri: Uri): Flow<ZipExtractionEvent> = flow {
         var processedCount = 0
         var errorCount = 0
 
@@ -401,8 +402,8 @@ class ZipImporter @Inject constructor(
     /**
      * Clean up extracted files after import is complete.
      */
-    fun cleanupExtractedFiles() {
-        extractDir.listFiles()?.forEach { it.delete() }
+    override fun cleanupExtractedFiles() {
+        extractDir.deleteRecursively()
     }
 
     /**

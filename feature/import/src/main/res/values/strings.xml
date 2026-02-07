@@ -11,21 +11,22 @@
     <string name="import_content_description_remove">Remove</string>
     <string name="import_content_description_image_to_import">Image to import</string>
     <string name="import_content_description_image_preview">Image preview</string>
+    <string name="import_content_description_error">Processing error</string>
 
     <!-- Empty State -->
-    <string name="import_empty_icon">📥</string>
     <string name="import_empty_title">Import Your Memes</string>
     <string name="import_empty_message">Select images from your gallery to add to your meme collection</string>
 
     <!-- Buttons -->
     <string name="import_button_select_images">Select Images</string>
-    <string name="import_button_import_bundle">Import Bundle (.meme.zip)</string>
+    <string name="import_button_import_bundle">Import Meme Bundle</string>
     <string name="import_button_add_more">Add More</string>
     <string name="import_button_done">Done</string>
     <string name="import_button_apply_all">Apply All</string>
+    <string name="import_button_cancel">Cancel</string>
 
     <!-- Bundle Import -->
-    <string name="import_bundle_hint">Import meme bundles created with the CLI tool</string>
+    <string name="import_bundle_hint">Import pre-tagged meme collections</string>
 
     <!-- Section Labels -->
     <string name="import_section_ai_suggested">AI Suggested</string>
@@ -47,6 +48,28 @@
     <string name="import_status_streaming">Importing… %1$d memes processed</string>
     <string name="import_status_streaming_with_errors">Importing… %1$d processed, %2$d errors</string>
     <string name="import_status_imported_partial">Imported %1$d memes, %2$d failed</string>
+    <string name="import_status_zip_extract_errors">%d file(s) could not be extracted from the bundle</string>
     <string name="import_error_bundle_failed">Failed to import bundle</string>
     <string name="import_error_images_failed">Failed to import images</string>
+
+    <!-- Duplicate Detection Dialog -->
+    <string name="import_duplicate_dialog_title">Duplicates Found</string>
+    <string name="import_duplicate_dialog_message">%d image(s) already exist in your library.</string>
+    <string name="import_duplicate_import_anyway">Import Anyway</string>
+    <string name="import_duplicate_skip">Skip Duplicates</string>
+
+    <!-- Import Result Summary -->
+    <string name="import_result_title">Import Complete</string>
+    <string name="import_result_summary">%1$d imported, %2$d failed</string>
+    <string name="import_result_done">Done</string>
+    <string name="import_result_retry">Retry %d Failed</string>
+
+    <!-- Discovery Card -->
+    <string name="import_cli_did_you_know">💡 Did you know?</string>
+    <string name="import_cli_description">You can batch-annotate your memes with AI using our desktop tool. Visit our website to learn more.</string>
+    <string name="import_cli_learn_more">Learn More →</string>
+
+    <!-- Onboarding Tips -->
+    <string name="import_tip_emoji_tagging">Your memes will be auto-tagged with AI after import ✨</string>
+    <string name="import_hint_max_images">Up to 20 images at a time</string>
 </resources>

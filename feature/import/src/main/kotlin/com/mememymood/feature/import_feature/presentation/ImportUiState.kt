@@ -41,9 +41,24 @@ data class ImportUiState(
      * Whether in emoji picker mode.
      */
     val showEmojiPicker: Boolean = false,
+
+    /**
+     * Indices of images detected as duplicates pending user decision.
+     */
+    val duplicateIndices: Set<Int> = emptySet(),
+
+    /**
+     * Whether to show the duplicate confirmation dialog.
+     */
+    val showDuplicateDialog: Boolean = false,
+
+    /**
+     * Result of the import operation, shown in summary screen.
+     */
+    val importResult: ImportResult? = null,
 ) {
     val hasImages: Boolean get() = selectedImages.isNotEmpty()
-    val canImport: Boolean get() = hasImages && !isImporting && selectedImages.all { it.emojis.isNotEmpty() }
+    val canImport: Boolean get() = hasImages && !isImporting
     val editingImage: ImportImage? get() = editingImageIndex?.let { selectedImages.getOrNull(it) }
 
     /** True when progress is indeterminate (streaming ZIP import). */
@@ -63,4 +78,13 @@ data class ImportImage(
     val suggestedEmojis: List<EmojiTag> = emptyList(),
     val isProcessing: Boolean = false,
     val error: String? = null
+)
+
+/**
+ * Result of the import operation.
+ */
+data class ImportResult(
+    val successCount: Int,
+    val failureCount: Int,
+    val failedImages: List<ImportImage> = emptyList(),
 )

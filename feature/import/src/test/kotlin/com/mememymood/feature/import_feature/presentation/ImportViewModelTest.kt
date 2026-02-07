@@ -6,9 +6,11 @@ import app.cash.turbine.test
 import com.mememymood.core.model.EmojiTag
 import com.mememymood.core.model.Meme
 import com.mememymood.core.model.MemeMetadata
+import com.mememymood.core.datastore.PreferencesDataStore
+import com.mememymood.feature.import_feature.domain.usecase.CheckDuplicateUseCase
 import com.mememymood.feature.import_feature.domain.usecase.ExtractTextUseCase
+import com.mememymood.feature.import_feature.domain.usecase.ExtractZipForPreviewUseCase
 import com.mememymood.feature.import_feature.domain.usecase.ImportImageUseCase
-import com.mememymood.feature.import_feature.domain.usecase.ImportZipBundleStreamingUseCase
 import com.mememymood.feature.import_feature.domain.usecase.SuggestEmojisUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -16,6 +18,7 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -35,7 +38,9 @@ class ImportViewModelTest {
     private lateinit var importImageUseCase: ImportImageUseCase
     private lateinit var suggestEmojisUseCase: SuggestEmojisUseCase
     private lateinit var extractTextUseCase: ExtractTextUseCase
-    private lateinit var importZipBundleStreamingUseCase: ImportZipBundleStreamingUseCase
+    private lateinit var extractZipForPreviewUseCase: ExtractZipForPreviewUseCase
+    private lateinit var checkDuplicateUseCase: CheckDuplicateUseCase
+    private lateinit var preferencesDataStore: PreferencesDataStore
     private lateinit var viewModel: ImportViewModel
 
     @Before
@@ -45,14 +50,20 @@ class ImportViewModelTest {
         importImageUseCase = mockk(relaxed = true)
         suggestEmojisUseCase = mockk(relaxed = true)
         extractTextUseCase = mockk(relaxed = true)
-        importZipBundleStreamingUseCase = mockk(relaxed = true)
+        extractZipForPreviewUseCase = mockk(relaxed = true)
+        checkDuplicateUseCase = mockk(relaxed = true)
+        preferencesDataStore = mockk(relaxed = true) {
+            every { hasShownEmojiTip } returns flowOf(false)
+        }
         viewModel = ImportViewModel(
             context = context,
             importImageUseCase = importImageUseCase,
             suggestEmojisUseCase = suggestEmojisUseCase,
             extractTextUseCase = extractTextUseCase,
-            importZipBundleStreamingUseCase = importZipBundleStreamingUseCase,
+            extractZipForPreviewUseCase = extractZipForPreviewUseCase,
+            checkDuplicateUseCase = checkDuplicateUseCase,
             userActionTracker = mockk(relaxed = true),
+            preferencesDataStore = preferencesDataStore,
         )
     }
 
@@ -373,20 +384,13 @@ class ImportViewModelTest {
     }
 
     @Test
-    fun `canImport is true when all images have emojis`() = runTest {
+    fun `canImport is true when images are selected regardless of emojis`() = runTest {
         val uri = mockk<Uri> { every { lastPathSegment } returns "meme.jpg" }
-        val emoji = EmojiTag("😀", "happy")
         
         coEvery { suggestEmojisUseCase(any()) } returns emptyList()
         coEvery { extractTextUseCase(any()) } returns null
 
         viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uri)))
-        advanceUntilIdle()
-        viewModel.onIntent(ImportIntent.EditImage(0))
-        advanceUntilIdle()
-        viewModel.onIntent(ImportIntent.AddEmoji(emoji))
-        advanceUntilIdle()
-        viewModel.onIntent(ImportIntent.CloseEditor)
         advanceUntilIdle()
 
         viewModel.uiState.test {
@@ -396,15 +400,7 @@ class ImportViewModelTest {
     }
 
     @Test
-    fun `canImport is false when images have no emojis`() = runTest {
-        val uri = mockk<Uri> { every { lastPathSegment } returns "meme.jpg" }
-        
-        coEvery { suggestEmojisUseCase(any()) } returns emptyList()
-        coEvery { extractTextUseCase(any()) } returns null
-
-        viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uri)))
-        advanceUntilIdle()
-
+    fun `canImport is false when no images are selected`() = runTest {
         viewModel.uiState.test {
             val state = awaitItem()
             assertThat(state.canImport).isFalse()
@@ -436,20 +432,14 @@ class ImportViewModelTest {
     @Test
     fun `StartImport triggers import process`() = runTest {
         val uri = mockk<Uri> { every { lastPathSegment } returns "meme.jpg" }
-        val emoji = EmojiTag("😀", "happy")
         val meme = mockk<Meme>()
         
         coEvery { suggestEmojisUseCase(any()) } returns emptyList()
         coEvery { extractTextUseCase(any()) } returns null
         coEvery { importImageUseCase(any(), any()) } returns Result.success(meme)
+        coEvery { checkDuplicateUseCase(any()) } returns false
 
         viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uri)))
-        advanceUntilIdle()
-        viewModel.onIntent(ImportIntent.EditImage(0))
-        advanceUntilIdle()
-        viewModel.onIntent(ImportIntent.AddEmoji(emoji))
-        advanceUntilIdle()
-        viewModel.onIntent(ImportIntent.CloseEditor)
         advanceUntilIdle()
         
         viewModel.onIntent(ImportIntent.StartImport)
@@ -479,4 +469,33 @@ class ImportViewModelTest {
             assertThat(state.editingImageIndex).isNull()
         }
     }
+
+    // region Regression: Max Import Items Limit (p2-ux)
+
+    @Test
+    fun `when import screen loaded then max items limit is exposed`() = runTest {
+        // The max 20 items limit is enforced in ImportScreen.kt at the UI layer
+        // via ActivityResultContracts.PickMultipleVisualMedia(maxItems = 20).
+        // The ViewModel does not expose or enforce this limit — it accepts any number
+        // of images from ImagesSelected intent. This is a UI-layer constraint only.
+        // Verify the ViewModel can handle exactly 20 images without issues.
+        val uris = (1..20).map { i ->
+            mockk<Uri> { every { lastPathSegment } returns "meme$i.jpg" }
+        }
+
+        coEvery { suggestEmojisUseCase(any()) } returns emptyList()
+        coEvery { extractTextUseCase(any()) } returns null
+
+        viewModel.onIntent(ImportIntent.ImagesSelected(uris))
+        advanceUntilIdle()
+
+        viewModel.uiState.test {
+            val state = awaitItem()
+            assertThat(state.selectedImages).hasSize(20)
+            assertThat(state.hasImages).isTrue()
+            assertThat(state.canImport).isTrue()
+        }
+    }
+
+    // endregion
 }

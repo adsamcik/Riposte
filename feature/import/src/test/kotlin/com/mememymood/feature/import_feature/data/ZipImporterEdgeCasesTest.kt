@@ -24,7 +24,7 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
 /**
- * Edge case tests for [ZipImporter] covering security, error handling, and resource limits.
+ * Edge case tests for [DefaultZipImporter] covering security, error handling, and resource limits.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33], manifest = Config.NONE)
@@ -34,12 +34,12 @@ class ZipImporterEdgeCasesTest {
     val tempFolder = TemporaryFolder()
 
     private lateinit var context: Context
-    private lateinit var zipImporter: ZipImporter
+    private lateinit var zipImporter: DefaultZipImporter
 
     @Before
     fun setup() {
         context = RuntimeEnvironment.getApplication()
-        zipImporter = ZipImporter(context)
+        zipImporter = DefaultZipImporter(context)
     }
 
     // ==================== ZIP Bomb Protection Tests ====================
@@ -49,7 +49,7 @@ class ZipImporterEdgeCasesTest {
     fun `extractBundle blocks ZIP with too many entries`() = runTest {
         // Create a ZIP with more entries than allowed
         // Use just 1 over the limit to keep test fast (creating 10k+ entries is slow)
-        val zipBytes = createZipWithManyEntries(ZipImporter.MAX_ENTRY_COUNT + 1)
+        val zipBytes = createZipWithManyEntries(DefaultZipImporter.MAX_ENTRY_COUNT + 1)
         val zipFile = tempFolder.newFile("bomb.meme.zip")
         zipFile.writeBytes(zipBytes)
         val uri = Uri.fromFile(zipFile)
@@ -64,7 +64,7 @@ class ZipImporterEdgeCasesTest {
     fun `extractBundle blocks single file exceeding size limit`() = runTest {
         // Create a ZIP with one file larger than MAX_SINGLE_FILE_SIZE
         // We'll simulate this by creating content that exceeds the limit
-        val largeContent = ByteArray((ZipImporter.MAX_SINGLE_FILE_SIZE + 1024).toInt()) { 0 }
+        val largeContent = ByteArray((DefaultZipImporter.MAX_SINGLE_FILE_SIZE + 1024).toInt()) { 0 }
         val zipBytes = createZipWithContent("large.jpg", largeContent)
         val zipFile = tempFolder.newFile("large.meme.zip")
         zipFile.writeBytes(zipBytes)
@@ -79,7 +79,7 @@ class ZipImporterEdgeCasesTest {
     @Test
     fun `extractBundle blocks oversized JSON sidecar`() = runTest {
         // Create a ZIP with a JSON file larger than MAX_JSON_SIZE
-        val largeJson = "{" + "\"key\":\"${"x".repeat((ZipImporter.MAX_JSON_SIZE + 1024).toInt())}\"}"
+        val largeJson = "{" + "\"key\":\"${"x".repeat((DefaultZipImporter.MAX_JSON_SIZE + 1024).toInt())}\"}"
         val zipBytes = createZipWithJsonSidecar("test.jpg", largeJson)
         val zipFile = tempFolder.newFile("largejson.meme.zip")
         zipFile.writeBytes(zipBytes)
@@ -201,7 +201,7 @@ class ZipImporterEdgeCasesTest {
         every { mockContext.cacheDir } returns tempFolder.newFolder("cache")
         every { mockContentResolver.openInputStream(any()) } throws SecurityException("Permission denied")
 
-        val zipImporterWithMock = ZipImporter(mockContext)
+        val zipImporterWithMock = DefaultZipImporter(mockContext)
         val uri = mockk<Uri>()
         every { uri.scheme } returns "content"
 

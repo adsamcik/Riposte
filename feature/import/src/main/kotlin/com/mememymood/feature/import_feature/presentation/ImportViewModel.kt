@@ -4,13 +4,14 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mememymood.core.common.review.UserActionTracker
+import com.mememymood.core.datastore.PreferencesDataStore
 import com.mememymood.core.model.MemeMetadata
 import com.mememymood.feature.import_feature.R
+import com.mememymood.feature.import_feature.domain.usecase.CheckDuplicateUseCase
 import com.mememymood.feature.import_feature.domain.usecase.ExtractTextUseCase
+import com.mememymood.feature.import_feature.domain.usecase.ExtractZipForPreviewUseCase
 import com.mememymood.feature.import_feature.domain.usecase.ImportImageUseCase
-import com.mememymood.feature.import_feature.domain.usecase.ImportZipBundleStreamingUseCase
 import com.mememymood.feature.import_feature.domain.usecase.SuggestEmojisUseCase
-import com.mememymood.feature.import_feature.domain.usecase.ZipImportEvent
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.Channel
@@ -18,6 +19,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -25,12 +27,14 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ImportViewModel @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val importImageUseCase: ImportImageUseCase,
     private val suggestEmojisUseCase: SuggestEmojisUseCase,
     private val extractTextUseCase: ExtractTextUseCase,
-    private val importZipBundleStreamingUseCase: ImportZipBundleStreamingUseCase,
+    private val extractZipForPreviewUseCase: ExtractZipForPreviewUseCase,
+    private val checkDuplicateUseCase: CheckDuplicateUseCase,
     private val userActionTracker: UserActionTracker,
+    private val preferencesDataStore: PreferencesDataStore,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ImportUiState())
@@ -60,6 +64,11 @@ class ImportViewModel @Inject constructor(
             is ImportIntent.ClearAll -> clearAll()
             is ImportIntent.PickMoreImages -> pickMoreImages()
             is ImportIntent.PickZipBundle -> pickZipBundle()
+            is ImportIntent.ImportDuplicatesAnyway -> importDuplicatesAnyway()
+            is ImportIntent.SkipDuplicates -> skipDuplicates()
+            is ImportIntent.DismissDuplicateDialog -> dismissDuplicateDialog()
+            is ImportIntent.RetryFailedImports -> retryFailedImports()
+            is ImportIntent.DismissImportResult -> dismissImportResult()
         }
     }
 
@@ -87,75 +96,57 @@ class ImportViewModel @Inject constructor(
     }
 
     private fun handleZipSelected(intent: ImportIntent.ZipSelected) {
-        importJob = viewModelScope.launch {
+        viewModelScope.launch {
             _uiState.update {
                 it.copy(
                     isImporting = true,
-                    importProgress = -1f, // -1 indicates indeterminate progress
+                    importProgress = -1f,
                     statusMessage = context.getString(R.string.import_status_extracting),
                 )
             }
 
-            var processedCount = 0
-            var errorCount = 0
+            val result = extractZipForPreviewUseCase(intent.uri)
 
-            importZipBundleStreamingUseCase(intent.uri).collect { event ->
-                when (event) {
-                    is ZipImportEvent.Progress -> {
-                        processedCount = event.imported
-                        errorCount = event.errors
-                        _uiState.update {
-                            it.copy(
-                                statusMessage = if (errorCount > 0) {
-                                    context.getString(
-                                        R.string.import_status_streaming_with_errors,
-                                        processedCount,
-                                        errorCount,
-                                    )
-                                } else {
-                                    context.getString(
-                                        R.string.import_status_streaming,
-                                        processedCount,
-                                    )
-                                },
-                            )
-                        }
-                    }
+            if (result.extractedMemes.isEmpty()) {
+                _uiState.update { it.copy(isImporting = false, statusMessage = null) }
+                val errorMsg = result.errors.values.firstOrNull()
+                    ?: context.getString(R.string.import_error_bundle_failed)
+                _effects.send(ImportEffect.ShowError(errorMsg))
+                return@launch
+            }
 
-                    is ZipImportEvent.MemeImported -> {
-                        // Progress is already tracked via Progress events
-                    }
+            // Convert extracted memes to ImportImage for preview
+            val newImages = result.extractedMemes.map { extracted ->
+                val emojis = extracted.metadata?.emojis?.map {
+                    com.mememymood.core.model.EmojiTag.fromEmoji(it)
+                } ?: emptyList()
+                ImportImage(
+                    uri = extracted.imageUri,
+                    fileName = extracted.imageUri.lastPathSegment ?: "image",
+                    emojis = emojis,
+                    title = extracted.metadata?.title,
+                    description = extracted.metadata?.description,
+                    extractedText = extracted.metadata?.textContent,
+                )
+            }
 
-                    is ZipImportEvent.Error -> {
-                        // Errors are accumulated and shown in final result
-                    }
+            _uiState.update { state ->
+                state.copy(
+                    isImporting = false,
+                    statusMessage = null,
+                    selectedImages = state.selectedImages + newImages,
+                )
+            }
 
-                    is ZipImportEvent.Complete -> {
-                        _uiState.update { it.copy(isImporting = false, statusMessage = null) }
-
-                        val result = event.result
-                        if (result.successCount > 0) {
-                            userActionTracker.trackPositiveAction()
-                            _effects.send(ImportEffect.ImportComplete(result.successCount))
-                            if (result.failureCount > 0) {
-                                _effects.send(
-                                    ImportEffect.ShowSnackbar(
-                                        context.getString(
-                                            R.string.import_status_imported_partial,
-                                            result.successCount,
-                                            result.failureCount,
-                                        ),
-                                    ),
-                                )
-                            }
-                            _effects.send(ImportEffect.NavigateToGallery)
-                        } else {
-                            val errorMsg = result.errors.values.firstOrNull()
-                                ?: context.getString(R.string.import_error_bundle_failed)
-                            _effects.send(ImportEffect.ShowError(errorMsg))
-                        }
-                    }
-                }
+            if (result.errors.isNotEmpty()) {
+                _effects.send(
+                    ImportEffect.ShowSnackbar(
+                        context.getString(
+                            R.string.import_status_zip_extract_errors,
+                            result.errors.size,
+                        ),
+                    ),
+                )
             }
         }
     }
@@ -266,43 +257,118 @@ class ImportViewModel @Inject constructor(
     private fun startImport() {
         // Guard against duplicate imports - check and set synchronously
         if (_uiState.value.isImporting) return
-        _uiState.update { it.copy(isImporting = true, importProgress = 0f) }
+        _uiState.update { it.copy(isImporting = true) }
 
         importJob = viewModelScope.launch {
+            // Check for duplicates first
             val images = _uiState.value.selectedImages
-            var successCount = 0
-
+            val duplicateIndices = mutableSetOf<Int>()
             images.forEachIndexed { index, image ->
-                // Only create metadata if there are emojis (required by MemeMetadata)
-                val metadata = if (image.emojis.isNotEmpty()) {
-                    MemeMetadata(
-                        emojis = image.emojis.map { it.emoji },
-                        title = image.title,
-                        description = image.description
-                    )
-                } else {
-                    null
+                try {
+                    if (checkDuplicateUseCase(image.uri)) {
+                        duplicateIndices.add(index)
+                    }
+                } catch (_: Exception) {
+                    // Ignore check errors, proceed with import
                 }
+            }
 
-                val result = importImageUseCase(image.uri, metadata)
-                if (result.isSuccess) {
-                    successCount++
-                }
-
+            if (duplicateIndices.isNotEmpty()) {
                 _uiState.update {
-                    it.copy(importProgress = (index + 1).toFloat() / images.size)
+                    it.copy(
+                        isImporting = false,
+                        duplicateIndices = duplicateIndices,
+                        showDuplicateDialog = true,
+                    )
                 }
+                return@launch
             }
 
-            _uiState.update { it.copy(isImporting = false) }
+            performImport(images)
+        }
+    }
 
-            if (successCount > 0) {
-                userActionTracker.trackPositiveAction()
-                _effects.send(ImportEffect.ImportComplete(successCount))
-                _effects.send(ImportEffect.NavigateToGallery)
+    private fun importDuplicatesAnyway() {
+        _uiState.update { it.copy(showDuplicateDialog = false, duplicateIndices = emptySet()) }
+        val images = _uiState.value.selectedImages
+        importJob = viewModelScope.launch { performImport(images) }
+    }
+
+    private fun skipDuplicates() {
+        val dupes = _uiState.value.duplicateIndices
+        _uiState.update { state ->
+            state.copy(
+                selectedImages = state.selectedImages.filterIndexed { index, _ -> index !in dupes },
+                showDuplicateDialog = false,
+                duplicateIndices = emptySet(),
+            )
+        }
+        val images = _uiState.value.selectedImages
+        if (images.isEmpty()) return
+        importJob = viewModelScope.launch { performImport(images) }
+    }
+
+    private fun dismissDuplicateDialog() {
+        _uiState.update { it.copy(showDuplicateDialog = false) }
+    }
+
+    private suspend fun performImport(images: List<ImportImage>) {
+        _uiState.update { it.copy(isImporting = true, importProgress = 0f) }
+
+        var successCount = 0
+        val failedImages = mutableListOf<ImportImage>()
+
+        images.forEachIndexed { index, image ->
+            val metadata = if (image.emojis.isNotEmpty()) {
+                MemeMetadata(
+                    emojis = image.emojis.map { it.emoji },
+                    title = image.title,
+                    description = image.description,
+                )
             } else {
-                _effects.send(ImportEffect.ShowError(context.getString(R.string.import_error_images_failed)))
+                null
             }
+
+            val result = importImageUseCase(image.uri, metadata)
+            if (result.isSuccess) {
+                successCount++
+            } else {
+                failedImages.add(image)
+            }
+
+            _uiState.update {
+                it.copy(importProgress = (index + 1).toFloat() / images.size)
+            }
+        }
+
+        _uiState.update {
+            it.copy(
+                isImporting = false,
+                importResult = ImportResult(
+                    successCount = successCount,
+                    failureCount = failedImages.size,
+                    failedImages = failedImages,
+                ),
+            )
+        }
+
+        if (successCount > 0) {
+            userActionTracker.trackPositiveAction()
+            _effects.send(ImportEffect.ImportComplete(successCount))
+            // Show emoji tagging tip once after first successful import
+            if (!preferencesDataStore.hasShownEmojiTip.first()) {
+                preferencesDataStore.setEmojiTipShown()
+                _effects.send(
+                    ImportEffect.ShowSnackbar(
+                        context.getString(R.string.import_tip_emoji_tagging),
+                    ),
+                )
+            }
+            if (failedImages.isEmpty()) {
+                _effects.send(ImportEffect.NavigateToGallery)
+            }
+        } else {
+            _effects.send(ImportEffect.ShowError(context.getString(R.string.import_error_images_failed)))
         }
     }
 
@@ -325,6 +391,23 @@ class ImportViewModel @Inject constructor(
     private fun pickZipBundle() {
         viewModelScope.launch {
             _effects.send(ImportEffect.OpenFilePicker)
+        }
+    }
+
+    private fun retryFailedImports() {
+        val failedImages = _uiState.value.importResult?.failedImages ?: return
+        _uiState.update {
+            it.copy(
+                selectedImages = failedImages,
+                importResult = null,
+            )
+        }
+    }
+
+    private fun dismissImportResult() {
+        _uiState.update { it.copy(importResult = null) }
+        viewModelScope.launch {
+            _effects.send(ImportEffect.NavigateToGallery)
         }
     }
 }
