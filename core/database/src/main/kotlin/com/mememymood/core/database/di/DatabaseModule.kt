@@ -7,6 +7,7 @@ import com.mememymood.core.database.dao.EmojiTagDao
 import com.mememymood.core.database.dao.MemeDao
 import com.mememymood.core.database.dao.MemeEmbeddingDao
 import com.mememymood.core.database.dao.MemeSearchDao
+import com.mememymood.core.database.dao.ShareTargetDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -31,7 +32,12 @@ object DatabaseModule {
             .addMigrations(
                 MemeDatabase.MIGRATION_1_2,
                 MemeDatabase.MIGRATION_2_3,
-                MemeDatabase.MIGRATION_3_4
+                MemeDatabase.MIGRATION_3_4,
+                MemeDatabase.MIGRATION_4_5,
+                MemeDatabase.MIGRATION_5_6,
+                MemeDatabase.MIGRATION_6_7,
+                MemeDatabase.MIGRATION_7_8,
+                MemeDatabase.MIGRATION_8_9,
             )
             .build()
     }
@@ -58,5 +64,11 @@ object DatabaseModule {
     @Singleton
     fun provideMemeEmbeddingDao(database: MemeDatabase): MemeEmbeddingDao {
         return database.memeEmbeddingDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideShareTargetDao(database: MemeDatabase): ShareTargetDao {
+        return database.shareTargetDao()
     }
 }

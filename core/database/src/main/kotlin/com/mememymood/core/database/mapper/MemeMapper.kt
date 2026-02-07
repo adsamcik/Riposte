@@ -3,6 +3,7 @@ package com.mememymood.core.database.mapper
 import com.mememymood.core.database.entity.EmojiTagEntity
 import com.mememymood.core.database.entity.MemeEntity
 import com.mememymood.core.model.EmojiTag
+import com.mememymood.core.model.LocalizedContent
 import com.mememymood.core.model.Meme
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -37,6 +38,10 @@ object MemeMapper {
             isFavorite = isFavorite,
             createdAt = createdAt,
             useCount = useCount,
+            primaryLanguage = primaryLanguage,
+            localizations = parseLocalizationsJson(localizationsJson),
+            viewCount = viewCount,
+            lastViewedAt = lastViewedAt,
         )
     }
 
@@ -60,6 +65,10 @@ object MemeMapper {
             isFavorite = isFavorite,
             createdAt = createdAt,
             useCount = useCount,
+            primaryLanguage = primaryLanguage,
+            localizationsJson = serializeLocalizations(localizations),
+            viewCount = viewCount,
+            lastViewedAt = lastViewedAt,
         )
     }
 
@@ -101,5 +110,25 @@ object MemeMapper {
      */
     private fun serializeEmojiTags(emojiTags: List<EmojiTag>): String {
         return json.encodeToString(emojiTags.map { it.emoji })
+    }
+
+    /**
+     * Parses localizations from JSON string.
+     */
+    private fun parseLocalizationsJson(jsonString: String?): Map<String, LocalizedContent> {
+        if (jsonString.isNullOrBlank()) return emptyMap()
+        return try {
+            json.decodeFromString(jsonString)
+        } catch (e: Exception) {
+            emptyMap()
+        }
+    }
+
+    /**
+     * Serializes localizations to JSON string.
+     */
+    private fun serializeLocalizations(localizations: Map<String, LocalizedContent>): String? {
+        if (localizations.isEmpty()) return null
+        return json.encodeToString(localizations)
     }
 }

@@ -29,7 +29,8 @@ import androidx.room.PrimaryKey
     indices = [
         Index(value = ["memeId"], unique = true),
         Index(value = ["modelVersion"]),
-        Index(value = ["generatedAt"])
+        Index(value = ["generatedAt"]),
+        Index(value = ["needsRegeneration"])
     ]
 )
 data class MemeEmbeddingEntity(
@@ -84,7 +85,18 @@ data class MemeEmbeddingEntity(
      * - The model version is outdated
      * - Manual regeneration is requested
      */
-    val needsRegeneration: Boolean = false
+    val needsRegeneration: Boolean = false,
+
+    /**
+     * Number of times embedding generation has been attempted.
+     * Used to track and limit retries for problematic memes.
+     */
+    val indexingAttempts: Int = 0,
+
+    /**
+     * Timestamp when embedding generation was last attempted (epoch millis).
+     */
+    val lastAttemptAt: Long? = null,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -100,6 +112,8 @@ data class MemeEmbeddingEntity(
         if (generatedAt != other.generatedAt) return false
         if (sourceTextHash != other.sourceTextHash) return false
         if (needsRegeneration != other.needsRegeneration) return false
+        if (indexingAttempts != other.indexingAttempts) return false
+        if (lastAttemptAt != other.lastAttemptAt) return false
 
         return true
     }
@@ -113,6 +127,8 @@ data class MemeEmbeddingEntity(
         result = 31 * result + generatedAt.hashCode()
         result = 31 * result + (sourceTextHash?.hashCode() ?: 0)
         result = 31 * result + needsRegeneration.hashCode()
+        result = 31 * result + indexingAttempts
+        result = 31 * result + (lastAttemptAt?.hashCode() ?: 0)
         return result
     }
 

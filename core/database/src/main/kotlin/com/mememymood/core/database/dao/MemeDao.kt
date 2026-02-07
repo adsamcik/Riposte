@@ -143,6 +143,12 @@ interface MemeDao {
     suspend fun memeExistsByPath(filePath: String): Boolean
 
     /**
+     * Check if a meme with the given file hash already exists.
+     */
+    @Query("SELECT EXISTS(SELECT 1 FROM memes WHERE fileHash = :hash)")
+    suspend fun memeExistsByHash(hash: String): Boolean
+
+    /**
      * Get all memes as a PagingSource for efficient pagination.
      * Used for large collections (1000+ memes).
      */
@@ -154,4 +160,17 @@ interface MemeDao {
      */
     @Query("SELECT id FROM memes ORDER BY importedAt DESC")
     suspend fun getAllMemeIds(): List<Long>
+
+    /**
+     * Increment the view count and update last viewed timestamp.
+     */
+    @Query("UPDATE memes SET viewCount = viewCount + 1, lastViewedAt = :timestamp WHERE id = :id")
+    suspend fun recordView(id: Long, timestamp: Long = System.currentTimeMillis())
+
+    /**
+     * Get recently viewed memes ordered by last view time (most recent first).
+     * Only includes memes that have been viewed at least once.
+     */
+    @Query("SELECT * FROM memes WHERE lastViewedAt IS NOT NULL ORDER BY lastViewedAt DESC LIMIT :limit")
+    fun getRecentlyViewedMemes(limit: Int = 20): Flow<List<MemeEntity>>
 }

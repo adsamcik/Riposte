@@ -12,7 +12,10 @@ import androidx.room.PrimaryKey
     indices = [
         Index(value = ["importedAt"]),
         Index(value = ["isFavorite"]),
-        Index(value = ["filePath"], unique = true)
+        Index(value = ["filePath"], unique = true),
+        Index(value = ["viewCount"]),
+        Index(value = ["lastViewedAt"]),
+        Index(value = ["fileHash"]),
     ]
 )
 data class MemeEntity(
@@ -109,6 +112,21 @@ data class MemeEntity(
      * Example: {"cs": {"title": "...", "description": "...", "tags": [...]}}
      */
     val localizationsJson: String? = null,
+
+    /**
+     * Number of times this meme has been viewed.
+     */
+    val viewCount: Int = 0,
+
+    /**
+     * Timestamp when this meme was last viewed (epoch millis).
+     */
+    val lastViewedAt: Long? = null,
+
+    /**
+     * SHA-256 hash of the imported image file for duplicate detection.
+     */
+    val fileHash: String? = null,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -137,6 +155,9 @@ data class MemeEntity(
         if (useCount != other.useCount) return false
         if (primaryLanguage != other.primaryLanguage) return false
         if (localizationsJson != other.localizationsJson) return false
+        if (viewCount != other.viewCount) return false
+        if (lastViewedAt != other.lastViewedAt) return false
+        if (fileHash != other.fileHash) return false
 
         return true
     }
@@ -160,6 +181,9 @@ data class MemeEntity(
         result = 31 * result + useCount
         result = 31 * result + (primaryLanguage?.hashCode() ?: 0)
         result = 31 * result + (localizationsJson?.hashCode() ?: 0)
+        result = 31 * result + viewCount
+        result = 31 * result + (lastViewedAt?.hashCode() ?: 0)
+        result = 31 * result + (fileHash?.hashCode() ?: 0)
         return result
     }
 }

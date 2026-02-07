@@ -38,11 +38,6 @@ data class SharingPreferences(
     val stripMetadata: Boolean = true,
     
     /**
-     * Whether to keep emoji metadata when sharing.
-     */
-    val keepMetadata: Boolean = true,
-    
-    /**
      * Recently used apps for sharing (package names).
      */
     val recentShareTargets: List<String> = emptyList(),

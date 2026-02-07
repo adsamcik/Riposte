@@ -8,10 +8,12 @@ import com.mememymood.core.database.dao.EmojiTagDao
 import com.mememymood.core.database.dao.MemeDao
 import com.mememymood.core.database.dao.MemeEmbeddingDao
 import com.mememymood.core.database.dao.MemeSearchDao
+import com.mememymood.core.database.dao.ShareTargetDao
 import com.mememymood.core.database.entity.EmojiTagEntity
 import com.mememymood.core.database.entity.MemeEmbeddingEntity
 import com.mememymood.core.database.entity.MemeEntity
 import com.mememymood.core.database.entity.MemeFtsEntity
+import com.mememymood.core.database.entity.ShareTargetEntity
 
 /**
  * Room database for Meme My Mood app.
@@ -21,9 +23,10 @@ import com.mememymood.core.database.entity.MemeFtsEntity
         MemeEntity::class,
         MemeFtsEntity::class,
         EmojiTagEntity::class,
-        MemeEmbeddingEntity::class
+        MemeEmbeddingEntity::class,
+        ShareTargetEntity::class,
     ],
-    version = 4,
+    version = 9,
     exportSchema = true
 )
 abstract class MemeDatabase : RoomDatabase() {
@@ -47,6 +50,11 @@ abstract class MemeDatabase : RoomDatabase() {
      * DAO for embedding operations.
      */
     abstract fun memeEmbeddingDao(): MemeEmbeddingDao
+
+    /**
+     * DAO for share target tracking.
+     */
+    abstract fun shareTargetDao(): ShareTargetDao
 
     companion object {
         /**
@@ -107,6 +115,71 @@ abstract class MemeDatabase : RoomDatabase() {
                 db.execSQL("ALTER TABLE memes ADD COLUMN primaryLanguage TEXT DEFAULT NULL")
                 // Add localizationsJson column for storing additional language content
                 db.execSQL("ALTER TABLE memes ADD COLUMN localizationsJson TEXT DEFAULT NULL")
+            }
+        }
+
+        /**
+         * Migration from version 4 to 5: Add indexing status tracking to embeddings.
+         */
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Add indexingAttempts column to track how many times embedding generation was attempted
+                db.execSQL("ALTER TABLE meme_embeddings ADD COLUMN indexingAttempts INTEGER NOT NULL DEFAULT 0")
+                // Add lastAttemptAt column to track when embedding generation was last attempted
+                db.execSQL("ALTER TABLE meme_embeddings ADD COLUMN lastAttemptAt INTEGER DEFAULT NULL")
+            }
+        }
+
+        /**
+         * Migration from version 5 to 6: Add view tracking to memes.
+         */
+        val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Add viewCount column for tracking how often a meme is viewed
+                db.execSQL("ALTER TABLE memes ADD COLUMN viewCount INTEGER NOT NULL DEFAULT 0")
+                // Add lastViewedAt column for tracking when last viewed
+                db.execSQL("ALTER TABLE memes ADD COLUMN lastViewedAt INTEGER DEFAULT NULL")
+                // Create indices for efficient sorting by view count and recency
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_memes_viewCount ON memes(viewCount)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_memes_lastViewedAt ON memes(lastViewedAt)")
+            }
+        }
+
+        /**
+         * Migration from version 6 to 7: Add index on needsRegeneration column.
+         */
+        val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_meme_embeddings_needsRegeneration ON meme_embeddings(needsRegeneration)")
+            }
+        }
+
+        /**
+         * Migration from version 7 to 8: Add fileHash column for duplicate detection.
+         */
+        val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE memes ADD COLUMN fileHash TEXT DEFAULT NULL")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_memes_fileHash ON memes(fileHash)")
+            }
+        }
+
+        /**
+         * Migration from version 8 to 9: Add share_targets table.
+         */
+        val MIGRATION_8_9 = object : Migration(8, 9) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS share_targets (
+                        packageName TEXT NOT NULL PRIMARY KEY,
+                        activityName TEXT NOT NULL,
+                        displayLabel TEXT NOT NULL,
+                        shareCount INTEGER NOT NULL DEFAULT 0,
+                        lastSharedAt INTEGER DEFAULT NULL
+                    )
+                """)
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_share_targets_shareCount ON share_targets(shareCount)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_share_targets_lastSharedAt ON share_targets(lastSharedAt)")
             }
         }
     }

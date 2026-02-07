@@ -22,6 +22,10 @@ data class Meme(
     val isFavorite: Boolean = false,
     val createdAt: Long = importedAt,
     val useCount: Int = 0,
+    val primaryLanguage: String? = null,
+    val localizations: Map<String, LocalizedContent> = emptyMap(),
+    val viewCount: Int = 0,
+    val lastViewedAt: Long? = null,
 ) {
     /**
      * Returns a comma-separated string of emojis for display.

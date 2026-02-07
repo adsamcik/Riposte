@@ -2,6 +2,7 @@ package com.mememymood.core.database.dao
 
 import androidx.room.Dao
 import androidx.room.Query
+import androidx.room.RewriteQueriesToDropUnusedColumns
 import com.mememymood.core.database.entity.MemeEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -33,6 +34,7 @@ interface MemeSearchDao {
      * Search memes and return with relevance ranking.
      * Uses BM25 ranking for better search results.
      */
+    @RewriteQueriesToDropUnusedColumns
     @Query("""
         SELECT m.*, bm25(memes_fts) as `rank`
         FROM memes m
