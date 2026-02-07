@@ -286,4 +286,128 @@ class PreferencesDataStoreTest {
     }
 
     // endregion
+
+    // region Onboarding Tips Tests
+
+    @Test
+    fun `hasShownEmojiTip returns false by default`() = runTest {
+        preferencesDataStore.hasShownEmojiTip.test {
+            assertThat(awaitItem()).isFalse()
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `setEmojiTipShown marks emoji tip as shown`() = runTest {
+        preferencesDataStore.setEmojiTipShown()
+
+        preferencesDataStore.hasShownEmojiTip.test {
+            assertThat(awaitItem()).isTrue()
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `hasShownSearchTip returns false by default`() = runTest {
+        preferencesDataStore.hasShownSearchTip.test {
+            assertThat(awaitItem()).isFalse()
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `setSearchTipShown marks search tip as shown`() = runTest {
+        preferencesDataStore.setSearchTipShown()
+
+        preferencesDataStore.hasShownSearchTip.test {
+            assertThat(awaitItem()).isTrue()
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `hasShownShareTip returns false by default`() = runTest {
+        preferencesDataStore.hasShownShareTip.test {
+            assertThat(awaitItem()).isFalse()
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `setShareTipShown marks share tip as shown`() = runTest {
+        preferencesDataStore.setShareTipShown()
+
+        preferencesDataStore.hasShownShareTip.test {
+            assertThat(awaitItem()).isTrue()
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `tip shown state persists and is not repeated`() = runTest {
+        // Initially not shown
+        preferencesDataStore.hasShownEmojiTip.test {
+            assertThat(awaitItem()).isFalse()
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        // Mark as shown
+        preferencesDataStore.setEmojiTipShown()
+
+        // Should remain true
+        preferencesDataStore.hasShownEmojiTip.test {
+            assertThat(awaitItem()).isTrue()
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        // Calling set again should not change anything
+        preferencesDataStore.setEmojiTipShown()
+
+        preferencesDataStore.hasShownEmojiTip.test {
+            assertThat(awaitItem()).isTrue()
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `each tip tracks independently`() = runTest {
+        preferencesDataStore.setEmojiTipShown()
+
+        preferencesDataStore.hasShownEmojiTip.test {
+            assertThat(awaitItem()).isTrue()
+            cancelAndIgnoreRemainingEvents()
+        }
+        preferencesDataStore.hasShownSearchTip.test {
+            assertThat(awaitItem()).isFalse()
+            cancelAndIgnoreRemainingEvents()
+        }
+        preferencesDataStore.hasShownShareTip.test {
+            assertThat(awaitItem()).isFalse()
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `clearAll resets tip shown state`() = runTest {
+        preferencesDataStore.setEmojiTipShown()
+        preferencesDataStore.setSearchTipShown()
+        preferencesDataStore.setShareTipShown()
+
+        preferencesDataStore.clearAll()
+
+        preferencesDataStore.hasShownEmojiTip.test {
+            assertThat(awaitItem()).isFalse()
+            cancelAndIgnoreRemainingEvents()
+        }
+        preferencesDataStore.hasShownSearchTip.test {
+            assertThat(awaitItem()).isFalse()
+            cancelAndIgnoreRemainingEvents()
+        }
+        preferencesDataStore.hasShownShareTip.test {
+            assertThat(awaitItem()).isFalse()
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    // endregion
 }

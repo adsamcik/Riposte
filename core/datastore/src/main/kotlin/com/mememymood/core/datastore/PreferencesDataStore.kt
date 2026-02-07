@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -56,9 +57,18 @@ class PreferencesDataStore @Inject constructor(
         val AUTO_EXTRACT_TEXT = booleanPreferencesKey("auto_extract_text")
         val SAVE_SEARCH_HISTORY = booleanPreferencesKey("save_search_history")
         val USER_DENSITY_PREFERENCE = stringPreferencesKey("user_density_preference")
+        val HOLD_TO_SHARE_DELAY_MS = longPreferencesKey("hold_to_share_delay_ms")
 
         // Search preferences - use string key with JSON to preserve order
         val RECENT_SEARCHES = stringPreferencesKey("recent_searches_json")
+
+        // Suggestion preferences
+        val LAST_SESSION_SUGGESTION_IDS = stringSetPreferencesKey("last_session_suggestion_ids")
+
+        // Onboarding tip preferences
+        val HAS_SHOWN_EMOJI_TIP = booleanPreferencesKey("has_shown_emoji_tip")
+        val HAS_SHOWN_SEARCH_TIP = booleanPreferencesKey("has_shown_search_tip")
+        val HAS_SHOWN_SHARE_TIP = booleanPreferencesKey("has_shown_share_tip")
     }
 
     /**
@@ -137,6 +147,7 @@ class PreferencesDataStore @Inject constructor(
                 userDensityPreference = prefs[PreferencesKeys.USER_DENSITY_PREFERENCE]?.let {
                     UserDensityPreference.valueOf(it)
                 } ?: UserDensityPreference.AUTO,
+                holdToShareDelayMs = prefs[PreferencesKeys.HOLD_TO_SHARE_DELAY_MS] ?: 600L,
             )
         }
 
@@ -153,6 +164,7 @@ class PreferencesDataStore @Inject constructor(
             prefs[PreferencesKeys.AUTO_EXTRACT_TEXT] = preferences.autoExtractText
             prefs[PreferencesKeys.SAVE_SEARCH_HISTORY] = preferences.saveSearchHistory
             prefs[PreferencesKeys.USER_DENSITY_PREFERENCE] = preferences.userDensityPreference.name
+            prefs[PreferencesKeys.HOLD_TO_SHARE_DELAY_MS] = preferences.holdToShareDelayMs
         }
     }
 
@@ -241,6 +253,103 @@ class PreferencesDataStore @Inject constructor(
             prefs.remove(PreferencesKeys.RECENT_SEARCHES)
         }
     }
+
+    /**
+     * Flow of last session's suggestion IDs (for staleness rotation).
+     */
+    val lastSessionSuggestionIds: Flow<Set<Long>> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { prefs ->
+            prefs[PreferencesKeys.LAST_SESSION_SUGGESTION_IDS]
+                ?.mapNotNull { it.toLongOrNull() }
+                ?.toSet()
+                ?: emptySet()
+        }
+
+    /**
+     * Persists the current session's suggestion IDs for staleness rotation.
+     */
+    suspend fun updateLastSessionSuggestionIds(ids: Set<Long>) {
+        context.dataStore.edit { prefs ->
+            prefs[PreferencesKeys.LAST_SESSION_SUGGESTION_IDS] = ids.map { it.toString() }.toSet()
+        }
+    }
+
+    // region Onboarding Tips
+
+    /**
+     * Whether the emoji tagging tip has been shown.
+     */
+    val hasShownEmojiTip: Flow<Boolean> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { prefs -> prefs[PreferencesKeys.HAS_SHOWN_EMOJI_TIP] ?: false }
+
+    /**
+     * Whether the smart search tip has been shown.
+     */
+    val hasShownSearchTip: Flow<Boolean> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { prefs -> prefs[PreferencesKeys.HAS_SHOWN_SEARCH_TIP] ?: false }
+
+    /**
+     * Whether the long-press share tip has been shown.
+     */
+    val hasShownShareTip: Flow<Boolean> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { prefs -> prefs[PreferencesKeys.HAS_SHOWN_SHARE_TIP] ?: false }
+
+    /**
+     * Marks the emoji tagging tip as shown.
+     */
+    suspend fun setEmojiTipShown() {
+        context.dataStore.edit { prefs ->
+            prefs[PreferencesKeys.HAS_SHOWN_EMOJI_TIP] = true
+        }
+    }
+
+    /**
+     * Marks the smart search tip as shown.
+     */
+    suspend fun setSearchTipShown() {
+        context.dataStore.edit { prefs ->
+            prefs[PreferencesKeys.HAS_SHOWN_SEARCH_TIP] = true
+        }
+    }
+
+    /**
+     * Marks the long-press share tip as shown.
+     */
+    suspend fun setShareTipShown() {
+        context.dataStore.edit { prefs ->
+            prefs[PreferencesKeys.HAS_SHOWN_SHARE_TIP] = true
+        }
+    }
+
+    // endregion
 
     /**
      * Clears all preferences. Primarily used for testing.
