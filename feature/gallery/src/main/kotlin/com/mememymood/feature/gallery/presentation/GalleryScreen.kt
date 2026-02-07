@@ -125,7 +125,7 @@ fun GalleryScreen(
                 is GalleryEffect.ShowError -> snackbarHostState.showSnackbar(effect.message)
                 is GalleryEffect.NavigateToShare -> onNavigateToShare(effect.memeId)
                 is GalleryEffect.LaunchShareIntent -> {
-                    context.startActivity(android.content.Intent.createChooser(effect.intent, "Share Meme"))
+                    context.startActivity(android.content.Intent.createChooser(effect.intent, context.getString(R.string.gallery_share_chooser_title)))
                 }
                 is GalleryEffect.LaunchQuickShare -> {
                     val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
@@ -427,7 +427,7 @@ private fun GalleryScreenContent(
                         loadState.refresh is LoadState.Error -> {
                             val error = (loadState.refresh as LoadState.Error).error
                             ErrorState(
-                                message = error.message ?: "Failed to load memes",
+                                message = error.message ?: stringResource(R.string.gallery_error_load_failed),
                                 onRetry = { pagedMemes.retry() },
                                 modifier = Modifier.semantics { liveRegion = LiveRegionMode.Assertive },
                             )

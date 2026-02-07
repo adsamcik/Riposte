@@ -1,5 +1,6 @@
 package com.mememymood.feature.search.presentation
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mememymood.core.common.di.DefaultDispatcher
@@ -10,8 +11,10 @@ import com.mememymood.core.common.util.normalizeEmoji
 import com.mememymood.core.model.MatchType
 import com.mememymood.core.model.SearchResult
 import com.mememymood.core.datastore.PreferencesDataStore
+import com.mememymood.feature.search.R
 import com.mememymood.feature.search.domain.usecase.SearchUseCases
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -35,6 +38,7 @@ import javax.inject.Inject
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class SearchViewModel @Inject constructor(
+    @param:ApplicationContext private val context: Context,
     private val searchUseCases: SearchUseCases,
     private val getSuggestionsUseCase: GetSuggestionsUseCase,
     private val preferencesDataStore: PreferencesDataStore,
@@ -179,7 +183,7 @@ class SearchViewModel @Inject constructor(
                     preferencesDataStore.setSearchTipShown()
                     _effects.send(
                         SearchEffect.ShowSnackbar(
-                            "\uD83D\uDCA1 Tip: Try Smart search to find memes by meaning, not just text!",
+                            context.getString(R.string.search_tip_smart_search),
                         ),
                     )
                 }
@@ -277,10 +281,10 @@ class SearchViewModel @Inject constructor(
                     it.copy(
                         isSearching = false,
                         hasSearched = true,
-                        errorMessage = e.message ?: "Search failed",
+                        errorMessage = e.message ?: context.getString(R.string.search_error_failed),
                     )
                 }
-                _effects.send(SearchEffect.ShowError(e.message ?: "Search failed"))
+                _effects.send(SearchEffect.ShowError(e.message ?: context.getString(R.string.search_error_failed)))
             }
         }
     }
@@ -351,7 +355,7 @@ class SearchViewModel @Inject constructor(
                 it.copy(
                     isSearching = false,
                     hasSearched = true,
-                    errorMessage = e.message ?: "Search failed",
+                    errorMessage = e.message ?: context.getString(R.string.search_error_failed),
                 )
             }
         }

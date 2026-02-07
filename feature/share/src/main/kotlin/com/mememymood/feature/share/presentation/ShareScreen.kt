@@ -684,7 +684,7 @@ private fun ShareScreenErrorPreview() {
         ShareScreen(
             uiState = ShareUiState(
                 isLoading = false,
-                errorMessage = "Failed to load meme",
+                errorMessage = stringResource(R.string.share_error_load_failed),
             ),
             onIntent = {},
             onNavigateBack = {},

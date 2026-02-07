@@ -266,7 +266,7 @@ class GalleryViewModel @Inject constructor(
     private fun toggleFavorite(memeId: Long) {
         viewModelScope.launch {
             toggleFavoriteUseCase(memeId).onFailure { error ->
-                _effects.send(GalleryEffect.ShowError(error.message ?: "Failed to update favorite"))
+                _effects.send(GalleryEffect.ShowError(error.message ?: context.getString(R.string.gallery_snackbar_favorite_failed)))
             }
         }
     }

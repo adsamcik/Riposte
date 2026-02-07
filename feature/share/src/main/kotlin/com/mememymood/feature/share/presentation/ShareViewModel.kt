@@ -180,7 +180,7 @@ class ShareViewModel @Inject constructor(
                         _effects.send(ShareEffect.LaunchShareIntent(intent))
                     },
                     onFailure = { error ->
-                        _effects.send(ShareEffect.ShowError(error.message ?: "Share failed"))
+                        _effects.send(ShareEffect.ShowError(error.message ?: context.getString(R.string.share_error_share_failed)))
                     },
                 )
             } finally {

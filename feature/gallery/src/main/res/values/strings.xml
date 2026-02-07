@@ -116,6 +116,7 @@
     <!-- Error Messages -->
     <string name="gallery_error_invalid_meme_id">Invalid meme ID</string>
     <string name="gallery_error_meme_not_found">Meme not found</string>
+    <string name="gallery_error_load_failed">Failed to load memes</string>
 
     <!-- Snackbar Messages -->
     <string name="gallery_snackbar_deleted">%d meme(s) deleted</string>

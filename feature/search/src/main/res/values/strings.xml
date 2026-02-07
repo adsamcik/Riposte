@@ -84,6 +84,7 @@
     <string name="search_empty_description">Find memes by text, description, or use AI-powered semantic search</string>
 
     <!-- Search Tips -->
+    <string name="search_tip_smart_search">💡 Tip: Try Smart search to find memes by meaning, not just text!</string>
     <string name="search_tips_title">💡 Search Tips</string>
     <string name="search_tip_keywords">Use keywords like \"cat\", \"funny\", \"reaction\"</string>
     <string name="search_tip_ai_mode">Try AI mode for natural language: \"meme about Mondays\"</string>
@@ -105,6 +106,9 @@
     <string name="search_result_card_content_description">%1$s, best match</string>
     <string name="search_result_more_emojis">+%1$d</string>
     <string name="search_result_best_match">Best match</string>
+
+    <!-- Error Messages -->
+    <string name="search_error_failed">Search failed</string>
 
     <!-- Filters Bottom Sheet -->
     <string name="search_filters">Filters</string>

@@ -128,7 +128,7 @@ fun MemeDetailScreen(
                 is MemeDetailEffect.NavigateToShare -> onNavigateToShare(effect.memeId)
                 is MemeDetailEffect.NavigateToMeme -> onNavigateToMeme(effect.memeId)
                 is MemeDetailEffect.LaunchShareIntent -> {
-                    context.startActivity(Intent.createChooser(effect.intent, "Share Meme"))
+                    context.startActivity(Intent.createChooser(effect.intent, context.getString(R.string.gallery_share_chooser_title)))
                 }
                 is MemeDetailEffect.ShowSnackbar -> snackbarHostState.showSnackbar(effect.message)
                 is MemeDetailEffect.ShowError -> snackbarHostState.showSnackbar(effect.message)

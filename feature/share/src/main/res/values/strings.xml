@@ -69,6 +69,8 @@
     <string name="share_error_title">Something went wrong</string>
     <string name="share_error_generic">Error</string>
     <string name="share_error_meme_not_found">Meme not found</string>
+    <string name="share_error_share_failed">Share failed</string>
+    <string name="share_error_load_failed">Failed to load meme</string>
 
     <!-- Snackbar Messages -->
     <string name="share_snackbar_saved_to_gallery">Saved to gallery</string>
