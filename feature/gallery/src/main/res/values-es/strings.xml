@@ -91,4 +91,9 @@
     <string name="gallery_snackbar_changes_saved">Cambios guardados</string>
     <string name="gallery_snackbar_save_failed">No se pudieron guardar los cambios</string>
     <string name="gallery_snackbar_unsaved_changes">Tienes cambios sin guardar</string>
+
+    <!-- Discard Changes Dialog -->
+    <string name="gallery_discard_changes_title">¿Descartar cambios?</string>
+    <string name="gallery_discard_changes_message">Tienes cambios sin guardar que se perderán.</string>
+    <string name="gallery_button_keep_editing">Seguir editando</string>
 </resources>

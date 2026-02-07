@@ -4,11 +4,13 @@ import android.content.Context
 import app.cash.turbine.test
 import app.cash.turbine.turbineScope
 import com.google.common.truth.Truth.assertThat
+import com.mememymood.core.common.suggestion.GetSuggestionsUseCase
 import com.mememymood.core.datastore.PreferencesDataStore
 import com.mememymood.core.model.AppPreferences
 import com.mememymood.core.model.DarkMode
 import com.mememymood.core.model.EmojiTag
 import com.mememymood.core.model.Meme
+import com.mememymood.core.model.UserDensityPreference
 import com.mememymood.feature.gallery.domain.usecase.DeleteMemesUseCase
 import com.mememymood.feature.gallery.domain.usecase.GetAllMemeIdsUseCase
 import com.mememymood.feature.gallery.domain.usecase.GetFavoritesUseCase
@@ -46,6 +48,8 @@ class GalleryViewModelTest {
     private lateinit var deleteMemesUseCase: DeleteMemesUseCase
     private lateinit var toggleFavoriteUseCase: ToggleFavoriteUseCase
     private lateinit var getAllMemeIdsUseCase: GetAllMemeIdsUseCase
+    private lateinit var getSuggestionsUseCase: GetSuggestionsUseCase
+    private lateinit var shareTargetRepository: com.mememymood.feature.gallery.domain.repository.ShareTargetRepository
     private lateinit var preferencesDataStore: PreferencesDataStore
     private lateinit var context: Context
 
@@ -81,12 +85,18 @@ class GalleryViewModelTest {
         deleteMemesUseCase = mockk()
         toggleFavoriteUseCase = mockk()
         getAllMemeIdsUseCase = mockk()
+        getSuggestionsUseCase = GetSuggestionsUseCase()
+        shareTargetRepository = mockk(relaxed = true)
         preferencesDataStore = mockk()
 
         every { getMemesUseCase() } returns flowOf(testMemes)
         every { getFavoritesUseCase() } returns flowOf(testMemes.filter { it.isFavorite })
         every { getMemesByEmojiUseCase(any()) } returns flowOf(emptyList())
         every { preferencesDataStore.appPreferences } returns flowOf(defaultPreferences)
+        every { preferencesDataStore.lastSessionSuggestionIds } returns flowOf(emptySet())
+        every { preferencesDataStore.hasShownShareTip } returns flowOf(true)
+        coEvery { preferencesDataStore.updateLastSessionSuggestionIds(any()) } returns Unit
+        coEvery { preferencesDataStore.setShareTipShown() } returns Unit
         coEvery { getAllMemeIdsUseCase() } returns testMemes.map { it.id }
     }
 
@@ -105,6 +115,9 @@ class GalleryViewModelTest {
             deleteMemeUseCase = deleteMemesUseCase,
             toggleFavoriteUseCase = toggleFavoriteUseCase,
             getAllMemeIdsUseCase = getAllMemeIdsUseCase,
+            getSuggestionsUseCase = getSuggestionsUseCase,
+            shareTargetRepository = shareTargetRepository,
+            defaultDispatcher = testDispatcher,
             preferencesDataStore = preferencesDataStore,
         )
     }
@@ -135,14 +148,14 @@ class GalleryViewModelTest {
     }
 
     @Test
-    fun `loads grid columns from preferences`() = runTest {
-        val customPrefs = defaultPreferences.copy(gridColumns = 3)
+    fun `loads density preference from preferences`() = runTest {
+        val customPrefs = defaultPreferences.copy(userDensityPreference = UserDensityPreference.COMPACT)
         every { preferencesDataStore.appPreferences } returns flowOf(customPrefs)
 
         viewModel = createViewModel()
         advanceUntilIdle()
 
-        assertThat(viewModel.uiState.value.gridColumns).isEqualTo(3)
+        assertThat(viewModel.uiState.value.densityPreference).isEqualTo(UserDensityPreference.COMPACT)
     }
 
     // endregion
@@ -189,6 +202,19 @@ class GalleryViewModelTest {
         val state = viewModel.uiState.value
         assertThat(state.isSelectionMode).isTrue()
         assertThat(state.selectedMemeIds).containsExactly(1L)
+    }
+
+    @Test
+    fun `EnterSelectionMode enters selection mode without pre-selecting`() = runTest {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onIntent(GalleryIntent.EnterSelectionMode)
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertThat(state.isSelectionMode).isTrue()
+        assertThat(state.selectedMemeIds).isEmpty()
     }
 
     @Test
@@ -543,18 +569,18 @@ class GalleryViewModelTest {
     // region Preferences Flow Tests
 
     @Test
-    fun `gridColumns updates when preferences change`() = runTest {
+    fun `densityPreference updates when preferences change`() = runTest {
         val prefsFlow = MutableStateFlow(defaultPreferences)
         every { preferencesDataStore.appPreferences } returns prefsFlow
         viewModel = createViewModel()
         advanceUntilIdle()
 
-        assertThat(viewModel.uiState.value.gridColumns).isEqualTo(2)
+        assertThat(viewModel.uiState.value.densityPreference).isEqualTo(UserDensityPreference.AUTO)
 
-        prefsFlow.value = defaultPreferences.copy(gridColumns = 4)
+        prefsFlow.value = defaultPreferences.copy(userDensityPreference = UserDensityPreference.DENSE)
         advanceUntilIdle()
 
-        assertThat(viewModel.uiState.value.gridColumns).isEqualTo(4)
+        assertThat(viewModel.uiState.value.densityPreference).isEqualTo(UserDensityPreference.DENSE)
     }
 
     // endregion
@@ -598,12 +624,270 @@ class GalleryViewModelTest {
 
     // endregion
 
+    // region Emoji Filter Tests (p2-7)
+
+    @Test
+    fun `ToggleEmojiFilter adds emoji to activeEmojiFilters`() = runTest {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        // Switch to favorites to get non-paged path with memes
+        viewModel.onIntent(GalleryIntent.SetFilter(GalleryFilter.Favorites))
+        advanceUntilIdle()
+
+        viewModel.onIntent(GalleryIntent.ToggleEmojiFilter("😂"))
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.activeEmojiFilters).containsExactly("😂")
+    }
+
+    @Test
+    fun `ToggleEmojiFilter removes emoji when already active`() = runTest {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onIntent(GalleryIntent.ToggleEmojiFilter("😂"))
+        viewModel.onIntent(GalleryIntent.ToggleEmojiFilter("😂"))
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.activeEmojiFilters).isEmpty()
+    }
+
+    @Test
+    fun `ClearEmojiFilters resets all active filters`() = runTest {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onIntent(GalleryIntent.ToggleEmojiFilter("😂"))
+        viewModel.onIntent(GalleryIntent.ToggleEmojiFilter("🔥"))
+        advanceUntilIdle()
+        assertThat(viewModel.uiState.value.activeEmojiFilters).hasSize(2)
+
+        viewModel.onIntent(GalleryIntent.ClearEmojiFilters)
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.activeEmojiFilters).isEmpty()
+    }
+
+    @Test
+    fun `emoji filters survive in UiState across intents`() = runTest {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onIntent(GalleryIntent.ToggleEmojiFilter("😂"))
+        advanceUntilIdle()
+
+        // Trigger another unrelated intent
+        viewModel.onIntent(GalleryIntent.LoadMemes)
+        advanceUntilIdle()
+
+        // Emoji filters should still be present
+        assertThat(viewModel.uiState.value.activeEmojiFilters).containsExactly("😂")
+    }
+
+    // endregion
+
+    // region Sort Option Tests (p3-11)
+
+    @Test
+    fun `initial sort option is Recent`() = runTest {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.sortOption).isEqualTo(SortOption.Recent)
+    }
+
+    @Test
+    fun `SetSortOption updates sort option to MostUsed`() = runTest {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onIntent(GalleryIntent.SetSortOption(SortOption.MostUsed))
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.sortOption).isEqualTo(SortOption.MostUsed)
+    }
+
+    @Test
+    fun `SetSortOption updates sort option to EmojiGroup`() = runTest {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onIntent(GalleryIntent.SetSortOption(SortOption.EmojiGroup))
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.sortOption).isEqualTo(SortOption.EmojiGroup)
+    }
+
+    @Test
+    fun `SetSortOption MostUsed sorts filteredMemes by useCount descending`() = runTest {
+        val sortableMemes = listOf(
+            createTestMeme(1, "a.jpg", useCount = 5, title = "Charlie"),
+            createTestMeme(2, "b.jpg", useCount = 20, title = "Alice"),
+            createTestMeme(3, "c.jpg", useCount = 10, title = "Bob", isFavorite = true),
+        )
+        every { getMemesUseCase() } returns flowOf(sortableMemes)
+        every { getFavoritesUseCase() } returns flowOf(sortableMemes)
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        // Switch to non-paged view with all memes
+        viewModel.onIntent(GalleryIntent.SetFilter(GalleryFilter.Favorites))
+        advanceUntilIdle()
+
+        viewModel.onIntent(GalleryIntent.SetSortOption(SortOption.MostUsed))
+        advanceUntilIdle()
+
+        val sorted = viewModel.uiState.value.filteredMemes
+        assertThat(sorted.map { it.id }).containsExactly(2L, 3L, 1L).inOrder()
+    }
+
+    @Test
+    fun `SetSortOption EmojiGroup sorts filteredMemes by first emoji tag`() = runTest {
+        val sortableMemes = listOf(
+            createTestMeme(1, "a.jpg", emojiTags = listOf(EmojiTag.fromEmoji("🔥"))),
+            createTestMeme(2, "b.jpg", emojiTags = listOf(EmojiTag.fromEmoji("😂"))),
+            createTestMeme(3, "c.jpg", isFavorite = true, emojiTags = listOf(EmojiTag.fromEmoji("🔥"))),
+        )
+        every { getMemesUseCase() } returns flowOf(sortableMemes)
+        every { getFavoritesUseCase() } returns flowOf(sortableMemes)
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onIntent(GalleryIntent.SetFilter(GalleryFilter.Favorites))
+        advanceUntilIdle()
+
+        viewModel.onIntent(GalleryIntent.SetSortOption(SortOption.EmojiGroup))
+        advanceUntilIdle()
+
+        val sorted = viewModel.uiState.value.filteredMemes
+        // Memes with same emoji should be grouped together
+        val emojiGroups = sorted.map { it.emojiTags.first().emoji }
+        assertThat(emojiGroups[0]).isEqualTo(emojiGroups[1])
+    }
+
+    // endregion
+
+    // region Derived State Tests (p1-2)
+
+    @Test
+    fun `uniqueEmojis computed from memes in non-paged mode`() = runTest {
+        val memesWithEmojis = listOf(
+            createTestMeme(1, "a.jpg", emojiTags = listOf(EmojiTag.fromEmoji("😂"), EmojiTag.fromEmoji("🔥"))),
+            createTestMeme(2, "b.jpg", emojiTags = listOf(EmojiTag.fromEmoji("😂"))),
+            createTestMeme(3, "c.jpg", isFavorite = true, emojiTags = listOf(EmojiTag.fromEmoji("🔥"), EmojiTag.fromEmoji("💀"))),
+        )
+        every { getMemesUseCase() } returns flowOf(memesWithEmojis)
+        every { getFavoritesUseCase() } returns flowOf(memesWithEmojis)
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onIntent(GalleryIntent.SetFilter(GalleryFilter.Favorites))
+        advanceUntilIdle()
+
+        val emojis = viewModel.uiState.value.uniqueEmojis
+        // 😂 appears 2 times, 🔥 appears 2 times, 💀 appears 1 time
+        assertThat(emojis).hasSize(3)
+        assertThat(emojis.first().first).isAnyOf("😂", "🔥") // Both have count 2
+        assertThat(emojis.last().second).isEqualTo(1)
+    }
+
+    @Test
+    fun `filteredMemes excludes non-matching emoji when filter active`() = runTest {
+        val memesWithEmojis = listOf(
+            createTestMeme(1, "a.jpg", emojiTags = listOf(EmojiTag.fromEmoji("😂"))),
+            createTestMeme(2, "b.jpg", emojiTags = listOf(EmojiTag.fromEmoji("🔥"))),
+            createTestMeme(3, "c.jpg", isFavorite = true, emojiTags = listOf(EmojiTag.fromEmoji("😂"), EmojiTag.fromEmoji("🔥"))),
+        )
+        every { getMemesUseCase() } returns flowOf(memesWithEmojis)
+        every { getFavoritesUseCase() } returns flowOf(memesWithEmojis)
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onIntent(GalleryIntent.SetFilter(GalleryFilter.Favorites))
+        advanceUntilIdle()
+
+        viewModel.onIntent(GalleryIntent.ToggleEmojiFilter("🔥"))
+        advanceUntilIdle()
+
+        val filtered = viewModel.uiState.value.filteredMemes
+        assertThat(filtered.map { it.id }).containsExactly(2L, 3L)
+    }
+
+    @Test
+    fun `filteredMemes returns all memes when no emoji filter active`() = runTest {
+        val allMemes = listOf(
+            createTestMeme(1, "a.jpg"),
+            createTestMeme(2, "b.jpg"),
+        )
+        every { getMemesUseCase() } returns flowOf(allMemes)
+        every { getFavoritesUseCase() } returns flowOf(allMemes)
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onIntent(GalleryIntent.SetFilter(GalleryFilter.Favorites))
+        advanceUntilIdle()
+
+        val filtered = viewModel.uiState.value.filteredMemes
+        assertThat(filtered).hasSize(2)
+    }
+
+    // endregion
+
+    // region Regression: Filter State and Selection Mode (p2-ux)
+
+    @Test
+    fun `when filter mode is favorites then title reflects filter state`() = runTest {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onIntent(GalleryIntent.SetFilter(GalleryFilter.Favorites))
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertThat(state.filter).isEqualTo(GalleryFilter.Favorites)
+        // Favorites filter uses non-paged path
+        assertThat(state.usePaging).isFalse()
+    }
+
+    @Test
+    fun `when emoji filter is active then filter indicator is shown`() = runTest {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onIntent(GalleryIntent.ToggleEmojiFilter("😂"))
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertThat(state.activeEmojiFilters).isNotEmpty()
+        assertThat(state.activeEmojiFilters).containsExactly("😂")
+    }
+
+    @Test
+    fun `when start selection intent sent then selection mode activates`() = runTest {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        // EnterSelectionMode is the overflow-menu entry point (no pre-selected meme)
+        viewModel.onIntent(GalleryIntent.EnterSelectionMode)
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertThat(state.isSelectionMode).isTrue()
+        assertThat(state.selectedMemeIds).isEmpty()
+    }
+
+    // endregion
+
     // region Helper Functions
 
     private fun createTestMeme(
         id: Long,
         fileName: String,
-        isFavorite: Boolean = false
+        isFavorite: Boolean = false,
+        emojiTags: List<EmojiTag> = listOf(EmojiTag.fromEmoji("😂")),
+        title: String? = "Test Meme $id",
+        useCount: Int = 0,
     ): Meme = Meme(
         id = id,
         filePath = "/storage/memes/$fileName",
@@ -612,12 +896,13 @@ class GalleryViewModelTest {
         width = 1080,
         height = 1080,
         fileSizeBytes = 1024L,
-        importedAt = System.currentTimeMillis(),
-        emojiTags = listOf(EmojiTag.fromEmoji("😂")),
-        title = "Test Meme $id",
+        importedAt = System.currentTimeMillis() - (id * 1000),
+        emojiTags = emojiTags,
+        title = title,
         description = null,
         textContent = null,
-        isFavorite = isFavorite
+        isFavorite = isFavorite,
+        useCount = useCount,
     )
 
     // endregion

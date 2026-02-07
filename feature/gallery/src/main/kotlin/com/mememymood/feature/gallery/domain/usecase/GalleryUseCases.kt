@@ -2,6 +2,8 @@ package com.mememymood.feature.gallery.domain.usecase
 
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
+import com.mememymood.core.database.LibraryStatsProvider
+import com.mememymood.core.database.LibraryStatistics
 import com.mememymood.core.model.Meme
 import com.mememymood.feature.gallery.domain.repository.GalleryRepository
 import kotlinx.coroutines.CoroutineScope
@@ -94,4 +96,31 @@ class GetAllMemeIdsUseCase @Inject constructor(
     private val repository: GalleryRepository
 ) {
     suspend operator fun invoke(): List<Long> = repository.getAllMemeIds()
+}
+
+/**
+ * Use case for recording a meme view.
+ */
+class RecordMemeViewUseCase @Inject constructor(
+    private val repository: GalleryRepository
+) {
+    suspend operator fun invoke(id: Long) = repository.recordMemeView(id)
+}
+
+/**
+ * Use case for getting recently viewed memes.
+ */
+class GetRecentlyViewedMemesUseCase @Inject constructor(
+    private val repository: GalleryRepository
+) {
+    operator fun invoke(limit: Int = 20): Flow<List<Meme>> = repository.getRecentlyViewed(limit)
+}
+
+/**
+ * Use case for observing library statistics (total count, favorites, indexed).
+ */
+class GetLibraryStatsUseCase @Inject constructor(
+    private val statsProvider: LibraryStatsProvider
+) {
+    operator fun invoke(): Flow<LibraryStatistics> = statsProvider.observeStatistics()
 }

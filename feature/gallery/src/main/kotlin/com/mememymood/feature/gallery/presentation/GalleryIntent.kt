@@ -25,6 +25,11 @@ sealed interface GalleryIntent {
     data class StartSelection(val memeId: Long) : GalleryIntent
 
     /**
+     * Enter selection mode without pre-selecting a meme (from overflow menu).
+     */
+    data object EnterSelectionMode : GalleryIntent
+
+    /**
      * Exit selection mode.
      */
     data object ClearSelection : GalleryIntent
@@ -78,4 +83,34 @@ sealed interface GalleryIntent {
      * Quick share a meme (long press action).
      */
     data class QuickShare(val memeId: Long) : GalleryIntent
+
+    /**
+     * Toggle an emoji filter on/off.
+     */
+    data class ToggleEmojiFilter(val emoji: String) : GalleryIntent
+
+    /**
+     * Clear all active emoji filters.
+     */
+    data object ClearEmojiFilters : GalleryIntent
+
+    /**
+     * Change the sort option.
+     */
+    data class SetSortOption(val option: SortOption) : GalleryIntent
+
+    /**
+     * User selected a specific share target from the quick share sheet.
+     */
+    data class SelectShareTarget(val target: com.mememymood.core.model.ShareTarget) : GalleryIntent
+
+    /**
+     * User tapped "More…" in the quick share sheet (open system chooser).
+     */
+    data object QuickShareMore : GalleryIntent
+
+    /**
+     * Dismiss the quick share bottom sheet.
+     */
+    data object DismissQuickShare : GalleryIntent
 }

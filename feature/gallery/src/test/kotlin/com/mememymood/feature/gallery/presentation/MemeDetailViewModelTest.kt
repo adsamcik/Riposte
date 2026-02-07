@@ -537,6 +537,131 @@ class MemeDetailViewModelTest {
 
     // endregion
 
+    // region hasUnsavedChanges Tests
+
+    @Test
+    fun `hasUnsavedChanges is false when editedTitle equals empty string and original title is null`() = runTest {
+        val memeWithNullTitle = createTestMeme(1L).copy(title = null)
+        coEvery { getMemeByIdUseCase(1L) } returns memeWithNullTitle
+
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onIntent(MemeDetailIntent.ToggleEditMode)
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.editedTitle).isEqualTo("")
+        assertThat(viewModel.uiState.value.hasUnsavedChanges).isFalse()
+    }
+
+    @Test
+    fun `hasUnsavedChanges is false when editedDescription equals empty string and original description is null`() = runTest {
+        val memeWithNullDescription = createTestMeme(1L).copy(description = null)
+        coEvery { getMemeByIdUseCase(1L) } returns memeWithNullDescription
+
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onIntent(MemeDetailIntent.ToggleEditMode)
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.editedDescription).isEqualTo("")
+        assertThat(viewModel.uiState.value.hasUnsavedChanges).isFalse()
+    }
+
+    @Test
+    fun `save button is disabled when isSaving`() {
+        // Verify that isSaving prevents hasUnsavedChanges from enabling save
+        val meme = createTestMeme(1L)
+        val state = MemeDetailUiState(
+            meme = meme,
+            isEditMode = true,
+            editedTitle = "New Title",
+            editedDescription = meme.description ?: "",
+            editedEmojis = meme.emojiTags.map { it.emoji },
+            isSaving = true,
+        )
+
+        assertThat(state.hasUnsavedChanges).isTrue()
+        assertThat(state.isSaving).isTrue()
+        // Save button enabled = hasUnsavedChanges && !isSaving
+        assertThat(state.hasUnsavedChanges && !state.isSaving).isFalse()
+    }
+
+    // endregion
+
+    // region Adaptive Peek Height Tests
+
+    @Test
+    fun `computeAdaptivePeekHeight returns 25 percent of screen height`() {
+        val result = computeAdaptivePeekHeight(800f)
+        assertThat(result).isEqualTo(200f)
+    }
+
+    @Test
+    fun `computeAdaptivePeekHeight clamps to minimum 120dp for small screens`() {
+        val result = computeAdaptivePeekHeight(400f)
+        assertThat(result).isEqualTo(120f)
+    }
+
+    @Test
+    fun `computeAdaptivePeekHeight clamps to maximum 280dp for large screens`() {
+        val result = computeAdaptivePeekHeight(1600f)
+        assertThat(result).isEqualTo(280f)
+    }
+
+    @Test
+    fun `computeAdaptivePeekHeight returns exact minimum at boundary`() {
+        // 480 * 0.25 = 120
+        val result = computeAdaptivePeekHeight(480f)
+        assertThat(result).isEqualTo(120f)
+    }
+
+    @Test
+    fun `computeAdaptivePeekHeight returns exact maximum at boundary`() {
+        // 1120 * 0.25 = 280
+        val result = computeAdaptivePeekHeight(1120f)
+        assertThat(result).isEqualTo(280f)
+    }
+
+    // endregion
+
+    // region Regression: Empty Emoji State and Favorite Toggle (p2-ux)
+
+    @Test
+    fun `when meme has no emoji tags then empty state is exposed`() = runTest {
+        val memeWithNoEmojis = createTestMeme(1L).copy(emojiTags = emptyList())
+        coEvery { getMemeByIdUseCase(1L) } returns memeWithNoEmojis
+
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertThat(state.meme).isNotNull()
+        assertThat(state.meme!!.emojiTags).isEmpty()
+        assertThat(state.editedEmojis).isEmpty()
+    }
+
+    @Test
+    fun `when toggle favorite then favorite state updates`() = runTest {
+        val updatedMeme = testMeme.copy(isFavorite = true)
+        coEvery { toggleFavoriteUseCase(1L) } returns Result.success(Unit)
+        coEvery { getMemeByIdUseCase(1L) } returnsMany listOf(testMeme, updatedMeme)
+
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.meme!!.isFavorite).isFalse()
+
+        viewModel.onIntent(MemeDetailIntent.ToggleFavorite)
+        advanceUntilIdle()
+
+        coVerify { toggleFavoriteUseCase(1L) }
+        assertThat(viewModel.uiState.value.meme!!.isFavorite).isTrue()
+    }
+
+    // endregion
+
     companion object {
         private fun createTestMeme(id: Long) = Meme(
             id = id,

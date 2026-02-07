@@ -91,4 +91,9 @@
     <string name="gallery_snackbar_changes_saved">Änderungen gespeichert</string>
     <string name="gallery_snackbar_save_failed">Änderungen konnten nicht gespeichert werden</string>
     <string name="gallery_snackbar_unsaved_changes">Du hast ungespeicherte Änderungen</string>
+
+    <!-- Discard Changes Dialog -->
+    <string name="gallery_discard_changes_title">Änderungen verwerfen?</string>
+    <string name="gallery_discard_changes_message">Du hast ungespeicherte Änderungen, die verloren gehen.</string>
+    <string name="gallery_button_keep_editing">Weiter bearbeiten</string>
 </resources>

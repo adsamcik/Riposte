@@ -91,4 +91,9 @@
     <string name="gallery_snackbar_changes_saved">Změny uloženy</string>
     <string name="gallery_snackbar_save_failed">Nepodařilo se uložit změny</string>
     <string name="gallery_snackbar_unsaved_changes">Máš neuložené změny</string>
+
+    <!-- Discard Changes Dialog -->
+    <string name="gallery_discard_changes_title">Zahodit změny?</string>
+    <string name="gallery_discard_changes_message">Máš neuložené změny, které budou ztraceny.</string>
+    <string name="gallery_button_keep_editing">Pokračovat v úpravách</string>
 </resources>

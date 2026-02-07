@@ -68,4 +68,14 @@ interface GalleryRepository {
      * Get all meme IDs for bulk operations.
      */
     suspend fun getAllMemeIds(): List<Long>
+
+    /**
+     * Record that a meme was viewed.
+     */
+    suspend fun recordMemeView(id: Long)
+
+    /**
+     * Get recently viewed memes.
+     */
+    fun getRecentlyViewed(limit: Int = 20): Flow<List<Meme>>
 }

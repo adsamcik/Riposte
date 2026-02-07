@@ -427,6 +427,28 @@ class GalleryRepositoryImplTest {
 
     // endregion
 
+    // region recordMemeView Tests
+
+    @Test
+    fun `recordMemeView calls dao recordView`() = runTest(testDispatcher) {
+        coEvery { memeDao.recordView(any(), any()) } just Runs
+
+        repository.recordMemeView(1L)
+
+        coVerify { memeDao.recordView(1L, any()) }
+    }
+
+    @Test
+    fun `recordMemeView handles non-existent meme gracefully`() = runTest(testDispatcher) {
+        coEvery { memeDao.recordView(any(), any()) } just Runs
+
+        repository.recordMemeView(999L)
+
+        coVerify { memeDao.recordView(999L, any()) }
+    }
+
+    // endregion
+
     // region Helper Functions
 
     private fun createTestMemeEntity(

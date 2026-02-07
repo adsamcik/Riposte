@@ -7,6 +7,19 @@
     <string name="gallery_menu_all_memes">All Memes</string>
     <string name="gallery_menu_favorites">Favorites</string>
     <string name="gallery_menu_settings">Settings</string>
+    <string name="gallery_menu_select">Select</string>
+
+    <!-- Filter State -->
+    <string name="gallery_title_favorites">⭐ Favorites</string>
+    <string name="gallery_cd_clear_filter">Clear filter</string>
+
+    <!-- Section Headers -->
+    <string name="gallery_section_suggested">✨ Suggested</string>
+
+    <!-- Context Menu -->
+    <string name="gallery_context_share">Share</string>
+    <string name="gallery_context_favorite">Favorite</string>
+    <string name="gallery_context_select">Select</string>
 
     <!-- Selection Mode -->
     <string name="gallery_selection_count">%d selected</string>
@@ -56,6 +69,12 @@
     <string name="gallery_section_quick_access">Quick Access</string>
     <string name="gallery_section_all_memes">All Memes</string>
 
+    <!-- Sort Options -->
+    <string name="gallery_sort_recent">Recent</string>
+    <string name="gallery_sort_most_used">Most Used</string>
+    <string name="gallery_sort_emoji_group">Emoji</string>
+    <string name="gallery_cd_sort">Sort</string>
+
     <!-- Error State -->
     <string name="gallery_error_default">Error</string>
 
@@ -68,6 +87,19 @@
     <string name="gallery_detail_label_emoji_tags">Emoji Tags</string>
     <string name="gallery_detail_label_imported">Imported: %s</string>
     <string name="gallery_detail_label_extracted_text">Extracted Text:</string>
+
+    <!-- Detail Action Labels -->
+    <string name="gallery_detail_action_edit">Edit</string>
+    <string name="gallery_detail_action_share">Share</string>
+    <string name="gallery_detail_action_favorite">Favorite</string>
+    <string name="gallery_detail_action_delete">Delete</string>
+
+    <!-- Details Section -->
+    <string name="gallery_detail_section_details">Details</string>
+    <string name="gallery_detail_dimensions">Dimensions</string>
+    <string name="gallery_detail_dimensions_value">%1$d × %2$d</string>
+    <string name="gallery_detail_file_size">File size</string>
+    <string name="gallery_detail_format">Format</string>
 
     <!-- Emoji Dialog -->
     <string name="gallery_emoji_dialog_title">Edit Emoji Tags</string>
@@ -91,4 +123,19 @@
     <string name="gallery_snackbar_changes_saved">Changes saved</string>
     <string name="gallery_snackbar_save_failed">Failed to save changes</string>
     <string name="gallery_snackbar_unsaved_changes">You have unsaved changes</string>
+
+    <!-- Quick Share Bottom Sheet -->
+    <string name="gallery_quick_share_title">Share to…</string>
+    <string name="gallery_quick_share_more">More</string>
+
+    <!-- Detail Action Labels (Edit Mode) -->
+    <string name="gallery_detail_action_cancel">Cancel</string>
+
+    <!-- Empty Emoji Tags -->
+    <string name="gallery_detail_empty_emoji_tags">No emoji tags — tap Edit to add</string>
+
+    <!-- Discard Changes Dialog -->
+    <string name="gallery_discard_changes_title">Discard changes?</string>
+    <string name="gallery_discard_changes_message">You have unsaved changes that will be lost.</string>
+    <string name="gallery_button_keep_editing">Keep editing</string>
 </resources>

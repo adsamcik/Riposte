@@ -158,4 +158,14 @@ class GalleryRepositoryImpl @Inject constructor(
     override suspend fun getAllMemeIds(): List<Long> = withContext(ioDispatcher) {
         memeDao.getAllMemeIds()
     }
+
+    override suspend fun recordMemeView(id: Long) = withContext(ioDispatcher) {
+        memeDao.recordView(id)
+    }
+
+    override fun getRecentlyViewed(limit: Int): Flow<List<Meme>> {
+        return memeDao.getRecentlyViewedMemes(limit)
+            .map { entities -> entities.map { it.toDomain() } }
+            .flowOn(ioDispatcher)
+    }
 }

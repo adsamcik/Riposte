@@ -16,7 +16,7 @@ data class MemeDetailUiState(
 ) {
     val hasUnsavedChanges: Boolean
         get() = meme?.let { original ->
-            editedTitle != original.title ||
+            editedTitle != (original.title ?: "") ||
                 editedDescription != (original.description ?: "") ||
                 editedEmojis != original.emojiTags.map { it.emoji }
         } ?: false

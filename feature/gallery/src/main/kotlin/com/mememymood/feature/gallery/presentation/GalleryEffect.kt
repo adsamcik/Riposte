@@ -43,4 +43,12 @@ sealed interface GalleryEffect {
      * Launch share intent directly.
      */
     data class LaunchShareIntent(val intent: android.content.Intent) : GalleryEffect
+
+    /**
+     * Launch a quick share to a specific app target.
+     */
+    data class LaunchQuickShare(
+        val meme: com.mememymood.core.model.Meme,
+        val target: com.mememymood.core.model.ShareTarget,
+    ) : GalleryEffect
 }
