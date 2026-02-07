@@ -41,7 +41,10 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.ColorFilter
 import coil3.compose.AsyncImage
+import coil3.compose.AsyncImagePainter
+import coil3.compose.rememberAsyncImagePainter
 import com.mememymood.core.ui.R
 import com.mememymood.core.model.EmojiTag
 import com.mememymood.core.model.Meme
@@ -94,11 +97,10 @@ fun MemeCard(
                     contentDescription = null,
                     modifier = Modifier
                         .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
                         .clearAndSetSemantics { },
                     contentScale = ContentScale.Crop
                 )
-
-                // Favorite button
                 IconButton(
                     onClick = onFavoriteClick,
                     modifier = Modifier
@@ -222,11 +224,10 @@ fun MemeCardCompact(
             contentDescription = null,
             modifier = Modifier
                 .fillMaxSize()
+                .background(MaterialTheme.colorScheme.surfaceVariant)
                 .clearAndSetSemantics { },
             contentScale = ContentScale.Crop
         )
-
-        // Emoji overlay
         if (meme.emojiTags.isNotEmpty()) {
             Row(
                 modifier = Modifier
