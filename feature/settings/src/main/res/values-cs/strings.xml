@@ -69,6 +69,19 @@
     <string name="settings_clear_cache_dialog_confirm">Vymazat</string>
     <string name="settings_clear_cache_dialog_cancel">Zrušit</string>
     
+    <!-- Export Options Dialog -->
+    <string name="settings_export_options_title">Možnosti exportu</string>
+    <string name="settings_export_option_settings">Nastavení</string>
+    <string name="settings_export_option_images">Obrázky memů</string>
+    <string name="settings_export_option_tags">Štítky a metadata</string>
+    <string name="settings_export_button">Exportovat</string>
+
+    <!-- Import Confirmation Dialog -->
+    <string name="settings_import_confirm_title">Importovat zálohu</string>
+    <string name="settings_import_confirm_message">Nahradit aktuální nastavení zálohou z %1$s?</string>
+    <string name="settings_import_confirm_message_unknown">Nahradit aktuální nastavení touto zálohou?</string>
+    <string name="settings_import_confirm_replace">Nahradit</string>
+
     <!-- Language Section -->
     <string name="settings_language_title">Jazyk</string>
     <string name="settings_language_subtitle">Vybrat jazyk aplikace</string>

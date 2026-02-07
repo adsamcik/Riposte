@@ -7,6 +7,19 @@
     <string name="gallery_menu_all_memes">Všechny memy</string>
     <string name="gallery_menu_favorites">Oblíbené</string>
     <string name="gallery_menu_settings">Nastavení</string>
+    <string name="gallery_menu_select">Vybrat</string>
+
+    <!-- Filter State -->
+    <string name="gallery_title_favorites">⭐ Oblíbené</string>
+    <string name="gallery_cd_clear_filter">Zrušit filtr</string>
+
+    <!-- Section Headers -->
+    <string name="gallery_section_suggested">✨ Doporučené</string>
+
+    <!-- Context Menu -->
+    <string name="gallery_context_share">Sdílet</string>
+    <string name="gallery_context_favorite">Oblíbené</string>
+    <string name="gallery_context_select">Vybrat</string>
 
     <!-- Selection Mode -->
     <string name="gallery_selection_count">%d vybráno</string>
@@ -49,6 +62,12 @@
     <string name="gallery_empty_title">Zatím žádné memy</string>
     <string name="gallery_empty_message">Importuj nějaké memy a můžeme začít!</string>
 
+    <!-- Sort Options -->
+    <string name="gallery_sort_recent">Nedávné</string>
+    <string name="gallery_sort_most_used">Nejpoužívanější</string>
+    <string name="gallery_sort_emoji_group">Emoji</string>
+    <string name="gallery_cd_sort">Řazení</string>
+
     <!-- Section Headers -->
     <string name="gallery_section_quick_access">Rychlý přístup</string>
     <string name="gallery_section_all_memes">Všechny memy</string>
@@ -69,6 +88,24 @@
     <string name="gallery_detail_label_imported">Importováno: %s</string>
     <string name="gallery_detail_label_extracted_text">Rozpoznaný text:</string>
 
+    <!-- Detail Action Labels -->
+    <string name="gallery_detail_action_edit">Upravit</string>
+    <string name="gallery_detail_action_share">Sdílet</string>
+    <string name="gallery_detail_action_favorite">Oblíbené</string>
+    <string name="gallery_detail_action_delete">Smazat</string>
+
+    <!-- Similar Memes Section -->
+    <string name="gallery_detail_section_similar">Podobné memy</string>
+    <string name="gallery_detail_similar_empty">Žádné podobné memy nenalezeny</string>
+    <string name="gallery_cd_similar_meme">Podobný meme: %s</string>
+
+    <!-- Details Section -->
+    <string name="gallery_detail_section_details">Podrobnosti</string>
+    <string name="gallery_detail_dimensions">Rozměry</string>
+    <string name="gallery_detail_dimensions_value">%1$d × %2$d</string>
+    <string name="gallery_detail_file_size">Velikost souboru</string>
+    <string name="gallery_detail_format">Formát</string>
+
     <!-- Emoji Dialog -->
     <string name="gallery_emoji_dialog_title">Upravit emoji štítky</string>
     <string name="gallery_emoji_search_label">Hledat emoji</string>
@@ -79,6 +116,7 @@
     <!-- Error Messages -->
     <string name="gallery_error_invalid_meme_id">Neplatné ID memu</string>
     <string name="gallery_error_meme_not_found">Meme nenalezen</string>
+    <string name="gallery_error_load_failed">Nepodařilo se načíst memy</string>
 
     <!-- Snackbar Messages -->
     <string name="gallery_snackbar_deleted">%d mem(ů) smazáno</string>
@@ -91,6 +129,16 @@
     <string name="gallery_snackbar_changes_saved">Změny uloženy</string>
     <string name="gallery_snackbar_save_failed">Nepodařilo se uložit změny</string>
     <string name="gallery_snackbar_unsaved_changes">Máš neuložené změny</string>
+
+    <!-- Quick Share Bottom Sheet -->
+    <string name="gallery_quick_share_title">Sdílet přes…</string>
+    <string name="gallery_quick_share_more">Více</string>
+
+    <!-- Detail Action Labels (Edit Mode) -->
+    <string name="gallery_detail_action_cancel">Zrušit</string>
+
+    <!-- Empty Emoji Tags -->
+    <string name="gallery_detail_empty_emoji_tags">Žádné emoji štítky — klepni na Upravit pro přidání</string>
 
     <!-- Discard Changes Dialog -->
     <string name="gallery_discard_changes_title">Zahodit změny?</string>

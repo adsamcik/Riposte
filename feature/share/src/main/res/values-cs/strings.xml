@@ -69,6 +69,8 @@
     <string name="share_error_title">Něco se pokazilo</string>
     <string name="share_error_generic">Chyba</string>
     <string name="share_error_meme_not_found">Meme nenalezen</string>
+    <string name="share_error_share_failed">Sdílení selhalo</string>
+    <string name="share_error_load_failed">Nepodařilo se načíst meme</string>
 
     <!-- Snackbar Messages -->
     <string name="share_snackbar_saved_to_gallery">Uloženo do galerie</string>

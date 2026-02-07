@@ -11,6 +11,7 @@
     <string name="import_content_description_remove">Odebrat</string>
     <string name="import_content_description_image_to_import">Obrázek k importu</string>
     <string name="import_content_description_image_preview">Náhled obrázku</string>
+    <string name="import_content_description_error">Chyba zpracování</string>
 
     <!-- Empty State -->
     <string name="import_empty_title">Importuj své memy</string>
@@ -22,6 +23,7 @@
     <string name="import_button_add_more">Přidat další</string>
     <string name="import_button_done">Hotovo</string>
     <string name="import_button_apply_all">Použít na vše</string>
+    <string name="import_button_cancel">Zrušit</string>
 
     <!-- Bundle Import -->
     <string name="import_bundle_hint">Importovat sbírky memů s emoji štítky a popisky</string>
@@ -46,6 +48,23 @@
     <string name="import_status_streaming">Importuji… %1$d memů zpracováno</string>
     <string name="import_status_streaming_with_errors">Importuji… %1$d zpracováno, %2$d chyb</string>
     <string name="import_status_imported_partial">Importováno %1$d memů, %2$d selhalo</string>
+    <string name="import_status_zip_extract_errors">%d soubor(ů) nebylo možné extrahovat z balíčku</string>
     <string name="import_error_bundle_failed">Nepodařilo se importovat balíček</string>
     <string name="import_error_images_failed">Nepodařilo se importovat obrázky</string>
+
+    <!-- Duplicate Detection Dialog -->
+    <string name="import_duplicate_dialog_title">Nalezeny duplikáty</string>
+    <string name="import_duplicate_dialog_message">%d obrázek(ů) už ve tvé knihovně existuje.</string>
+    <string name="import_duplicate_import_anyway">Importovat přesto</string>
+    <string name="import_duplicate_skip">Přeskočit duplikáty</string>
+
+    <!-- Import Result Summary -->
+    <string name="import_result_title">Import dokončen</string>
+    <string name="import_result_summary">%1$d importováno, %2$d selhalo</string>
+    <string name="import_result_done">Hotovo</string>
+    <string name="import_result_retry">Opakovat %d neúspěšných</string>
+
+    <!-- Onboarding Tips -->
+    <string name="import_tip_emoji_tagging">Tvé memy budou po importu automaticky oštítkovány pomocí AI ✨</string>
+    <string name="import_hint_max_images">Až 20 obrázků najednou</string>
 </resources>

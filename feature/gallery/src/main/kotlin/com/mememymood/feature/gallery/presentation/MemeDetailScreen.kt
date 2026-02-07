@@ -505,7 +505,6 @@ private fun MemeInfoSheet(
                 )
                 IconButton(
                     onClick = { onIntent(MemeDetailIntent.ShowEmojiPicker) },
-                    modifier = Modifier.size(32.dp),
                 ) {
                     Icon(Icons.Default.Add, contentDescription = stringResource(R.string.gallery_cd_add_emoji))
                 }

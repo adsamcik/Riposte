@@ -7,6 +7,7 @@
     <!-- Search Bar Actions -->
     <string name="search_action_close">Zavřít vyhledávání</string>
     <string name="search_action_voice">Hlasové vyhledávání</string>
+    <string name="search_action_search">Hledat</string>
     <string name="search_action_clear">Vymazat hledaný výraz</string>
 
     <!-- Search Modes -->
@@ -52,6 +53,7 @@
     <!-- Suggestions Section -->
     <string name="search_suggestions_title">Návrhy</string>
     <string name="search_suggestions_content_description">Návrh: %1$s</string>
+    <string name="search_suggested_memes_title">Doporučené pro tebe</string>
 
     <!-- Recent Searches Section -->
     <string name="search_recent_title">Poslední hledání</string>
@@ -67,6 +69,7 @@
 
     <!-- Sort Order Labels -->
     <string name="search_sort_relevance">Relevance</string>
+    <!-- Note: "Relevance" is commonly used in Czech as a loanword -->
     <string name="search_sort_newest">Nejnovější</string>
     <string name="search_sort_oldest">Nejstarší</string>
     <string name="search_sort_most_used">Nejpoužívanější</string>
@@ -82,6 +85,7 @@
     <string name="search_empty_description">Najdi memy podle textu, popisu nebo použij AI sémantické vyhledávání</string>
 
     <!-- Search Tips -->
+    <string name="search_tip_smart_search">💡 Tip: Zkus Chytré vyhledávání pro hledání memů podle významu, nejen textu!</string>
     <string name="search_tips_title">💡 Tipy pro vyhledávání</string>
     <string name="search_tip_keywords">Použij klíčová slova jako \"kočka\", \"vtipné\", \"reakce\"</string>
     <string name="search_tip_ai_mode">Zkus AI režim pro přirozený jazyk: \"meme o pondělcích\"</string>
@@ -103,6 +107,9 @@
     <string name="search_result_card_content_description">%1$s, nejlepší shoda</string>
     <string name="search_result_more_emojis">+%1$d</string>
     <string name="search_result_best_match">Nejlepší shoda</string>
+
+    <!-- Error Messages -->
+    <string name="search_error_failed">Vyhledávání selhalo</string>
 
     <!-- Filters Bottom Sheet -->
     <string name="search_filters">Filtry</string>

@@ -438,6 +438,7 @@ private fun SettingsHeader(
             .fillMaxWidth()
             .clip(RoundedCornerShape(8.dp))
             .clickable(onClick = onToggle)
+            .heightIn(min = 48.dp)
             .padding(vertical = 12.dp, horizontal = 4.dp)
             .semantics { contentDescription = toggleDescription },
         horizontalArrangement = Arrangement.SpaceBetween,
