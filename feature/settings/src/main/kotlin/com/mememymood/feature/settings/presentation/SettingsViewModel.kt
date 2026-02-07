@@ -233,7 +233,9 @@ class SettingsViewModel @Inject constructor(
     private fun calculateCacheSize() {
         viewModelScope.launch {
             val cacheDir = context.cacheDir
-            val size = calculateDirectorySize(cacheDir)
+            val size = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                calculateDirectorySize(cacheDir)
+            }
             _uiState.update { it.copy(cacheSize = formatFileSize(size)) }
         }
     }
@@ -272,7 +274,9 @@ class SettingsViewModel @Inject constructor(
             _uiState.update { it.copy(showClearCacheDialog = false) }
 
             try {
-                clearCacheDirectory(context.cacheDir)
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    clearCacheDirectory(context.cacheDir)
+                }
                 calculateCacheSize()
                 _effects.send(SettingsEffect.ShowSnackbar(context.getString(R.string.settings_snackbar_cache_cleared)))
             } catch (e: Exception) {
