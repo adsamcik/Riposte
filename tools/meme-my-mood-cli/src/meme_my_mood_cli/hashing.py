@@ -1,6 +1,6 @@
 """Image hashing and deduplication utilities.
 
-Provides SHA-256 content hashing and perceptual hashing for
+Provides SHA-256 content hashing and DCT-based perceptual hashing for
 detecting exact and near-duplicate images.
 """
 
@@ -10,10 +10,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-try:
-    from PIL import Image
-except ImportError:
-    Image = None  # type: ignore[assignment,misc]
+import imagehash
+from PIL import Image
 
 HASH_MANIFEST_FILENAME = ".meme-hashes.json"
 
@@ -49,33 +47,22 @@ def get_image_hash(image_path: Path) -> str:
 
 
 def _compute_phash(image_path: Path, hash_size: int = 16) -> str | None:
-    """Compute a perceptual hash (pHash) of an image.
+    """Compute a DCT-based perceptual hash (pHash) of an image.
 
-    Uses a simplified DCT-free approach: resize to small grayscale,
-    compare each pixel to the mean, and encode as a hex string.
+    Uses the imagehash library's DCT-based pHash algorithm, which is robust
+    against rescaling, recompression, and minor edits.
 
     Args:
         image_path: Path to the image file.
         hash_size: Size of the hash grid (hash_size x hash_size).
 
     Returns:
-        Hex-encoded perceptual hash, or None if PIL is unavailable.
+        Hex-encoded perceptual hash, or None if hashing fails.
     """
-    if Image is None:
-        return None
-
     try:
         with Image.open(image_path) as img:
-            # Resize to small grayscale thumbnail
-            img = img.convert("L").resize(
-                (hash_size, hash_size), Image.Resampling.LANCZOS
-            )
-            pixels: list[int] = list(img.getdata())  # type: ignore[arg-type]
-            mean_val: float = sum(pixels) / len(pixels)
-            # Build bit string: 1 if pixel >= mean, else 0
-            bits = "".join("1" if p >= mean_val else "0" for p in pixels)
-            # Convert to hex
-            return hex(int(bits, 2))[2:].zfill(hash_size * hash_size // 4)
+            phash = imagehash.phash(img, hash_size=hash_size)
+            return str(phash)
     except Exception:
         return None
 
@@ -91,7 +78,7 @@ def _hamming_distance(hash1: str, hash2: str) -> int:
         Number of differing bits.
     """
     if len(hash1) != len(hash2):
-        return 256  # Max distance if lengths differ
+        return len(hash1) * 4  # Max distance if lengths differ
 
     val1 = int(hash1, 16)
     val2 = int(hash2, 16)

@@ -30,6 +30,7 @@ dependencies = [
     "click>=8.1.0",
     "github-copilot-sdk>=0.1.18",
     "Pillow>=10.0.0",
+    "imagehash>=4.3.0",
     "filetype>=1.2.0",
     "rich>=13.0.0",
 ]
