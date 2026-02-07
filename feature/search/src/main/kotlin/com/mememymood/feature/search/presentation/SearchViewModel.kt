@@ -6,6 +6,7 @@ import com.mememymood.core.common.di.DefaultDispatcher
 import com.mememymood.core.common.suggestion.GetSuggestionsUseCase
 import com.mememymood.core.common.suggestion.Surface
 import com.mememymood.core.common.suggestion.SuggestionContext
+import com.mememymood.core.common.util.normalizeEmoji
 import com.mememymood.core.model.MatchType
 import com.mememymood.core.model.SearchResult
 import com.mememymood.core.datastore.PreferencesDataStore
@@ -111,7 +112,8 @@ class SearchViewModel @Inject constructor(
         viewModelScope.launch {
             searchUseCases.getRecentSearches()
                 .collectLatest { searches ->
-                    _uiState.update { it.copy(recentSearches = searches) }
+                    val filtered = searches.filterNot { it.isInternalQuerySyntax() }
+                    _uiState.update { it.copy(recentSearches = filtered) }
                 }
         }
     }
@@ -286,20 +288,22 @@ class SearchViewModel @Inject constructor(
     private fun applyFilters(results: List<com.mememymood.core.model.SearchResult>): List<com.mememymood.core.model.SearchResult> {
         var filtered = results
         
-        // Apply emoji filters
+        // Apply emoji filters with normalization for variation selector tolerance
         val emojiFilters = _uiState.value.selectedEmojiFilters
         if (emojiFilters.isNotEmpty()) {
+            val normalizedFilters = emojiFilters.map { normalizeEmoji(it) }.toSet()
             filtered = filtered.filter { result ->
-                val memeEmojis = result.meme.emojiTags.map { it.emoji }
-                emojiFilters.any { it in memeEmojis }
+                val normalizedMemeEmojis = result.meme.emojiTags.map { normalizeEmoji(it.emoji) }
+                normalizedFilters.any { it in normalizedMemeEmojis }
             }
         }
         
         // Apply quick filter emoji if present
         val quickFilter = _uiState.value.selectedQuickFilter
         if (quickFilter?.emojiFilter != null) {
+            val normalizedFilterEmoji = normalizeEmoji(quickFilter.emojiFilter)
             filtered = filtered.filter { result ->
-                result.meme.emojiTags.any { it.emoji == quickFilter.emojiFilter }
+                result.meme.emojiTags.any { normalizeEmoji(it.emoji) == normalizedFilterEmoji }
             }
         }
         
@@ -319,9 +323,10 @@ class SearchViewModel @Inject constructor(
         val filters = _uiState.value.selectedEmojiFilters
         if (filters.isEmpty()) return results
 
+        val normalizedFilters = filters.map { normalizeEmoji(it) }.toSet()
         return results.filter { result ->
-            val memeEmojis = result.meme.emojiTags.map { it.emoji }
-            filters.any { it in memeEmojis }
+            val normalizedMemeEmojis = result.meme.emojiTags.map { normalizeEmoji(it.emoji) }
+            normalizedFilters.any { it in normalizedMemeEmojis }
         }
     }
 
@@ -386,12 +391,13 @@ class SearchViewModel @Inject constructor(
     }
 
     private fun toggleEmojiFilter(emoji: String) {
+        val normalized = normalizeEmoji(emoji)
         _uiState.update { state ->
             val currentFilters = state.selectedEmojiFilters
-            val newFilters = if (emoji in currentFilters) {
-                currentFilters - emoji
+            val newFilters = if (normalized in currentFilters) {
+                currentFilters - normalized
             } else {
-                currentFilters + emoji
+                currentFilters + normalized
             }
             state.copy(selectedEmojiFilters = newFilters)
         }
@@ -492,29 +498,24 @@ class SearchViewModel @Inject constructor(
             }
         }
         
-        // If filter has a query, use it
+        // If filter has a query, search directly without updating the display query
         if (filter.query != null) {
-            updateQuery(filter.query)
-            performSearch()
+            performSearchInternal(filter.query)
         } else if (_uiState.value.query.isNotBlank()) {
             performSearchInternal(_uiState.value.query)
         }
     }
     
     private fun clearQuickFilter() {
-        val filter = _uiState.value.selectedQuickFilter
         _uiState.update {
             it.copy(
                 selectedQuickFilter = null,
-                // Clear query if it was set by the quick filter
-                query = if (filter?.query != null && it.query == filter.query) "" else it.query,
-                results = if (filter?.query != null && it.query == filter.query) emptyList() else it.results,
-                hasSearched = if (filter?.query != null && it.query == filter.query) false else it.hasSearched,
+                results = emptyList(),
+                hasSearched = false,
             )
         }
-        if (filter?.query != null && _uiState.value.query.isBlank()) {
-            queryFlow.value = ""
-        } else if (_uiState.value.query.isNotBlank() && _uiState.value.hasSearched) {
+        // Re-search with existing user query if present
+        if (_uiState.value.query.isNotBlank()) {
             performSearchInternal(_uiState.value.query)
         }
     }
@@ -583,5 +584,11 @@ class SearchViewModel @Inject constructor(
 
     companion object {
         private const val SEARCH_DEBOUNCE_MS = 300L
+
+        /** Matches internal query syntax that should never be shown to users. */
+        private val INTERNAL_QUERY_REGEX = Regex("^(is|type):", RegexOption.IGNORE_CASE)
+
+        fun String.isInternalQuerySyntax(): Boolean =
+            INTERNAL_QUERY_REGEX.containsMatchIn(this.trim())
     }
 }

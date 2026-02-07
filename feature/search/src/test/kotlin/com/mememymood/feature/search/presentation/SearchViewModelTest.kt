@@ -517,7 +517,7 @@ class SearchViewModelTest {
     }
 
     @Test
-    fun `SelectQuickFilter with query updates query and searches`() = runTest {
+    fun `SelectQuickFilter with query searches without updating display query`() = runTest {
         viewModel = createViewModel()
         advanceUntilIdle()
 
@@ -525,7 +525,11 @@ class SearchViewModelTest {
         viewModel.onIntent(SearchIntent.SelectQuickFilter(favoritesFilter))
         advanceUntilIdle()
 
-        assertThat(viewModel.uiState.value.query).isEqualTo("is:favorite")
+        // Display query must remain empty — internal syntax should never leak to UI
+        assertThat(viewModel.uiState.value.query).isEmpty()
+        // But the filter is selected and search results are present
+        assertThat(viewModel.uiState.value.selectedQuickFilter).isEqualTo(favoritesFilter)
+        assertThat(viewModel.uiState.value.hasSearched).isTrue()
     }
 
     @Test
@@ -1091,6 +1095,69 @@ class SearchViewModelTest {
         advanceUntilIdle()
 
         assertThat(viewModel.uiState.value.activeFilterCount).isEqualTo(1)
+    }
+
+    // endregion
+
+    // region Regression: Quick Filter Display Query Leak
+
+    @Test
+    fun `selectQuickFilter Favorites does not set display query to is favorite`() = runTest {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        val favoritesFilter = QuickFilter.defaultFilters().find { it.id == "favorites" }!!
+        viewModel.onIntent(SearchIntent.SelectQuickFilter(favoritesFilter))
+        advanceUntilIdle()
+
+        // The SearchBar query must remain empty — "is:favorite" must not leak to UI
+        assertThat(viewModel.uiState.value.query).isEmpty()
+        // But search must still execute via the quick filter
+        assertThat(viewModel.uiState.value.hasSearched).isTrue()
+        assertThat(viewModel.uiState.value.results).isNotEmpty()
+    }
+
+    // endregion
+
+    // region Regression: Internal Syntax in Recent Searches
+
+    @Test
+    fun `recent searches filter out entries with is prefix`() = runTest {
+        val searchesWithInternal = listOf("funny", "is:favorite", "cat", "type:reaction", "is:recent")
+        every { searchUseCases.getRecentSearches() } returns flowOf(searchesWithInternal)
+
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        val recentSearches = viewModel.uiState.value.recentSearches
+        assertThat(recentSearches).containsExactly("funny", "cat")
+        assertThat(recentSearches).doesNotContain("is:favorite")
+        assertThat(recentSearches).doesNotContain("type:reaction")
+        assertThat(recentSearches).doesNotContain("is:recent")
+    }
+
+    // endregion
+
+    // region Regression: Emoji Unicode Normalization
+
+    @Test
+    fun `emoji filter matches heart with and without variation selector`() = runTest {
+        // Meme has ❤ (U+2764 without variation selector)
+        val heartMeme = createTestMeme(1, "heart.jpg", emojiTags = listOf(EmojiTag.fromEmoji("❤")))
+        val otherMeme = createTestMeme(2, "other.jpg", emojiTags = listOf(EmojiTag.fromEmoji("😀")))
+        val allMemes = listOf(heartMeme, otherMeme)
+        every { searchUseCases.getAllMemes() } returns flowOf(allMemes)
+
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        // Toggle filter with ❤️ (U+2764 U+FE0F — with variation selector)
+        viewModel.onIntent(SearchIntent.ToggleEmojiFilter("❤️"))
+        advanceUntilIdle()
+
+        val results = viewModel.uiState.value.results
+        assertThat(results).hasSize(1)
+        assertThat(results.first().meme.id).isEqualTo(1L)
     }
 
     // endregion
