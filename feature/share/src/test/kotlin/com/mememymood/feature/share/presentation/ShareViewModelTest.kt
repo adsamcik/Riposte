@@ -97,6 +97,7 @@ class ShareViewModelTest {
             shareUseCases = shareUseCases,
             imageProcessor = imageProcessor,
             bitmapLoader = bitmapLoader,
+            userActionTracker = mockk(relaxed = true),
         )
     }
 

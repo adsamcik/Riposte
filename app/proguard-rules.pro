@@ -121,3 +121,10 @@
 
 -keepattributes SourceFile,LineNumberTable
 -renamesourcefileattribute SourceFile
+
+# ============================================================
+# GOOGLE PLAY IN-APP REVIEW
+# ============================================================
+
+-keep class com.google.android.play.core.review.** { *; }
+-keep class com.google.android.play.core.tasks.** { *; }

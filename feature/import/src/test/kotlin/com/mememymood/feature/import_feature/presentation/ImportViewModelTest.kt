@@ -52,6 +52,7 @@ class ImportViewModelTest {
             suggestEmojisUseCase = suggestEmojisUseCase,
             extractTextUseCase = extractTextUseCase,
             importZipBundleStreamingUseCase = importZipBundleStreamingUseCase,
+            userActionTracker = mockk(relaxed = true),
         )
     }
 

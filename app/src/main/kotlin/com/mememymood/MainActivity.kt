@@ -11,7 +11,9 @@ import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.mememymood.core.ui.theme.MemeMoodTheme
 import com.mememymood.navigation.MemeMoodNavHost
+import com.mememymood.review.InAppReviewManager
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 /**
  * Main Activity for Meme My Mood.
@@ -20,12 +22,17 @@ import dagger.hilt.android.AndroidEntryPoint
  */
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
-    
+
+    @Inject
+    lateinit var inAppReviewManager: InAppReviewManager
+
     override fun onCreate(savedInstanceState: Bundle?) {
         // Install splash screen before super.onCreate()
         installSplashScreen()
         
         super.onCreate(savedInstanceState)
+
+        inAppReviewManager.trackAppOpen()
         
         // Enable edge-to-edge display
         enableEdgeToEdge()
@@ -40,5 +47,10 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        inAppReviewManager.requestReviewIfReady(this)
     }
 }

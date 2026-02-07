@@ -19,7 +19,7 @@ android {
         minSdk = 30
         targetSdk = 36
         versionCode = 1
-        versionName = "1.0.0"
+        versionName = "0.1.0"
 
         testInstrumentationRunner = "com.mememymood.core.testing.HiltTestRunner"
         
@@ -230,6 +230,9 @@ dependencies {
     // Coroutines
     implementation(libs.coroutines.core)
     implementation(libs.coroutines.android)
+
+    // Google Play In-App Review
+    implementation(libs.play.review.ktx)
 
     // Profile Installer for baseline profiles
     implementation(libs.profile.installer)

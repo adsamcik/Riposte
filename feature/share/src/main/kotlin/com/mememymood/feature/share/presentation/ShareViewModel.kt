@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mememymood.core.common.review.UserActionTracker
 import com.mememymood.core.model.ImageFormat
 import com.mememymood.core.model.ShareConfig
 import com.mememymood.feature.share.R
@@ -28,6 +29,7 @@ class ShareViewModel @Inject constructor(
     private val shareUseCases: ShareUseCases,
     private val imageProcessor: ImageProcessor,
     private val bitmapLoader: BitmapLoader,
+    private val userActionTracker: UserActionTracker,
 ) : ViewModel() {
 
     private val memeId: Long = savedStateHandle.get<Long>("memeId") ?: -1L
@@ -164,6 +166,7 @@ class ShareViewModel @Inject constructor(
                             ImageFormat.GIF -> "image/gif"
                         }
                         val intent = shareUseCases.createShareIntent(uri, mimeType)
+                        userActionTracker.trackPositiveAction()
                         _effects.send(ShareEffect.LaunchShareIntent(intent))
                     },
                     onFailure = { error ->

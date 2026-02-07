@@ -4,10 +4,12 @@ import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mememymood.core.common.review.UserActionTracker
 import com.mememymood.core.model.EmojiTag
 import com.mememymood.feature.gallery.R
 import com.mememymood.feature.gallery.domain.usecase.DeleteMemesUseCase
 import com.mememymood.feature.gallery.domain.usecase.GetMemeByIdUseCase
+import com.mememymood.feature.gallery.domain.usecase.RecordMemeViewUseCase
 import com.mememymood.feature.gallery.domain.usecase.ToggleFavoriteUseCase
 import com.mememymood.feature.gallery.domain.usecase.UpdateMemeUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -29,6 +31,8 @@ class MemeDetailViewModel @Inject constructor(
     private val updateMemeUseCase: UpdateMemeUseCase,
     private val deleteMemeUseCase: DeleteMemesUseCase,
     private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
+    private val recordMemeViewUseCase: RecordMemeViewUseCase,
+    private val userActionTracker: UserActionTracker,
 ) : ViewModel() {
 
     private val memeId: Long = savedStateHandle.get<Long>("memeId") ?: -1L
@@ -93,6 +97,8 @@ class MemeDetailViewModel @Inject constructor(
                             errorMessage = null,
                         )
                     }
+                    // Record view (fire-and-forget, don't block UI)
+                    launch { recordMemeViewUseCase(memeId) }
                 } else {
                     _uiState.update { it.copy(isLoading = false, errorMessage = context.getString(R.string.gallery_error_meme_not_found)) }
                 }
@@ -155,6 +161,7 @@ class MemeDetailViewModel @Inject constructor(
                     val meme = getMemeByIdUseCase(memeId)
                     if (meme != null) {
                         _uiState.update { it.copy(meme = meme) }
+                        if (meme.isFavorite) userActionTracker.trackPositiveAction()
                         _effects.send(
                             MemeDetailEffect.ShowSnackbar(
                                 if (meme.isFavorite) context.getString(R.string.gallery_snackbar_added_to_favorites) 

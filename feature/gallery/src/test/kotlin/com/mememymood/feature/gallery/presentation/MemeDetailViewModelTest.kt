@@ -8,6 +8,7 @@ import com.mememymood.core.model.EmojiTag
 import com.mememymood.core.model.Meme
 import com.mememymood.feature.gallery.domain.usecase.DeleteMemesUseCase
 import com.mememymood.feature.gallery.domain.usecase.GetMemeByIdUseCase
+import com.mememymood.feature.gallery.domain.usecase.RecordMemeViewUseCase
 import com.mememymood.feature.gallery.domain.usecase.ToggleFavoriteUseCase
 import com.mememymood.feature.gallery.domain.usecase.UpdateMemeUseCase
 import com.mememymood.feature.gallery.R
@@ -41,6 +42,7 @@ class MemeDetailViewModelTest {
     private lateinit var updateMemeUseCase: UpdateMemeUseCase
     private lateinit var deleteMemeUseCase: DeleteMemesUseCase
     private lateinit var toggleFavoriteUseCase: ToggleFavoriteUseCase
+    private lateinit var recordMemeViewUseCase: RecordMemeViewUseCase
     private lateinit var context: Context
     private lateinit var viewModel: MemeDetailViewModel
 
@@ -72,6 +74,7 @@ class MemeDetailViewModelTest {
         updateMemeUseCase = mockk()
         deleteMemeUseCase = mockk()
         toggleFavoriteUseCase = mockk()
+        recordMemeViewUseCase = mockk(relaxUnitFun = true)
 
         // Default mock setup
         coEvery { getMemeByIdUseCase(1L) } returns testMeme
@@ -90,6 +93,8 @@ class MemeDetailViewModelTest {
             updateMemeUseCase = updateMemeUseCase,
             deleteMemeUseCase = deleteMemeUseCase,
             toggleFavoriteUseCase = toggleFavoriteUseCase,
+            recordMemeViewUseCase = recordMemeViewUseCase,
+            userActionTracker = mockk(relaxed = true),
         )
     }
 
@@ -145,6 +150,26 @@ class MemeDetailViewModelTest {
         assertThat(state.editedTitle).isEqualTo(testMeme.title)
         assertThat(state.editedDescription).isEqualTo(testMeme.description)
         assertThat(state.editedEmojis).containsExactly("😀")
+    }
+
+    @Test
+    fun `loadMeme records view after successful load`() = runTest {
+        coEvery { getMemeByIdUseCase(1L) } returns testMeme
+
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        coVerify { recordMemeViewUseCase(1L) }
+    }
+
+    @Test
+    fun `loadMeme does not record view when meme not found`() = runTest {
+        coEvery { getMemeByIdUseCase(1L) } returns null
+
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) { recordMemeViewUseCase(any()) }
     }
 
     // endregion

@@ -3,6 +3,7 @@ package com.mememymood.feature.import_feature.presentation
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mememymood.core.common.review.UserActionTracker
 import com.mememymood.core.model.MemeMetadata
 import com.mememymood.feature.import_feature.R
 import com.mememymood.feature.import_feature.domain.usecase.ExtractTextUseCase
@@ -29,6 +30,7 @@ class ImportViewModel @Inject constructor(
     private val suggestEmojisUseCase: SuggestEmojisUseCase,
     private val extractTextUseCase: ExtractTextUseCase,
     private val importZipBundleStreamingUseCase: ImportZipBundleStreamingUseCase,
+    private val userActionTracker: UserActionTracker,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ImportUiState())
@@ -133,6 +135,7 @@ class ImportViewModel @Inject constructor(
 
                         val result = event.result
                         if (result.successCount > 0) {
+                            userActionTracker.trackPositiveAction()
                             _effects.send(ImportEffect.ImportComplete(result.successCount))
                             if (result.failureCount > 0) {
                                 _effects.send(
@@ -294,6 +297,7 @@ class ImportViewModel @Inject constructor(
             _uiState.update { it.copy(isImporting = false) }
 
             if (successCount > 0) {
+                userActionTracker.trackPositiveAction()
                 _effects.send(ImportEffect.ImportComplete(successCount))
                 _effects.send(ImportEffect.NavigateToGallery)
             } else {
