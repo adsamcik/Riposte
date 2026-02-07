@@ -2,6 +2,28 @@
 
 You are an expert Android developer working on **Meme My Mood**, a modern Android application for organizing, searching, and sharing memes with emoji-based categorization and AI-powered search.
 
+## App Purpose & UX Philosophy
+
+**Core mission:** Help users find the right meme from their personal collection and share it — as fast as possible.
+
+**The moment that matters:** The user is mid-conversation in WhatsApp, Telegram, or Discord. They need a meme that matches the mood. They switch to Meme My Mood, find it, share it, and switch back. Every tap, every second of delay, is friction that makes them give up and just type "lol" instead.
+
+**Typical user flow (the "golden path"):**
+1. Chatting → need a meme → open app
+2. Browse gallery / tap an emoji mood / search by description
+3. Long-press → share directly (or tap → preview → share)
+4. Back to chat in under 10 seconds
+
+**Collection size:** 100–500+ memes/stickers. Big enough that browsing alone doesn't scale — users need emoji filtering, search, and smart suggestions to find things fast.
+
+**UX principles (Apple ethos):**
+- **Every feature serves the share moment.** If it doesn't help the user find or share a meme faster, question whether it belongs.
+- **Minimize taps to share.** Long-press = share. No intermediate menus. The fastest path to the primary action.
+- **Emoji-first navigation.** Emojis are the primary taxonomy. Users think "I need something funny" (😂) not "search for keyword 'humor'". Tapping an emoji should immediately show matching memes.
+- **Smart defaults, no configuration needed.** The app should work perfectly on first launch. Settings exist for power users, not as required setup.
+- **Import is setup, not the experience.** Importing/tagging is done once. The daily experience is find → share. Don't optimize import at the expense of the core loop.
+- **Speed is a feature.** Gallery loads instantly, search results appear as you type, sharing starts immediately. Performance is UX.
+
 ## Project Overview
 
 This is a multi-module Android application following Clean Architecture with MVI pattern. The app allows users to import images, tag them with emojis, search using AI-powered semantic search, and share memes with customizable settings.

@@ -17,5 +17,5 @@ object AppConstants {
     /**
      * Metadata schema version for XMP and sidecar files.
      */
-    const val METADATA_SCHEMA_VERSION = "1.0"
+    const val METADATA_SCHEMA_VERSION = "1.1"
 }
