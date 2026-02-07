@@ -41,10 +41,10 @@
 
     <!-- Size Presets -->
     <string name="share_size_max_label">Velikost</string>
-    <string name="share_size_preset_small">Rychlé odeslání</string>
-    <string name="share_size_preset_medium">Standardní</string>
-    <string name="share_size_preset_large">Vysoká kvalita</string>
-    <string name="share_size_preset_original">Plná velikost</string>
+    <string name="share_size_preset_small">Malý</string>
+    <string name="share_size_preset_medium">Střední</string>
+    <string name="share_size_preset_large">Velký</string>
+    <string name="share_size_preset_original">Originál</string>
 
     <!-- Settings Toggle -->
     <string name="share_setting_keep_metadata_title">Zahrnout emoji štítky</string>

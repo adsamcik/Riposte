@@ -406,7 +406,7 @@ private fun FileSizeBanner(
             text = message,
             style = MaterialTheme.typography.bodyMedium,
             color = messageColor,
-            modifier = modifier.padding(horizontal = 4.dp),
+            modifier = modifier.padding(horizontal = 16.dp),
         )
     }
 }
@@ -579,7 +579,7 @@ private fun SettingToggle(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp)
+            .padding(vertical = 12.dp)
             .semantics(mergeDescendants = true) {
                 role = Role.Switch
                 stateDescription = stateText

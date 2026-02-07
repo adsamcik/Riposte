@@ -41,10 +41,10 @@
 
     <!-- Size Presets -->
     <string name="share_size_max_label">Size</string>
-    <string name="share_size_preset_small">Quick Send</string>
-    <string name="share_size_preset_medium">Standard</string>
-    <string name="share_size_preset_large">High Quality</string>
-    <string name="share_size_preset_original">Full Size</string>
+    <string name="share_size_preset_small">Small</string>
+    <string name="share_size_preset_medium">Medium</string>
+    <string name="share_size_preset_large">Large</string>
+    <string name="share_size_preset_original">Original</string>
 
     <!-- Settings Toggle -->
     <string name="share_setting_keep_metadata_title">Include emoji tags</string>
