@@ -36,6 +36,12 @@ interface MemeDao {
     suspend fun getMemeById(id: Long): MemeEntity?
 
     /**
+     * Get multiple memes by IDs in a single query.
+     */
+    @Query("SELECT * FROM memes WHERE id IN (:ids)")
+    suspend fun getMemesByIds(ids: List<Long>): List<MemeEntity>
+
+    /**
      * Get a single meme by ID as a Flow for observation.
      */
     @Query("SELECT * FROM memes WHERE id = :id")
@@ -154,6 +160,24 @@ interface MemeDao {
      */
     @Query("SELECT * FROM memes ORDER BY importedAt DESC")
     fun getAllMemesPaged(): PagingSource<Int, MemeEntity>
+
+    /**
+     * Get all memes as a PagingSource sorted by most used first.
+     */
+    @Query("SELECT * FROM memes ORDER BY useCount DESC, importedAt DESC")
+    fun getAllMemesPagedByMostUsed(): PagingSource<Int, MemeEntity>
+
+    /**
+     * Get all memes as a PagingSource sorted by primary emoji tag.
+     */
+    @Query(
+        """
+        SELECT m.* FROM memes m
+        LEFT JOIN (SELECT memeId, MIN(emoji) as primaryEmoji FROM emoji_tags GROUP BY memeId) e ON m.id = e.memeId
+        ORDER BY COALESCE(e.primaryEmoji, 'zzz') ASC, m.importedAt DESC
+        """,
+    )
+    fun getAllMemesPagedByEmoji(): PagingSource<Int, MemeEntity>
 
     /**
      * Get all meme IDs for bulk operations (e.g., select all).

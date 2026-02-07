@@ -40,14 +40,20 @@ class GalleryRepositoryImpl @Inject constructor(
             .flowOn(ioDispatcher)
     }
 
-    override fun getPagedMemes(): Flow<PagingData<Meme>> {
+    override fun getPagedMemes(sortBy: String): Flow<PagingData<Meme>> {
         return Pager(
             config = PagingConfig(
                 pageSize = PAGE_SIZE,
                 prefetchDistance = PREFETCH_DISTANCE,
                 enablePlaceholders = false,
             ),
-            pagingSourceFactory = { memeDao.getAllMemesPaged() }
+            pagingSourceFactory = {
+                when (sortBy) {
+                    "most_used" -> memeDao.getAllMemesPagedByMostUsed()
+                    "emoji" -> memeDao.getAllMemesPagedByEmoji()
+                    else -> memeDao.getAllMemesPaged()
+                }
+            },
         ).flow.map { pagingData ->
             pagingData.map { it.toDomain() }
         }.flowOn(ioDispatcher)

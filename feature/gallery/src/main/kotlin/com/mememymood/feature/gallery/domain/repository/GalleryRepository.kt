@@ -16,8 +16,9 @@ interface GalleryRepository {
 
     /**
      * Get all memes as paged data for large collections.
+     * @param sortBy Sort key: "recent" (default), "most_used", or "emoji".
      */
-    fun getPagedMemes(): Flow<PagingData<Meme>>
+    fun getPagedMemes(sortBy: String = "recent"): Flow<PagingData<Meme>>
 
     /**
      * Get favorite memes.

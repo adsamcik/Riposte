@@ -29,7 +29,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -58,9 +61,20 @@ class GalleryViewModel @Inject constructor(
 
     /**
      * Paged memes flow for the "All" filter.
-     * Only active when usePaging is true in UI state.
+     * Reacts to sort option changes and re-queries the database accordingly.
      */
-    val pagedMemes: Flow<PagingData<Meme>> = getPagedMemesUseCase(viewModelScope)
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    val pagedMemes: Flow<PagingData<Meme>> = _uiState
+        .map { it.sortOption }
+        .distinctUntilChanged()
+        .flatMapLatest { sortOption ->
+            val sortBy = when (sortOption) {
+                SortOption.Recent -> "recent"
+                SortOption.MostUsed -> "most_used"
+                SortOption.EmojiGroup -> "emoji"
+            }
+            getPagedMemesUseCase(viewModelScope, sortBy)
+        }
 
     private val _effects = Channel<GalleryEffect>(Channel.BUFFERED)
     val effects = _effects.receiveAsFlow()

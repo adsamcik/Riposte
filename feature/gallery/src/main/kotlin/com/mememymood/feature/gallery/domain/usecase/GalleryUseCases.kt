@@ -28,9 +28,10 @@ class GetPagedMemesUseCase @Inject constructor(
     /**
      * Returns a Flow of PagingData for efficient pagination.
      * @param scope CoroutineScope to cache the paging data in (typically viewModelScope)
+     * @param sortBy Sort key: "recent" (default), "most_used", or "emoji".
      */
-    operator fun invoke(scope: CoroutineScope): Flow<PagingData<Meme>> =
-        repository.getPagedMemes().cachedIn(scope)
+    operator fun invoke(scope: CoroutineScope, sortBy: String = "recent"): Flow<PagingData<Meme>> =
+        repository.getPagedMemes(sortBy).cachedIn(scope)
 }
 
 /**

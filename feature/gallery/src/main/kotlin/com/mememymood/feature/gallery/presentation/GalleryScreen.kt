@@ -277,7 +277,7 @@ private fun GalleryScreenContent(
                             when (uiState.filter) {
                                 is GalleryFilter.Favorites -> stringResource(R.string.gallery_title_favorites)
                                 is GalleryFilter.ByEmoji -> uiState.filter.emoji
-                                is GalleryFilter.All -> stringResource(R.string.gallery_title)
+                                is GalleryFilter.All -> ""
                             }
                         }
                     )
