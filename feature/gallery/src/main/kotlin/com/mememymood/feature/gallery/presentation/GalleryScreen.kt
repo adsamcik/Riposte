@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -36,6 +37,7 @@ import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -533,6 +535,40 @@ private fun GalleryScreenContent(
                                             memeDescription = memeDescription,
                                             onIntent = onIntent,
                                         )
+                                    }
+                                }
+
+                                // Paging append loading indicator
+                                if (loadState.append is LoadState.Loading) {
+                                    item(
+                                        span = { GridItemSpan(maxLineSpan) },
+                                        key = "append_loading",
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(16.dp),
+                                            contentAlignment = Alignment.Center,
+                                        ) {
+                                            CircularProgressIndicator(
+                                                modifier = Modifier.size(32.dp),
+                                            )
+                                        }
+                                    }
+                                }
+
+                                // Paging append error with retry
+                                if (loadState.append is LoadState.Error) {
+                                    item(
+                                        span = { GridItemSpan(maxLineSpan) },
+                                        key = "append_error",
+                                    ) {
+                                        TextButton(
+                                            onClick = { pagedMemes.retry() },
+                                            modifier = Modifier.fillMaxWidth(),
+                                        ) {
+                                            Text(stringResource(R.string.gallery_action_retry))
+                                        }
                                     }
                                 }
                             }

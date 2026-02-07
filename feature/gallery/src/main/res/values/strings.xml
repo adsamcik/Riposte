@@ -63,6 +63,7 @@
 
     <!-- Error State -->
     <string name="gallery_error_default">Error</string>
+    <string name="gallery_action_retry">Retry</string>
 
     <!-- Share -->
     <string name="gallery_share_chooser_title">Share Meme</string>
