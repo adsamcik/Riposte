@@ -18,4 +18,6 @@ sealed interface MemeDetailIntent {
     data object ShowEmojiPicker : MemeDetailIntent
     data object DismissEmojiPicker : MemeDetailIntent
     data object Dismiss : MemeDetailIntent
+    data object LoadSimilarMemes : MemeDetailIntent
+    data class NavigateToSimilarMeme(val memeId: Long) : MemeDetailIntent
 }

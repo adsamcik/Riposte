@@ -39,12 +39,14 @@ fun NavGraphBuilder.galleryScreen(
 fun NavGraphBuilder.memeDetailScreen(
     onNavigateBack: () -> Unit,
     onNavigateToShare: (Long) -> Unit = {},
+    onNavigateToMeme: (Long) -> Unit = {},
 ) {
     composable<MemeDetailRoute> { backStackEntry ->
         val route = backStackEntry.toRoute<MemeDetailRoute>()
         MemeDetailScreen(
             onNavigateBack = onNavigateBack,
             onNavigateToShare = onNavigateToShare,
+            onNavigateToMeme = onNavigateToMeme,
         )
     }
 }

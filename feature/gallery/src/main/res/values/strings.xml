@@ -94,6 +94,11 @@
     <string name="gallery_detail_action_favorite">Favorite</string>
     <string name="gallery_detail_action_delete">Delete</string>
 
+    <!-- Similar Memes Section -->
+    <string name="gallery_detail_section_similar">More Like This</string>
+    <string name="gallery_detail_similar_empty">No similar memes found</string>
+    <string name="gallery_cd_similar_meme">Similar meme: %s</string>
+
     <!-- Details Section -->
     <string name="gallery_detail_section_details">Details</string>
     <string name="gallery_detail_dimensions">Dimensions</string>

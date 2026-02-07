@@ -13,6 +13,8 @@ data class MemeDetailUiState(
     val showEmojiPicker: Boolean = false,
     val isSaving: Boolean = false,
     val errorMessage: String? = null,
+    val similarMemes: List<Meme> = emptyList(),
+    val isLoadingSimilar: Boolean = false,
 ) {
     val hasUnsavedChanges: Boolean
         get() = meme?.let { original ->

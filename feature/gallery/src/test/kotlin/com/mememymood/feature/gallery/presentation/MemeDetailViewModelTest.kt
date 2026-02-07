@@ -8,6 +8,7 @@ import com.mememymood.core.model.EmojiTag
 import com.mememymood.core.model.Meme
 import com.mememymood.feature.gallery.domain.usecase.DeleteMemesUseCase
 import com.mememymood.feature.gallery.domain.usecase.GetMemeByIdUseCase
+import com.mememymood.feature.gallery.domain.usecase.GetSimilarMemesUseCase
 import com.mememymood.feature.gallery.domain.usecase.RecordMemeViewUseCase
 import com.mememymood.feature.gallery.domain.usecase.ToggleFavoriteUseCase
 import com.mememymood.feature.gallery.domain.usecase.UpdateMemeUseCase
@@ -43,6 +44,7 @@ class MemeDetailViewModelTest {
     private lateinit var deleteMemeUseCase: DeleteMemesUseCase
     private lateinit var toggleFavoriteUseCase: ToggleFavoriteUseCase
     private lateinit var recordMemeViewUseCase: RecordMemeViewUseCase
+    private lateinit var getSimilarMemesUseCase: GetSimilarMemesUseCase
     private lateinit var context: Context
     private lateinit var viewModel: MemeDetailViewModel
 
@@ -75,9 +77,11 @@ class MemeDetailViewModelTest {
         deleteMemeUseCase = mockk()
         toggleFavoriteUseCase = mockk()
         recordMemeViewUseCase = mockk(relaxUnitFun = true)
+        getSimilarMemesUseCase = mockk()
 
         // Default mock setup
         coEvery { getMemeByIdUseCase(1L) } returns testMeme
+        coEvery { getSimilarMemesUseCase(any(), any()) } returns emptyList()
     }
 
     @After
@@ -94,6 +98,7 @@ class MemeDetailViewModelTest {
             deleteMemeUseCase = deleteMemeUseCase,
             toggleFavoriteUseCase = toggleFavoriteUseCase,
             recordMemeViewUseCase = recordMemeViewUseCase,
+            getSimilarMemesUseCase = getSimilarMemesUseCase,
             userActionTracker = mockk(relaxed = true),
         )
     }

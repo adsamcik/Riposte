@@ -29,6 +29,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -109,6 +111,7 @@ import java.time.format.FormatStyle
 fun MemeDetailScreen(
     onNavigateBack: () -> Unit,
     onNavigateToShare: (Long) -> Unit = {},
+    onNavigateToMeme: (Long) -> Unit = {},
     viewModel: MemeDetailViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -121,6 +124,7 @@ fun MemeDetailScreen(
             when (effect) {
                 is MemeDetailEffect.NavigateBack -> onNavigateBack()
                 is MemeDetailEffect.NavigateToShare -> onNavigateToShare(effect.memeId)
+                is MemeDetailEffect.NavigateToMeme -> onNavigateToMeme(effect.memeId)
                 is MemeDetailEffect.LaunchShareIntent -> {
                     context.startActivity(Intent.createChooser(effect.intent, "Share Meme"))
                 }
@@ -604,6 +608,13 @@ private fun MemeInfoSheet(
             // Collapsible Details section
             Spacer(Modifier.height(16.dp))
             MemeDetailsSection(meme = meme)
+
+            // Similar memes section
+            SimilarMemesSection(
+                similarMemes = uiState.similarMemes,
+                isLoading = uiState.isLoadingSimilar,
+                onMemeClick = { onIntent(MemeDetailIntent.NavigateToSimilarMeme(it)) },
+            )
         }
 
         Spacer(Modifier.height(32.dp))
@@ -622,6 +633,86 @@ private fun formatFileSize(bytes: Long): String {
         bytes >= 1024 * 1024 -> String.format("%.1f MB", bytes / (1024.0 * 1024.0))
         bytes >= 1024 -> String.format("%.1f KB", bytes / 1024.0)
         else -> "$bytes B"
+    }
+}
+
+@Composable
+private fun SimilarMemesSection(
+    similarMemes: List<com.mememymood.core.model.Meme>,
+    isLoading: Boolean,
+    onMemeClick: (Long) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    if (!isLoading && similarMemes.isEmpty()) return
+
+    Column(modifier = modifier.fillMaxWidth()) {
+        Spacer(Modifier.height(16.dp))
+        Text(
+            text = stringResource(R.string.gallery_detail_section_similar),
+            style = MaterialTheme.typography.labelMedium,
+            modifier = Modifier.padding(bottom = 8.dp),
+        )
+
+        if (isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(100.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                androidx.compose.material3.CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    strokeWidth = 2.dp,
+                )
+            }
+        } else {
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                items(
+                    items = similarMemes,
+                    key = { it.id },
+                ) { meme ->
+                    SimilarMemeCard(
+                        meme = meme,
+                        onClick = { onMemeClick(meme.id) },
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SimilarMemeCard(
+    meme: com.mememymood.core.model.Meme,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .width(100.dp)
+            .clip(MaterialTheme.shapes.medium)
+            .clickable(onClick = onClick),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        AsyncImage(
+            model = meme.filePath,
+            contentDescription = stringResource(R.string.gallery_cd_similar_meme, meme.title ?: meme.fileName),
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .size(100.dp)
+                .clip(MaterialTheme.shapes.medium),
+        )
+        meme.title?.let { title ->
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelSmall,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+        }
     }
 }
 

@@ -9,6 +9,7 @@ import com.mememymood.core.model.EmojiTag
 import com.mememymood.feature.gallery.R
 import com.mememymood.feature.gallery.domain.usecase.DeleteMemesUseCase
 import com.mememymood.feature.gallery.domain.usecase.GetMemeByIdUseCase
+import com.mememymood.feature.gallery.domain.usecase.GetSimilarMemesUseCase
 import com.mememymood.feature.gallery.domain.usecase.RecordMemeViewUseCase
 import com.mememymood.feature.gallery.domain.usecase.ToggleFavoriteUseCase
 import com.mememymood.feature.gallery.domain.usecase.UpdateMemeUseCase
@@ -32,6 +33,7 @@ class MemeDetailViewModel @Inject constructor(
     private val deleteMemeUseCase: DeleteMemesUseCase,
     private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
     private val recordMemeViewUseCase: RecordMemeViewUseCase,
+    private val getSimilarMemesUseCase: GetSimilarMemesUseCase,
     private val userActionTracker: UserActionTracker,
 ) : ViewModel() {
 
@@ -66,6 +68,8 @@ class MemeDetailViewModel @Inject constructor(
             is MemeDetailIntent.ShowEmojiPicker -> showEmojiPicker()
             is MemeDetailIntent.DismissEmojiPicker -> dismissEmojiPicker()
             is MemeDetailIntent.Dismiss -> dismiss()
+            is MemeDetailIntent.LoadSimilarMemes -> loadSimilarMemes()
+            is MemeDetailIntent.NavigateToSimilarMeme -> navigateToMeme(intent.memeId)
         }
     }
 
@@ -99,6 +103,8 @@ class MemeDetailViewModel @Inject constructor(
                     }
                     // Record view (fire-and-forget, don't block UI)
                     launch { recordMemeViewUseCase(memeId) }
+                    // Load similar memes in background
+                    launch { loadSimilarMemes() }
                 } else {
                     _uiState.update { it.copy(isLoading = false, errorMessage = context.getString(R.string.gallery_error_meme_not_found)) }
                 }
@@ -270,6 +276,24 @@ class MemeDetailViewModel @Inject constructor(
             } else {
                 _effects.send(MemeDetailEffect.NavigateBack)
             }
+        }
+    }
+
+    private fun loadSimilarMemes() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoadingSimilar = true) }
+            try {
+                val similar = getSimilarMemesUseCase(memeId)
+                _uiState.update { it.copy(similarMemes = similar, isLoadingSimilar = false) }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoadingSimilar = false) }
+            }
+        }
+    }
+
+    private fun navigateToMeme(memeId: Long) {
+        viewModelScope.launch {
+            _effects.send(MemeDetailEffect.NavigateToMeme(memeId))
         }
     }
 }

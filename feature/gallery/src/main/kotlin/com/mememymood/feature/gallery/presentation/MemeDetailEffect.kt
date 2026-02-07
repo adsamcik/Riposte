@@ -8,4 +8,5 @@ sealed interface MemeDetailEffect {
     data class LaunchShareIntent(val intent: Intent) : MemeDetailEffect
     data class ShowSnackbar(val message: String) : MemeDetailEffect
     data class ShowError(val message: String) : MemeDetailEffect
+    data class NavigateToMeme(val memeId: Long) : MemeDetailEffect
 }

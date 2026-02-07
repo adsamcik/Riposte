@@ -60,7 +60,10 @@ fun MemeMoodNavHost(
             },
             onNavigateToShare = { memeId ->
                 navController.navigateToShare(memeId)
-            }
+            },
+            onNavigateToMeme = { memeId ->
+                navController.navigateToMemeDetail(memeId)
+            },
         )
 
         // Share screen
