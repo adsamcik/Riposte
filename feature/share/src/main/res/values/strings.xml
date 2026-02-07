@@ -9,36 +9,51 @@
     <!-- Preview Section -->
     <string name="share_preview_original">Original</string>
     <string name="share_preview_processed">Processed</string>
+    <string name="share_preview_image">Meme preview</string>
 
     <!-- File Size Info -->
     <string name="share_size_estimated">Estimated Size</string>
     <string name="share_size_original">Original: %1$s</string>
     <string name="share_size_smaller">%1$d%% smaller</string>
+    <string name="share_size_quick_to_send">✓ Quick to send</string>
+    <string name="share_size_good_quality">Good quality</string>
+    <string name="share_size_large_file">Large file — may be slow to send</string>
+
+    <!-- Settings Section -->
+    <string name="share_settings_header">⚙️ Adjust settings</string>
+    <string name="share_settings_collapse">Collapse settings</string>
+    <string name="share_settings_expand">Expand settings</string>
 
     <!-- Format Selector -->
     <string name="share_format_label">Format</string>
     <string name="share_format_jpeg">JPEG</string>
     <string name="share_format_png">PNG</string>
     <string name="share_format_webp">WEBP</string>
+    <string name="share_format_jpeg_description">Standard (JPEG)</string>
+    <string name="share_format_png_description">Lossless (PNG)</string>
+    <string name="share_format_webp_description">Smallest (WebP)</string>
 
     <!-- Quality Slider -->
     <string name="share_quality_label">Quality</string>
     <string name="share_quality_percentage">%1$d%%</string>
+    <string name="share_quality_smaller_file">Smaller file</string>
+    <string name="share_quality_better_quality">Better quality</string>
 
     <!-- Size Presets -->
-    <string name="share_size_max_label">Max Size</string>
-    <string name="share_size_preset_small">Small</string>
-    <string name="share_size_preset_medium">Medium</string>
-    <string name="share_size_preset_large">Large</string>
-    <string name="share_size_preset_original">Original</string>
+    <string name="share_size_max_label">Size</string>
+    <string name="share_size_preset_small">Quick Send</string>
+    <string name="share_size_preset_medium">Standard</string>
+    <string name="share_size_preset_large">High Quality</string>
+    <string name="share_size_preset_original">Full Size</string>
 
     <!-- Settings Toggle -->
-    <string name="share_setting_keep_metadata_title">Keep Metadata</string>
-    <string name="share_setting_keep_metadata_description">Preserve emoji tags and other data</string>
+    <string name="share_setting_keep_metadata_title">Include emoji tags</string>
+    <string name="share_setting_keep_metadata_description">Attach emoji tags and meme info to the file</string>
 
     <!-- Action Buttons -->
     <string name="share_button_save">Save</string>
     <string name="share_button_share">Share</string>
+    <string name="share_button_save_to_gallery">or save to gallery</string>
 
     <!-- Content Descriptions -->
     <string name="share_content_description_original_image">Original</string>

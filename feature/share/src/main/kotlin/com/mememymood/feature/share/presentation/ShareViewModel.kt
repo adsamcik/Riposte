@@ -14,6 +14,8 @@ import com.mememymood.feature.share.domain.usecase.ShareUseCases
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,7 +26,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ShareViewModel @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     savedStateHandle: SavedStateHandle,
     private val shareUseCases: ShareUseCases,
     private val imageProcessor: ImageProcessor,
@@ -39,6 +41,8 @@ class ShareViewModel @Inject constructor(
 
     private val _effects = Channel<ShareEffect>(Channel.BUFFERED)
     val effects = _effects.receiveAsFlow()
+
+    private var previewUpdateJob: Job? = null
 
     init {
         loadMeme()
@@ -100,6 +104,12 @@ class ShareViewModel @Inject constructor(
             state.copy(config = transform(state.config))
         }
         updateEstimatedSize()
+        // Debounced preview refresh to avoid thrashing during slider drags
+        previewUpdateJob?.cancel()
+        previewUpdateJob = viewModelScope.launch {
+            delay(300)
+            updatePreview()
+        }
     }
 
     private fun updatePreview() {

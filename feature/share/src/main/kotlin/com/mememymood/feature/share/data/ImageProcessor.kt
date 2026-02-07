@@ -183,12 +183,7 @@ class ImageProcessor @Inject constructor(
                 val compressFormat = when (format) {
                     ImageFormat.JPEG -> Bitmap.CompressFormat.JPEG
                     ImageFormat.PNG -> Bitmap.CompressFormat.PNG
-                    ImageFormat.WEBP -> if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-                        Bitmap.CompressFormat.WEBP_LOSSY
-                    } else {
-                        @Suppress("DEPRECATION")
-                        Bitmap.CompressFormat.WEBP
-                    }
+                    ImageFormat.WEBP -> Bitmap.CompressFormat.WEBP_LOSSY
                     ImageFormat.GIF -> Bitmap.CompressFormat.PNG // GIF not directly supported
                 }
                 bitmap.compress(compressFormat, quality, out)

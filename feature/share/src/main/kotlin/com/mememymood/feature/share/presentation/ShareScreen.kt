@@ -1,42 +1,46 @@
 package com.mememymood.feature.share.presentation
 
+import android.content.res.Configuration
 import android.graphics.Bitmap
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
@@ -46,20 +50,23 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
@@ -67,6 +74,7 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import com.mememymood.feature.share.R
@@ -162,248 +170,279 @@ fun ShareScreen(
     }
 }
 
+/**
+ * Stateless ShareScreen for previews and testing.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun ShareScreen(
+    uiState: ShareUiState,
+    onIntent: (ShareIntent) -> Unit,
+    onNavigateBack: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Scaffold(
+        modifier = modifier,
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.share_title)) },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.share_navigation_back))
+                    }
+                },
+            )
+        },
+        contentWindowInsets = WindowInsets.safeDrawing,
+    ) { paddingValues ->
+        when {
+            uiState.isLoading -> {
+                LoadingScreen()
+            }
+
+            uiState.errorMessage != null -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues)
+                        .semantics { liveRegion = LiveRegionMode.Assertive },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    EmptyState(
+                        icon = "⚠️",
+                        title = stringResource(R.string.share_error_title),
+                        message = uiState.errorMessage ?: stringResource(R.string.share_error_generic),
+                    )
+                }
+            }
+
+            else -> {
+                ShareContent(
+                    uiState = uiState,
+                    onIntent = onIntent,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
+                )
+            }
+        }
+    }
+}
+
 @Composable
 private fun ShareContent(
     uiState: ShareUiState,
     onIntent: (ShareIntent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var settingsExpanded by remember { mutableStateOf(false) }
+
     Column(
         modifier = modifier
             .verticalScroll(rememberScrollState())
             .padding(16.dp),
     ) {
-        // Preview section
+        // Single centered preview
         PreviewSection(
-            originalBitmap = uiState.originalPreviewBitmap,
             processedBitmap = uiState.processedPreviewBitmap,
+            originalBitmap = uiState.originalPreviewBitmap,
             isProcessing = uiState.isProcessing,
         )
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(12.dp))
 
-        // File size info
-        FileSizeInfo(
-            originalSize = uiState.formattedOriginalSize,
-            estimatedSize = uiState.formattedEstimatedSize,
-            compressionRatio = uiState.compressionRatio,
-        )
-
-        Spacer(Modifier.height(24.dp))
-
-        // Format selector
-        FormatSelector(
-            selectedFormat = uiState.config.format,
-            onFormatChange = { onIntent(ShareIntent.SetFormat(it)) },
-        )
+        // Simplified file size banner
+        FileSizeBanner(estimatedFileSize = uiState.estimatedFileSize)
 
         Spacer(Modifier.height(16.dp))
 
-        // Quality slider
-        QualitySlider(
-            quality = uiState.config.quality,
-            onQualityChange = { onIntent(ShareIntent.SetQuality(it)) },
+        // Expandable settings header
+        SettingsHeader(
+            expanded = settingsExpanded,
+            onToggle = { settingsExpanded = !settingsExpanded },
         )
 
-        Spacer(Modifier.height(16.dp))
-
-        // Size presets
-        SizePresets(
-            selectedDimension = uiState.config.maxWidth ?: 1080,
-            onDimensionChange = { onIntent(ShareIntent.SetMaxDimension(it)) },
-        )
-
-        Spacer(Modifier.height(16.dp))
-
-        // Toggles
-        SettingToggle(
-            title = stringResource(R.string.share_setting_keep_metadata_title),
-            description = stringResource(R.string.share_setting_keep_metadata_description),
-            checked = !uiState.config.stripMetadata,
-            onCheckedChange = { onIntent(ShareIntent.SetStripMetadata(!it)) },
-        )
-
-        Spacer(Modifier.height(24.dp))
-
-        // Action buttons
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        // Collapsible settings section
+        AnimatedVisibility(
+            visible = settingsExpanded,
+            enter = expandVertically(),
+            exit = shrinkVertically(),
         ) {
-            FilledTonalButton(
-                onClick = { onIntent(ShareIntent.SaveToGallery) },
-                enabled = !uiState.isProcessing,
-                modifier = Modifier
-                    .weight(1f)
-                    .animatedPressScale(),
-            ) {
-                Icon(Icons.Default.Download, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.share_button_save))
-            }
+            Column {
+                Spacer(Modifier.height(16.dp))
 
-            Button(
-                onClick = { onIntent(ShareIntent.Share) },
-                enabled = !uiState.isProcessing,
-                modifier = Modifier
-                    .weight(1f)
-                    .animatedPressScale(),
-            ) {
-                Icon(Icons.Default.Share, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.share_button_share))
+                FormatSelector(
+                    selectedFormat = uiState.config.format,
+                    onFormatChange = { onIntent(ShareIntent.SetFormat(it)) },
+                )
+
+                Spacer(Modifier.height(16.dp))
+
+                QualitySlider(
+                    quality = uiState.config.quality,
+                    onQualityChange = { onIntent(ShareIntent.SetQuality(it)) },
+                )
+
+                Spacer(Modifier.height(16.dp))
+
+                SizePresets(
+                    selectedDimension = uiState.config.maxWidth ?: 1080,
+                    onDimensionChange = { onIntent(ShareIntent.SetMaxDimension(it)) },
+                )
+
+                Spacer(Modifier.height(16.dp))
+
+                SettingToggle(
+                    title = stringResource(R.string.share_setting_keep_metadata_title),
+                    description = stringResource(R.string.share_setting_keep_metadata_description),
+                    checked = !uiState.config.stripMetadata,
+                    onCheckedChange = { onIntent(ShareIntent.SetStripMetadata(!it)) },
+                )
             }
+        }
+
+        Spacer(Modifier.height(24.dp))
+
+        // Hero share button
+        val shareInteractionSource = remember { MutableInteractionSource() }
+        Button(
+            onClick = { onIntent(ShareIntent.Share) },
+            enabled = !uiState.isProcessing,
+            interactionSource = shareInteractionSource,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .animatedPressScale(shareInteractionSource),
+        ) {
+            Icon(Icons.Default.Share, contentDescription = null)
+            Spacer(Modifier.width(8.dp))
+            Text(
+                text = stringResource(R.string.share_button_share),
+                style = MaterialTheme.typography.titleMedium,
+            )
+        }
+
+        // Demoted save link
+        TextButton(
+            onClick = { onIntent(ShareIntent.SaveToGallery) },
+            enabled = !uiState.isProcessing,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(
+                text = stringResource(R.string.share_button_save_to_gallery),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
 
 @Composable
 private fun PreviewSection(
-    originalBitmap: Bitmap?,
     processedBitmap: Bitmap?,
+    originalBitmap: Bitmap?,
     isProcessing: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        // Original preview
-        Card(
-            modifier = Modifier.weight(1f),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant,
-            ),
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(8.dp),
-            ) {
-                Text(
-                    text = stringResource(R.string.share_preview_original),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.semantics { heading() },
-                )
-                Spacer(Modifier.height(4.dp))
-                Box(
-                    modifier = Modifier
-                        .aspectRatio(1f)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.surface),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    originalBitmap?.let { bitmap ->
-                        Image(
-                            bitmap = bitmap.asImageBitmap(),
-                            contentDescription = stringResource(R.string.share_content_description_original_image),
-                            contentScale = ContentScale.Fit,
-                            modifier = Modifier.fillMaxSize(),
-                        )
-                    }
-                }
-            }
-        }
+    val screenHeightDp = LocalConfiguration.current.screenHeightDp.dp
+    val maxPreviewHeight = screenHeightDp * 0.4f
 
-        // Processed preview
-        Card(
-            modifier = Modifier.weight(1f),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant,
-            ),
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(8.dp),
-            ) {
-                Text(
-                    text = stringResource(R.string.share_preview_processed),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.semantics { heading() },
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(max = maxPreviewHeight)
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant),
+        contentAlignment = Alignment.Center,
+    ) {
+        val displayBitmap = processedBitmap ?: originalBitmap
+        if (isProcessing) {
+            // Show original while processing, with a loading indicator overlay
+            displayBitmap?.let { bitmap ->
+                Image(
+                    bitmap = bitmap.asImageBitmap(),
+                    contentDescription = stringResource(R.string.share_preview_image),
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.fillMaxSize(),
                 )
-                Spacer(Modifier.height(4.dp))
-                Box(
-                    modifier = Modifier
-                        .aspectRatio(1f)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.surface)
-                        .then(
-                            if (isProcessing) {
-                                Modifier.border(
-                                    width = 2.dp,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    shape = RoundedCornerShape(8.dp),
-                                )
-                            } else Modifier
-                        ),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    if (isProcessing) {
-                        CircularProgressIndicator(modifier = Modifier.size(32.dp))
-                    } else {
-                        processedBitmap?.let { bitmap ->
-                            Image(
-                                bitmap = bitmap.asImageBitmap(),
-                                contentDescription = stringResource(R.string.share_content_description_processed_image),
-                                contentScale = ContentScale.Fit,
-                                modifier = Modifier.fillMaxSize(),
-                            )
-                        }
-                    }
-                }
+            }
+            CircularProgressIndicator(modifier = Modifier.size(32.dp))
+        } else {
+            displayBitmap?.let { bitmap ->
+                Image(
+                    bitmap = bitmap.asImageBitmap(),
+                    contentDescription = stringResource(R.string.share_preview_image),
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.fillMaxSize(),
+                )
             }
         }
     }
 }
 
 @Composable
-private fun FileSizeInfo(
-    originalSize: String,
-    estimatedSize: String,
-    compressionRatio: Float,
+private fun FileSizeBanner(
+    estimatedFileSize: Long,
     modifier: Modifier = Modifier,
 ) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
-        ),
+    val estimatedKb = estimatedFileSize / 1024f
+
+    val (message, messageColor) = when {
+        estimatedFileSize <= 0 -> null to MaterialTheme.colorScheme.onSurfaceVariant
+        estimatedKb < 100 -> stringResource(R.string.share_size_quick_to_send) to
+                MaterialTheme.colorScheme.tertiary
+        estimatedKb <= 500 -> stringResource(R.string.share_size_good_quality) to
+                MaterialTheme.colorScheme.onSurfaceVariant
+        else -> stringResource(R.string.share_size_large_file) to
+                MaterialTheme.colorScheme.error
+    }
+
+    if (message != null) {
+        Text(
+            text = message,
+            style = MaterialTheme.typography.bodyMedium,
+            color = messageColor,
+            modifier = modifier.padding(horizontal = 4.dp),
+        )
+    }
+}
+
+@Composable
+private fun SettingsHeader(
+    expanded: Boolean,
+    onToggle: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val toggleDescription = if (expanded) {
+        stringResource(R.string.share_settings_collapse)
+    } else {
+        stringResource(R.string.share_settings_expand)
+    }
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .clickable(onClick = onToggle)
+            .padding(vertical = 12.dp, horizontal = 4.dp)
+            .semantics { contentDescription = toggleDescription },
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column {
-                Text(
-                    text = stringResource(R.string.share_size_estimated),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
-                )
-                Text(
-                    text = estimatedSize,
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                )
-            }
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    text = stringResource(R.string.share_size_original, originalSize),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
-                )
-                if (compressionRatio > 0 && compressionRatio < 1) {
-                    Text(
-                        text = stringResource(R.string.share_size_smaller, ((1 - compressionRatio) * 100).toInt()),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                    )
-                }
-            }
-        }
+        Text(
+            text = stringResource(R.string.share_settings_header),
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Icon(
+            imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
@@ -423,14 +462,18 @@ private fun FormatSelector(
         )
         Spacer(Modifier.height(8.dp))
         SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-            val formats = listOf(ImageFormat.JPEG, ImageFormat.PNG, ImageFormat.WEBP)
-            formats.forEachIndexed { index, format ->
+            val formats = listOf(
+                ImageFormat.JPEG to stringResource(R.string.share_format_jpeg_description),
+                ImageFormat.PNG to stringResource(R.string.share_format_png_description),
+                ImageFormat.WEBP to stringResource(R.string.share_format_webp_description),
+            )
+            formats.forEachIndexed { index, (format, label) ->
                 SegmentedButton(
                     selected = selectedFormat == format,
                     onClick = { onFormatChange(format) },
                     shape = SegmentedButtonDefaults.itemShape(index = index, count = formats.size),
                 ) {
-                    Text(format.name)
+                    Text(label)
                 }
             }
         }
@@ -465,6 +508,21 @@ private fun QualitySlider(
             valueRange = 10f..100f,
             steps = 8,
         )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                text = stringResource(R.string.share_quality_smaller_file),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = stringResource(R.string.share_quality_better_quality),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 
@@ -512,7 +570,11 @@ private fun SettingToggle(
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val stateText = if (checked) "On" else "Off"
+    val stateText = if (checked) {
+        stringResource(com.mememymood.core.ui.R.string.ui_toggle_state_on)
+    } else {
+        stringResource(com.mememymood.core.ui.R.string.ui_toggle_state_off)
+    }
     
     Row(
         modifier = modifier
@@ -542,3 +604,82 @@ private fun SettingToggle(
         )
     }
 }
+
+// region Previews
+
+private val sharePreviewMeme = com.mememymood.core.model.Meme(
+    id = 1L,
+    filePath = "/preview/meme.jpg",
+    fileName = "meme.jpg",
+    mimeType = "image/jpeg",
+    width = 1024,
+    height = 768,
+    fileSizeBytes = 256_000L,
+    importedAt = System.currentTimeMillis(),
+    emojiTags = listOf(com.mememymood.core.model.EmojiTag.fromEmoji("😂")),
+    title = "Sample meme",
+)
+
+@Preview(name = "Loading", showBackground = true)
+@Composable
+private fun ShareScreenLoadingPreview() {
+    com.mememymood.core.ui.theme.MemeMoodTheme {
+        ShareScreen(
+            uiState = ShareUiState(isLoading = true),
+            onIntent = {},
+            onNavigateBack = {},
+        )
+    }
+}
+
+@Preview(name = "Content", showBackground = true)
+@Preview(name = "Content Dark", showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun ShareScreenContentPreview() {
+    com.mememymood.core.ui.theme.MemeMoodTheme {
+        ShareScreen(
+            uiState = ShareUiState(
+                meme = sharePreviewMeme,
+                isLoading = false,
+                originalFileSize = 256_000L,
+                estimatedFileSize = 68_000L,
+            ),
+            onIntent = {},
+            onNavigateBack = {},
+        )
+    }
+}
+
+@Preview(name = "Content - Large File", showBackground = true)
+@Composable
+private fun ShareScreenLargeFilePreview() {
+    com.mememymood.core.ui.theme.MemeMoodTheme {
+        ShareScreen(
+            uiState = ShareUiState(
+                meme = sharePreviewMeme,
+                isLoading = false,
+                originalFileSize = 2_048_000L,
+                estimatedFileSize = 1_024_000L,
+            ),
+            onIntent = {},
+            onNavigateBack = {},
+        )
+    }
+}
+
+@Preview(name = "Error", showBackground = true)
+@Composable
+private fun ShareScreenErrorPreview() {
+    com.mememymood.core.ui.theme.MemeMoodTheme {
+        ShareScreen(
+            uiState = ShareUiState(
+                isLoading = false,
+                errorMessage = "Failed to load meme",
+            ),
+            onIntent = {},
+            onNavigateBack = {},
+        )
+    }
+}
+
+// endregion

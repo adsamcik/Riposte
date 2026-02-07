@@ -9,36 +9,51 @@
     <!-- Preview Section -->
     <string name="share_preview_original">Originál</string>
     <string name="share_preview_processed">Zpracované</string>
+    <string name="share_preview_image">Náhled meme</string>
 
     <!-- File Size Info -->
     <string name="share_size_estimated">Odhadovaná velikost</string>
     <string name="share_size_original">Originál: %1$s</string>
     <string name="share_size_smaller">O %1$d%% menší</string>
+    <string name="share_size_quick_to_send">✓ Rychlé odeslání</string>
+    <string name="share_size_good_quality">Dobrá kvalita</string>
+    <string name="share_size_large_file">Velký soubor — odeslání může trvat déle</string>
+
+    <!-- Settings Section -->
+    <string name="share_settings_header">⚙️ Upravit nastavení</string>
+    <string name="share_settings_collapse">Sbalit nastavení</string>
+    <string name="share_settings_expand">Rozbalit nastavení</string>
 
     <!-- Format Selector -->
     <string name="share_format_label">Formát</string>
     <string name="share_format_jpeg">JPEG</string>
     <string name="share_format_png">PNG</string>
     <string name="share_format_webp">WEBP</string>
+    <string name="share_format_jpeg_description">Standardní (JPEG)</string>
+    <string name="share_format_png_description">Bezztrátový (PNG)</string>
+    <string name="share_format_webp_description">Nejmenší (WebP)</string>
 
     <!-- Quality Slider -->
     <string name="share_quality_label">Kvalita</string>
     <string name="share_quality_percentage">%1$d%%</string>
+    <string name="share_quality_smaller_file">Menší soubor</string>
+    <string name="share_quality_better_quality">Lepší kvalita</string>
 
     <!-- Size Presets -->
-    <string name="share_size_max_label">Max. velikost</string>
-    <string name="share_size_preset_small">Malá</string>
-    <string name="share_size_preset_medium">Střední</string>
-    <string name="share_size_preset_large">Velká</string>
-    <string name="share_size_preset_original">Původní</string>
+    <string name="share_size_max_label">Velikost</string>
+    <string name="share_size_preset_small">Rychlé odeslání</string>
+    <string name="share_size_preset_medium">Standardní</string>
+    <string name="share_size_preset_large">Vysoká kvalita</string>
+    <string name="share_size_preset_original">Plná velikost</string>
 
     <!-- Settings Toggle -->
-    <string name="share_setting_keep_metadata_title">Zachovat metadata</string>
-    <string name="share_setting_keep_metadata_description">Zachovat emoji štítky a další data</string>
+    <string name="share_setting_keep_metadata_title">Zahrnout emoji štítky</string>
+    <string name="share_setting_keep_metadata_description">Připojit emoji štítky a info o meme k souboru</string>
 
     <!-- Action Buttons -->
     <string name="share_button_save">Uložit</string>
     <string name="share_button_share">Sdílet</string>
+    <string name="share_button_save_to_gallery">nebo uložit do galerie</string>
 
     <!-- Content Descriptions -->
     <string name="share_content_description_original_image">Originál</string>
@@ -51,6 +66,7 @@
     <string name="share_message_saved_to_gallery">Uloženo do galerie</string>
 
     <!-- Error Messages -->
+    <string name="share_error_title">Něco se pokazilo</string>
     <string name="share_error_generic">Chyba</string>
     <string name="share_error_meme_not_found">Meme nenalezen</string>
 
