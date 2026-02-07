@@ -11,7 +11,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -84,7 +83,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalUriHandler
+
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -116,7 +115,6 @@ fun ImportScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
-    val uriHandler = LocalUriHandler.current
 
     val multiplePhotoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickMultipleVisualMedia(maxItems = 20),
@@ -250,9 +248,6 @@ fun ImportScreen(
                         currentFileName = uiState.statusMessage,
                         isIndeterminate = uiState.isProgressIndeterminate,
                         onCancel = { viewModel.onIntent(ImportIntent.CancelImport) },
-                        onLearnMoreClick = {
-                            uriHandler.openUri("https://github.com/user/meme-my-mood/tree/main/tools/meme-my-mood-cli")
-                        },
                         modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
                     )
                 }
@@ -764,7 +759,6 @@ internal fun ImportProgressContent(
     currentFileName: String?,
     isIndeterminate: Boolean,
     onCancel: () -> Unit,
-    onLearnMoreClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val progressCount = (progress * total).toInt()
@@ -816,44 +810,6 @@ internal fun ImportProgressContent(
         OutlinedButton(onClick = onCancel) {
             Text(stringResource(R.string.import_button_cancel))
         }
-        Spacer(Modifier.height(24.dp))
-        CliDiscoveryCard(onLearnMoreClick = onLearnMoreClick)
-    }
-}
-
-@Composable
-private fun CliDiscoveryCard(
-    onLearnMoreClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-        ),
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-        ) {
-            Text(
-                text = stringResource(R.string.import_cli_did_you_know),
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onTertiaryContainer,
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = stringResource(R.string.import_cli_description),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onTertiaryContainer,
-            )
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = stringResource(R.string.import_cli_learn_more),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.tertiary,
-                modifier = Modifier.clickable(onClick = onLearnMoreClick),
-            )
-        }
     }
 }
 
@@ -881,7 +837,6 @@ private fun ImportProgressContentPreview() {
             currentFileName = "funny_cat.jpg",
             isIndeterminate = false,
             onCancel = {},
-            onLearnMoreClick = {},
         )
     }
 }
@@ -896,7 +851,6 @@ private fun ImportProgressIndeterminatePreview() {
             currentFileName = "Extracting ZIP bundle...",
             isIndeterminate = true,
             onCancel = {},
-            onLearnMoreClick = {},
         )
     }
 }

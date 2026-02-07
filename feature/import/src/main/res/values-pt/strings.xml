@@ -24,7 +24,7 @@
     <string name="import_button_apply_all">Aplicar a Todos</string>
 
     <!-- Bundle Import -->
-    <string name="import_bundle_hint">Importar pacotes de memes criados com a ferramenta CLI</string>
+    <string name="import_bundle_hint">Importar coleções de memes com tags de emoji e descrições</string>
 
     <!-- Section Labels -->
     <string name="import_section_ai_suggested">Sugestões da IA</string>

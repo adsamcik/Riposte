@@ -24,7 +24,7 @@
     <string name="import_button_apply_all">Použít na vše</string>
 
     <!-- Bundle Import -->
-    <string name="import_bundle_hint">Importovat meme balíčky vytvořené CLI nástrojem</string>
+    <string name="import_bundle_hint">Importovat sbírky memů s emoji štítky a popisky</string>
 
     <!-- Section Labels -->
     <string name="import_section_ai_suggested">Navrženo AI</string>

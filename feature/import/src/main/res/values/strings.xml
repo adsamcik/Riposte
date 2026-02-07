@@ -26,7 +26,7 @@
     <string name="import_button_cancel">Cancel</string>
 
     <!-- Bundle Import -->
-    <string name="import_bundle_hint">Import pre-tagged meme collections</string>
+    <string name="import_bundle_hint">Import meme collections with emoji tags and descriptions</string>
 
     <!-- Section Labels -->
     <string name="import_section_ai_suggested">AI Suggested</string>
@@ -63,11 +63,6 @@
     <string name="import_result_summary">%1$d imported, %2$d failed</string>
     <string name="import_result_done">Done</string>
     <string name="import_result_retry">Retry %d Failed</string>
-
-    <!-- Discovery Card -->
-    <string name="import_cli_did_you_know">💡 Did you know?</string>
-    <string name="import_cli_description">You can batch-annotate your memes with AI using our desktop tool. Visit our website to learn more.</string>
-    <string name="import_cli_learn_more">Learn More →</string>
 
     <!-- Onboarding Tips -->
     <string name="import_tip_emoji_tagging">Your memes will be auto-tagged with AI after import ✨</string>
