@@ -83,7 +83,7 @@ fun QuickAccessSection(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Quick Access",
+                    text = stringResource(R.string.ui_quick_access_title),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -142,7 +142,10 @@ private fun QuickAccessItem(
     onHoldComplete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val itemDescription = "${meme.title ?: meme.fileName}, sticker. Tap to share, hold for instant share"
+    val itemDescription = stringResource(
+        R.string.ui_quick_access_item_description,
+        meme.title ?: meme.fileName,
+    )
 
     HoldToShareContainer(
         onTap = onTap,

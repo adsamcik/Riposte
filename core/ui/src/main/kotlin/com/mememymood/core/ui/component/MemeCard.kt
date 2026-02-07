@@ -64,6 +64,7 @@ fun MemeCard(
     showEmojis: Boolean = true
 ) {
     val favoritedText = stringResource(R.string.ui_state_favorited)
+    val notFavoritedText = stringResource(R.string.ui_state_not_favorited)
     val memeDescription = buildString {
         append(meme.title ?: meme.fileName)
         if (meme.emojiTags.isNotEmpty()) {
@@ -108,7 +109,7 @@ fun MemeCard(
                         .padding(4.dp)
                         .semantics {
                             role = Role.Button
-                            stateDescription = if (meme.isFavorite) "Favorited" else "Not favorited"
+                            stateDescription = if (meme.isFavorite) favoritedText else notFavoritedText
                         }
                 ) {
                     Icon(

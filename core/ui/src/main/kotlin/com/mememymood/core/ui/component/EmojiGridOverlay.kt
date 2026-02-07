@@ -66,7 +66,7 @@ fun EmojiGridOverlay(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "All Moods",
+                    text = stringResource(R.string.ui_emoji_grid_title),
                     style = MaterialTheme.typography.titleMedium,
                 )
                 Spacer(modifier = Modifier.weight(1f))
