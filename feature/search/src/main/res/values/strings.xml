@@ -28,6 +28,7 @@
     <!-- Suggestions Section -->
     <string name="search_suggestions_title">Suggestions</string>
     <string name="search_suggestions_content_description">Suggestion: %1$s</string>
+    <string name="search_suggestions_icon">Suggestion</string>
 
     <!-- Recent Searches Section -->
     <string name="search_recent_title">Recent Searches</string>
@@ -35,6 +36,7 @@
     <string name="search_recent_clear_all_content_description">Clear all recent searches</string>
     <string name="search_recent_item_content_description">Recent search: %1$s. Swipe left to delete.</string>
     <string name="search_recent_delete">Delete</string>
+    <string name="search_recent_icon">Recent search</string>
 
     <!-- Results Toolbar -->
     <string name="search_results_sort_content_description">Sort results by %1$s</string>

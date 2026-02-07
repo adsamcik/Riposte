@@ -23,6 +23,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.semantics
+import com.mememymood.core.ui.R
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -76,8 +81,18 @@ fun HoldToShareContainer(
     var isHolding by remember { mutableStateOf(false) }
     var holdJob by remember { mutableStateOf<Job?>(null) }
 
+    val shareActionLabel = stringResource(R.string.ui_hold_to_share_action)
+
     Box(
         modifier = modifier
+            .semantics {
+                customActions = listOf(
+                    CustomAccessibilityAction(shareActionLabel) {
+                        onHoldComplete()
+                        true
+                    }
+                )
+            }
             .pointerInput(Unit) {
                 awaitEachGesture {
                     val down = awaitFirstDown(requireUnconsumed = false)

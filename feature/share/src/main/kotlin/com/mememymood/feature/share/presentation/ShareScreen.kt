@@ -328,7 +328,7 @@ private fun ShareContent(
                 .height(56.dp)
                 .animatedPressScale(shareInteractionSource),
         ) {
-            Icon(Icons.Default.Share, contentDescription = null)
+            Icon(Icons.Default.Share, contentDescription = stringResource(R.string.share_button_share))
             Spacer(Modifier.width(8.dp))
             Text(
                 text = stringResource(R.string.share_button_share),

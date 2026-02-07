@@ -26,6 +26,7 @@
 
     <!-- Accessibility: HoldToShareProgress -->
     <string name="ui_hold_to_share_progress">Hold to share, %1$d percent</string>
+    <string name="ui_hold_to_share_action">Share</string>
 
     <!-- Accessibility: EmojiGridOverlay -->
     <string name="ui_emoji_grid_title">All Moods</string>

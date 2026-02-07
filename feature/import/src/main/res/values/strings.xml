@@ -9,6 +9,9 @@
     <string name="import_content_description_image_to_import">Image to import</string>
     <string name="import_content_description_image_preview">Image preview</string>
     <string name="import_content_description_error">Processing error</string>
+    <string name="import_content_description_confirm_import">Confirm import</string>
+    <string name="import_content_description_add_photos">Add photos</string>
+    <string name="import_content_description_add_images">Add images</string>
 
     <!-- Empty State -->
     <string name="import_empty_title">Import Your Memes</string>

@@ -196,12 +196,12 @@ fun SearchScreen(
                                     },
                                     modifier = Modifier.semantics { contentDescription = closeSearchDescription }
                                 ) {
-                                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.search_action_close))
                                 }
                             } else {
                                 Icon(
                                     Icons.Default.Search,
-                                    contentDescription = null,
+                                    contentDescription = stringResource(R.string.search_action_search),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
@@ -220,7 +220,7 @@ fun SearchScreen(
                                     ) {
                                         Icon(
                                             Icons.Default.Mic,
-                                            contentDescription = null,
+                                            contentDescription = stringResource(R.string.search_action_voice),
                                             tint = if (uiState.isVoiceSearchActive) 
                                                 MaterialTheme.colorScheme.primary 
                                             else 
@@ -260,7 +260,7 @@ fun SearchScreen(
                                         onClick = { viewModel.onIntent(SearchIntent.ResetSearch) },
                                         modifier = Modifier.semantics { contentDescription = clearSearchDescription }
                                     ) {
-                                        Icon(Icons.Default.Clear, contentDescription = null)
+                                        Icon(Icons.Default.Clear, contentDescription = stringResource(R.string.search_action_clear))
                                     }
                                 }
                             }
@@ -462,7 +462,7 @@ private fun QuickFilterRow(
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        items(quickFilters) { filter ->
+        items(items = quickFilters, key = { it.id }) { filter ->
             val isSelected = selectedFilter?.id == filter.id
             AssistChip(
                 onClick = {
@@ -533,7 +533,7 @@ private fun SearchResultsToolbar(
                 ) {
                     Icon(
                         Icons.AutoMirrored.Filled.Sort,
-                        contentDescription = null,
+                        contentDescription = stringResource(R.string.search_results_sort_content_description, sortOrder.label),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
@@ -573,7 +573,10 @@ private fun SearchResultsToolbar(
             ) {
                 Icon(
                     if (viewMode == SearchViewMode.LIST) Icons.Default.GridView else Icons.Default.ViewList,
-                    contentDescription = null,
+                    contentDescription = stringResource(
+                        if (viewMode == SearchViewMode.GRID) R.string.search_results_view_switch_list
+                        else R.string.search_results_view_switch_grid
+                    ),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -606,13 +609,13 @@ private fun SearchSuggestionsContent(
                         .semantics { heading() },
                 )
             }
-            items(suggestions) { suggestion ->
+            items(items = suggestions, key = { it }) { suggestion ->
                 ListItem(
                     headlineContent = { Text(suggestion) },
                     leadingContent = {
                         Icon(
                             Icons.Default.TrendingUp, 
-                            contentDescription = null,
+                            contentDescription = stringResource(R.string.search_suggestions_icon),
                             tint = MaterialTheme.colorScheme.primary
                         )
                     },
@@ -642,7 +645,7 @@ private fun SearchSuggestionsContent(
                     }
                 }
             }
-            items(recentSearches.take(5)) { search ->
+            items(items = recentSearches.take(5), key = { it }) { search ->
                 val recentSearchDescription = stringResource(R.string.search_recent_item_content_description, search)
                 val dismissState = rememberSwipeToDismissBoxState(
                     confirmValueChange = { dismissValue ->
@@ -680,7 +683,7 @@ private fun SearchSuggestionsContent(
                             leadingContent = {
                                 Icon(
                                     Icons.Default.History, 
-                                    contentDescription = null,
+                                    contentDescription = stringResource(R.string.search_recent_icon),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             },
@@ -766,7 +769,7 @@ private fun RecentSearchesSection(
                         leadingContent = {
                             Icon(
                                 Icons.Default.History, 
-                                contentDescription = null,
+                                contentDescription = stringResource(R.string.search_recent_icon),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         },
@@ -888,7 +891,7 @@ private fun ShimmerSearchResults(
         modifier = modifier.height(400.dp),
         userScrollEnabled = false,
     ) {
-        items(columns * 2) {
+        items(count = columns * 2, key = { it }) {
             ShimmerCard(brush = brush)
         }
     }

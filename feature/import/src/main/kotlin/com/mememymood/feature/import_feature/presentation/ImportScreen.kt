@@ -288,7 +288,7 @@ fun ImportScreen(
                             .fillMaxWidth()
                             .padding(16.dp),
                     ) {
-                        Icon(Icons.Default.Check, contentDescription = null)
+                        Icon(Icons.Default.Check, contentDescription = stringResource(R.string.import_content_description_confirm_import))
                         Spacer(Modifier.width(8.dp))
                         Text(pluralStringResource(R.plurals.import_button_import_memes, uiState.selectedImages.size, uiState.selectedImages.size))
                     }
@@ -384,7 +384,7 @@ internal fun EmptyImportContent(
         Spacer(Modifier.fillMaxHeight(0.25f))
         Icon(
             imageVector = Icons.Outlined.AddPhotoAlternate,
-            contentDescription = null,
+            contentDescription = stringResource(R.string.import_content_description_add_photos),
             modifier = Modifier.size(72.dp),
             tint = MaterialTheme.colorScheme.primary,
         )
@@ -403,7 +403,7 @@ internal fun EmptyImportContent(
         )
         Spacer(Modifier.height(24.dp))
         Button(onClick = onSelectImages) {
-            Icon(Icons.Default.Add, contentDescription = null)
+            Icon(Icons.Default.Add, contentDescription = stringResource(R.string.import_content_description_add_images))
             Spacer(Modifier.width(8.dp))
             Text(stringResource(R.string.import_button_select_images))
         }
