@@ -23,7 +23,7 @@ class XmpMetadataHandler @Inject constructor(
     @param:ApplicationContext private val context: Context,
 ) {
     companion object {
-        private const val XMP_NAMESPACE = "http://meme-my-mood.app/1.0/"
+        private const val XMP_NAMESPACE = "http://meme-my-mood.app/1.1/"
         private const val XMP_PREFIX = "mmm"
         private const val DC_NAMESPACE = "http://purl.org/dc/elements/1.1/"
         private const val SIDECAR_EXTENSION = ".xmp"

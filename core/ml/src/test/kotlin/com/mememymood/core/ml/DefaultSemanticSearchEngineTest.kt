@@ -363,6 +363,60 @@ class DefaultSemanticSearchEngineTest {
     // ==================== State and Lifecycle Tests ====================
 
     @Test
+    fun `findSimilar returns empty list when UnsatisfiedLinkError is thrown`() = runTest {
+        coEvery { mockEmbeddingGenerator.generateFromText("test") } throws
+            UnsatisfiedLinkError("libgemma_embedding_model_jni.so not found")
+
+        val candidates = listOf(
+            createMemeWithEmbedding(1L, floatArrayOf(1f, 0f, 0f)),
+        )
+
+        val results = searchEngine.findSimilar(
+            query = "test",
+            candidates = candidates,
+            threshold = 0f,
+        )
+
+        assertThat(results).isEmpty()
+    }
+
+    @Test
+    fun `findSimilar returns empty list when ExceptionInInitializerError is thrown`() = runTest {
+        coEvery { mockEmbeddingGenerator.generateFromText("test") } throws
+            ExceptionInInitializerError(UnsatisfiedLinkError("libgemma_embedding_model_jni.so not found"))
+
+        val candidates = listOf(
+            createMemeWithEmbedding(1L, floatArrayOf(1f, 0f, 0f)),
+        )
+
+        val results = searchEngine.findSimilar(
+            query = "test",
+            candidates = candidates,
+            threshold = 0f,
+        )
+
+        assertThat(results).isEmpty()
+    }
+
+    @Test
+    fun `findSimilar returns empty list when general exception is thrown during embedding`() = runTest {
+        coEvery { mockEmbeddingGenerator.generateFromText("test") } throws
+            RuntimeException("Model initialization failed")
+
+        val candidates = listOf(
+            createMemeWithEmbedding(1L, floatArrayOf(1f, 0f, 0f)),
+        )
+
+        val results = searchEngine.findSimilar(
+            query = "test",
+            candidates = candidates,
+            threshold = 0f,
+        )
+
+        assertThat(results).isEmpty()
+    }
+
+    @Test
     fun `isReady delegates to embedding generator`() = runTest {
         coEvery { mockEmbeddingGenerator.isReady() } returns true
         

@@ -16,6 +16,14 @@ class DefaultSemanticSearchEngine @Inject constructor(
     private val embeddingGenerator: EmbeddingGenerator
 ) : SemanticSearchEngine {
 
+    private val queryEmbeddingCache: MutableMap<String, FloatArray> = java.util.Collections.synchronizedMap(
+        object : LinkedHashMap<String, FloatArray>(MAX_CACHE_ENTRIES, 0.75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, FloatArray>): Boolean {
+                return size > MAX_CACHE_ENTRIES
+            }
+        }
+    )
+
     override suspend fun findSimilar(
         query: String,
         candidates: List<MemeWithEmbedding>,
@@ -24,8 +32,19 @@ class DefaultSemanticSearchEngine @Inject constructor(
     ): List<SearchResult> = withContext(Dispatchers.Default) {
         if (candidates.isEmpty()) return@withContext emptyList()
 
-        // Generate query embedding
-        val queryEmbedding = embeddingGenerator.generateFromText(query)
+        // Generate query embedding (cache to avoid regenerating for repeated queries)
+        val queryEmbedding = try {
+            queryEmbeddingCache[query]
+                ?: embeddingGenerator.generateFromText(query).also {
+                    queryEmbeddingCache[query] = it
+                }
+        } catch (e: UnsatisfiedLinkError) {
+            return@withContext emptyList()
+        } catch (e: ExceptionInInitializerError) {
+            return@withContext emptyList()
+        } catch (e: Exception) {
+            return@withContext emptyList()
+        }
 
         // Calculate similarities and filter
         candidates
@@ -67,7 +86,19 @@ class DefaultSemanticSearchEngine @Inject constructor(
         embeddingGenerator.initialize()
     }
 
+    /**
+     * Clears the query embedding cache.
+     * Call when the embedding model changes.
+     */
+    fun clearCache() {
+        queryEmbeddingCache.clear()
+    }
+
     override fun close() {
         embeddingGenerator.close()
+    }
+
+    private companion object {
+        const val MAX_CACHE_ENTRIES = 50
     }
 }

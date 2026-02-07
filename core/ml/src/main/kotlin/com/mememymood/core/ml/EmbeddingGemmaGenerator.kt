@@ -278,6 +278,12 @@ class EmbeddingGemmaGenerator @Inject constructor(
             )
 
             Log.i(TAG, "EmbeddingGemma initialized successfully (dimension: $embeddingDimension)")
+        } catch (e: UnsatisfiedLinkError) {
+            Log.e(TAG, "Native library not available for EmbeddingGemma (unsupported ABI?)", e)
+            embeddingModel = null
+        } catch (e: ExceptionInInitializerError) {
+            Log.e(TAG, "EmbeddingGemma static initialization failed", e)
+            embeddingModel = null
         } catch (e: Exception) {
             Log.e(TAG, "Failed to initialize EmbeddingGemma", e)
 
@@ -295,6 +301,12 @@ class EmbeddingGemmaGenerator @Inject constructor(
                         false,
                     )
                     Log.i(TAG, "EmbeddingGemma initialized with CPU fallback")
+                } catch (cpuError: UnsatisfiedLinkError) {
+                    Log.e(TAG, "CPU fallback failed: native library not available", cpuError)
+                    embeddingModel = null
+                } catch (cpuError: ExceptionInInitializerError) {
+                    Log.e(TAG, "CPU fallback failed: static initialization error", cpuError)
+                    embeddingModel = null
                 } catch (cpuError: Exception) {
                     Log.e(TAG, "CPU fallback also failed", cpuError)
                     embeddingModel = null
@@ -479,11 +491,7 @@ class EmbeddingGemmaGenerator @Inject constructor(
          * Falls back to generic model if no optimized variant is available.
          */
         fun getBestModelFilename(): String {
-            val socModel = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                Build.SOC_MODEL.lowercase()
-            } else {
-                Build.HARDWARE.lowercase()
-            }
+            val socModel = Build.SOC_MODEL.lowercase()
 
             Log.d(TAG, "Detected SoC: $socModel")
 
