@@ -2,6 +2,7 @@ package com.mememymood.feature.search.data.repository
 
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
+import com.mememymood.core.database.dao.EmojiTagDao
 import com.mememymood.core.database.dao.MemeDao
 import com.mememymood.core.database.dao.MemeEmbeddingDao
 import com.mememymood.core.database.dao.MemeSearchDao
@@ -40,6 +41,7 @@ class SearchRepositoryImplTest {
     private lateinit var memeSearchDao: MemeSearchDao
     private lateinit var memeEmbeddingDao: MemeEmbeddingDao
     private lateinit var semanticSearchEngine: SemanticSearchEngine
+    private lateinit var emojiTagDao: EmojiTagDao
     private lateinit var preferencesDataStore: PreferencesDataStore
 
     private lateinit var repository: SearchRepositoryImpl
@@ -69,16 +71,20 @@ class SearchRepositoryImplTest {
         memeSearchDao = mockk()
         memeEmbeddingDao = mockk()
         semanticSearchEngine = mockk()
+        emojiTagDao = mockk()
         preferencesDataStore = mockk()
 
         every { preferencesDataStore.appPreferences } returns flowOf(defaultPreferences)
         every { preferencesDataStore.recentSearches } returns flowOf(recentSearches)
         coEvery { memeEmbeddingDao.getMemesWithEmbeddings() } returns emptyList()
+        every { memeDao.getFavoriteMemes() } returns flowOf(emptyList())
+        every { memeDao.getRecentlyViewedMemes(any()) } returns flowOf(emptyList())
 
         repository = SearchRepositoryImpl(
             memeDao = memeDao,
             memeSearchDao = memeSearchDao,
             memeEmbeddingDao = memeEmbeddingDao,
+            emojiTagDao = emojiTagDao,
             semanticSearchEngine = semanticSearchEngine,
             preferencesDataStore = preferencesDataStore
         )
@@ -260,6 +266,7 @@ class SearchRepositoryImplTest {
             memeDao = memeDao,
             memeSearchDao = memeSearchDao,
             memeEmbeddingDao = memeEmbeddingDao,
+            emojiTagDao = emojiTagDao,
             semanticSearchEngine = semanticSearchEngine,
             preferencesDataStore = preferencesDataStore
         )
@@ -284,6 +291,7 @@ class SearchRepositoryImplTest {
             memeDao = memeDao,
             memeSearchDao = memeSearchDao,
             memeEmbeddingDao = memeEmbeddingDao,
+            emojiTagDao = emojiTagDao,
             semanticSearchEngine = semanticSearchEngine,
             preferencesDataStore = preferencesDataStore
         )
@@ -400,6 +408,50 @@ class SearchRepositoryImplTest {
         repository.clearRecentSearches()
 
         coVerify { preferencesDataStore.clearRecentSearches() }
+    }
+
+    // endregion
+
+    // region getFavoriteMemes Tests
+
+    @Test
+    fun `getFavoriteMemes returns flow of favorite memes as search results`() = runTest {
+        val favoriteEntities = listOf(
+            createTestMemeEntity(1, "fav1.jpg", isFavorite = true),
+            createTestMemeEntity(2, "fav2.jpg", isFavorite = true),
+        )
+        every { memeDao.getFavoriteMemes() } returns flowOf(favoriteEntities)
+
+        repository.getFavoriteMemes().test {
+            val results = awaitItem()
+            assertThat(results).hasSize(2)
+            assertThat(results[0].relevanceScore).isGreaterThan(0f)
+            awaitComplete()
+        }
+
+        verify { memeDao.getFavoriteMemes() }
+    }
+
+    // endregion
+
+    // region getRecentMemes Tests
+
+    @Test
+    fun `getRecentMemes returns flow of recently viewed memes as search results`() = runTest {
+        val recentEntities = listOf(
+            createTestMemeEntity(3, "recent1.jpg"),
+            createTestMemeEntity(4, "recent2.jpg"),
+        )
+        every { memeDao.getRecentlyViewedMemes(any()) } returns flowOf(recentEntities)
+
+        repository.getRecentMemes().test {
+            val results = awaitItem()
+            assertThat(results).hasSize(2)
+            assertThat(results[0].relevanceScore).isGreaterThan(0f)
+            awaitComplete()
+        }
+
+        verify { memeDao.getRecentlyViewedMemes(any()) }
     }
 
     // endregion

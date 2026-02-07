@@ -334,6 +334,40 @@ class SearchUseCasesTest {
 
     // endregion
 
+    // region SearchUseCases getFavoriteMemes/getRecentMemes Tests
+
+    @Test
+    fun `SearchUseCases getFavoriteMemes returns flow from repository`() = runTest {
+        val favoriteResults = testSearchResults.take(1)
+        every { repository.getFavoriteMemes() } returns flowOf(favoriteResults)
+        val useCases = SearchUseCases(repository)
+
+        useCases.getFavoriteMemes().test {
+            val results = awaitItem()
+            assertThat(results).hasSize(1)
+            awaitComplete()
+        }
+
+        verify { repository.getFavoriteMemes() }
+    }
+
+    @Test
+    fun `SearchUseCases getRecentMemes returns flow from repository`() = runTest {
+        val recentResults = testSearchResults.take(2)
+        every { repository.getRecentMemes() } returns flowOf(recentResults)
+        val useCases = SearchUseCases(repository)
+
+        useCases.getRecentMemes().test {
+            val results = awaitItem()
+            assertThat(results).hasSize(2)
+            awaitComplete()
+        }
+
+        verify { repository.getRecentMemes() }
+    }
+
+    // endregion
+
     // region Helper Functions
 
     private fun createTestMeme(

@@ -2,8 +2,16 @@ package com.mememymood.feature.search.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mememymood.core.common.di.DefaultDispatcher
+import com.mememymood.core.common.suggestion.GetSuggestionsUseCase
+import com.mememymood.core.common.suggestion.Surface
+import com.mememymood.core.common.suggestion.SuggestionContext
+import com.mememymood.core.model.MatchType
+import com.mememymood.core.model.SearchResult
+import com.mememymood.core.datastore.PreferencesDataStore
 import com.mememymood.feature.search.domain.usecase.SearchUseCases
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.Channel
@@ -13,18 +21,23 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class SearchViewModel @Inject constructor(
     private val searchUseCases: SearchUseCases,
+    private val getSuggestionsUseCase: GetSuggestionsUseCase,
+    private val preferencesDataStore: PreferencesDataStore,
+    @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SearchUiState())
@@ -38,6 +51,7 @@ class SearchViewModel @Inject constructor(
     init {
         loadRecentSearches()
         loadEmojiCounts()
+        loadSuggestedMemes()
         observeQueryChanges()
     }
 
@@ -56,6 +70,7 @@ class SearchViewModel @Inject constructor(
             // UX enhancement intents
             is SearchIntent.SelectQuickFilter -> selectQuickFilter(intent.filter)
             is SearchIntent.ClearQuickFilter -> clearQuickFilter()
+            is SearchIntent.ResetSearch -> resetSearch()
             is SearchIntent.SetSortOrder -> setSortOrder(intent.order)
             is SearchIntent.SetViewMode -> setViewMode(intent.mode)
             is SearchIntent.StartVoiceSearch -> startVoiceSearch()
@@ -110,6 +125,23 @@ class SearchViewModel @Inject constructor(
         }
     }
 
+    private fun loadSuggestedMemes() {
+        viewModelScope.launch {
+            searchUseCases.getAllMemes()
+                .collectLatest { allMemes ->
+                    val suggestions = withContext(defaultDispatcher) {
+                        val recentSearches = _uiState.value.recentSearches
+                        val ctx = SuggestionContext(
+                            surface = Surface.SEARCH,
+                            recentSearches = recentSearches,
+                        )
+                        getSuggestionsUseCase(allMemes, ctx)
+                    }
+                    _uiState.update { it.copy(suggestedMemes = suggestions) }
+                }
+        }
+    }
+
     private fun loadSuggestions(query: String) {
         viewModelScope.launch {
             try {
@@ -133,15 +165,44 @@ class SearchViewModel @Inject constructor(
     private fun performSearch() {
         val query = _uiState.value.query
         if (query.isNotBlank()) {
+            _uiState.update { it.copy(hasSearched = true, isSearching = true) }
             performSearchInternal(query)
             viewModelScope.launch {
                 searchUseCases.addRecentSearch(query)
+                // Show smart search tip once after first search
+                if (!preferencesDataStore.hasShownSearchTip.first()) {
+                    preferencesDataStore.setSearchTipShown()
+                    _effects.send(
+                        SearchEffect.ShowSnackbar(
+                            "\uD83D\uDCA1 Tip: Try Smart search to find memes by meaning, not just text!",
+                        ),
+                    )
+                }
             }
         }
     }
 
     private fun performSearchInternal(query: String) {
         viewModelScope.launch {
+            // Intercept quick filter queries before FTS sanitization
+            val quickFilterResult = tryQuickFilterQuery(query)
+            if (quickFilterResult != null) {
+                quickFilterResult.collectLatest { results ->
+                    val filteredResults = applyFilters(results)
+                    val sortedResults = applySorting(filteredResults)
+                    _uiState.update {
+                        it.copy(
+                            results = sortedResults,
+                            totalResultCount = filteredResults.size,
+                            searchDurationMs = 0L,
+                            isSearching = false,
+                            hasSearched = true,
+                        )
+                    }
+                }
+                return@launch
+            }
+
             _uiState.update { it.copy(isSearching = true, errorMessage = null) }
             val startTime = System.currentTimeMillis()
 
@@ -164,33 +225,45 @@ class SearchViewModel @Inject constructor(
                         }
                     }
                     SearchMode.SEMANTIC -> {
-                        val results = searchUseCases.semanticSearch(query)
-                        val filteredResults = applyFilters(results)
-                        val sortedResults = applySorting(filteredResults)
-                        val endTime = System.currentTimeMillis()
-                        _uiState.update {
-                            it.copy(
-                                results = sortedResults,
-                                totalResultCount = filteredResults.size,
-                                searchDurationMs = endTime - startTime,
-                                isSearching = false,
-                                hasSearched = true,
-                            )
+                        try {
+                            val results = searchUseCases.semanticSearch(query)
+                            val filteredResults = applyFilters(results)
+                            val sortedResults = applySorting(filteredResults)
+                            val endTime = System.currentTimeMillis()
+                            _uiState.update {
+                                it.copy(
+                                    results = sortedResults,
+                                    totalResultCount = filteredResults.size,
+                                    searchDurationMs = endTime - startTime,
+                                    isSearching = false,
+                                    hasSearched = true,
+                                )
+                            }
+                        } catch (@Suppress("SwallowedException") e: UnsatisfiedLinkError) {
+                            fallbackToTextSearch(query, startTime)
+                        } catch (@Suppress("SwallowedException") e: ExceptionInInitializerError) {
+                            fallbackToTextSearch(query, startTime)
                         }
                     }
                     SearchMode.HYBRID -> {
-                        val results = searchUseCases.hybridSearch(query)
-                        val filteredResults = applyFilters(results)
-                        val sortedResults = applySorting(filteredResults)
-                        val endTime = System.currentTimeMillis()
-                        _uiState.update {
-                            it.copy(
-                                results = sortedResults,
-                                totalResultCount = filteredResults.size,
-                                searchDurationMs = endTime - startTime,
-                                isSearching = false,
-                                hasSearched = true,
-                            )
+                        try {
+                            val results = searchUseCases.hybridSearch(query)
+                            val filteredResults = applyFilters(results)
+                            val sortedResults = applySorting(filteredResults)
+                            val endTime = System.currentTimeMillis()
+                            _uiState.update {
+                                it.copy(
+                                    results = sortedResults,
+                                    totalResultCount = filteredResults.size,
+                                    searchDurationMs = endTime - startTime,
+                                    isSearching = false,
+                                    hasSearched = true,
+                                )
+                            }
+                        } catch (@Suppress("SwallowedException") e: UnsatisfiedLinkError) {
+                            fallbackToTextSearch(query, startTime)
+                        } catch (@Suppress("SwallowedException") e: ExceptionInInitializerError) {
+                            fallbackToTextSearch(query, startTime)
                         }
                     }
                 }
@@ -249,6 +322,33 @@ class SearchViewModel @Inject constructor(
         }
     }
 
+    private suspend fun fallbackToTextSearch(query: String, startTime: Long) {
+        try {
+            searchUseCases.search(query).collectLatest { results ->
+                val filteredResults = applyFilters(results)
+                val sortedResults = applySorting(filteredResults)
+                val endTime = System.currentTimeMillis()
+                _uiState.update {
+                    it.copy(
+                        results = sortedResults,
+                        totalResultCount = filteredResults.size,
+                        searchDurationMs = endTime - startTime,
+                        isSearching = false,
+                        hasSearched = true,
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            _uiState.update {
+                it.copy(
+                    isSearching = false,
+                    hasSearched = true,
+                    errorMessage = e.message ?: "Search failed",
+                )
+            }
+        }
+    }
+
     private fun clearQuery() {
         _uiState.update {
             it.copy(
@@ -256,6 +356,27 @@ class SearchViewModel @Inject constructor(
                 results = emptyList(),
                 suggestions = emptyList(),
                 hasSearched = false,
+                selectedQuickFilter = null,
+                selectedEmojiFilters = emptyList(),
+            )
+        }
+        queryFlow.value = ""
+    }
+
+    /**
+     * Atomically resets all search state — query, quick filters, emoji filters, results.
+     * Unlike calling clearQuery/clearEmojiFilters/clearQuickFilter separately,
+     * this avoids intermediate states that re-trigger searches.
+     */
+    private fun resetSearch() {
+        _uiState.update {
+            it.copy(
+                query = "",
+                results = emptyList(),
+                suggestions = emptyList(),
+                hasSearched = false,
+                selectedQuickFilter = null,
+                selectedEmojiFilters = emptyList(),
             )
         }
         queryFlow.value = ""
@@ -271,21 +392,57 @@ class SearchViewModel @Inject constructor(
             }
             state.copy(selectedEmojiFilters = newFilters)
         }
-
-        // Re-apply filters
-        val currentQuery = _uiState.value.query
-        if (currentQuery.isNotBlank() && _uiState.value.hasSearched) {
-            performSearchInternal(currentQuery)
-        }
+        // Always perform search when emoji filters change — emoji filtering IS searching
+        performEmojiFilterSearch()
     }
 
     private fun clearEmojiFilters() {
         _uiState.update { it.copy(selectedEmojiFilters = emptyList()) }
+        // Re-evaluate search state after clearing filters
+        performEmojiFilterSearch()
+    }
 
-        // Re-apply filters
+    private fun performEmojiFilterSearch() {
         val currentQuery = _uiState.value.query
-        if (currentQuery.isNotBlank() && _uiState.value.hasSearched) {
-            performSearchInternal(currentQuery)
+        val emojiFilters = _uiState.value.selectedEmojiFilters
+        when {
+            currentQuery.isNotBlank() -> performSearchInternal(currentQuery)
+            emojiFilters.isNotEmpty() -> {
+                viewModelScope.launch {
+                    searchUseCases.getAllMemes()
+                        .map { memes ->
+                            memes.map { meme ->
+                                SearchResult(
+                                    meme = meme,
+                                    relevanceScore = 1.0f,
+                                    matchType = MatchType.EMOJI,
+                                )
+                            }
+                        }
+                        .collectLatest { allResults ->
+                            val filteredResults = applyFilters(allResults)
+                            val sortedResults = applySorting(filteredResults)
+                            _uiState.update {
+                                it.copy(
+                                    results = sortedResults,
+                                    totalResultCount = filteredResults.size,
+                                    searchDurationMs = 0L,
+                                    isSearching = false,
+                                    hasSearched = true,
+                                )
+                            }
+                        }
+                }
+            }
+            else -> {
+                _uiState.update {
+                    it.copy(
+                        results = emptyList(),
+                        totalResultCount = 0,
+                        hasSearched = false,
+                    )
+                }
+            }
         }
     }
 
@@ -342,8 +499,19 @@ class SearchViewModel @Inject constructor(
     }
     
     private fun clearQuickFilter() {
-        _uiState.update { it.copy(selectedQuickFilter = null) }
-        if (_uiState.value.query.isNotBlank() && _uiState.value.hasSearched) {
+        val filter = _uiState.value.selectedQuickFilter
+        _uiState.update {
+            it.copy(
+                selectedQuickFilter = null,
+                // Clear query if it was set by the quick filter
+                query = if (filter?.query != null && it.query == filter.query) "" else it.query,
+                results = if (filter?.query != null && it.query == filter.query) emptyList() else it.results,
+                hasSearched = if (filter?.query != null && it.query == filter.query) false else it.hasSearched,
+            )
+        }
+        if (filter?.query != null && _uiState.value.query.isBlank()) {
+            queryFlow.value = ""
+        } else if (_uiState.value.query.isNotBlank() && _uiState.value.hasSearched) {
             performSearchInternal(_uiState.value.query)
         }
     }
@@ -393,6 +561,20 @@ class SearchViewModel @Inject constructor(
             _uiState.update { state ->
                 state.copy(recentSearches = state.recentSearches - query)
             }
+        }
+    }
+
+    /**
+     * Intercept quick filter queries (e.g., "is:favorite", "is:recent") before FTS sanitization.
+     * Returns a Flow of results if the query matches a known filter, or null for regular search.
+     */
+    private fun tryQuickFilterQuery(query: String): kotlinx.coroutines.flow.Flow<List<com.mememymood.core.model.SearchResult>>? {
+        return when (query.trim().lowercase()) {
+            "is:favorite" -> searchUseCases.getFavoriteMemes()
+            "is:recent" -> searchUseCases.getRecentMemes()
+            "type:reaction" -> searchUseCases.search("reaction")
+            "type:gif" -> searchUseCases.search("gif")
+            else -> null
         }
     }
 

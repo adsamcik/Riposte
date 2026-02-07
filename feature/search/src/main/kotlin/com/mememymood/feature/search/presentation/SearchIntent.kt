@@ -14,6 +14,7 @@ sealed interface SearchIntent {
     // UX enhancement intents
     data class SelectQuickFilter(val filter: QuickFilter) : SearchIntent
     data object ClearQuickFilter : SearchIntent
+    data object ResetSearch : SearchIntent
     data class SetSortOrder(val order: SearchSortOrder) : SearchIntent
     data class SetViewMode(val mode: SearchViewMode) : SearchIntent
     data object StartVoiceSearch : SearchIntent

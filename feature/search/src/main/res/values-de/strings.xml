@@ -10,9 +10,9 @@
     <string name="search_action_clear">Suchanfrage löschen</string>
 
     <!-- Search Modes -->
-    <string name="search_mode_text">Text</string>
-    <string name="search_mode_ai">KI</string>
-    <string name="search_mode_hybrid">Hybrid</string>
+    <string name="search_mode_text">Exakt</string>
+    <string name="search_mode_ai">Smart</string>
+    <string name="search_mode_hybrid">Beides</string>
     <string name="search_mode_content_description">Suchmodus: %1$s</string>
 
     <!-- Emoji Filter Section -->
@@ -100,7 +100,12 @@
     <string name="search_no_results_clear_filters">Alle Filter leeren</string>
 
     <!-- Result Card -->
-    <string name="search_result_card_content_description">%1$s, %2$d%% relevant</string>
+    <string name="search_result_card_content_description">%1$s, beste Übereinstimmung</string>
     <string name="search_result_more_emojis">+%1$d</string>
-    <string name="search_result_relevance_percent">%1$d%%</string>
+    <string name="search_result_best_match">Beste Übereinstimmung</string>
+
+    <!-- Filters Bottom Sheet -->
+    <string name="search_filters">Filter</string>
+    <string name="search_filters_content_description">Filter, %1$d aktiv</string>
+    <string name="search_filters_apply">Anwenden</string>
 </resources>

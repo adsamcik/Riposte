@@ -67,6 +67,7 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SearchBar
+import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -173,85 +174,120 @@ fun SearchScreen(
 
             // Enhanced Search bar with voice search
             SearchBar(
-                query = uiState.query,
-                onQueryChange = { viewModel.onIntent(SearchIntent.UpdateQuery(it)) },
-                onSearch = { 
-                    viewModel.onIntent(SearchIntent.Search)
-                    isSearchActive = false
-                    focusManager.clearFocus()
+                inputField = {
+                    SearchBarDefaults.InputField(
+                        query = uiState.query,
+                        onQueryChange = { viewModel.onIntent(SearchIntent.UpdateQuery(it)) },
+                        onSearch = {
+                            viewModel.onIntent(SearchIntent.Search)
+                            isSearchActive = false
+                            focusManager.clearFocus()
+                        },
+                        expanded = isSearchActive,
+                        onExpandedChange = { isSearchActive = it },
+                        placeholder = { Text(stringResource(R.string.search_placeholder)) },
+                        leadingIcon = {
+                            if (isSearchActive) {
+                                IconButton(
+                                    onClick = {
+                                        isSearchActive = false
+                                        focusManager.clearFocus()
+                                        viewModel.onIntent(SearchIntent.ResetSearch)
+                                    },
+                                    modifier = Modifier.semantics { contentDescription = closeSearchDescription }
+                                ) {
+                                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                                }
+                            } else {
+                                Icon(
+                                    Icons.Default.Search,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        },
+                        trailingIcon = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                // Voice search button
+                                AnimatedVisibility(
+                                    visible = uiState.query.isEmpty() && onStartVoiceSearch != null,
+                                    enter = fadeIn() + scaleIn(),
+                                    exit = fadeOut() + scaleOut()
+                                ) {
+                                    IconButton(
+                                        onClick = { viewModel.onIntent(SearchIntent.StartVoiceSearch) },
+                                        modifier = Modifier.semantics { contentDescription = voiceSearchDescription }
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Mic,
+                                            contentDescription = null,
+                                            tint = if (uiState.isVoiceSearchActive) 
+                                                MaterialTheme.colorScheme.primary 
+                                            else 
+                                                MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+
+                                // Search submit button — visible when query has text and bar is expanded
+                                AnimatedVisibility(
+                                    visible = uiState.query.isNotEmpty() && isSearchActive,
+                                    enter = fadeIn() + scaleIn(),
+                                    exit = fadeOut() + scaleOut()
+                                ) {
+                                    IconButton(
+                                        onClick = {
+                                            viewModel.onIntent(SearchIntent.Search)
+                                            isSearchActive = false
+                                            focusManager.clearFocus()
+                                        },
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Search,
+                                            contentDescription = stringResource(R.string.search_action_search),
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                }
+                                
+                                // Clear button
+                                AnimatedVisibility(
+                                    visible = uiState.query.isNotEmpty(),
+                                    enter = fadeIn() + scaleIn(),
+                                    exit = fadeOut() + scaleOut()
+                                ) {
+                                    IconButton(
+                                        onClick = { viewModel.onIntent(SearchIntent.ResetSearch) },
+                                        modifier = Modifier.semantics { contentDescription = clearSearchDescription }
+                                    ) {
+                                        Icon(Icons.Default.Clear, contentDescription = null)
+                                    }
+                                }
+                            }
+                        },
+                    )
                 },
-                active = isSearchActive,
-                onActiveChange = { isSearchActive = it },
+                expanded = isSearchActive,
+                onExpandedChange = { isSearchActive = it },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = if (isSearchActive) 0.dp else 16.dp)
                     .semantics { contentDescription = searchContentDescription },
-                placeholder = { Text(stringResource(R.string.search_placeholder)) },
-                leadingIcon = {
-                    if (isSearchActive) {
-                        IconButton(
-                            onClick = {
-                                isSearchActive = false
-                                focusManager.clearFocus()
-                                viewModel.onIntent(SearchIntent.ClearQuery)
-                            },
-                            modifier = Modifier.semantics { contentDescription = closeSearchDescription }
-                        ) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
-                        }
-                    } else {
-                        Icon(
-                            Icons.Default.Search,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                },
-                trailingIcon = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        // Voice search button
-                        AnimatedVisibility(
-                            visible = uiState.query.isEmpty() && onStartVoiceSearch != null,
-                            enter = fadeIn() + scaleIn(),
-                            exit = fadeOut() + scaleOut()
-                        ) {
-                            IconButton(
-                                onClick = { viewModel.onIntent(SearchIntent.StartVoiceSearch) },
-                                modifier = Modifier.semantics { contentDescription = voiceSearchDescription }
-                            ) {
-                                Icon(
-                                    Icons.Default.Mic,
-                                    contentDescription = null,
-                                    tint = if (uiState.isVoiceSearchActive) 
-                                        MaterialTheme.colorScheme.primary 
-                                    else 
-                                        MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                        
-                        // Clear button
-                        AnimatedVisibility(
-                            visible = uiState.query.isNotEmpty(),
-                            enter = fadeIn() + scaleIn(),
-                            exit = fadeOut() + scaleOut()
-                        ) {
-                            IconButton(
-                                onClick = { viewModel.onIntent(SearchIntent.ClearQuery) },
-                                modifier = Modifier.semantics { contentDescription = clearSearchDescription }
-                            ) {
-                                Icon(Icons.Default.Clear, contentDescription = null)
-                            }
-                        }
-                    }
-                },
             ) {
                 // Search suggestions content
                 SearchSuggestionsContent(
                     suggestions = uiState.suggestions,
                     recentSearches = uiState.recentSearches,
-                    onSuggestionClick = { viewModel.onIntent(SearchIntent.SelectSuggestion(it)) },
-                    onRecentSearchClick = { viewModel.onIntent(SearchIntent.SelectRecentSearch(it)) },
+                    onSuggestionClick = {
+                        viewModel.onIntent(SearchIntent.SelectSuggestion(it))
+                        isSearchActive = false
+                        focusManager.clearFocus()
+                    },
+                    onRecentSearchClick = {
+                        viewModel.onIntent(SearchIntent.SelectRecentSearch(it))
+                        isSearchActive = false
+                        focusManager.clearFocus()
+                    },
                     onDeleteRecentSearch = { viewModel.onIntent(SearchIntent.DeleteRecentSearch(it)) },
                     onClearRecentSearches = { viewModel.onIntent(SearchIntent.ClearRecentSearches) },
                 )
@@ -370,18 +406,9 @@ fun SearchScreen(
                                 icon = "🔍",
                                 title = stringResource(R.string.search_no_results_title),
                                 message = stringResource(R.string.search_no_results_description, uiState.query),
-                                actionLabel = if (uiState.hasActiveFilters) {
-                                    stringResource(R.string.search_no_results_clear_filters)
-                                } else {
-                                    null
-                                },
-                                onAction = if (uiState.hasActiveFilters) {
-                                    {
-                                        viewModel.onIntent(SearchIntent.ClearEmojiFilters)
-                                        viewModel.onIntent(SearchIntent.ClearQuickFilter)
-                                    }
-                                } else {
-                                    null
+                                actionLabel = stringResource(R.string.search_no_results_clear_filters),
+                                onAction = {
+                                    viewModel.onIntent(SearchIntent.ResetSearch)
                                 },
                                 modifier = Modifier.fillMaxSize(),
                             )
@@ -433,7 +460,7 @@ private fun QuickFilterRow(
                 onClick = {
                     if (isSelected) onClearFilter() else onFilterClick(filter)
                 },
-                label = { Text(filter.label) },
+                label = { Text(stringResource(filter.labelResId)) },
                 leadingIcon = { Text(filter.emoji) },
                 colors = if (isSelected) {
                     AssistChipDefaults.assistChipColors(
@@ -447,7 +474,7 @@ private fun QuickFilterRow(
                     contentDescription = context.getString(
                         if (isSelected) R.string.search_quick_filter_selected_content_description 
                         else R.string.search_quick_filter_content_description,
-                        filter.label
+                        context.getString(filter.labelResId)
                     )
                 }
             )

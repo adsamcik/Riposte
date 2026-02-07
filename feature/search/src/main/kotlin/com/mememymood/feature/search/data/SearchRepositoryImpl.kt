@@ -263,6 +263,36 @@ class SearchRepositoryImpl @Inject constructor(
         }
     }
 
+    override fun getAllMemes(): Flow<List<Meme>> {
+        return memeDao.getAllMemes().map { entities ->
+            entities.map { it.toDomain() }
+        }
+    }
+
+    override fun getFavoriteMemes(): Flow<List<SearchResult>> {
+        return memeDao.getFavoriteMemes().map { entities ->
+            entities.mapIndexed { index, entity ->
+                SearchResult(
+                    meme = entity.toDomain(),
+                    relevanceScore = 1.0f - (index * 0.01f).coerceAtMost(0.5f),
+                    matchType = MatchType.TEXT,
+                )
+            }
+        }
+    }
+
+    override fun getRecentMemes(): Flow<List<SearchResult>> {
+        return memeDao.getRecentlyViewedMemes().map { entities ->
+            entities.mapIndexed { index, entity ->
+                SearchResult(
+                    meme = entity.toDomain(),
+                    relevanceScore = 1.0f - (index * 0.01f).coerceAtMost(0.5f),
+                    matchType = MatchType.TEXT,
+                )
+            }
+        }
+    }
+
     companion object {
         private const val FTS_WEIGHT = 0.6f
         private const val SEMANTIC_WEIGHT = 0.4f

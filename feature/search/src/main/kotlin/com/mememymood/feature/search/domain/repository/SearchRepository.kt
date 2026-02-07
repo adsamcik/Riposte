@@ -1,5 +1,6 @@
 package com.mememymood.feature.search.domain.repository
 
+import com.mememymood.core.model.Meme
 import com.mememymood.core.model.SearchResult
 import kotlinx.coroutines.flow.Flow
 
@@ -84,4 +85,25 @@ interface SearchRepository {
      * @return Flow of emoji-count pairs sorted by frequency descending.
      */
     fun getEmojiCounts(): Flow<List<Pair<String, Int>>>
+
+    /**
+     * Get all memes as a flow (for suggestion engine).
+     *
+     * @return Flow of all memes.
+     */
+    fun getAllMemes(): Flow<List<Meme>>
+
+    /**
+     * Get favorite memes as search results.
+     *
+     * @return Flow of favorite memes wrapped as search results.
+     */
+    fun getFavoriteMemes(): Flow<List<SearchResult>>
+
+    /**
+     * Get recently viewed memes as search results.
+     *
+     * @return Flow of recently viewed memes wrapped as search results.
+     */
+    fun getRecentMemes(): Flow<List<SearchResult>>
 }

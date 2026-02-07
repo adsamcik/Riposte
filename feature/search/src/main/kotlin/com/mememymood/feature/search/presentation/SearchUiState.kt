@@ -2,6 +2,7 @@ package com.mememymood.feature.search.presentation
 
 import com.mememymood.core.model.Meme
 import com.mememymood.core.model.SearchResult
+import com.mememymood.feature.search.R
 
 data class SearchUiState(
     val query: String = "",
@@ -9,6 +10,7 @@ data class SearchUiState(
     val results: List<SearchResult> = emptyList(),
     val recentSearches: List<String> = emptyList(),
     val suggestions: List<String> = emptyList(),
+    val suggestedMemes: List<Meme> = emptyList(),
     val selectedEmojiFilters: List<String> = emptyList(),
     val emojiCounts: List<Pair<String, Int>> = emptyList(),
     val isSearching: Boolean = false,
@@ -25,6 +27,17 @@ data class SearchUiState(
 ) {
     val hasActiveFilters: Boolean
         get() = selectedEmojiFilters.isNotEmpty() || selectedQuickFilter != null
+
+    val activeFilterCount: Int
+        get() {
+            var count = 0
+            if (selectedEmojiFilters.isNotEmpty()) count += selectedEmojiFilters.size
+            if (selectedQuickFilter != null) count++
+            if (searchMode != SearchMode.HYBRID) count++
+            if (sortOrder != SearchSortOrder.RELEVANCE) count++
+            if (viewMode != SearchViewMode.GRID) count++
+            return count
+        }
 
     val resultSummary: String
         get() = when {
@@ -55,19 +68,18 @@ enum class SearchViewMode {
 
 data class QuickFilter(
     val id: String,
-    val label: String,
+    val labelResId: Int,
     val emoji: String,
     val query: String? = null,
     val emojiFilter: String? = null,
 ) {
     companion object {
         fun defaultFilters() = listOf(
-            QuickFilter("favorites", "Favorites", "⭐", query = "is:favorite"),
-            QuickFilter("recent", "Recent", "🕐", query = "is:recent"),
-            QuickFilter("trending", "Trending", "🔥"),
-            QuickFilter("funny", "Funny", "😂", emojiFilter = "😂"),
-            QuickFilter("love", "Love", "❤️", emojiFilter = "❤️"),
-            QuickFilter("reactions", "Reactions", "😮", query = "type:reaction"),
+            QuickFilter("favorites", R.string.search_quick_filter_favorites, "⭐", query = "is:favorite"),
+            QuickFilter("recent", R.string.search_quick_filter_recent, "🕐", query = "is:recent"),
+            QuickFilter("funny", R.string.search_quick_filter_funny, "😂", emojiFilter = "😂"),
+            QuickFilter("love", R.string.search_quick_filter_love, "❤️", emojiFilter = "❤️"),
+            QuickFilter("reactions", R.string.search_quick_filter_reactions, "😮", query = "type:reaction"),
         )
     }
 }

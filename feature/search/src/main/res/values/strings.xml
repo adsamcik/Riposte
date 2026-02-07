@@ -7,12 +7,13 @@
     <!-- Search Bar Actions -->
     <string name="search_action_close">Close search</string>
     <string name="search_action_voice">Voice search</string>
+    <string name="search_action_search">Search</string>
     <string name="search_action_clear">Clear search query</string>
 
     <!-- Search Modes -->
-    <string name="search_mode_text">Text</string>
-    <string name="search_mode_ai">AI</string>
-    <string name="search_mode_hybrid">Hybrid</string>
+    <string name="search_mode_text">Exact</string>
+    <string name="search_mode_ai">Smart</string>
+    <string name="search_mode_hybrid">Both</string>
     <string name="search_mode_content_description">Search mode: %1$s</string>
 
     <!-- Emoji Filter Section -->
@@ -52,6 +53,7 @@
     <!-- Suggestions Section -->
     <string name="search_suggestions_title">Suggestions</string>
     <string name="search_suggestions_content_description">Suggestion: %1$s</string>
+    <string name="search_suggested_memes_title">Suggested for You</string>
 
     <!-- Recent Searches Section -->
     <string name="search_recent_title">Recent Searches</string>
@@ -100,7 +102,12 @@
     <string name="search_no_results_clear_filters">Clear All Filters</string>
 
     <!-- Result Card -->
-    <string name="search_result_card_content_description">%1$s, %2$d%% relevant</string>
+    <string name="search_result_card_content_description">%1$s, best match</string>
     <string name="search_result_more_emojis">+%1$d</string>
-    <string name="search_result_relevance_percent">%1$d%%</string>
+    <string name="search_result_best_match">Best match</string>
+
+    <!-- Filters Bottom Sheet -->
+    <string name="search_filters">Filters</string>
+    <string name="search_filters_content_description">Filters, %1$d active</string>
+    <string name="search_filters_apply">Apply</string>
 </resources>

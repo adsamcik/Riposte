@@ -1,5 +1,6 @@
 package com.mememymood.feature.search.domain.usecase
 
+import com.mememymood.core.model.Meme
 import com.mememymood.core.model.SearchResult
 import com.mememymood.feature.search.domain.repository.SearchRepository
 import kotlinx.coroutines.flow.Flow
@@ -140,5 +141,26 @@ class SearchUseCases @Inject constructor(
      */
     suspend fun clearRecentSearches() {
         repository.clearRecentSearches()
+    }
+
+    /**
+     * Get all memes for the suggestion engine.
+     */
+    fun getAllMemes(): Flow<List<Meme>> {
+        return repository.getAllMemes()
+    }
+
+    /**
+     * Get favorite memes as search results.
+     */
+    fun getFavoriteMemes(): Flow<List<SearchResult>> {
+        return repository.getFavoriteMemes()
+    }
+
+    /**
+     * Get recently viewed memes as search results.
+     */
+    fun getRecentMemes(): Flow<List<SearchResult>> {
+        return repository.getRecentMemes()
     }
 }

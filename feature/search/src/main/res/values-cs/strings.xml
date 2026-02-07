@@ -10,9 +10,9 @@
     <string name="search_action_clear">Vymazat hledaný výraz</string>
 
     <!-- Search Modes -->
-    <string name="search_mode_text">Text</string>
-    <string name="search_mode_ai">AI</string>
-    <string name="search_mode_hybrid">Hybridní</string>
+    <string name="search_mode_text">Přesné</string>
+    <string name="search_mode_ai">Chytré</string>
+    <string name="search_mode_hybrid">Obojí</string>
     <string name="search_mode_content_description">Režim vyhledávání: %1$s</string>
 
     <!-- Emoji Filter Section -->
@@ -100,7 +100,12 @@
     <string name="search_no_results_clear_filters">Vymazat všechny filtry</string>
 
     <!-- Result Card -->
-    <string name="search_result_card_content_description">%1$s, %2$d%% shoda</string>
+    <string name="search_result_card_content_description">%1$s, nejlepší shoda</string>
     <string name="search_result_more_emojis">+%1$d</string>
-    <string name="search_result_relevance_percent">%1$d%%</string>
+    <string name="search_result_best_match">Nejlepší shoda</string>
+
+    <!-- Filters Bottom Sheet -->
+    <string name="search_filters">Filtry</string>
+    <string name="search_filters_content_description">Filtry, %1$d aktivních</string>
+    <string name="search_filters_apply">Použít</string>
 </resources>

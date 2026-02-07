@@ -3,6 +3,8 @@ package com.mememymood.feature.search.presentation
 import app.cash.turbine.test
 import app.cash.turbine.turbineScope
 import com.google.common.truth.Truth.assertThat
+import com.mememymood.core.common.suggestion.GetSuggestionsUseCase
+import com.mememymood.core.datastore.PreferencesDataStore
 import com.mememymood.core.model.EmojiTag
 import com.mememymood.core.model.MatchType
 import com.mememymood.core.model.Meme
@@ -32,6 +34,8 @@ class SearchViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
 
     private lateinit var searchUseCases: SearchUseCases
+    private lateinit var getSuggestionsUseCase: GetSuggestionsUseCase
+    private lateinit var preferencesDataStore: PreferencesDataStore
     private lateinit var viewModel: SearchViewModel
 
     private val testMemes = listOf(
@@ -55,13 +59,23 @@ class SearchViewModelTest {
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         searchUseCases = mockk()
+        getSuggestionsUseCase = GetSuggestionsUseCase()
+        preferencesDataStore = mockk()
+
+        // Default mock setup
+        every { preferencesDataStore.hasShownSearchTip } returns flowOf(true)
+        coEvery { preferencesDataStore.setSearchTipShown() } returns Unit
 
         // Default mock setup
         every { searchUseCases.getRecentSearches() } returns flowOf(recentSearches)
+        every { searchUseCases.getEmojiCounts() } returns flowOf(emptyList())
         every { searchUseCases.search(any()) } returns flowOf(testSearchResults)
         coEvery { searchUseCases.semanticSearch(any(), any()) } returns testSearchResults
         coEvery { searchUseCases.hybridSearch(any(), any()) } returns testSearchResults
         coEvery { searchUseCases.getSearchSuggestions(any()) } returns suggestions
+        every { searchUseCases.getAllMemes() } returns flowOf(testMemes)
+        every { searchUseCases.getFavoriteMemes() } returns flowOf(testSearchResults)
+        every { searchUseCases.getRecentMemes() } returns flowOf(testSearchResults)
         coEvery { searchUseCases.addRecentSearch(any()) } returns Unit
         coEvery { searchUseCases.deleteRecentSearch(any()) } returns Unit
         coEvery { searchUseCases.clearRecentSearches() } returns Unit
@@ -73,7 +87,7 @@ class SearchViewModelTest {
     }
 
     private fun createViewModel(): SearchViewModel {
-        return SearchViewModel(searchUseCases)
+        return SearchViewModel(searchUseCases, getSuggestionsUseCase, preferencesDataStore, testDispatcher)
     }
 
     // region Initialization Tests
@@ -238,6 +252,17 @@ class SearchViewModelTest {
     }
 
     @Test
+    fun `Search sets hasSearched true immediately`() = runTest {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onIntent(SearchIntent.UpdateQuery("test query"))
+        viewModel.onIntent(SearchIntent.Search)
+
+        assertThat(viewModel.uiState.value.hasSearched).isTrue()
+    }
+
+    @Test
     fun `Search with blank query does nothing`() = runTest {
         viewModel = createViewModel()
         advanceUntilIdle()
@@ -344,7 +369,71 @@ class SearchViewModelTest {
 
     // endregion
 
-    // region Recent Searches Tests
+    // region Emoji Filter With Empty Query Tests
+
+    @Test
+    fun `ToggleEmojiFilter with empty query triggers search results`() = runTest {
+        val memesWithEmoji = listOf(
+            createTestMeme(1, "meme1.jpg", emojiTags = listOf(EmojiTag.fromEmoji("😂"))),
+            createTestMeme(2, "meme2.jpg", emojiTags = listOf(EmojiTag.fromEmoji("😀"))),
+            createTestMeme(3, "meme3.jpg", emojiTags = listOf(EmojiTag.fromEmoji("😂"))),
+        )
+        every { searchUseCases.getAllMemes() } returns flowOf(memesWithEmoji)
+
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        // Toggle emoji filter with no text query
+        viewModel.onIntent(SearchIntent.ToggleEmojiFilter("😂"))
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertThat(state.hasSearched).isTrue()
+        assertThat(state.results).hasSize(2)
+        assertThat(state.results.all { result ->
+            result.meme.emojiTags.any { it.emoji == "😂" }
+        }).isTrue()
+    }
+
+    @Test
+    fun `ClearEmojiFilters resets hasSearched when query is empty`() = runTest {
+        val memesWithEmoji = listOf(
+            createTestMeme(1, "meme1.jpg", emojiTags = listOf(EmojiTag.fromEmoji("😂"))),
+        )
+        every { searchUseCases.getAllMemes() } returns flowOf(memesWithEmoji)
+
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        // Toggle emoji filter to trigger search
+        viewModel.onIntent(SearchIntent.ToggleEmojiFilter("😂"))
+        advanceUntilIdle()
+        assertThat(viewModel.uiState.value.hasSearched).isTrue()
+
+        // Clear filters — should reset hasSearched
+        viewModel.onIntent(SearchIntent.ClearEmojiFilters)
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertThat(state.hasSearched).isFalse()
+        assertThat(state.results).isEmpty()
+        assertThat(state.selectedEmojiFilters).isEmpty()
+    }
+
+    @Test
+    fun `Search intent triggers performSearch`() = runTest {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onIntent(SearchIntent.UpdateQuery("hello"))
+        viewModel.onIntent(SearchIntent.Search)
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.hasSearched).isTrue()
+        assertThat(viewModel.uiState.value.results).isNotEmpty()
+    }
+
+    // endregion
 
     @Test
     fun `SelectRecentSearch updates query and performs search`() = runTest {
@@ -355,6 +444,7 @@ class SearchViewModelTest {
         advanceUntilIdle()
 
         assertThat(viewModel.uiState.value.query).isEqualTo("funny")
+        assertThat(viewModel.uiState.value.hasSearched).isTrue()
         coVerify { searchUseCases.addRecentSearch("funny") }
     }
 
@@ -787,6 +877,220 @@ class SearchViewModelTest {
 
             effectsFlow.cancel()
         }
+    }
+
+    @Test
+    fun `hybrid search falls back to FTS when UnsatisfiedLinkError is thrown`() = runTest {
+        coEvery { searchUseCases.hybridSearch(any(), any()) } throws UnsatisfiedLinkError("libgemma_embedding_model_jni.so not found")
+
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onIntent(SearchIntent.UpdateQuery("test"))
+        advanceTimeBy(350)
+        advanceUntilIdle()
+
+        // Should fall back to text search and show results
+        verify { searchUseCases.search("test") }
+        val state = viewModel.uiState.value
+        assertThat(state.hasSearched).isTrue()
+        assertThat(state.results).isNotEmpty()
+        assertThat(state.errorMessage).isNull()
+    }
+
+    @Test
+    fun `semantic search falls back to FTS when UnsatisfiedLinkError is thrown`() = runTest {
+        coEvery { searchUseCases.semanticSearch(any(), any()) } throws UnsatisfiedLinkError("libgemma_embedding_model_jni.so not found")
+
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onIntent(SearchIntent.SetSearchMode(SearchMode.SEMANTIC))
+        viewModel.onIntent(SearchIntent.UpdateQuery("test"))
+        advanceTimeBy(350)
+        advanceUntilIdle()
+
+        // Should fall back to text search
+        verify { searchUseCases.search("test") }
+        val state = viewModel.uiState.value
+        assertThat(state.hasSearched).isTrue()
+        assertThat(state.results).isNotEmpty()
+    }
+
+    @Test
+    fun `hybrid search falls back to FTS when ExceptionInInitializerError is thrown`() = runTest {
+        coEvery { searchUseCases.hybridSearch(any(), any()) } throws ExceptionInInitializerError(
+            UnsatisfiedLinkError("libgemma_embedding_model_jni.so not found")
+        )
+
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onIntent(SearchIntent.UpdateQuery("test"))
+        advanceTimeBy(350)
+        advanceUntilIdle()
+
+        // Should fall back to text search
+        verify { searchUseCases.search("test") }
+        val state = viewModel.uiState.value
+        assertThat(state.hasSearched).isTrue()
+        assertThat(state.results).isNotEmpty()
+        assertThat(state.errorMessage).isNull()
+    }
+
+    // endregion
+
+    // region Quick Filter Interception Tests (p1-9)
+
+    @Test
+    fun `is_favorite query routes to getFavoriteMemes instead of FTS`() = runTest {
+        val favoriteResults = listOf(
+            SearchResult(
+                meme = createTestMeme(10, "fav.jpg", isFavorite = true),
+                relevanceScore = 1.0f,
+                matchType = MatchType.TEXT
+            )
+        )
+        every { searchUseCases.getFavoriteMemes() } returns flowOf(favoriteResults)
+
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onIntent(SearchIntent.UpdateQuery("is:favorite"))
+        advanceTimeBy(350)
+        advanceUntilIdle()
+
+        verify { searchUseCases.getFavoriteMemes() }
+        assertThat(viewModel.uiState.value.results).hasSize(1)
+        assertThat(viewModel.uiState.value.results[0].meme.isFavorite).isTrue()
+        assertThat(viewModel.uiState.value.hasSearched).isTrue()
+    }
+
+    @Test
+    fun `is_recent query routes to getRecentMemes instead of FTS`() = runTest {
+        val recentResults = listOf(
+            SearchResult(
+                meme = createTestMeme(20, "recent.jpg"),
+                relevanceScore = 1.0f,
+                matchType = MatchType.TEXT
+            )
+        )
+        every { searchUseCases.getRecentMemes() } returns flowOf(recentResults)
+
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onIntent(SearchIntent.UpdateQuery("is:recent"))
+        advanceTimeBy(350)
+        advanceUntilIdle()
+
+        verify { searchUseCases.getRecentMemes() }
+        assertThat(viewModel.uiState.value.results).hasSize(1)
+        assertThat(viewModel.uiState.value.hasSearched).isTrue()
+    }
+
+    @Test
+    fun `type_reaction query falls through to regular search`() = runTest {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onIntent(SearchIntent.UpdateQuery("type:reaction"))
+        advanceTimeBy(350)
+        advanceUntilIdle()
+
+        verify { searchUseCases.search("reaction") }
+        assertThat(viewModel.uiState.value.hasSearched).isTrue()
+    }
+
+    @Test
+    fun `regular query is not intercepted by quick filter`() = runTest {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onIntent(SearchIntent.UpdateQuery("funny cats"))
+        advanceTimeBy(350)
+        advanceUntilIdle()
+
+        coVerify { searchUseCases.hybridSearch("funny cats", any()) }
+    }
+
+    // endregion
+
+    // region Regression: Trending Quick Filter (p2-ux)
+
+    @Test
+    fun `when trending filter selected then results are returned or filter is skipped`() = runTest {
+        // "Trending" is not in default quick filters and has no tryQuickFilterQuery handler.
+        // Selecting a quick filter whose query doesn't match a known filter should fall through
+        // to regular search. Verify the ViewModel gracefully handles an unknown quick filter query.
+        val trendingFilter = QuickFilter("trending", 0, "📈", query = "is:trending")
+        every { searchUseCases.search(any()) } returns flowOf(testSearchResults)
+
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onIntent(SearchIntent.SelectQuickFilter(trendingFilter))
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertThat(state.selectedQuickFilter).isEqualTo(trendingFilter)
+        // "is:trending" is not intercepted, so it falls through to hybrid search
+        assertThat(state.hasSearched).isTrue()
+    }
+
+    // endregion
+
+    // region Regression: Search Mode Affects Search (p2-ux)
+
+    @Test
+    fun `when search mode changed then subsequent search uses new mode`() = runTest {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        // Start a search in HYBRID mode
+        viewModel.onIntent(SearchIntent.UpdateQuery("cats"))
+        advanceTimeBy(350)
+        advanceUntilIdle()
+
+        coVerify { searchUseCases.hybridSearch("cats", any()) }
+
+        // Switch to TEXT mode — should re-search with text search
+        viewModel.onIntent(SearchIntent.SetSearchMode(SearchMode.TEXT))
+        advanceUntilIdle()
+
+        verify { searchUseCases.search("cats") }
+        assertThat(viewModel.uiState.value.searchMode).isEqualTo(SearchMode.TEXT)
+
+        // Switch to SEMANTIC — should re-search with semantic search
+        viewModel.onIntent(SearchIntent.SetSearchMode(SearchMode.SEMANTIC))
+        advanceUntilIdle()
+
+        coVerify { searchUseCases.semanticSearch("cats", any()) }
+        assertThat(viewModel.uiState.value.searchMode).isEqualTo(SearchMode.SEMANTIC)
+    }
+
+    // endregion
+
+    // region Search Mode Renaming Tests (p1-12)
+
+    @Test
+    fun `default search mode is HYBRID (Both)`() = runTest {
+        viewModel = createViewModel()
+
+        assertThat(viewModel.uiState.value.searchMode).isEqualTo(SearchMode.HYBRID)
+    }
+
+    @Test
+    fun `activeFilterCount increments when mode is not HYBRID`() = runTest {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.activeFilterCount).isEqualTo(0)
+
+        viewModel.onIntent(SearchIntent.SetSearchMode(SearchMode.TEXT))
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.activeFilterCount).isEqualTo(1)
     }
 
     // endregion
