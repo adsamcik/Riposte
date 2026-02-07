@@ -73,6 +73,7 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -276,12 +277,21 @@ private fun ShareContent(
                     onFormatChange = { onIntent(ShareIntent.SetFormat(it)) },
                 )
 
-                Spacer(Modifier.height(16.dp))
+                AnimatedVisibility(
+                    visible = uiState.config.format.isLossy,
+                    enter = expandVertically(),
+                    exit = shrinkVertically(),
+                    modifier = Modifier.testTag("quality_slider_section"),
+                ) {
+                    Column {
+                        Spacer(Modifier.height(16.dp))
 
-                QualitySlider(
-                    quality = uiState.config.quality,
-                    onQualityChange = { onIntent(ShareIntent.SetQuality(it)) },
-                )
+                        QualitySlider(
+                            quality = uiState.config.quality,
+                            onQualityChange = { onIntent(ShareIntent.SetQuality(it)) },
+                        )
+                    }
+                }
 
                 Spacer(Modifier.height(16.dp))
 

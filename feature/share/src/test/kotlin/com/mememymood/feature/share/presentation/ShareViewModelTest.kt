@@ -149,6 +149,39 @@ class ShareViewModelTest {
     }
 
     @Test
+    fun `SetFormat to PNG results in non-lossy format hiding quality slider`() = runTest {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onIntent(ShareIntent.SetFormat(ImageFormat.PNG))
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.config.format.isLossy).isFalse()
+    }
+
+    @Test
+    fun `SetFormat to JPEG results in lossy format showing quality slider`() = runTest {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onIntent(ShareIntent.SetFormat(ImageFormat.JPEG))
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.config.format.isLossy).isTrue()
+    }
+
+    @Test
+    fun `SetFormat to WEBP results in lossy format showing quality slider`() = runTest {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onIntent(ShareIntent.SetFormat(ImageFormat.WEBP))
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.config.format.isLossy).isTrue()
+    }
+
+    @Test
     fun `SetQuality updates config quality`() = runTest {
         viewModel = createViewModel()
         advanceUntilIdle()
