@@ -14,6 +14,7 @@ import com.mememymood.core.model.UserDensityPreference
 import com.mememymood.feature.gallery.domain.usecase.DeleteMemesUseCase
 import com.mememymood.feature.gallery.domain.usecase.GetAllMemeIdsUseCase
 import com.mememymood.feature.gallery.domain.usecase.GetFavoritesUseCase
+import com.mememymood.feature.gallery.domain.usecase.GetMemeByIdUseCase
 import com.mememymood.feature.gallery.domain.usecase.GetMemesByEmojiUseCase
 import com.mememymood.feature.gallery.domain.usecase.GetMemesUseCase
 import com.mememymood.feature.gallery.domain.usecase.GetPagedMemesUseCase
@@ -45,6 +46,7 @@ class GalleryViewModelTest {
     private lateinit var getPagedMemesUseCase: GetPagedMemesUseCase
     private lateinit var getFavoritesUseCase: GetFavoritesUseCase
     private lateinit var getMemesByEmojiUseCase: GetMemesByEmojiUseCase
+    private lateinit var getMemeByIdUseCase: GetMemeByIdUseCase
     private lateinit var deleteMemesUseCase: DeleteMemesUseCase
     private lateinit var toggleFavoriteUseCase: ToggleFavoriteUseCase
     private lateinit var getAllMemeIdsUseCase: GetAllMemeIdsUseCase
@@ -82,6 +84,7 @@ class GalleryViewModelTest {
         getPagedMemesUseCase = mockk(relaxed = true)
         getFavoritesUseCase = mockk()
         getMemesByEmojiUseCase = mockk()
+        getMemeByIdUseCase = mockk()
         deleteMemesUseCase = mockk()
         toggleFavoriteUseCase = mockk()
         getAllMemeIdsUseCase = mockk()
@@ -112,6 +115,7 @@ class GalleryViewModelTest {
             getPagedMemesUseCase = getPagedMemesUseCase,
             getFavoritesUseCase = getFavoritesUseCase,
             getMemesByEmojiUseCase = getMemesByEmojiUseCase,
+            getMemeByIdUseCase = getMemeByIdUseCase,
             deleteMemeUseCase = deleteMemesUseCase,
             toggleFavoriteUseCase = toggleFavoriteUseCase,
             getAllMemeIdsUseCase = getAllMemeIdsUseCase,

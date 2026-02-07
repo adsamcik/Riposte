@@ -14,6 +14,7 @@ import com.mememymood.feature.gallery.R
 import com.mememymood.feature.gallery.domain.usecase.DeleteMemesUseCase
 import com.mememymood.feature.gallery.domain.usecase.GetAllMemeIdsUseCase
 import com.mememymood.feature.gallery.domain.usecase.GetFavoritesUseCase
+import com.mememymood.feature.gallery.domain.usecase.GetMemeByIdUseCase
 import com.mememymood.feature.gallery.domain.usecase.GetMemesByEmojiUseCase
 import com.mememymood.feature.gallery.domain.usecase.GetMemesUseCase
 import com.mememymood.feature.gallery.domain.usecase.GetPagedMemesUseCase
@@ -42,6 +43,7 @@ class GalleryViewModel @Inject constructor(
     private val getPagedMemesUseCase: GetPagedMemesUseCase,
     private val getFavoritesUseCase: GetFavoritesUseCase,
     private val getMemesByEmojiUseCase: GetMemesByEmojiUseCase,
+    private val getMemeByIdUseCase: GetMemeByIdUseCase,
     private val deleteMemeUseCase: DeleteMemesUseCase,
     private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
     private val getAllMemeIdsUseCase: GetAllMemeIdsUseCase,
@@ -324,6 +326,7 @@ class GalleryViewModel @Inject constructor(
             // Find the meme to show in the bottom sheet
             val meme = _uiState.value.memes.find { it.id == memeId }
                 ?: _uiState.value.suggestions.find { it.id == memeId }
+                ?: getMemeByIdUseCase(memeId)
             if (meme == null) {
                 _effects.send(GalleryEffect.NavigateToShare(memeId))
                 return@launch
