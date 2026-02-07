@@ -402,10 +402,18 @@ fun SearchScreen(
                             SearchEmptyPrompt()
                         }
                         isEmpty -> {
+                            val filterLabel = uiState.selectedQuickFilter?.let {
+                                stringResource(it.labelResId)
+                            }
+                            val displayQuery = uiState.query.ifEmpty { filterLabel ?: "" }
                             EmptyState(
                                 icon = "🔍",
                                 title = stringResource(R.string.search_no_results_title),
-                                message = stringResource(R.string.search_no_results_description, uiState.query),
+                                message = if (displayQuery.isNotEmpty()) {
+                                    stringResource(R.string.search_no_results_description, displayQuery)
+                                } else {
+                                    stringResource(R.string.search_no_results_title)
+                                },
                                 actionLabel = stringResource(R.string.search_no_results_clear_filters),
                                 onAction = {
                                     viewModel.onIntent(SearchIntent.ResetSearch)
