@@ -323,17 +323,6 @@ class SearchViewModel @Inject constructor(
         }
     }
 
-    private fun applyEmojiFilters(results: List<com.mememymood.core.model.SearchResult>): List<com.mememymood.core.model.SearchResult> {
-        val filters = _uiState.value.selectedEmojiFilters
-        if (filters.isEmpty()) return results
-
-        val normalizedFilters = filters.map { normalizeEmoji(it) }.toSet()
-        return results.filter { result ->
-            val normalizedMemeEmojis = result.meme.emojiTags.map { normalizeEmoji(it.emoji) }
-            normalizedFilters.any { it in normalizedMemeEmojis }
-        }
-    }
-
     private suspend fun fallbackToTextSearch(query: String, startTime: Long) {
         try {
             searchUseCases.search(query).collectLatest { results ->
