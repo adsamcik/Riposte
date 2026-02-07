@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.graphics.drawable.Drawable
 import android.net.Uri
+import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -44,6 +45,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
 import coil3.compose.AsyncImage
@@ -155,14 +157,19 @@ private fun ShareTargetItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val density = LocalDensity.current
+    val iconSizePx = remember(density) { with(density) { 48.dp.roundToPx() } }
+
     Column(
         modifier = modifier
-            .width(64.dp)
+            .width(80.dp)
             .clickable(onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         if (icon != null) {
-            val bitmap = remember(icon) { icon.toBitmap(96, 96).asImageBitmap() }
+            val bitmap = remember(icon, iconSizePx) {
+                icon.toBitmap(iconSizePx, iconSizePx).asImageBitmap()
+            }
             Image(
                 bitmap = bitmap,
                 contentDescription = label,
@@ -185,7 +192,7 @@ private fun ShareTargetItem(
             }
         }
 
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         Text(
             text = label,
@@ -205,7 +212,7 @@ private fun MoreItem(
 ) {
     Column(
         modifier = modifier
-            .width(64.dp)
+            .width(80.dp)
             .clickable(onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -223,7 +230,7 @@ private fun MoreItem(
             }
         }
 
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         Text(
             text = stringResource(R.string.gallery_quick_share_more),
@@ -236,12 +243,44 @@ private fun MoreItem(
 }
 
 /**
+ * Well-known messaging app packages, used to prioritize these apps
+ * in the share target list when there is no user usage data.
+ */
+@VisibleForTesting
+internal val MESSAGING_PACKAGES = setOf(
+    "com.whatsapp",
+    "org.telegram.messenger",
+    "com.discord",
+    "com.facebook.orca",
+    "com.google.android.apps.messaging",
+    "org.thoughtcrime.securesms",
+    "com.slack",
+    "com.viber.voip",
+    "com.instagram.android",
+    "com.snapchat.android",
+)
+
+/**
+ * Sorts share targets so that messaging apps appear first when there is no usage data.
+ *
+ * @param targets List of share targets to sort.
+ * @return Sorted list with messaging apps prioritized when no usage data exists.
+ */
+@VisibleForTesting
+internal fun prioritizeShareTargets(targets: List<ShareTarget>): List<ShareTarget> {
+    val hasUsageData = targets.any { it.shareCount > 0 }
+    if (hasUsageData) return targets
+    return targets.sortedByDescending { it.packageName in MESSAGING_PACKAGES }
+}
+
+/**
  * Resolves share targets by merging frequent (DB-tracked) targets with
  * system-available share targets discovered via PackageManager.
  *
  * - Frequent targets are shown first (they already have usage data)
  * - If fewer than 6 frequent targets, pad with system-discovered apps
  * - Verifies that frequent targets are still installed
+ * - When no usage data exists, messaging apps are prioritized
  */
 private fun resolveShareTargets(
     context: Context,
@@ -259,6 +298,9 @@ private fun resolveShareTargets(
 
     val systemTargetsByPackage = resolvedInfos.associateBy { it.activityInfo.packageName }
 
+    // Check if user has any usage data
+    val hasUsageData = frequentTargets.any { it.shareCount > 0 }
+
     // Resolve frequent targets (verify still installed)
     val resolved = mutableListOf<ResolvedTarget>()
     val seenPackages = mutableSetOf<String>()
@@ -273,7 +315,15 @@ private fun resolveShareTargets(
 
     // Pad with system targets if needed
     if (resolved.size < maxItems) {
-        for (info in resolvedInfos) {
+        // Sort remaining system targets: messaging apps first when no usage data
+        val remainingInfos = resolvedInfos.filter { it.activityInfo.packageName !in seenPackages }
+        val sortedInfos = if (hasUsageData) {
+            remainingInfos
+        } else {
+            remainingInfos.sortedByDescending { it.activityInfo.packageName in MESSAGING_PACKAGES }
+        }
+
+        for (info in sortedInfos) {
             val pkg = info.activityInfo.packageName
             if (pkg in seenPackages) continue
             val label = info.loadLabel(pm).toString()
