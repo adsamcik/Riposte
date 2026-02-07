@@ -31,10 +31,9 @@ data class SettingsUiState(
     val gridDensityPreference: UserDensityPreference = UserDensityPreference.AUTO,
 
     // Sharing defaults
-    val defaultFormat: ImageFormat = ImageFormat.JPEG,
+    val defaultFormat: ImageFormat = ImageFormat.WEBP,
     val defaultQuality: Int = 85,
     val defaultMaxDimension: Int = 1080,
-    val keepMetadata: Boolean = true,
 
     // Search
     val enableSemanticSearch: Boolean = true,
@@ -43,6 +42,17 @@ data class SettingsUiState(
     // Storage
     val cacheSize: String = "0 B",
     val showClearCacheDialog: Boolean = false,
+
+    // Export options dialog
+    val showExportOptionsDialog: Boolean = false,
+    val exportSettings: Boolean = true,
+    val exportImages: Boolean = true,
+    val exportTags: Boolean = true,
+
+    // Import confirmation dialog
+    val showImportConfirmDialog: Boolean = false,
+    val pendingImportJson: String? = null,
+    val importBackupTimestamp: Long? = null,
 
     // About
     val appVersion: String = "1.0.0",

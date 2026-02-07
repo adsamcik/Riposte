@@ -17,7 +17,6 @@ sealed interface SettingsIntent {
     data class SetDefaultFormat(val format: ImageFormat) : SettingsIntent
     data class SetDefaultQuality(val quality: Int) : SettingsIntent
     data class SetDefaultMaxDimension(val dimension: Int) : SettingsIntent
-    data class SetKeepMetadata(val keep: Boolean) : SettingsIntent
 
     // Search
     data class SetEnableSemanticSearch(val enabled: Boolean) : SettingsIntent
@@ -28,8 +27,21 @@ sealed interface SettingsIntent {
     data object ShowClearCacheDialog : SettingsIntent
     data object DismissDialog : SettingsIntent
     data object ConfirmClearCache : SettingsIntent
-    data object ExportData : SettingsIntent
+
+    // Export
+    data object ShowExportOptionsDialog : SettingsIntent
+    data object DismissExportOptionsDialog : SettingsIntent
+    data class SetExportSettings(val include: Boolean) : SettingsIntent
+    data class SetExportImages(val include: Boolean) : SettingsIntent
+    data class SetExportTags(val include: Boolean) : SettingsIntent
+    data object ConfirmExport : SettingsIntent
+    data class ExportToUri(val uri: android.net.Uri) : SettingsIntent
+
+    // Import
     data object ImportData : SettingsIntent
+    data class ImportFromUri(val uri: android.net.Uri) : SettingsIntent
+    data object ConfirmImport : SettingsIntent
+    data object DismissImportConfirmDialog : SettingsIntent
 
     // About
     data object OpenLicenses : SettingsIntent

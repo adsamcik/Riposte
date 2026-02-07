@@ -27,6 +27,7 @@ fun SliderSettingItem(
     steps: Int = 0,
     valueLabel: @Composable ((Float) -> String)? = null,
     enabled: Boolean = true,
+    onValueChangeFinished: (() -> Unit)? = null,
 ) {
     val labelText = valueLabel?.invoke(value)
     
@@ -54,6 +55,7 @@ fun SliderSettingItem(
         Slider(
             value = value,
             onValueChange = onValueChange,
+            onValueChangeFinished = onValueChangeFinished,
             valueRange = valueRange,
             steps = steps,
             enabled = enabled,

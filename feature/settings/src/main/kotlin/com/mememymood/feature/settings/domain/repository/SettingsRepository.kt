@@ -4,6 +4,7 @@ import com.mememymood.core.model.AppPreferences
 import com.mememymood.core.model.DarkMode
 import com.mememymood.core.model.ImageFormat
 import com.mememymood.core.model.SharingPreferences
+import com.mememymood.core.model.UserDensityPreference
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -62,9 +63,9 @@ interface SettingsRepository {
     suspend fun setDefaultMaxDimension(dimension: Int)
 
     /**
-     * Updates the keep metadata setting.
+     * Updates the grid density preference.
      */
-    suspend fun setKeepMetadata(keep: Boolean)
+    suspend fun setGridDensity(preference: UserDensityPreference)
 
     /**
      * Exports preferences to a JSON string.

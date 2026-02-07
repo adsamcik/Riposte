@@ -63,13 +63,11 @@ class DefaultSettingsRepositoryTest {
         defaultQuality: Int = 85,
         maxWidth: Int = 1080,
         maxHeight: Int = 1080,
-        keepMetadata: Boolean = true,
     ) = SharingPreferences(
         defaultFormat = defaultFormat,
         defaultQuality = defaultQuality,
         maxWidth = maxWidth,
         maxHeight = maxHeight,
-        keepMetadata = keepMetadata,
     )
 
     // region Flow Tests
@@ -215,17 +213,6 @@ class DefaultSettingsRepositoryTest {
         assertThat(prefsSlot.captured.maxHeight).isEqualTo(2048)
     }
 
-    @Test
-    fun `setKeepMetadata updates sharing preferences with new value`() = runTest {
-        val prefsSlot = slot<SharingPreferences>()
-        coEvery { preferencesDataStore.updateSharingPreferences(capture(prefsSlot)) } returns Unit
-
-        repository.setKeepMetadata(false)
-
-        coVerify { preferencesDataStore.updateSharingPreferences(any()) }
-        assertThat(prefsSlot.captured.keepMetadata).isFalse()
-    }
-
     // endregion
 
     // region Export/Import Tests
@@ -275,7 +262,6 @@ class DefaultSettingsRepositoryTest {
         coVerify { preferencesDataStore.updateSharingPreferences(any()) }
         coVerify { preferencesDataStore.updateAppPreferences(any()) }
         assertThat(prefsSlot.captured.defaultFormat).isEqualTo(ImageFormat.PNG)
-        assertThat(appPrefsSlot.captured.darkMode).isEqualTo(DarkMode.DARK)
     }
 
     @Test

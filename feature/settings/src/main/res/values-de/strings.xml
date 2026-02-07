@@ -8,6 +8,7 @@
     
     <!-- Section Headers -->
     <string name="settings_section_appearance">Aussehen</string>
+    <string name="settings_section_display">Anzeige</string>
     <string name="settings_section_default_sharing">Standard-Teilen</string>
     <string name="settings_section_search">Suche</string>
     <string name="settings_section_storage">Speicher</string>
@@ -20,6 +21,14 @@
     <string name="settings_theme_dark">Dunkel</string>
     <string name="settings_dynamic_colors_title">Dynamische Farben</string>
     <string name="settings_dynamic_colors_subtitle">Farben aus deinem Hintergrundbild verwenden</string>
+    
+    <!-- Display Section -->
+    <string name="settings_grid_density_title">Rasterdichte</string>
+    <string name="settings_grid_density_subtitle">Miniaturgröße in der Galerie</string>
+    <string name="settings_grid_density_auto">Automatisch (passt sich dem Bildschirm an)</string>
+    <string name="settings_grid_density_compact">Groß (3 Spalten)</string>
+    <string name="settings_grid_density_standard">Mittel (4 Spalten)</string>
+    <string name="settings_grid_density_dense">Klein (5 Spalten)</string>
     
     <!-- Default Sharing Section -->
     <string name="settings_format_title">Format</string>
@@ -36,13 +45,14 @@
     
     <!-- Search Section -->
     <string name="settings_semantic_search_title">Semantische Suche</string>
-    <string name="settings_semantic_search_subtitle">KI-gestützte Suche nach ähnlichen Memes</string>
+    <string name="settings_semantic_search_subtitle">KI-gestützte Suche nach ähnlichen Memes. Benötigt zusätzlichen Speicher für KI-Modell</string>
     <string name="settings_search_history_title">Suchverlauf</string>
     <string name="settings_search_history_subtitle">Letzte Suchen speichern</string>
     
     <!-- Storage Section -->
     <string name="settings_clear_cache_title">Cache leeren</string>
     <string name="settings_clear_cache_subtitle">%1$s freigeben</string>
+    <string name="settings_clear_cache_subtitle_empty">Cache ist leer</string>
     <string name="settings_export_data_title">Daten exportieren</string>
     <string name="settings_export_data_subtitle">Deine Memes und Einstellungen sichern</string>
     <string name="settings_import_data_title">Daten importieren</string>

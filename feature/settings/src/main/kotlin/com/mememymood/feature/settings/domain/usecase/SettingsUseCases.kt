@@ -4,6 +4,7 @@ import com.mememymood.core.model.AppPreferences
 import com.mememymood.core.model.DarkMode
 import com.mememymood.core.model.ImageFormat
 import com.mememymood.core.model.SharingPreferences
+import com.mememymood.core.model.UserDensityPreference
 import com.mememymood.feature.settings.domain.repository.SettingsRepository
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
@@ -99,12 +100,12 @@ class SetDefaultMaxDimensionUseCase @Inject constructor(
 }
 
 /**
- * Use case for updating keep metadata setting.
+ * Use case for updating grid density preference.
  */
-class SetKeepMetadataUseCase @Inject constructor(
+class SetGridDensityUseCase @Inject constructor(
     private val repository: SettingsRepository,
 ) {
-    suspend operator fun invoke(keep: Boolean) = repository.setKeepMetadata(keep)
+    suspend operator fun invoke(preference: UserDensityPreference) = repository.setGridDensity(preference)
 }
 
 /**

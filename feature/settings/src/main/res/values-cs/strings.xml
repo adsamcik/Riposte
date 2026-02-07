@@ -8,6 +8,7 @@
     
     <!-- Section Headers -->
     <string name="settings_section_appearance">Vzhled</string>
+    <string name="settings_section_display">Zobrazení</string>
     <string name="settings_section_default_sharing">Výchozí sdílení</string>
     <string name="settings_section_search">Vyhledávání</string>
     <string name="settings_section_storage">Úložiště</string>
@@ -20,6 +21,14 @@
     <string name="settings_theme_dark">Tmavý</string>
     <string name="settings_dynamic_colors_title">Dynamické barvy</string>
     <string name="settings_dynamic_colors_subtitle">Použít barvy z tapety</string>
+    
+    <!-- Display Section -->
+    <string name="settings_grid_density_title">Hustota mřížky</string>
+    <string name="settings_grid_density_subtitle">Velikost náhledů v galerii</string>
+    <string name="settings_grid_density_auto">Automaticky (přizpůsobí se obrazovce)</string>
+    <string name="settings_grid_density_compact">Velké (3 sloupce)</string>
+    <string name="settings_grid_density_standard">Střední (4 sloupce)</string>
+    <string name="settings_grid_density_dense">Malé (5 sloupců)</string>
     
     <!-- Default Sharing Section -->
     <string name="settings_format_title">Formát</string>
@@ -36,13 +45,14 @@
     
     <!-- Search Section -->
     <string name="settings_semantic_search_title">Sémantické vyhledávání</string>
-    <string name="settings_semantic_search_subtitle">AI vyhledávání podobných memů</string>
+    <string name="settings_semantic_search_subtitle">AI vyhledávání podobných memů. Vyžaduje další úložiště pro AI model</string>
     <string name="settings_search_history_title">Historie vyhledávání</string>
     <string name="settings_search_history_subtitle">Ukládat poslední hledání</string>
     
     <!-- Storage Section -->
     <string name="settings_clear_cache_title">Vymazat mezipaměť</string>
     <string name="settings_clear_cache_subtitle">Uvolnit %1$s</string>
+    <string name="settings_clear_cache_subtitle_empty">Mezipaměť je prázdná</string>
     <string name="settings_export_data_title">Exportovat data</string>
     <string name="settings_export_data_subtitle">Zálohovat memy a nastavení</string>
     <string name="settings_import_data_title">Importovat data</string>

@@ -1,36 +1,39 @@
 package com.mememymood.feature.settings.presentation
 
-import android.content.Intent
+import android.content.res.Configuration
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Brightness4
-import androidx.compose.material.icons.filled.Cached
 import androidx.compose.material.icons.filled.CleaningServices
 import androidx.compose.material.icons.filled.ColorLens
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.HighQuality
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.PhotoSizeSelectLarge
 import androidx.compose.material.icons.filled.Policy
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -40,29 +43,32 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.mememymood.feature.settings.R
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mememymood.core.model.DarkMode
-import com.mememymood.core.model.ImageFormat
 import com.mememymood.core.model.UserDensityPreference
 import com.mememymood.feature.settings.presentation.component.ClickableSettingItem
 import com.mememymood.feature.settings.presentation.component.DialogSettingItem
 import com.mememymood.feature.settings.presentation.component.SettingsSection
-import com.mememymood.feature.settings.presentation.component.SliderSettingItem
 import com.mememymood.feature.settings.presentation.component.SwitchSettingItem
 import kotlinx.coroutines.flow.collectLatest
+import java.text.DateFormat
+import java.util.Date
 
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * Stateful SettingsScreen that manages ViewModel and side effects.
+ */
 @Composable
 fun SettingsScreen(
     onNavigateBack: () -> Unit,
@@ -72,27 +78,22 @@ fun SettingsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val uriHandler = LocalUriHandler.current
     val context = LocalContext.current
-    
-    // State to trigger file picker launches
-    var launchExportPicker by remember { mutableStateOf(false) }
-    var launchImportPicker by remember { mutableStateOf(false) }
-    
+
     // Export file picker launcher
     val exportLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("application/json")
+        contract = ActivityResultContracts.CreateDocument("application/zip")
     ) { uri: Uri? ->
         if (uri != null) {
-            // Trigger export to this location
-            viewModel.onIntent(SettingsIntent.ExportData)
+            viewModel.onIntent(SettingsIntent.ExportToUri(uri))
         }
     }
-    
+
     // Import file picker launcher
     val importLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
         if (uri != null) {
-            viewModel.importFromFile(uri)
+            viewModel.onIntent(SettingsIntent.ImportFromUri(uri))
         }
     }
 
@@ -111,10 +112,10 @@ fun SettingsScreen(
                     uriHandler.openUri(effect.url)
                 }
                 is SettingsEffect.LaunchExportPicker -> {
-                    exportLauncher.launch("meme_my_mood_backup_${System.currentTimeMillis()}.json")
+                    exportLauncher.launch("meme_my_mood_backup_${System.currentTimeMillis()}.zip")
                 }
                 is SettingsEffect.LaunchImportPicker -> {
-                    importLauncher.launch(arrayOf("application/json"))
+                    importLauncher.launch(arrayOf("application/json", "application/zip", "*/*"))
                 }
                 is SettingsEffect.ExportComplete -> {
                     snackbarHostState.showSnackbar(context.getString(R.string.settings_export_complete, effect.path))
@@ -129,19 +130,111 @@ fun SettingsScreen(
         }
     }
 
+    SettingsScreen(
+        uiState = uiState,
+        onIntent = viewModel::onIntent,
+        onNavigateBack = onNavigateBack,
+        snackbarHostState = snackbarHostState,
+    )
+}
+
+/**
+ * Stateless SettingsScreen for testing and previews.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SettingsScreen(
+    uiState: SettingsUiState,
+    onIntent: (SettingsIntent) -> Unit,
+    onNavigateBack: () -> Unit,
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
+) {
     // Clear cache confirmation dialog
     if (uiState.showClearCacheDialog) {
         AlertDialog(
-            onDismissRequest = { viewModel.onIntent(SettingsIntent.DismissDialog) },
+            onDismissRequest = { onIntent(SettingsIntent.DismissDialog) },
             title = { Text(stringResource(R.string.settings_clear_cache_dialog_title)) },
             text = { Text(stringResource(R.string.settings_clear_cache_dialog_message, uiState.cacheSize)) },
             confirmButton = {
-                TextButton(onClick = { viewModel.onIntent(SettingsIntent.ConfirmClearCache) }) {
-                    Text(stringResource(R.string.settings_clear_cache_dialog_confirm))
+                TextButton(onClick = { onIntent(SettingsIntent.ConfirmClearCache) }) {
+                    Text(
+                        text = stringResource(R.string.settings_clear_cache_dialog_confirm),
+                        color = MaterialTheme.colorScheme.error,
+                    )
                 }
             },
             dismissButton = {
-                TextButton(onClick = { viewModel.onIntent(SettingsIntent.DismissDialog) }) {
+                TextButton(onClick = { onIntent(SettingsIntent.DismissDialog) }) {
+                    Text(stringResource(R.string.settings_clear_cache_dialog_cancel))
+                }
+            },
+        )
+    }
+
+    // Export options dialog
+    if (uiState.showExportOptionsDialog) {
+        AlertDialog(
+            onDismissRequest = { onIntent(SettingsIntent.DismissExportOptionsDialog) },
+            title = { Text(stringResource(R.string.settings_export_options_title)) },
+            text = {
+                Column {
+                    ExportOptionRow(
+                        label = stringResource(R.string.settings_export_option_settings),
+                        checked = uiState.exportSettings,
+                        onCheckedChange = { onIntent(SettingsIntent.SetExportSettings(it)) },
+                    )
+                    ExportOptionRow(
+                        label = stringResource(R.string.settings_export_option_images),
+                        checked = uiState.exportImages,
+                        onCheckedChange = { onIntent(SettingsIntent.SetExportImages(it)) },
+                    )
+                    ExportOptionRow(
+                        label = stringResource(R.string.settings_export_option_tags),
+                        checked = uiState.exportTags,
+                        onCheckedChange = { onIntent(SettingsIntent.SetExportTags(it)) },
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = { onIntent(SettingsIntent.ConfirmExport) },
+                    enabled = uiState.exportSettings || uiState.exportImages || uiState.exportTags,
+                ) {
+                    Text(stringResource(R.string.settings_export_button))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { onIntent(SettingsIntent.DismissExportOptionsDialog) }) {
+                    Text(stringResource(R.string.settings_clear_cache_dialog_cancel))
+                }
+            },
+        )
+    }
+
+    // Import confirmation dialog
+    if (uiState.showImportConfirmDialog) {
+        val dateText = uiState.importBackupTimestamp?.let { timestamp ->
+            DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(timestamp))
+        }
+        AlertDialog(
+            onDismissRequest = { onIntent(SettingsIntent.DismissImportConfirmDialog) },
+            title = { Text(stringResource(R.string.settings_import_confirm_title)) },
+            text = {
+                Text(
+                    if (dateText != null) {
+                        stringResource(R.string.settings_import_confirm_message, dateText)
+                    } else {
+                        stringResource(R.string.settings_import_confirm_message_unknown)
+                    }
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { onIntent(SettingsIntent.ConfirmImport) }) {
+                    Text(stringResource(R.string.settings_import_confirm_replace))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { onIntent(SettingsIntent.DismissImportConfirmDialog) }) {
                     Text(stringResource(R.string.settings_clear_cache_dialog_cancel))
                 }
             },
@@ -174,7 +267,7 @@ fun SettingsScreen(
                         title = stringResource(R.string.settings_theme_title),
                         selectedValue = uiState.darkMode,
                         values = DarkMode.entries,
-                        onValueChange = { viewModel.onIntent(SettingsIntent.SetDarkMode(it)) },
+                        onValueChange = { onIntent(SettingsIntent.SetDarkMode(it)) },
                         icon = Icons.Default.Brightness4,
                         valueLabel = { mode ->
                             when (mode) {
@@ -193,7 +286,7 @@ fun SettingsScreen(
                             selectedValue = uiState.availableLanguages.find { it.code == uiState.currentLanguage }
                                 ?: defaultLanguage,
                             values = uiState.availableLanguages,
-                            onValueChange = { viewModel.onIntent(SettingsIntent.SetLanguage(it.code)) },
+                            onValueChange = { onIntent(SettingsIntent.SetLanguage(it.code)) },
                             icon = Icons.Default.Language,
                             valueLabel = { language ->
                                 when (language.code) {
@@ -213,21 +306,16 @@ fun SettingsScreen(
                         title = stringResource(R.string.settings_dynamic_colors_title),
                         subtitle = stringResource(R.string.settings_dynamic_colors_subtitle),
                         checked = uiState.dynamicColorsEnabled,
-                        onCheckedChange = { viewModel.onIntent(SettingsIntent.SetDynamicColors(it)) },
+                        onCheckedChange = { onIntent(SettingsIntent.SetDynamicColors(it)) },
                         icon = Icons.Default.ColorLens,
                     )
-                }
-            }
 
-            // Display Section
-            item {
-                SettingsSection(title = stringResource(R.string.settings_section_display)) {
                     DialogSettingItem(
                         title = stringResource(R.string.settings_grid_density_title),
                         subtitle = stringResource(R.string.settings_grid_density_subtitle),
                         selectedValue = uiState.gridDensityPreference,
                         values = UserDensityPreference.entries,
-                        onValueChange = { viewModel.onIntent(SettingsIntent.SetGridDensity(it)) },
+                        onValueChange = { onIntent(SettingsIntent.SetGridDensity(it)) },
                         icon = Icons.Default.GridView,
                         valueLabel = { preference ->
                             when (preference) {
@@ -241,55 +329,6 @@ fun SettingsScreen(
                 }
             }
 
-            // Default Sharing Section
-            item {
-                SettingsSection(title = stringResource(R.string.settings_section_default_sharing)) {
-                    DialogSettingItem(
-                        title = stringResource(R.string.settings_format_title),
-                        selectedValue = uiState.defaultFormat,
-                        values = listOf(ImageFormat.JPEG, ImageFormat.PNG, ImageFormat.WEBP),
-                        onValueChange = { viewModel.onIntent(SettingsIntent.SetDefaultFormat(it)) },
-                        icon = Icons.Default.Image,
-                        valueLabel = { it.name },
-                    )
-
-                    SliderSettingItem(
-                        title = stringResource(R.string.settings_quality_title),
-                        value = uiState.defaultQuality.toFloat(),
-                        onValueChange = { viewModel.onIntent(SettingsIntent.SetDefaultQuality(it.toInt())) },
-                        icon = Icons.Default.HighQuality,
-                        valueRange = 10f..100f,
-                        steps = 8,
-                        valueLabel = { stringResource(R.string.settings_quality_value, it.toInt()) },
-                    )
-
-                    DialogSettingItem(
-                        title = stringResource(R.string.settings_max_size_title),
-                        selectedValue = uiState.defaultMaxDimension,
-                        values = listOf(480, 720, 1080, 2048),
-                        onValueChange = { viewModel.onIntent(SettingsIntent.SetDefaultMaxDimension(it)) },
-                        icon = Icons.Default.PhotoSizeSelectLarge,
-                        valueLabel = { dimension ->
-                            when (dimension) {
-                                480 -> stringResource(R.string.settings_max_size_small)
-                                720 -> stringResource(R.string.settings_max_size_medium)
-                                1080 -> stringResource(R.string.settings_max_size_large)
-                                2048 -> stringResource(R.string.settings_max_size_original)
-                                else -> stringResource(R.string.settings_max_size_custom, dimension)
-                            }
-                        },
-                    )
-
-                    SwitchSettingItem(
-                        title = stringResource(R.string.settings_keep_metadata_title),
-                        subtitle = stringResource(R.string.settings_keep_metadata_subtitle),
-                        checked = uiState.keepMetadata,
-                        onCheckedChange = { viewModel.onIntent(SettingsIntent.SetKeepMetadata(it)) },
-                        icon = Icons.Default.Description,
-                    )
-                }
-            }
-
             // Search Section
             item {
                 SettingsSection(title = stringResource(R.string.settings_section_search)) {
@@ -297,7 +336,7 @@ fun SettingsScreen(
                         title = stringResource(R.string.settings_semantic_search_title),
                         subtitle = stringResource(R.string.settings_semantic_search_subtitle),
                         checked = uiState.enableSemanticSearch,
-                        onCheckedChange = { viewModel.onIntent(SettingsIntent.SetEnableSemanticSearch(it)) },
+                        onCheckedChange = { onIntent(SettingsIntent.SetEnableSemanticSearch(it)) },
                         icon = Icons.Default.Psychology,
                     )
 
@@ -305,7 +344,7 @@ fun SettingsScreen(
                         title = stringResource(R.string.settings_search_history_title),
                         subtitle = stringResource(R.string.settings_search_history_subtitle),
                         checked = uiState.saveSearchHistory,
-                        onCheckedChange = { viewModel.onIntent(SettingsIntent.SetSaveSearchHistory(it)) },
+                        onCheckedChange = { onIntent(SettingsIntent.SetSaveSearchHistory(it)) },
                         icon = Icons.Default.History,
                     )
                 }
@@ -314,25 +353,31 @@ fun SettingsScreen(
             // Storage Section
             item {
                 SettingsSection(title = stringResource(R.string.settings_section_storage)) {
+                    val isCacheEmpty = uiState.cacheSize == "0 B"
                     ClickableSettingItem(
                         title = stringResource(R.string.settings_clear_cache_title),
-                        subtitle = stringResource(R.string.settings_clear_cache_subtitle, uiState.cacheSize),
-                        onClick = { viewModel.onIntent(SettingsIntent.ShowClearCacheDialog) },
+                        subtitle = if (isCacheEmpty) {
+                            stringResource(R.string.settings_clear_cache_subtitle_empty)
+                        } else {
+                            stringResource(R.string.settings_clear_cache_subtitle, uiState.cacheSize)
+                        },
+                        onClick = { onIntent(SettingsIntent.ShowClearCacheDialog) },
                         icon = Icons.Default.CleaningServices,
                         showChevron = false,
+                        enabled = !isCacheEmpty,
                     )
 
                     ClickableSettingItem(
                         title = stringResource(R.string.settings_export_data_title),
                         subtitle = stringResource(R.string.settings_export_data_subtitle),
-                        onClick = { viewModel.onIntent(SettingsIntent.ExportData) },
+                        onClick = { onIntent(SettingsIntent.ShowExportOptionsDialog) },
                         icon = Icons.Default.Upload,
                     )
 
                     ClickableSettingItem(
                         title = stringResource(R.string.settings_import_data_title),
                         subtitle = stringResource(R.string.settings_import_data_subtitle),
-                        onClick = { viewModel.onIntent(SettingsIntent.ImportData) },
+                        onClick = { onIntent(SettingsIntent.ImportData) },
                         icon = Icons.Default.Download,
                     )
                 }
@@ -352,13 +397,13 @@ fun SettingsScreen(
 
                     ClickableSettingItem(
                         title = stringResource(R.string.settings_open_source_licenses_title),
-                        onClick = { viewModel.onIntent(SettingsIntent.OpenLicenses) },
+                        onClick = { onIntent(SettingsIntent.OpenLicenses) },
                         icon = Icons.Default.Description,
                     )
 
                     ClickableSettingItem(
                         title = stringResource(R.string.settings_privacy_policy_title),
-                        onClick = { viewModel.onIntent(SettingsIntent.OpenPrivacyPolicy) },
+                        onClick = { onIntent(SettingsIntent.OpenPrivacyPolicy) },
                         icon = Icons.Default.Policy,
                     )
                 }
@@ -366,3 +411,44 @@ fun SettingsScreen(
         }
     }
 }
+
+@Composable
+private fun ExportOptionRow(
+    label: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+    ) {
+        Checkbox(checked = checked, onCheckedChange = onCheckedChange)
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.padding(start = 8.dp),
+        )
+    }
+}
+
+// region Previews
+
+@Preview(name = "Settings", showBackground = true)
+@Preview(name = "Settings Dark", showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun SettingsScreenPreview() {
+    com.mememymood.core.ui.theme.MemeMoodTheme {
+        SettingsScreen(
+            uiState = SettingsUiState(
+                cacheSize = "24.5 MB",
+                appVersion = "1.0.0 (42)",
+            ),
+            onIntent = {},
+            onNavigateBack = {},
+        )
+    }
+}
+
+// endregion

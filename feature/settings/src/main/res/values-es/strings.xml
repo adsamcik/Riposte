@@ -8,6 +8,7 @@
     
     <!-- Section Headers -->
     <string name="settings_section_appearance">Apariencia</string>
+    <string name="settings_section_display">Pantalla</string>
     <string name="settings_section_default_sharing">Compartir por Defecto</string>
     <string name="settings_section_search">Búsqueda</string>
     <string name="settings_section_storage">Almacenamiento</string>
@@ -20,6 +21,14 @@
     <string name="settings_theme_dark">Oscuro</string>
     <string name="settings_dynamic_colors_title">Colores Dinámicos</string>
     <string name="settings_dynamic_colors_subtitle">Usar colores de tu fondo de pantalla</string>
+    
+    <!-- Display Section -->
+    <string name="settings_grid_density_title">Densidad de Cuadrícula</string>
+    <string name="settings_grid_density_subtitle">Tamaño de miniaturas en la galería</string>
+    <string name="settings_grid_density_auto">Automático (se adapta a la pantalla)</string>
+    <string name="settings_grid_density_compact">Grande (3 columnas)</string>
+    <string name="settings_grid_density_standard">Mediano (4 columnas)</string>
+    <string name="settings_grid_density_dense">Pequeño (5 columnas)</string>
     
     <!-- Default Sharing Section -->
     <string name="settings_format_title">Formato</string>
@@ -36,13 +45,14 @@
     
     <!-- Search Section -->
     <string name="settings_semantic_search_title">Búsqueda Semántica</string>
-    <string name="settings_semantic_search_subtitle">Búsqueda con IA para memes similares</string>
+    <string name="settings_semantic_search_subtitle">Búsqueda con IA para memes similares. Usa almacenamiento adicional para el modelo de IA</string>
     <string name="settings_search_history_title">Historial de Búsqueda</string>
     <string name="settings_search_history_subtitle">Guardar búsquedas recientes</string>
     
     <!-- Storage Section -->
     <string name="settings_clear_cache_title">Limpiar Caché</string>
     <string name="settings_clear_cache_subtitle">Liberar %1$s</string>
+    <string name="settings_clear_cache_subtitle_empty">La caché está vacía</string>
     <string name="settings_export_data_title">Exportar Datos</string>
     <string name="settings_export_data_subtitle">Hacer copia de seguridad de tus memes y ajustes</string>
     <string name="settings_import_data_title">Importar Datos</string>

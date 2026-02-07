@@ -16,6 +16,9 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 
+import androidx.compose.ui.res.stringResource
+import com.mememymood.core.ui.R as UiR
+
 @Composable
 fun SwitchSettingItem(
     title: String,
@@ -26,7 +29,11 @@ fun SwitchSettingItem(
     icon: ImageVector? = null,
     enabled: Boolean = true,
 ) {
-    val stateText = if (checked) "On" else "Off"
+    val stateText = if (checked) {
+        stringResource(UiR.string.ui_toggle_state_on)
+    } else {
+        stringResource(UiR.string.ui_toggle_state_off)
+    }
     val description = if (subtitle != null) "$title, $subtitle" else title
     
     ListItem(

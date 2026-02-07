@@ -5,6 +5,7 @@ import com.mememymood.core.model.AppPreferences
 import com.mememymood.core.model.DarkMode
 import com.mememymood.core.model.ImageFormat
 import com.mememymood.core.model.SharingPreferences
+import com.mememymood.core.model.UserDensityPreference
 import com.mememymood.feature.settings.domain.repository.SettingsRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -70,9 +71,9 @@ class DefaultSettingsRepository @Inject constructor(
         )
     }
 
-    override suspend fun setKeepMetadata(keep: Boolean) {
-        val current = preferencesDataStore.sharingPreferences.first()
-        preferencesDataStore.updateSharingPreferences(current.copy(keepMetadata = keep))
+    override suspend fun setGridDensity(preference: UserDensityPreference) {
+        val current = preferencesDataStore.appPreferences.first()
+        preferencesDataStore.updateAppPreferences(current.copy(userDensityPreference = preference))
     }
 
     override suspend fun exportPreferences(): String {
@@ -88,7 +89,6 @@ class DefaultSettingsRepository @Inject constructor(
                     "defaultQuality" to JsonPrimitive(sharingPrefs.defaultQuality),
                     "maxWidth" to JsonPrimitive(sharingPrefs.maxWidth),
                     "maxHeight" to JsonPrimitive(sharingPrefs.maxHeight),
-                    "keepMetadata" to JsonPrimitive(sharingPrefs.keepMetadata),
                 )
             ),
             "appPreferences" to JsonObject(
@@ -131,8 +131,6 @@ class DefaultSettingsRepository @Inject constructor(
                         ?: currentSharing.maxWidth,
                     maxHeight = (sharingPrefsJson["maxHeight"] as? JsonPrimitive)?.intOrNull
                         ?: currentSharing.maxHeight,
-                    keepMetadata = (sharingPrefsJson["keepMetadata"] as? JsonPrimitive)?.booleanOrNull
-                        ?: currentSharing.keepMetadata,
                 )
             )
         }

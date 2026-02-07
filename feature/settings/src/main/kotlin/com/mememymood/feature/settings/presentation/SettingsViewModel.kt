@@ -1,15 +1,28 @@
 package com.mememymood.feature.settings.presentation
 
 import android.content.Context
+import android.net.Uri
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.pm.PackageInfoCompat
 import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.mememymood.core.datastore.PreferencesDataStore
 import com.mememymood.core.model.DarkMode
 import com.mememymood.core.model.ImageFormat
+import com.mememymood.core.model.UserDensityPreference
 import com.mememymood.feature.settings.R
+import com.mememymood.feature.settings.domain.usecase.ExportPreferencesUseCase
+import com.mememymood.feature.settings.domain.usecase.GetAppPreferencesUseCase
+import com.mememymood.feature.settings.domain.usecase.GetSharingPreferencesUseCase
+import com.mememymood.feature.settings.domain.usecase.ImportPreferencesUseCase
+import com.mememymood.feature.settings.domain.usecase.SetDarkModeUseCase
+import com.mememymood.feature.settings.domain.usecase.SetDefaultFormatUseCase
+import com.mememymood.feature.settings.domain.usecase.SetDefaultMaxDimensionUseCase
+import com.mememymood.feature.settings.domain.usecase.SetDefaultQualityUseCase
+import com.mememymood.feature.settings.domain.usecase.SetDynamicColorsUseCase
+import com.mememymood.feature.settings.domain.usecase.SetEnableSemanticSearchUseCase
+import com.mememymood.feature.settings.domain.usecase.SetGridDensityUseCase
+import com.mememymood.feature.settings.domain.usecase.SetSaveSearchHistoryUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.Channel
@@ -17,23 +30,34 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.booleanOrNull
-import kotlinx.serialization.json.contentOrNull
-import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.longOrNull
 import java.io.File
+import java.util.zip.ZipEntry
+import java.util.zip.ZipInputStream
+import java.util.zip.ZipOutputStream
 import javax.inject.Inject
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     @param:ApplicationContext private val context: Context,
-    private val preferencesDataStore: PreferencesDataStore,
+    private val getAppPreferencesUseCase: GetAppPreferencesUseCase,
+    private val getSharingPreferencesUseCase: GetSharingPreferencesUseCase,
+    private val setDarkModeUseCase: SetDarkModeUseCase,
+    private val setDynamicColorsUseCase: SetDynamicColorsUseCase,
+    private val setEnableSemanticSearchUseCase: SetEnableSemanticSearchUseCase,
+    private val setSaveSearchHistoryUseCase: SetSaveSearchHistoryUseCase,
+    private val setDefaultFormatUseCase: SetDefaultFormatUseCase,
+    private val setDefaultQualityUseCase: SetDefaultQualityUseCase,
+    private val setDefaultMaxDimensionUseCase: SetDefaultMaxDimensionUseCase,
+    private val setGridDensityUseCase: SetGridDensityUseCase,
+    private val exportPreferencesUseCase: ExportPreferencesUseCase,
+    private val importPreferencesUseCase: ImportPreferencesUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
@@ -71,8 +95,8 @@ class SettingsViewModel @Inject constructor(
     private fun loadSettings() {
         viewModelScope.launch {
             combine(
-                preferencesDataStore.appPreferences,
-                preferencesDataStore.sharingPreferences,
+                getAppPreferencesUseCase(),
+                getSharingPreferencesUseCase(),
             ) { appPrefs, sharingPrefs ->
                 _uiState.value.copy(
                     darkMode = appPrefs.darkMode,
@@ -80,8 +104,7 @@ class SettingsViewModel @Inject constructor(
                     gridDensityPreference = appPrefs.userDensityPreference,
                     defaultFormat = sharingPrefs.defaultFormat,
                     defaultQuality = sharingPrefs.defaultQuality,
-                    defaultMaxDimension = sharingPrefs.maxWidth, // Using maxWidth as the max dimension setting
-                    keepMetadata = sharingPrefs.keepMetadata,
+                    defaultMaxDimension = sharingPrefs.maxWidth,
                     enableSemanticSearch = appPrefs.enableSemanticSearch,
                     saveSearchHistory = appPrefs.saveSearchHistory,
                     appVersion = getAppVersion(),
@@ -117,7 +140,6 @@ class SettingsViewModel @Inject constructor(
             is SettingsIntent.SetDefaultFormat -> setDefaultFormat(intent.format)
             is SettingsIntent.SetDefaultQuality -> setDefaultQuality(intent.quality)
             is SettingsIntent.SetDefaultMaxDimension -> setDefaultMaxDimension(intent.dimension)
-            is SettingsIntent.SetKeepMetadata -> setKeepMetadata(intent.keep)
 
             // Search
             is SettingsIntent.SetEnableSemanticSearch -> setEnableSemanticSearch(intent.enabled)
@@ -128,8 +150,21 @@ class SettingsViewModel @Inject constructor(
             is SettingsIntent.ShowClearCacheDialog -> showClearCacheDialog()
             is SettingsIntent.DismissDialog -> dismissDialog()
             is SettingsIntent.ConfirmClearCache -> confirmClearCache()
-            is SettingsIntent.ExportData -> exportData()
+
+            // Export
+            is SettingsIntent.ShowExportOptionsDialog -> showExportOptionsDialog()
+            is SettingsIntent.DismissExportOptionsDialog -> dismissExportOptionsDialog()
+            is SettingsIntent.SetExportSettings -> _uiState.update { it.copy(exportSettings = intent.include) }
+            is SettingsIntent.SetExportImages -> _uiState.update { it.copy(exportImages = intent.include) }
+            is SettingsIntent.SetExportTags -> _uiState.update { it.copy(exportTags = intent.include) }
+            is SettingsIntent.ConfirmExport -> confirmExport()
+            is SettingsIntent.ExportToUri -> exportToUri(intent.uri)
+
+            // Import
             is SettingsIntent.ImportData -> importData()
+            is SettingsIntent.ImportFromUri -> importFromUri(intent.uri)
+            is SettingsIntent.ConfirmImport -> confirmImport()
+            is SettingsIntent.DismissImportConfirmDialog -> dismissImportConfirmDialog()
 
             // About
             is SettingsIntent.OpenLicenses -> openLicenses()
@@ -139,21 +174,19 @@ class SettingsViewModel @Inject constructor(
 
     private fun setDarkMode(mode: DarkMode) {
         viewModelScope.launch {
-            preferencesDataStore.setDarkMode(mode)
+            setDarkModeUseCase(mode)
         }
     }
 
     private fun setDynamicColors(enabled: Boolean) {
         viewModelScope.launch {
-            val current = preferencesDataStore.appPreferences.first()
-            preferencesDataStore.updateAppPreferences(current.copy(dynamicColors = enabled))
+            setDynamicColorsUseCase(enabled)
         }
     }
 
-    private fun setGridDensity(preference: com.mememymood.core.model.UserDensityPreference) {
+    private fun setGridDensity(preference: UserDensityPreference) {
         viewModelScope.launch {
-            val current = preferencesDataStore.appPreferences.first()
-            preferencesDataStore.updateAppPreferences(current.copy(userDensityPreference = preference))
+            setGridDensityUseCase(preference)
         }
     }
 
@@ -169,45 +202,31 @@ class SettingsViewModel @Inject constructor(
 
     private fun setEnableSemanticSearch(enabled: Boolean) {
         viewModelScope.launch {
-            val current = preferencesDataStore.appPreferences.first()
-            preferencesDataStore.updateAppPreferences(current.copy(enableSemanticSearch = enabled))
+            setEnableSemanticSearchUseCase(enabled)
         }
     }
 
     private fun setSaveSearchHistory(save: Boolean) {
         viewModelScope.launch {
-            val current = preferencesDataStore.appPreferences.first()
-            preferencesDataStore.updateAppPreferences(current.copy(saveSearchHistory = save))
+            setSaveSearchHistoryUseCase(save)
         }
     }
 
     private fun setDefaultFormat(format: ImageFormat) {
         viewModelScope.launch {
-            val current = preferencesDataStore.sharingPreferences.first()
-            preferencesDataStore.updateSharingPreferences(current.copy(defaultFormat = format))
+            setDefaultFormatUseCase(format)
         }
     }
 
     private fun setDefaultQuality(quality: Int) {
         viewModelScope.launch {
-            val current = preferencesDataStore.sharingPreferences.first()
-            preferencesDataStore.updateSharingPreferences(current.copy(defaultQuality = quality))
+            setDefaultQualityUseCase(quality)
         }
     }
 
     private fun setDefaultMaxDimension(dimension: Int) {
         viewModelScope.launch {
-            val current = preferencesDataStore.sharingPreferences.first()
-            preferencesDataStore.updateSharingPreferences(
-                current.copy(maxWidth = dimension, maxHeight = dimension)
-            )
-        }
-    }
-
-    private fun setKeepMetadata(keep: Boolean) {
-        viewModelScope.launch {
-            val current = preferencesDataStore.sharingPreferences.first()
-            preferencesDataStore.updateSharingPreferences(current.copy(keepMetadata = keep))
+            setDefaultMaxDimensionUseCase(dimension)
         }
     }
 
@@ -219,7 +238,7 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    private fun calculateDirectorySize(dir: File): Long {
+    internal fun calculateDirectorySize(dir: File): Long {
         var size = 0L
         dir.listFiles()?.forEach { file ->
             size += if (file.isDirectory) {
@@ -231,7 +250,7 @@ class SettingsViewModel @Inject constructor(
         return size
     }
 
-    private fun formatFileSize(bytes: Long): String {
+    internal fun formatFileSize(bytes: Long): String {
         return when {
             bytes >= 1_073_741_824 -> "%.2f GB".format(bytes / 1_073_741_824.0)
             bytes >= 1_048_576 -> "%.2f MB".format(bytes / 1_048_576.0)
@@ -271,147 +290,140 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    private fun exportData() {
+    // region Export
+
+    private fun showExportOptionsDialog() {
+        _uiState.update {
+            it.copy(
+                showExportOptionsDialog = true,
+                exportSettings = true,
+                exportImages = true,
+                exportTags = true,
+            )
+        }
+    }
+
+    private fun dismissExportOptionsDialog() {
+        _uiState.update { it.copy(showExportOptionsDialog = false) }
+    }
+
+    private fun confirmExport() {
+        _uiState.update { it.copy(showExportOptionsDialog = false) }
+        viewModelScope.launch {
+            _effects.send(SettingsEffect.LaunchExportPicker)
+        }
+    }
+
+    private fun exportToUri(uri: Uri) {
         viewModelScope.launch {
             try {
-                val exportDir = File(context.getExternalFilesDir(null), "exports")
-                if (!exportDir.exists()) {
-                    exportDir.mkdirs()
+                val outputStream = context.contentResolver.openOutputStream(uri)
+                    ?: throw Exception("Cannot open output stream")
+
+                ZipOutputStream(outputStream.buffered()).use { zip ->
+                    if (_uiState.value.exportSettings) {
+                        val settingsJson = exportPreferencesUseCase()
+                        zip.putNextEntry(ZipEntry("settings.json"))
+                        zip.write(settingsJson.toByteArray())
+                        zip.closeEntry()
+                    }
+                    // TODO: Export meme images when MemeRepository is available in settings module
+                    // TODO: Export tags/metadata when MemeRepository is available in settings module
                 }
-                
-                val timestamp = System.currentTimeMillis()
-                val exportFile = File(exportDir, "meme_my_mood_backup_$timestamp.json")
-                
-                // Export preferences
-                val sharingPrefs = preferencesDataStore.sharingPreferences.first()
-                val appPrefs = preferencesDataStore.appPreferences.first()
-                
-                val exportData = mapOf(
-                    "version" to 1,
-                    "timestamp" to timestamp,
-                    "sharingPreferences" to mapOf(
-                        "defaultFormat" to sharingPrefs.defaultFormat.name,
-                        "defaultQuality" to sharingPrefs.defaultQuality,
-                        "maxWidth" to sharingPrefs.maxWidth,
-                        "maxHeight" to sharingPrefs.maxHeight,
-                        "keepMetadata" to sharingPrefs.keepMetadata
-                    ),
-                    "appPreferences" to mapOf(
-                        "darkMode" to appPrefs.darkMode.name,
-                        "dynamicColors" to appPrefs.dynamicColors,
-                        "enableSemanticSearch" to appPrefs.enableSemanticSearch,
-                        "saveSearchHistory" to appPrefs.saveSearchHistory
-                    )
-                )
-                
-                exportFile.writeText(kotlinx.serialization.json.Json.encodeToString(
-                    kotlinx.serialization.json.JsonObject.serializer(),
-                    kotlinx.serialization.json.JsonObject(exportData.mapValues { (_, value) ->
-                        when (value) {
-                            is Int -> kotlinx.serialization.json.JsonPrimitive(value)
-                            is Long -> kotlinx.serialization.json.JsonPrimitive(value)
-                            is Boolean -> kotlinx.serialization.json.JsonPrimitive(value)
-                            is String -> kotlinx.serialization.json.JsonPrimitive(value)
-                            is Map<*, *> -> kotlinx.serialization.json.JsonObject(
-                                (value as Map<String, Any>).mapValues { (_, v) ->
-                                    when (v) {
-                                        is Int -> kotlinx.serialization.json.JsonPrimitive(v)
-                                        is Boolean -> kotlinx.serialization.json.JsonPrimitive(v)
-                                        is String -> kotlinx.serialization.json.JsonPrimitive(v)
-                                        else -> kotlinx.serialization.json.JsonPrimitive(v.toString())
-                                    }
-                                }
-                            )
-                            else -> kotlinx.serialization.json.JsonPrimitive(value.toString())
-                        }
-                    })
-                ))
-                
-                _effects.send(SettingsEffect.ExportComplete(exportFile.absolutePath))
-                _effects.send(SettingsEffect.ShowSnackbar(context.getString(R.string.settings_snackbar_export_success, exportFile.name)))
+
+                _effects.send(SettingsEffect.ShowSnackbar(context.getString(R.string.settings_snackbar_export_success, "")))
             } catch (e: Exception) {
                 _effects.send(SettingsEffect.ShowSnackbar(context.getString(R.string.settings_snackbar_export_failed, e.message ?: "")))
             }
         }
     }
 
+    // endregion
+
+    // region Import
+
     private fun importData() {
         viewModelScope.launch {
-            try {
-                // Trigger file picker for import
-                _effects.send(SettingsEffect.LaunchImportPicker)
-            } catch (e: Exception) {
-                _effects.send(SettingsEffect.ShowSnackbar(context.getString(R.string.settings_snackbar_import_failed, e.message ?: "")))
-            }
+            _effects.send(SettingsEffect.LaunchImportPicker)
         }
     }
 
-    fun importFromFile(uri: android.net.Uri) {
+    private fun importFromUri(uri: Uri) {
         viewModelScope.launch {
             try {
                 val inputStream = context.contentResolver.openInputStream(uri)
                     ?: throw Exception("Cannot open file")
-                
-                val jsonString = inputStream.bufferedReader().use { it.readText() }
+
+                val bytes = inputStream.buffered().use { it.readBytes() }
+
+                // Try ZIP first, then fall back to plain JSON
+                val jsonString = tryReadZipSettings(bytes) ?: String(bytes)
+
+                // Parse to get timestamp for confirmation dialog
                 val jsonElement = Json.parseToJsonElement(jsonString)
-                
-                if (jsonElement is JsonObject) {
-                    val sharingPrefsJson = jsonElement["sharingPreferences"] as? JsonObject
-                    val appPrefsJson = jsonElement["appPreferences"] as? JsonObject
-                    
-                    // Import sharing preferences
-                    if (sharingPrefsJson != null) {
-                        val currentSharing = preferencesDataStore.sharingPreferences.first()
-                        val formatName = (sharingPrefsJson["defaultFormat"] as? JsonPrimitive)?.contentOrNull
-                        val format = formatName?.let { 
-                            try { ImageFormat.valueOf(it) } catch (_: Exception) { null }
-                        } ?: currentSharing.defaultFormat
-                        
-                        preferencesDataStore.updateSharingPreferences(
-                            currentSharing.copy(
-                                defaultFormat = format,
-                                defaultQuality = (sharingPrefsJson["defaultQuality"] as? JsonPrimitive)?.intOrNull
-                                    ?: currentSharing.defaultQuality,
-                                maxWidth = (sharingPrefsJson["maxWidth"] as? JsonPrimitive)?.intOrNull
-                                    ?: currentSharing.maxWidth,
-                                maxHeight = (sharingPrefsJson["maxHeight"] as? JsonPrimitive)?.intOrNull
-                                    ?: currentSharing.maxHeight,
-                                keepMetadata = (sharingPrefsJson["keepMetadata"] as? JsonPrimitive)?.booleanOrNull
-                                    ?: currentSharing.keepMetadata
-                            )
-                        )
-                    }
-                    
-                    // Import app preferences
-                    if (appPrefsJson != null) {
-                        val currentApp = preferencesDataStore.appPreferences.first()
-                        val darkModeName = (appPrefsJson["darkMode"] as? JsonPrimitive)?.contentOrNull
-                        val darkMode = darkModeName?.let {
-                            try { DarkMode.valueOf(it) } catch (_: Exception) { null }
-                        } ?: currentApp.darkMode
-                        
-                        preferencesDataStore.updateAppPreferences(
-                            currentApp.copy(
-                                darkMode = darkMode,
-                                dynamicColors = (appPrefsJson["dynamicColors"] as? JsonPrimitive)?.booleanOrNull
-                                    ?: currentApp.dynamicColors,
-                                enableSemanticSearch = (appPrefsJson["enableSemanticSearch"] as? JsonPrimitive)?.booleanOrNull
-                                    ?: currentApp.enableSemanticSearch,
-                                saveSearchHistory = (appPrefsJson["saveSearchHistory"] as? JsonPrimitive)?.booleanOrNull
-                                    ?: currentApp.saveSearchHistory
-                            )
-                        )
-                    }
-                    
-                    _effects.send(SettingsEffect.ShowSnackbar(context.getString(R.string.settings_snackbar_import_success)))
+                val timestamp = if (jsonElement is JsonObject) {
+                    (jsonElement["timestamp"] as? JsonPrimitive)?.longOrNull
                 } else {
-                    _effects.send(SettingsEffect.ShowSnackbar(context.getString(R.string.settings_snackbar_invalid_backup)))
+                    null
+                }
+
+                _uiState.update {
+                    it.copy(
+                        showImportConfirmDialog = true,
+                        pendingImportJson = jsonString,
+                        importBackupTimestamp = timestamp,
+                    )
                 }
             } catch (e: Exception) {
                 _effects.send(SettingsEffect.ShowSnackbar(context.getString(R.string.settings_snackbar_import_failed, e.message ?: "")))
             }
         }
     }
+
+    private fun tryReadZipSettings(bytes: ByteArray): String? {
+        return try {
+            ZipInputStream(bytes.inputStream()).use { zip ->
+                var entry = zip.nextEntry
+                while (entry != null) {
+                    if (entry.name == "settings.json") {
+                        return zip.bufferedReader().readText()
+                    }
+                    entry = zip.nextEntry
+                }
+                null
+            }
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun confirmImport() {
+        viewModelScope.launch {
+            val json = _uiState.value.pendingImportJson ?: return@launch
+            _uiState.update {
+                it.copy(showImportConfirmDialog = false, pendingImportJson = null, importBackupTimestamp = null)
+            }
+
+            val result = importPreferencesUseCase(json)
+            if (result.isSuccess) {
+                _effects.send(SettingsEffect.ShowSnackbar(context.getString(R.string.settings_snackbar_import_success)))
+            } else {
+                _effects.send(
+                    SettingsEffect.ShowSnackbar(
+                        context.getString(R.string.settings_snackbar_import_failed, result.exceptionOrNull()?.message ?: "")
+                    )
+                )
+            }
+        }
+    }
+
+    private fun dismissImportConfirmDialog() {
+        _uiState.update {
+            it.copy(showImportConfirmDialog = false, pendingImportJson = null, importBackupTimestamp = null)
+        }
+    }
+
+    // endregion
 
     private fun openLicenses() {
         viewModelScope.launch {

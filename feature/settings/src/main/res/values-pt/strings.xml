@@ -8,6 +8,7 @@
     
     <!-- Section Headers -->
     <string name="settings_section_appearance">Aparência</string>
+    <string name="settings_section_display">Exibição</string>
     <string name="settings_section_default_sharing">Compartilhamento Padrão</string>
     <string name="settings_section_search">Pesquisa</string>
     <string name="settings_section_storage">Armazenamento</string>
@@ -20,6 +21,14 @@
     <string name="settings_theme_dark">Escuro</string>
     <string name="settings_dynamic_colors_title">Cores Dinâmicas</string>
     <string name="settings_dynamic_colors_subtitle">Usar cores do seu papel de parede</string>
+    
+    <!-- Display Section -->
+    <string name="settings_grid_density_title">Densidade da Grade</string>
+    <string name="settings_grid_density_subtitle">Tamanho das miniaturas na galeria</string>
+    <string name="settings_grid_density_auto">Automático (adapta-se à tela)</string>
+    <string name="settings_grid_density_compact">Grande (3 colunas)</string>
+    <string name="settings_grid_density_standard">Médio (4 colunas)</string>
+    <string name="settings_grid_density_dense">Pequeno (5 colunas)</string>
     
     <!-- Default Sharing Section -->
     <string name="settings_format_title">Formato</string>
@@ -36,13 +45,14 @@
     
     <!-- Search Section -->
     <string name="settings_semantic_search_title">Pesquisa Semântica</string>
-    <string name="settings_semantic_search_subtitle">Pesquisa com IA para memes semelhantes</string>
+    <string name="settings_semantic_search_subtitle">Pesquisa com IA para memes semelhantes. Usa armazenamento adicional para modelo de IA</string>
     <string name="settings_search_history_title">Histórico de Pesquisa</string>
     <string name="settings_search_history_subtitle">Salvar pesquisas recentes</string>
     
     <!-- Storage Section -->
     <string name="settings_clear_cache_title">Limpar Cache</string>
     <string name="settings_clear_cache_subtitle">Liberar %1$s</string>
+    <string name="settings_clear_cache_subtitle_empty">Cache está vazio</string>
     <string name="settings_export_data_title">Exportar Dados</string>
     <string name="settings_export_data_subtitle">Fazer backup dos seus memes e configurações</string>
     <string name="settings_import_data_title">Importar Dados</string>
