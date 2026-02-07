@@ -12,7 +12,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        minSdk = 30
+        minSdk = 31
     }
 
     compileOptions {
@@ -30,6 +30,7 @@ dependencies {
     implementation(project(":core:model"))
     implementation(project(":core:ui"))
     implementation(project(":core:database"))
+    implementation(project(":core:datastore"))
     implementation(project(":core:ml"))
 
     // Compose
@@ -58,4 +59,7 @@ dependencies {
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.androidx.test.core.ktx)
+    testImplementation(project(":core:testing"))
+    androidTestImplementation(libs.bundles.android.testing)
+    androidTestImplementation(project(":core:testing"))
 }

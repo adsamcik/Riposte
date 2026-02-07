@@ -11,7 +11,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        minSdk = 30
+        minSdk = 31
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -22,6 +22,9 @@ android {
 }
 
 dependencies {
+    // Domain models (for suggestion engine)
+    api(project(":core:model"))
+
     // Hilt
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)

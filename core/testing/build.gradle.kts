@@ -10,7 +10,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        minSdk = 30
+        minSdk = 31
         testInstrumentationRunner = "com.mememymood.core.testing.HiltTestRunner"
     }
 

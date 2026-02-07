@@ -12,7 +12,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        minSdk = 30
+        minSdk = 31
     }
 
     compileOptions {
@@ -58,4 +58,6 @@ dependencies {
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.androidx.test.core.ktx)
     testImplementation(project(":core:testing"))
+    androidTestImplementation(libs.bundles.android.testing)
+    androidTestImplementation(project(":core:testing"))
 }
