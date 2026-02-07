@@ -17,9 +17,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.mememymood.core.model.EmojiTag
+import com.mememymood.core.ui.R
 import com.mememymood.core.ui.theme.MemeMoodTheme
 
 /** Maximum number of emojis to process to prevent DoS */
@@ -69,7 +71,7 @@ fun EmojiFilterRail(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Close,
-                            contentDescription = "Clear all filters",
+                            contentDescription = stringResource(R.string.ui_emoji_filter_clear_all),
                             modifier = Modifier.size(18.dp),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         )

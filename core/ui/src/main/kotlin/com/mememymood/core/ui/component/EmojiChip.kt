@@ -4,6 +4,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -23,12 +24,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mememymood.core.model.EmojiTag
+import com.mememymood.core.ui.R
 import com.mememymood.core.ui.theme.EmojiCardBackgrounds
 import com.mememymood.core.ui.theme.MemeMoodTheme
 import com.mememymood.core.ui.theme.MoodShapes
@@ -69,11 +72,28 @@ fun EmojiChip(
         label = "EmojiChipScale",
     )
 
+    val chipDescription = if (isSelected) {
+        stringResource(R.string.ui_emoji_chip_filter_active, emojiTag.emoji)
+    } else {
+        stringResource(R.string.ui_emoji_chip_filter_inactive, emojiTag.emoji)
+    }
+
+    val borderModifier = if (isSelected) {
+        Modifier.border(
+            width = 2.dp,
+            color = MaterialTheme.colorScheme.primary,
+            shape = EmojiChipShape,
+        )
+    } else {
+        Modifier
+    }
+
     Surface(
         modifier = modifier
             .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+            .then(borderModifier)
             .semantics {
-                contentDescription = "${emojiTag.emoji} filter, ${if (isSelected) "active" else "inactive"}"
+                contentDescription = chipDescription
             }
             .then(
                 if (onClick != null) {
@@ -86,7 +106,6 @@ fun EmojiChip(
                     Modifier
                 },
             )
-            .height(36.dp)
             .sizeIn(minWidth = 36.dp)
             .scale(scale),
         shape = EmojiChipShape,

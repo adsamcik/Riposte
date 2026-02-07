@@ -11,12 +11,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.mememymood.core.ui.R
 import com.mememymood.core.ui.theme.MemeMoodTheme
 
 /**
@@ -49,13 +51,14 @@ fun HoldToShareProgress(
     }
 
     val progressPercent = (progress.coerceIn(0f, 1f) * 100).toInt()
+    val progressDescription = stringResource(R.string.ui_hold_to_share_progress, progressPercent)
 
     CircularProgressIndicator(
         progress = { progress.coerceIn(0f, 1f) },
         modifier = modifier
             .size(48.dp)
             .semantics {
-                contentDescription = "Hold to share, $progressPercent percent"
+                contentDescription = progressDescription
                 liveRegion = LiveRegionMode.Polite
             },
         color = MaterialTheme.colorScheme.primary,

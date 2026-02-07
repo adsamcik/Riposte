@@ -15,4 +15,34 @@
     <string name="ui_search_placeholder">Search memes…</string>
     <string name="ui_search_icon_description">Search</string>
     <string name="ui_search_clear_description">Clear search</string>
+
+    <!-- Accessibility: SectionHeader -->
+    <string name="ui_section_header_see_all">See all</string>
+
+    <!-- Accessibility: QuickAccessSection -->
+    <string name="ui_quick_access_settings">Quick Access settings</string>
+
+    <!-- Accessibility: HoldToShareProgress -->
+    <string name="ui_hold_to_share_progress">Hold to share, %1$d percent</string>
+
+    <!-- Accessibility: EmojiGridOverlay -->
+    <string name="ui_emoji_grid_close">Close</string>
+
+    <!-- Accessibility: EmojiFilterRail -->
+    <string name="ui_emoji_filter_clear_all">Clear all filters</string>
+
+    <!-- Accessibility: EmojiChip -->
+    <string name="ui_emoji_chip_filter_active">%1$s filter, active</string>
+    <string name="ui_emoji_chip_filter_inactive">%1$s filter, inactive</string>
+
+    <!-- Accessibility: MoreChip -->
+    <string name="ui_more_chip_description">%1$d more emoji filters available</string>
+
+    <!-- Accessibility: Toggle states -->
+    <string name="ui_toggle_state_on">On</string>
+    <string name="ui_toggle_state_off">Off</string>
+    <string name="ui_state_favorited">Favorited</string>
+    <string name="ui_state_not_favorited">Not favorited</string>
+    <string name="ui_state_selected">Selected</string>
+    <string name="ui_state_not_selected">Not selected</string>
 </resources>

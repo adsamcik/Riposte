@@ -22,9 +22,11 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.mememymood.core.model.EmojiTag
+import com.mememymood.core.ui.R
 import com.mememymood.core.ui.theme.MemeMoodTheme
 
 /**
@@ -71,7 +73,7 @@ fun EmojiGridOverlay(
                 IconButton(onClick = onDismiss) {
                     Icon(
                         imageVector = Icons.Default.Close,
-                        contentDescription = "Close",
+                        contentDescription = stringResource(R.string.ui_emoji_grid_close),
                     )
                 }
             }

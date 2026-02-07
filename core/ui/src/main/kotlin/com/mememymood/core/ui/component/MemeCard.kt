@@ -2,6 +2,7 @@ package com.mememymood.core.ui.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -24,6 +25,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -58,6 +60,7 @@ fun MemeCard(
     showTitle: Boolean = true,
     showEmojis: Boolean = true
 ) {
+    val favoritedText = stringResource(R.string.ui_state_favorited)
     val memeDescription = buildString {
         append(meme.title ?: meme.fileName)
         if (meme.emojiTags.isNotEmpty()) {
@@ -65,7 +68,7 @@ fun MemeCard(
             append(meme.emojiTags.take(5).joinToString(", ") { it.name })
         }
         if (meme.isFavorite) {
-            append(", favorited")
+            append(", $favoritedText")
         }
     }
     
@@ -117,7 +120,11 @@ fun MemeCard(
                         } else {
                             stringResource(R.string.ui_meme_card_add_to_favorites)
                         },
-                        tint = if (meme.isFavorite) Color.Red else Color.White
+                        tint = if (meme.isFavorite) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    }
                     )
                 }
             }
@@ -168,13 +175,18 @@ fun MemeCard(
 
 /**
  * Compact meme card for grid layouts.
+ *
+ * @param onClick Click handler. When null, no click modifier is applied —
+ *   useful when a parent composable provides its own [combinedClickable].
  */
 @Composable
 fun MemeCardCompact(
     meme: Meme,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+    interactionSource: MutableInteractionSource? = null,
 ) {
+    val favoritedText = stringResource(R.string.ui_state_favorited)
     val memeDescription = buildString {
         append(meme.title ?: meme.fileName)
         if (meme.emojiTags.isNotEmpty()) {
@@ -182,15 +194,25 @@ fun MemeCardCompact(
             append(meme.emojiTags.take(3).joinToString(" ") { it.emoji })
         }
         if (meme.isFavorite) {
-            append(", favorited")
+            append(", $favoritedText")
         }
     }
-    
+
+    val clickModifier = if (onClick != null) {
+        Modifier.clickable(
+            interactionSource = interactionSource,
+            indication = if (interactionSource != null) ripple() else null,
+            onClick = onClick,
+        )
+    } else {
+        Modifier
+    }
+
     Box(
         modifier = modifier
             .aspectRatio(1f)
             .clip(MoodShapes.MemeCard)
-            .clickable(onClick = onClick)
+            .then(clickModifier)
             .semantics(mergeDescendants = true) {
                 contentDescription = memeDescription
             }
@@ -228,7 +250,7 @@ fun MemeCardCompact(
             Icon(
                 imageVector = Icons.Filled.Favorite,
                 contentDescription = null,
-                tint = Color.Red,
+                tint = MaterialTheme.colorScheme.error,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(8.dp)
