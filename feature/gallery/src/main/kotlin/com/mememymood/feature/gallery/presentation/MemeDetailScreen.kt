@@ -49,10 +49,12 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SheetValue
@@ -409,9 +411,9 @@ private fun MemeInfoSheet(
                 )
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                FilledTonalIconButton(
+                FilledIconButton(
                     onClick = { onIntent(MemeDetailIntent.Share) },
-                    colors = IconButtonDefaults.filledTonalIconButtonColors(
+                    colors = IconButtonDefaults.filledIconButtonColors(
                         containerColor = MaterialTheme.colorScheme.primaryContainer,
                     ),
                 ) {
@@ -450,8 +452,11 @@ private fun MemeInfoSheet(
                 )
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                FilledTonalIconButton(
+                OutlinedIconButton(
                     onClick = { onIntent(MemeDetailIntent.ShowDeleteDialog) },
+                    colors = IconButtonDefaults.outlinedIconButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error,
+                    ),
                 ) {
                     Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.gallery_cd_delete))
                 }
@@ -667,6 +672,7 @@ private fun SimilarMemesSection(
             }
         } else {
             LazyRow(
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 items(
@@ -693,7 +699,7 @@ private fun SimilarMemeCard(
         modifier = modifier
             .width(100.dp)
             .clip(MaterialTheme.shapes.medium)
-            .clickable(onClick = onClick),
+            .clickable(onClick = onClick, role = Role.Button),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         AsyncImage(
