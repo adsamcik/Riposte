@@ -19,7 +19,7 @@ import javax.inject.Singleton
  */
 @Singleton
 class InAppReviewManager @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
 ) : UserActionTracker {
     private val prefs: SharedPreferences =
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)

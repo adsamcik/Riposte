@@ -3,7 +3,11 @@ package com.mememymood
 import android.app.Application
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
+import com.mememymood.sharing.SharingShortcutUpdater
 import dagger.hilt.android.HiltAndroidApp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import javax.inject.Inject
 
 /**
@@ -17,6 +21,16 @@ class MemeMoodApplication : Application(), Configuration.Provider {
 
     @Inject
     lateinit var workerFactory: HiltWorkerFactory
+
+    @Inject
+    lateinit var sharingShortcutUpdater: SharingShortcutUpdater
+
+    private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    override fun onCreate() {
+        super.onCreate()
+        sharingShortcutUpdater.start(applicationScope)
+    }
 
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
