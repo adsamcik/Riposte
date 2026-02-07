@@ -131,6 +131,7 @@ class SettingsViewModelTest {
             setGridDensityUseCase = setGridDensityUseCase,
             exportPreferencesUseCase = exportPreferencesUseCase,
             importPreferencesUseCase = importPreferencesUseCase,
+            ioDispatcher = testDispatcher,
         )
     }
 

@@ -1,5 +1,6 @@
 package com.mememymood.feature.search.presentation
 
+import android.content.Context
 import app.cash.turbine.test
 import app.cash.turbine.turbineScope
 import com.google.common.truth.Truth.assertThat
@@ -33,6 +34,7 @@ class SearchViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
 
+    private lateinit var context: Context
     private lateinit var searchUseCases: SearchUseCases
     private lateinit var getSuggestionsUseCase: GetSuggestionsUseCase
     private lateinit var preferencesDataStore: PreferencesDataStore
@@ -58,6 +60,7 @@ class SearchViewModelTest {
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
+        context = mockk(relaxed = true)
         searchUseCases = mockk()
         getSuggestionsUseCase = GetSuggestionsUseCase()
         preferencesDataStore = mockk()
@@ -87,7 +90,7 @@ class SearchViewModelTest {
     }
 
     private fun createViewModel(): SearchViewModel {
-        return SearchViewModel(searchUseCases, getSuggestionsUseCase, preferencesDataStore, testDispatcher)
+        return SearchViewModel(context, searchUseCases, getSuggestionsUseCase, preferencesDataStore, testDispatcher)
     }
 
     // region Initialization Tests

@@ -23,8 +23,10 @@ import com.mememymood.feature.settings.domain.usecase.SetDynamicColorsUseCase
 import com.mememymood.feature.settings.domain.usecase.SetEnableSemanticSearchUseCase
 import com.mememymood.feature.settings.domain.usecase.SetGridDensityUseCase
 import com.mememymood.feature.settings.domain.usecase.SetSaveSearchHistoryUseCase
+import com.mememymood.core.common.di.IoDispatcher
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -37,6 +39,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.longOrNull
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
@@ -58,6 +61,7 @@ class SettingsViewModel @Inject constructor(
     private val setGridDensityUseCase: SetGridDensityUseCase,
     private val exportPreferencesUseCase: ExportPreferencesUseCase,
     private val importPreferencesUseCase: ImportPreferencesUseCase,
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
@@ -233,7 +237,7 @@ class SettingsViewModel @Inject constructor(
     private fun calculateCacheSize() {
         viewModelScope.launch {
             val cacheDir = context.cacheDir
-            val size = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            val size = withContext(ioDispatcher) {
                 calculateDirectorySize(cacheDir)
             }
             _uiState.update { it.copy(cacheSize = formatFileSize(size)) }
@@ -274,7 +278,7 @@ class SettingsViewModel @Inject constructor(
             _uiState.update { it.copy(showClearCacheDialog = false) }
 
             try {
-                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                withContext(ioDispatcher) {
                     clearCacheDirectory(context.cacheDir)
                 }
                 calculateCacheSize()
