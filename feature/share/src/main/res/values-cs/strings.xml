@@ -7,14 +7,9 @@
     <string name="share_navigation_back">Zpět</string>
 
     <!-- Preview Section -->
-    <string name="share_preview_original">Originál</string>
-    <string name="share_preview_processed">Zpracované</string>
     <string name="share_preview_image">Náhled meme</string>
 
     <!-- File Size Info -->
-    <string name="share_size_estimated">Odhadovaná velikost</string>
-    <string name="share_size_original">Originál: %1$s</string>
-    <string name="share_size_smaller">O %1$d%% menší</string>
     <string name="share_size_quick_to_send">✓ Rychlé odeslání</string>
     <string name="share_size_good_quality">Dobrá kvalita</string>
     <string name="share_size_large_file">Velký soubor — odeslání může trvat déle</string>
@@ -26,9 +21,6 @@
 
     <!-- Format Selector -->
     <string name="share_format_label">Formát</string>
-    <string name="share_format_jpeg">JPEG</string>
-    <string name="share_format_png">PNG</string>
-    <string name="share_format_webp">WEBP</string>
     <string name="share_format_jpeg_description">Standardní (JPEG)</string>
     <string name="share_format_png_description">Bezztrátový (PNG)</string>
     <string name="share_format_webp_description">Nejmenší (WebP)</string>
@@ -51,13 +43,8 @@
     <string name="share_setting_keep_metadata_description">Připojit emoji štítky a info o meme k souboru</string>
 
     <!-- Action Buttons -->
-    <string name="share_button_save">Uložit</string>
     <string name="share_button_share">Sdílet</string>
     <string name="share_button_save_to_gallery">nebo uložit do galerie</string>
-
-    <!-- Content Descriptions -->
-    <string name="share_content_description_original_image">Originál</string>
-    <string name="share_content_description_processed_image">Zpracované</string>
 
     <!-- Intent Chooser -->
     <string name="share_chooser_title">Sdílet meme</string>

@@ -16,34 +16,9 @@
     <string name="search_mode_hybrid">Obojí</string>
     <string name="search_mode_content_description">Režim vyhledávání: %1$s</string>
 
-    <!-- Emoji Filter Section -->
-    <string name="search_filter_emoji_title">Filtrovat podle emoji</string>
-    <string name="search_filter_emoji_clear">Vymazat (%1$d)</string>
-    <string name="search_filter_emoji_clear_content_description">Vymazat %1$d vybraných emoji filtrů</string>
-    <string name="search_filter_emoji_content_description">Filtr emoji %1$s</string>
-    <string name="search_filter_emoji_selected_content_description">Filtr emoji %1$s, vybráno</string>
-
-    <!-- Emoji Labels -->
-    <string name="search_emoji_joy">Radost</string>
-    <string name="search_emoji_heart">Srdce</string>
-    <string name="search_emoji_fire">Oheň</string>
-    <string name="search_emoji_heart_eyes">Zamilované oči</string>
-    <string name="search_emoji_rofl">Válím se smíchy</string>
-    <string name="search_emoji_blush">Červenání</string>
-    <string name="search_emoji_pray">Modlení</string>
-    <string name="search_emoji_crying">Pláč</string>
-    <string name="search_emoji_kiss">Polibek</string>
-    <string name="search_emoji_thumbs_up">Palec nahoru</string>
-    <string name="search_emoji_100">100</string>
-    <string name="search_emoji_party">Párty</string>
-    <string name="search_emoji_cool">Frajer</string>
-    <string name="search_emoji_pleading">Prosící</string>
-    <string name="search_emoji_sparkles">Jiskry</string>
-
     <!-- Quick Filters -->
     <string name="search_quick_filter_favorites">Oblíbené</string>
     <string name="search_quick_filter_recent">Nedávné</string>
-    <string name="search_quick_filter_trending">Populární</string>
     <string name="search_quick_filter_funny">Vtipné</string>
     <string name="search_quick_filter_love">Láska</string>
     <string name="search_quick_filter_reactions">Reakce</string>
@@ -53,7 +28,6 @@
     <!-- Suggestions Section -->
     <string name="search_suggestions_title">Návrhy</string>
     <string name="search_suggestions_content_description">Návrh: %1$s</string>
-    <string name="search_suggested_memes_title">Doporučené pro tebe</string>
 
     <!-- Recent Searches Section -->
     <string name="search_recent_title">Poslední hledání</string>
@@ -66,18 +40,6 @@
     <string name="search_results_sort_content_description">Seřadit výsledky podle %1$s</string>
     <string name="search_results_view_switch_list">Přepnout na seznam</string>
     <string name="search_results_view_switch_grid">Přepnout na mřížku</string>
-
-    <!-- Sort Order Labels -->
-    <string name="search_sort_relevance">Relevance</string>
-    <!-- Note: "Relevance" is commonly used in Czech as a loanword -->
-    <string name="search_sort_newest">Nejnovější</string>
-    <string name="search_sort_oldest">Nejstarší</string>
-    <string name="search_sort_most_used">Nejpoužívanější</string>
-
-    <!-- Result Summary -->
-    <string name="search_result_searching">Hledám…</string>
-    <string name="search_result_none">Žádné výsledky</string>
-    <string name="search_result_summary">%1$d výsledků za %2$dms</string>
 
     <!-- Empty State -->
     <string name="search_empty_icon">🔍</string>
@@ -96,23 +58,12 @@
     <string name="search_no_results_description">Žádné memy pro \"%1$s\" nenalezeny</string>
 
     <!-- No Results Suggestions -->
-    <string name="search_no_results_try_title">Zkus toto:</string>
-    <string name="search_no_results_tip_typos">Zkontroluj překlepy ve vyhledávání</string>
-    <string name="search_no_results_tip_keywords">Zkus širší nebo jiná klíčová slova</string>
-    <string name="search_no_results_tip_ai_mode">Přepni do AI režimu pro sémantické hledání</string>
-    <string name="search_no_results_tip_filters">Odeber některé filtry</string>
     <string name="search_no_results_clear_filters">Vymazat všechny filtry</string>
 
     <!-- Result Card -->
     <string name="search_result_card_content_description">%1$s, nejlepší shoda</string>
-    <string name="search_result_more_emojis">+%1$d</string>
-    <string name="search_result_best_match">Nejlepší shoda</string>
 
     <!-- Error Messages -->
     <string name="search_error_failed">Vyhledávání selhalo</string>
 
-    <!-- Filters Bottom Sheet -->
-    <string name="search_filters">Filtry</string>
-    <string name="search_filters_content_description">Filtry, %1$d aktivních</string>
-    <string name="search_filters_apply">Použít</string>
 </resources>

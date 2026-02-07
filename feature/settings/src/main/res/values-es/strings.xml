@@ -8,8 +8,6 @@
     
     <!-- Section Headers -->
     <string name="settings_section_appearance">Apariencia</string>
-    <string name="settings_section_display">Pantalla</string>
-    <string name="settings_section_default_sharing">Compartir por Defecto</string>
     <string name="settings_section_search">Búsqueda</string>
     <string name="settings_section_storage">Almacenamiento</string>
     <string name="settings_section_about">Acerca de</string>
@@ -29,19 +27,6 @@
     <string name="settings_grid_density_compact">Grande (3 columnas)</string>
     <string name="settings_grid_density_standard">Mediano (4 columnas)</string>
     <string name="settings_grid_density_dense">Pequeño (5 columnas)</string>
-    
-    <!-- Default Sharing Section -->
-    <string name="settings_format_title">Formato</string>
-    <string name="settings_quality_title">Calidad</string>
-    <string name="settings_quality_value">%1$d%%</string>
-    <string name="settings_max_size_title">Tamaño Máximo</string>
-    <string name="settings_max_size_small">Pequeño (480p)</string>
-    <string name="settings_max_size_medium">Mediano (720p)</string>
-    <string name="settings_max_size_large">Grande (1080p)</string>
-    <string name="settings_max_size_original">Original</string>
-    <string name="settings_max_size_custom">%1$dp</string>
-    <string name="settings_keep_metadata_title">Mantener Metadatos</string>
-    <string name="settings_keep_metadata_subtitle">Conservar etiquetas emoji al compartir</string>
     
     <!-- Search Section -->
     <string name="settings_semantic_search_title">Búsqueda Semántica</string>
@@ -90,5 +75,4 @@
     <string name="settings_snackbar_export_failed">Exportación fallida: %1$s</string>
     <string name="settings_snackbar_import_failed">Importación fallida: %1$s</string>
     <string name="settings_snackbar_import_success">Ajustes importados exitosamente</string>
-    <string name="settings_snackbar_invalid_backup">Formato de copia de seguridad no válido</string>
 </resources>

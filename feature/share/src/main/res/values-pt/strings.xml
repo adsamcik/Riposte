@@ -7,14 +7,9 @@
     <string name="share_navigation_back">Voltar</string>
 
     <!-- Preview Section -->
-    <string name="share_preview_original">Original</string>
-    <string name="share_preview_processed">Processado</string>
     <string name="share_preview_image">Pré-visualização do meme</string>
 
     <!-- File Size Info -->
-    <string name="share_size_estimated">Tamanho Estimado</string>
-    <string name="share_size_original">Original: %1$s</string>
-    <string name="share_size_smaller">%1$d%% menor</string>
     <string name="share_size_quick_to_send">✓ Rápido para enviar</string>
     <string name="share_size_good_quality">Boa qualidade</string>
     <string name="share_size_large_file">Arquivo grande — pode demorar para enviar</string>
@@ -26,9 +21,6 @@
 
     <!-- Format Selector -->
     <string name="share_format_label">Formato</string>
-    <string name="share_format_jpeg">JPEG</string>
-    <string name="share_format_png">PNG</string>
-    <string name="share_format_webp">WEBP</string>
     <string name="share_format_jpeg_description">Padrão (JPEG)</string>
     <string name="share_format_png_description">Sem perdas (PNG)</string>
     <string name="share_format_webp_description">Menor (WebP)</string>
@@ -51,13 +43,8 @@
     <string name="share_setting_keep_metadata_description">Anexar tags de emoji e info do meme ao arquivo</string>
 
     <!-- Action Buttons -->
-    <string name="share_button_save">Salvar</string>
     <string name="share_button_share">Compartilhar</string>
     <string name="share_button_save_to_gallery">ou salvar na galeria</string>
-
-    <!-- Content Descriptions -->
-    <string name="share_content_description_original_image">Original</string>
-    <string name="share_content_description_processed_image">Processado</string>
 
     <!-- Intent Chooser -->
     <string name="share_chooser_title">Compartilhar Meme</string>

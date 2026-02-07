@@ -8,8 +8,6 @@
     
     <!-- Section Headers -->
     <string name="settings_section_appearance">Appearance</string>
-    <string name="settings_section_display">Display</string>
-    <string name="settings_section_default_sharing">Default Sharing</string>
     <string name="settings_section_search">Search</string>
     <string name="settings_section_storage">Storage</string>
     <string name="settings_section_about">About</string>
@@ -29,19 +27,6 @@
     <string name="settings_grid_density_compact">Large (3 columns)</string>
     <string name="settings_grid_density_standard">Medium (4 columns)</string>
     <string name="settings_grid_density_dense">Small (5 columns)</string>
-    
-    <!-- Default Sharing Section -->
-    <string name="settings_format_title">Format</string>
-    <string name="settings_quality_title">Quality</string>
-    <string name="settings_quality_value">%1$d%%</string>
-    <string name="settings_max_size_title">Max Size</string>
-    <string name="settings_max_size_small">Small (480p)</string>
-    <string name="settings_max_size_medium">Medium (720p)</string>
-    <string name="settings_max_size_large">Large (1080p)</string>
-    <string name="settings_max_size_original">Original</string>
-    <string name="settings_max_size_custom">%1$dp</string>
-    <string name="settings_keep_metadata_title">Keep Metadata</string>
-    <string name="settings_keep_metadata_subtitle">Preserve emoji tags when sharing</string>
     
     <!-- Search Section -->
     <string name="settings_semantic_search_title">Semantic Search</string>
@@ -103,5 +88,4 @@
     <string name="settings_snackbar_export_failed">Export failed: %1$s</string>
     <string name="settings_snackbar_import_failed">Import failed: %1$s</string>
     <string name="settings_snackbar_import_success">Settings imported successfully</string>
-    <string name="settings_snackbar_invalid_backup">Invalid backup file format</string>
 </resources>

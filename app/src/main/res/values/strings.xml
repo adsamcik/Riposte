@@ -2,48 +2,15 @@
 <resources>
     <string name="app_name">Meme My Mood</string>
     
-    <!-- General -->
-    <string name="ok">OK</string>
-    <string name="cancel">Cancel</string>
-    <string name="delete">Delete</string>
-    <string name="share">Share</string>
-    <string name="save">Save</string>
-    <string name="search">Search</string>
-    <string name="settings">Settings</string>
-    
     <!-- Gallery -->
     <string name="gallery_title">Meme My Mood</string>
     <string name="gallery_empty_title">No memes yet</string>
     <string name="gallery_empty_message">Import some memes to get started!</string>
-    <string name="gallery_import_button">Import Memes</string>
-    <string name="gallery_favorites">Favorites</string>
-    <string name="gallery_all_memes">All Memes</string>
     
     <!-- Import -->
     <string name="import_title">Import Memes</string>
-    <string name="import_select_images">Select Images</string>
-    <string name="import_add_emojis">Add Emojis</string>
-    <string name="import_processing">Processing…</string>
-    
-    <!-- Search -->
-    <string name="search_hint">Search memes…</string>
-    <string name="search_no_results">No memes found</string>
-    <string name="search_recent">Recent Searches</string>
     
     <!-- Share -->
     <string name="share_title">Share Meme</string>
-    <string name="share_format">Format</string>
-    <string name="share_quality">Quality</string>
-    <string name="share_size">Max Size</string>
     
-    <!-- Settings -->
-    <string name="settings_appearance">Appearance</string>
-    <string name="settings_dark_mode">Dark Mode</string>
-    <string name="settings_dynamic_colors">Dynamic Colors</string>
-    <string name="settings_sharing">Sharing</string>
-    <string name="settings_default_format">Default Format</string>
-    <string name="settings_default_quality">Default Quality</string>
-    <string name="settings_ai">AI Features</string>
-    <string name="settings_semantic_search">Semantic Search</string>
-    <string name="settings_auto_extract_text">Auto Extract Text</string>
 </resources>

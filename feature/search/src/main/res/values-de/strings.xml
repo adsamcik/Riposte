@@ -15,34 +15,9 @@
     <string name="search_mode_hybrid">Beides</string>
     <string name="search_mode_content_description">Suchmodus: %1$s</string>
 
-    <!-- Emoji Filter Section -->
-    <string name="search_filter_emoji_title">Nach Emoji filtern</string>
-    <string name="search_filter_emoji_clear">Leeren (%1$d)</string>
-    <string name="search_filter_emoji_clear_content_description">%1$d ausgewählte Emoji-Filter leeren</string>
-    <string name="search_filter_emoji_content_description">%1$s Emoji-Filter</string>
-    <string name="search_filter_emoji_selected_content_description">%1$s Emoji-Filter, ausgewählt</string>
-
-    <!-- Emoji Labels -->
-    <string name="search_emoji_joy">Freude</string>
-    <string name="search_emoji_heart">Herz</string>
-    <string name="search_emoji_fire">Feuer</string>
-    <string name="search_emoji_heart_eyes">Herzaugen</string>
-    <string name="search_emoji_rofl">ROFL</string>
-    <string name="search_emoji_blush">Erröten</string>
-    <string name="search_emoji_pray">Beten</string>
-    <string name="search_emoji_crying">Weinen</string>
-    <string name="search_emoji_kiss">Kuss</string>
-    <string name="search_emoji_thumbs_up">Daumen hoch</string>
-    <string name="search_emoji_100">100</string>
-    <string name="search_emoji_party">Party</string>
-    <string name="search_emoji_cool">Cool</string>
-    <string name="search_emoji_pleading">Flehend</string>
-    <string name="search_emoji_sparkles">Funken</string>
-
     <!-- Quick Filters -->
     <string name="search_quick_filter_favorites">Favoriten</string>
     <string name="search_quick_filter_recent">Kürzlich</string>
-    <string name="search_quick_filter_trending">Beliebt</string>
     <string name="search_quick_filter_funny">Lustig</string>
     <string name="search_quick_filter_love">Liebe</string>
     <string name="search_quick_filter_reactions">Reaktionen</string>
@@ -65,17 +40,6 @@
     <string name="search_results_view_switch_list">Zur Listenansicht wechseln</string>
     <string name="search_results_view_switch_grid">Zur Rasteransicht wechseln</string>
 
-    <!-- Sort Order Labels -->
-    <string name="search_sort_relevance">Relevanz</string>
-    <string name="search_sort_newest">Neueste</string>
-    <string name="search_sort_oldest">Älteste</string>
-    <string name="search_sort_most_used">Am häufigsten verwendet</string>
-
-    <!-- Result Summary -->
-    <string name="search_result_searching">Suche läuft…</string>
-    <string name="search_result_none">Keine Ergebnisse gefunden</string>
-    <string name="search_result_summary">%1$d Ergebnisse in %2$dms</string>
-
     <!-- Empty State -->
     <string name="search_empty_icon">🔍</string>
     <string name="search_empty_title">Durchsuche deine Memes</string>
@@ -92,20 +56,9 @@
     <string name="search_no_results_description">Keine Memes für \"%1$s\" gefunden</string>
 
     <!-- No Results Suggestions -->
-    <string name="search_no_results_try_title">Versuche folgendes:</string>
-    <string name="search_no_results_tip_typos">Überprüfe deine Suche auf Tippfehler</string>
-    <string name="search_no_results_tip_keywords">Probiere allgemeinere oder andere Stichwörter</string>
-    <string name="search_no_results_tip_ai_mode">Wechsle in den KI-Modus für semantische Suche</string>
-    <string name="search_no_results_tip_filters">Entferne einige Filter</string>
     <string name="search_no_results_clear_filters">Alle Filter leeren</string>
 
     <!-- Result Card -->
     <string name="search_result_card_content_description">%1$s, beste Übereinstimmung</string>
-    <string name="search_result_more_emojis">+%1$d</string>
-    <string name="search_result_best_match">Beste Übereinstimmung</string>
 
-    <!-- Filters Bottom Sheet -->
-    <string name="search_filters">Filter</string>
-    <string name="search_filters_content_description">Filter, %1$d aktiv</string>
-    <string name="search_filters_apply">Anwenden</string>
 </resources>

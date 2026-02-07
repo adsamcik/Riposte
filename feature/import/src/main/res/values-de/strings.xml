@@ -3,9 +3,6 @@
     <!-- Screen Title -->
     <string name="import_title">Memes importieren</string>
 
-    <!-- Top Bar Actions -->
-    <string name="import_selected_count">%d ausgewählt</string>
-
     <!-- Content Descriptions -->
     <string name="import_content_description_back">Zurück</string>
     <string name="import_content_description_remove">Entfernen</string>
@@ -43,9 +40,6 @@
 
     <!-- Status Messages -->
     <string name="import_status_extracting">Bundle wird entpackt…</string>
-    <string name="import_status_streaming">Importiere… %1$d Memes verarbeitet</string>
-    <string name="import_status_streaming_with_errors">Importiere… %1$d verarbeitet, %2$d Fehler</string>
-    <string name="import_status_imported_partial">%1$d Memes importiert, %2$d fehlgeschlagen</string>
     <string name="import_error_bundle_failed">Bundle konnte nicht importiert werden</string>
     <string name="import_error_images_failed">Bilder konnten nicht importiert werden</string>
 </resources>

@@ -3,9 +3,6 @@
     <!-- Screen Title -->
     <string name="import_title">Importovat memy</string>
 
-    <!-- Top Bar Actions -->
-    <string name="import_selected_count">%d vybráno</string>
-
     <!-- Content Descriptions -->
     <string name="import_content_description_back">Zpět</string>
     <string name="import_content_description_remove">Odebrat</string>
@@ -45,9 +42,6 @@
 
     <!-- Status Messages -->
     <string name="import_status_extracting">Rozbaluji balíček…</string>
-    <string name="import_status_streaming">Importuji… %1$d memů zpracováno</string>
-    <string name="import_status_streaming_with_errors">Importuji… %1$d zpracováno, %2$d chyb</string>
-    <string name="import_status_imported_partial">Importováno %1$d memů, %2$d selhalo</string>
     <string name="import_status_zip_extract_errors">%d soubor(ů) nebylo možné extrahovat z balíčku</string>
     <string name="import_error_bundle_failed">Nepodařilo se importovat balíček</string>
     <string name="import_error_images_failed">Nepodařilo se importovat obrázky</string>

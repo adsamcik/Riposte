@@ -8,9 +8,6 @@
     <string name="gallery_menu_favorites">Favoriten</string>
     <string name="gallery_menu_settings">Einstellungen</string>
 
-    <!-- Selection Mode -->
-    <string name="gallery_selection_count">%d ausgewählt</string>
-
     <!-- Content Descriptions - Top Bar -->
     <string name="gallery_cd_cancel_selection">Auswahl aufheben</string>
     <string name="gallery_cd_select_all">Alle auswählen</string>
@@ -32,8 +29,6 @@
     <string name="gallery_cd_meme_image">Meme-Bild: %s</string>
 
     <!-- Delete Dialog -->
-    <string name="gallery_delete_title">Memes löschen</string>
-    <string name="gallery_delete_message">Möchtest du wirklich %d Meme(s) löschen? Das kann nicht rückgängig gemacht werden.</string>
     <string name="gallery_delete_single_title">Meme löschen?</string>
     <string name="gallery_delete_single_message">Diese Aktion kann nicht rückgängig gemacht werden.</string>
 
@@ -48,10 +43,6 @@
     <!-- Empty State -->
     <string name="gallery_empty_title">Noch keine Memes</string>
     <string name="gallery_empty_message">Importiere ein paar Memes, um loszulegen!</string>
-
-    <!-- Section Headers -->
-    <string name="gallery_section_quick_access">Schnellzugriff</string>
-    <string name="gallery_section_all_memes">Alle Memes</string>
 
     <!-- Loading State -->
     <string name="gallery_loading_message">Memes werden geladen…</string>
@@ -74,7 +65,6 @@
     <string name="gallery_emoji_search_label">Emojis suchen</string>
     <string name="gallery_emoji_section_selected">Ausgewählt</string>
     <string name="gallery_emoji_section_available">Verfügbar</string>
-    <string name="gallery_emoji_fallback_name">Emoji</string>
 
     <!-- Error Messages -->
     <string name="gallery_error_invalid_meme_id">Ungültige Meme-ID</string>

@@ -8,9 +8,6 @@
     <string name="gallery_menu_favorites">Favoritos</string>
     <string name="gallery_menu_settings">Configurações</string>
 
-    <!-- Selection Mode -->
-    <string name="gallery_selection_count">%d selecionado(s)</string>
-
     <!-- Content Descriptions - Top Bar -->
     <string name="gallery_cd_cancel_selection">Cancelar seleção</string>
     <string name="gallery_cd_select_all">Selecionar tudo</string>
@@ -32,8 +29,6 @@
     <string name="gallery_cd_meme_image">Imagem de meme: %s</string>
 
     <!-- Delete Dialog -->
-    <string name="gallery_delete_title">Excluir Memes</string>
-    <string name="gallery_delete_message">Tem certeza de que deseja excluir %d meme(s)? Esta ação não pode ser desfeita.</string>
     <string name="gallery_delete_single_title">Excluir Meme?</string>
     <string name="gallery_delete_single_message">Esta ação não pode ser desfeita.</string>
 
@@ -48,10 +43,6 @@
     <!-- Empty State -->
     <string name="gallery_empty_title">Nenhum meme ainda</string>
     <string name="gallery_empty_message">Importe alguns memes para começar!</string>
-
-    <!-- Section Headers -->
-    <string name="gallery_section_quick_access">Acesso Rápido</string>
-    <string name="gallery_section_all_memes">Todos os Memes</string>
 
     <!-- Loading State -->
     <string name="gallery_loading_message">Carregando memes…</string>
@@ -74,7 +65,6 @@
     <string name="gallery_emoji_search_label">Pesquisar emojis</string>
     <string name="gallery_emoji_section_selected">Selecionados</string>
     <string name="gallery_emoji_section_available">Disponíveis</string>
-    <string name="gallery_emoji_fallback_name">emoji</string>
 
     <!-- Error Messages -->
     <string name="gallery_error_invalid_meme_id">ID de meme inválido</string>

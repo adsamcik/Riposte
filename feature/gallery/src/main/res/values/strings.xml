@@ -16,14 +16,6 @@
     <!-- Section Headers -->
     <string name="gallery_section_suggested">✨ Suggested</string>
 
-    <!-- Context Menu -->
-    <string name="gallery_context_share">Share</string>
-    <string name="gallery_context_favorite">Favorite</string>
-    <string name="gallery_context_select">Select</string>
-
-    <!-- Selection Mode -->
-    <string name="gallery_selection_count">%d selected</string>
-
     <!-- Content Descriptions - Top Bar -->
     <string name="gallery_cd_cancel_selection">Cancel selection</string>
     <string name="gallery_cd_select_all">Select all</string>
@@ -45,8 +37,6 @@
     <string name="gallery_cd_meme_image">Meme image: %s</string>
 
     <!-- Delete Dialog -->
-    <string name="gallery_delete_title">Delete Memes</string>
-    <string name="gallery_delete_message">Are you sure you want to delete %d meme(s)? This cannot be undone.</string>
     <string name="gallery_delete_single_title">Delete Meme?</string>
     <string name="gallery_delete_single_message">This action cannot be undone.</string>
 
@@ -64,10 +54,6 @@
 
     <!-- Loading State -->
     <string name="gallery_loading_message">Loading memes…</string>
-
-    <!-- Section Headers -->
-    <string name="gallery_section_quick_access">Quick Access</string>
-    <string name="gallery_section_all_memes">All Memes</string>
 
     <!-- Sort Options -->
     <string name="gallery_sort_recent">Recent</string>
@@ -96,7 +82,6 @@
 
     <!-- Similar Memes Section -->
     <string name="gallery_detail_section_similar">More Like This</string>
-    <string name="gallery_detail_similar_empty">No similar memes found</string>
     <string name="gallery_cd_similar_meme">Similar meme: %s</string>
 
     <!-- Details Section -->
@@ -111,7 +96,6 @@
     <string name="gallery_emoji_search_label">Search emojis</string>
     <string name="gallery_emoji_section_selected">Selected</string>
     <string name="gallery_emoji_section_available">Available</string>
-    <string name="gallery_emoji_fallback_name">emoji</string>
 
     <!-- Error Messages -->
     <string name="gallery_error_invalid_meme_id">Invalid meme ID</string>

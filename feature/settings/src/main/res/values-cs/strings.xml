@@ -8,8 +8,6 @@
     
     <!-- Section Headers -->
     <string name="settings_section_appearance">Vzhled</string>
-    <string name="settings_section_display">Zobrazení</string>
-    <string name="settings_section_default_sharing">Výchozí sdílení</string>
     <string name="settings_section_search">Vyhledávání</string>
     <string name="settings_section_storage">Úložiště</string>
     <string name="settings_section_about">O aplikaci</string>
@@ -29,19 +27,6 @@
     <string name="settings_grid_density_compact">Velké (3 sloupce)</string>
     <string name="settings_grid_density_standard">Střední (4 sloupce)</string>
     <string name="settings_grid_density_dense">Malé (5 sloupců)</string>
-    
-    <!-- Default Sharing Section -->
-    <string name="settings_format_title">Formát</string>
-    <string name="settings_quality_title">Kvalita</string>
-    <string name="settings_quality_value">%1$d%%</string>
-    <string name="settings_max_size_title">Max. velikost</string>
-    <string name="settings_max_size_small">Malá (480p)</string>
-    <string name="settings_max_size_medium">Střední (720p)</string>
-    <string name="settings_max_size_large">Velká (1080p)</string>
-    <string name="settings_max_size_original">Původní</string>
-    <string name="settings_max_size_custom">%1$dp</string>
-    <string name="settings_keep_metadata_title">Zachovat metadata</string>
-    <string name="settings_keep_metadata_subtitle">Zachovat emoji štítky při sdílení</string>
     
     <!-- Search Section -->
     <string name="settings_semantic_search_title">Sémantické vyhledávání</string>
@@ -103,5 +88,4 @@
     <string name="settings_snackbar_export_failed">Export selhal: %1$s</string>
     <string name="settings_snackbar_import_failed">Import selhal: %1$s</string>
     <string name="settings_snackbar_import_success">Nastavení úspěšně importováno</string>
-    <string name="settings_snackbar_invalid_backup">Neplatný formát zálohy</string>
 </resources>
