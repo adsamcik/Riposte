@@ -168,7 +168,10 @@ class SearchViewModel @Inject constructor(
             _uiState.update { it.copy(hasSearched = true, isSearching = true) }
             performSearchInternal(query)
             viewModelScope.launch {
-                searchUseCases.addRecentSearch(query)
+                // Don't save quick filter queries (e.g., "is:favorite") to recent searches
+                if (_uiState.value.selectedQuickFilter == null) {
+                    searchUseCases.addRecentSearch(query)
+                }
                 // Show smart search tip once after first search
                 if (!preferencesDataStore.hasShownSearchTip.first()) {
                     preferencesDataStore.setSearchTipShown()
