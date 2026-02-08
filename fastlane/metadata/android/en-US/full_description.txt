@@ -1,0 +1,15 @@
+Meme My Mood helps you organize, search, and share memes from your personal collection — fast.
+
+Tag your memes with emojis, search by mood or description, and share directly to any app in seconds. Built for the moment you're mid-conversation and need the perfect reaction image.
+
+Features:
+
+• Emoji-based categorization — tap an emoji to find matching memes instantly
+• AI-powered semantic search — describe what you're looking for in plain words
+• Quick share — long-press any meme to share it directly
+• Import from gallery or ZIP bundles — bring your whole collection in at once
+• Customizable sharing — control format, quality, and size before sending
+• Fully offline — all AI processing happens on-device, no data leaves your phone
+• Material You — dynamic colors that match your system theme
+
+Meme My Mood is free and open source software.
