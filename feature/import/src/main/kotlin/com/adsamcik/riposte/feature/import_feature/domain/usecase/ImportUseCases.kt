@@ -78,6 +78,17 @@ class CheckDuplicateUseCase @Inject constructor(
 }
 
 /**
+ * Use case for cleaning up temporary files created during ZIP extraction.
+ */
+class CleanupExtractedFilesUseCase @Inject constructor(
+    private val zipImporter: ZipImporter,
+) {
+    operator fun invoke() {
+        zipImporter.cleanupExtractedFiles()
+    }
+}
+
+/**
  * Use case for extracting a ZIP bundle for preview without importing.
  */
 class ExtractZipForPreviewUseCase @Inject constructor(

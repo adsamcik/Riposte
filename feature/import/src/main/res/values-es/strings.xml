@@ -33,12 +33,13 @@
 
     <!-- Progress Screen -->
     <string name="import_progress_title">Importando Memes</string>
-    <string name="import_progress_count">%1$d de %2$d</string>
+    <string name="import_progress_count">%1$d de %2$d (%3$d%%)</string>
 
     <!-- Emoji Overflow -->
     <string name="import_emoji_overflow">+%d</string>
 
     <!-- Status Messages -->
+    <string name="import_status_checking_duplicates">Comprobando duplicados…</string>
     <string name="import_status_extracting">Extrayendo paquete…</string>
     <string name="import_error_bundle_failed">No se pudo importar el paquete</string>
     <string name="import_error_images_failed">No se pudieron importar las imágenes</string>

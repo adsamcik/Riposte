@@ -8,6 +8,7 @@ import com.adsamcik.riposte.core.datastore.PreferencesDataStore
 import com.adsamcik.riposte.core.model.MemeMetadata
 import com.adsamcik.riposte.feature.import_feature.R
 import com.adsamcik.riposte.feature.import_feature.domain.usecase.CheckDuplicateUseCase
+import com.adsamcik.riposte.feature.import_feature.domain.usecase.CleanupExtractedFilesUseCase
 import com.adsamcik.riposte.feature.import_feature.domain.usecase.ExtractTextUseCase
 import com.adsamcik.riposte.feature.import_feature.domain.usecase.ExtractZipForPreviewUseCase
 import com.adsamcik.riposte.feature.import_feature.domain.usecase.ImportImageUseCase
@@ -33,6 +34,7 @@ class ImportViewModel @Inject constructor(
     private val extractTextUseCase: ExtractTextUseCase,
     private val extractZipForPreviewUseCase: ExtractZipForPreviewUseCase,
     private val checkDuplicateUseCase: CheckDuplicateUseCase,
+    private val cleanupExtractedFilesUseCase: CleanupExtractedFilesUseCase,
     private val userActionTracker: UserActionTracker,
     private val preferencesDataStore: PreferencesDataStore,
 ) : ViewModel() {
@@ -44,6 +46,11 @@ class ImportViewModel @Inject constructor(
     val effects = _effects.receiveAsFlow()
 
     private var importJob: Job? = null
+
+    override fun onCleared() {
+        super.onCleared()
+        cleanupExtractedFilesUseCase()
+    }
 
     fun onIntent(intent: ImportIntent) {
         when (intent) {
@@ -257,7 +264,13 @@ class ImportViewModel @Inject constructor(
     private fun startImport() {
         // Guard against duplicate imports - check and set synchronously
         if (_uiState.value.isImporting) return
-        _uiState.update { it.copy(isImporting = true) }
+        _uiState.update {
+            it.copy(
+                isImporting = true,
+                importProgress = -1f,
+                statusMessage = context.getString(R.string.import_status_checking_duplicates),
+            )
+        }
 
         importJob = viewModelScope.launch {
             // Check for duplicates first
@@ -277,6 +290,7 @@ class ImportViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         isImporting = false,
+                        statusMessage = null,
                         duplicateIndices = duplicateIndices,
                         showDuplicateDialog = true,
                     )
@@ -313,37 +327,44 @@ class ImportViewModel @Inject constructor(
     }
 
     private suspend fun performImport(images: List<ImportImage>) {
-        _uiState.update { it.copy(isImporting = true, importProgress = 0f) }
+        _uiState.update { it.copy(isImporting = true, importProgress = 0f, statusMessage = null) }
 
         var successCount = 0
         val failedImages = mutableListOf<ImportImage>()
 
-        images.forEachIndexed { index, image ->
-            val metadata = if (image.emojis.isNotEmpty()) {
-                MemeMetadata(
-                    emojis = image.emojis.map { it.emoji },
-                    title = image.title,
-                    description = image.description,
-                )
-            } else {
-                null
-            }
+        try {
+            images.forEachIndexed { index, image ->
+                _uiState.update { it.copy(statusMessage = image.fileName) }
 
-            val result = importImageUseCase(image.uri, metadata)
-            if (result.isSuccess) {
-                successCount++
-            } else {
-                failedImages.add(image)
-            }
+                val metadata = if (image.emojis.isNotEmpty()) {
+                    MemeMetadata(
+                        emojis = image.emojis.map { it.emoji },
+                        title = image.title,
+                        description = image.description,
+                    )
+                } else {
+                    null
+                }
 
-            _uiState.update {
-                it.copy(importProgress = (index + 1).toFloat() / images.size)
+                val result = importImageUseCase(image.uri, metadata)
+                if (result.isSuccess) {
+                    successCount++
+                } else {
+                    failedImages.add(image)
+                }
+
+                _uiState.update {
+                    it.copy(importProgress = (index + 1).toFloat() / images.size)
+                }
             }
+        } finally {
+            cleanupExtractedFilesUseCase()
         }
 
         _uiState.update {
             it.copy(
                 isImporting = false,
+                statusMessage = null,
                 importResult = ImportResult(
                     successCount = successCount,
                     failureCount = failedImages.size,
@@ -375,10 +396,11 @@ class ImportViewModel @Inject constructor(
     private fun cancelImport() {
         importJob?.cancel()
         importJob = null
-        _uiState.update { it.copy(isImporting = false, importProgress = 0f) }
+        _uiState.update { it.copy(isImporting = false, importProgress = 0f, statusMessage = null) }
     }
 
     private fun clearAll() {
+        cleanupExtractedFilesUseCase()
         _uiState.update { ImportUiState() }
     }
 

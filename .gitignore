@@ -53,4 +53,5 @@ app/src/main/assets_mediatek/embedding_models/
 app/src/main/assets_qualcomm/embedding_models/
 
 # AI Packs (Play Asset Delivery on-demand models)
-aipacks/*/src/main/assets/
+aipacks/*/src/main/assets/.kotlin/
+app/full/release/

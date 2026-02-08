@@ -8,6 +8,7 @@ import com.adsamcik.riposte.core.model.EmojiTag
 import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.core.datastore.PreferencesDataStore
 import com.adsamcik.riposte.feature.import_feature.domain.usecase.CheckDuplicateUseCase
+import com.adsamcik.riposte.feature.import_feature.domain.usecase.CleanupExtractedFilesUseCase
 import com.adsamcik.riposte.feature.import_feature.domain.usecase.ExtractTextUseCase
 import com.adsamcik.riposte.feature.import_feature.domain.usecase.ExtractZipForPreviewUseCase
 import com.adsamcik.riposte.feature.import_feature.domain.usecase.ImportImageUseCase
@@ -45,6 +46,7 @@ class ImportViewModelEdgeCasesTest {
     private lateinit var extractTextUseCase: ExtractTextUseCase
     private lateinit var extractZipForPreviewUseCase: ExtractZipForPreviewUseCase
     private lateinit var checkDuplicateUseCase: CheckDuplicateUseCase
+    private lateinit var cleanupExtractedFilesUseCase: CleanupExtractedFilesUseCase
     private lateinit var preferencesDataStore: PreferencesDataStore
     private lateinit var viewModel: ImportViewModel
 
@@ -57,6 +59,7 @@ class ImportViewModelEdgeCasesTest {
         extractTextUseCase = mockk(relaxed = true)
         extractZipForPreviewUseCase = mockk(relaxed = true)
         checkDuplicateUseCase = mockk(relaxed = true)
+        cleanupExtractedFilesUseCase = mockk(relaxed = true)
         preferencesDataStore = mockk(relaxed = true) {
             every { hasShownEmojiTip } returns flowOf(false)
         }
@@ -67,6 +70,7 @@ class ImportViewModelEdgeCasesTest {
             extractTextUseCase = extractTextUseCase,
             extractZipForPreviewUseCase = extractZipForPreviewUseCase,
             checkDuplicateUseCase = checkDuplicateUseCase,
+            cleanupExtractedFilesUseCase = cleanupExtractedFilesUseCase,
             userActionTracker = mockk(relaxed = true),
             preferencesDataStore = preferencesDataStore,
         )
@@ -532,6 +536,109 @@ class ImportViewModelEdgeCasesTest {
         // Only non-duplicate should be imported
         coVerify(exactly = 1) { importImageUseCase(uri2, any()) }
         coVerify(exactly = 0) { importImageUseCase(uri1, any()) }
+    }
+
+    // ==================== Progress Reporting Tests ====================
+
+    @Test
+    fun `StartImport shows checking duplicates status`() = runTest {
+        val uri = mockk<Uri> { every { lastPathSegment } returns "meme.jpg" }
+
+        coEvery { suggestEmojisUseCase(any()) } returns emptyList()
+        coEvery { extractTextUseCase(any()) } returns null
+        // Slow duplicate check to observe intermediate state
+        coEvery { checkDuplicateUseCase(any()) } coAnswers {
+            delay(1000)
+            false
+        }
+        coEvery { importImageUseCase(any(), any()) } returns Result.success(mockk<Meme>())
+
+        viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uri)))
+        advanceUntilIdle()
+
+        viewModel.onIntent(ImportIntent.StartImport)
+        // Don't advance fully — observe intermediate state
+        advanceTimeBy(100)
+
+        viewModel.uiState.test {
+            val state = awaitItem()
+            assertThat(state.isImporting).isTrue()
+            assertThat(state.isProgressIndeterminate).isTrue()
+        }
+    }
+
+    @Test
+    fun `performImport sets statusMessage to current filename`() = runTest {
+        val uri1 = mockk<Uri> { every { lastPathSegment } returns "meme1.jpg" }
+        val uri2 = mockk<Uri> { every { lastPathSegment } returns "meme2.jpg" }
+        val meme = mockk<Meme>()
+
+        coEvery { suggestEmojisUseCase(any()) } returns emptyList()
+        coEvery { extractTextUseCase(any()) } returns null
+        coEvery { checkDuplicateUseCase(any()) } returns false
+        coEvery { importImageUseCase(any(), any()) } returns Result.success(meme)
+
+        viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uri1, uri2)))
+        advanceUntilIdle()
+
+        viewModel.onIntent(ImportIntent.StartImport)
+        advanceUntilIdle()
+
+        // After import completes, statusMessage should be cleared
+        viewModel.uiState.test {
+            val state = awaitItem()
+            assertThat(state.isImporting).isFalse()
+            assertThat(state.statusMessage).isNull()
+        }
+    }
+
+    @Test
+    fun `duplicate dialog clears statusMessage`() = runTest {
+        val uri = mockk<Uri> { every { lastPathSegment } returns "meme.jpg" }
+
+        coEvery { suggestEmojisUseCase(any()) } returns emptyList()
+        coEvery { extractTextUseCase(any()) } returns null
+        coEvery { checkDuplicateUseCase(uri) } returns true
+
+        viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uri)))
+        advanceUntilIdle()
+
+        viewModel.onIntent(ImportIntent.StartImport)
+        advanceUntilIdle()
+
+        viewModel.uiState.test {
+            val state = awaitItem()
+            assertThat(state.showDuplicateDialog).isTrue()
+            assertThat(state.statusMessage).isNull()
+        }
+    }
+
+    @Test
+    fun `CancelImport clears statusMessage`() = runTest {
+        val uri = mockk<Uri> { every { lastPathSegment } returns "meme.jpg" }
+
+        coEvery { suggestEmojisUseCase(any()) } returns emptyList()
+        coEvery { extractTextUseCase(any()) } returns null
+        coEvery { checkDuplicateUseCase(any()) } returns false
+        coEvery { importImageUseCase(any(), any()) } coAnswers {
+            delay(10_000)
+            Result.success(mockk<Meme>())
+        }
+
+        viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uri)))
+        advanceUntilIdle()
+
+        viewModel.onIntent(ImportIntent.StartImport)
+        advanceTimeBy(100)
+
+        viewModel.onIntent(ImportIntent.CancelImport)
+        advanceUntilIdle()
+
+        viewModel.uiState.test {
+            val state = awaitItem()
+            assertThat(state.statusMessage).isNull()
+            assertThat(state.isImporting).isFalse()
+        }
     }
 
     // ==================== Import Result Summary Tests ====================

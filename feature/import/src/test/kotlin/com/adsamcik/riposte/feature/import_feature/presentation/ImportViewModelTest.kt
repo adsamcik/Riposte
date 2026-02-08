@@ -8,6 +8,7 @@ import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.core.model.MemeMetadata
 import com.adsamcik.riposte.core.datastore.PreferencesDataStore
 import com.adsamcik.riposte.feature.import_feature.domain.usecase.CheckDuplicateUseCase
+import com.adsamcik.riposte.feature.import_feature.domain.usecase.CleanupExtractedFilesUseCase
 import com.adsamcik.riposte.feature.import_feature.domain.usecase.ExtractTextUseCase
 import com.adsamcik.riposte.feature.import_feature.domain.usecase.ExtractZipForPreviewUseCase
 import com.adsamcik.riposte.feature.import_feature.domain.usecase.ImportImageUseCase
@@ -40,6 +41,7 @@ class ImportViewModelTest {
     private lateinit var extractTextUseCase: ExtractTextUseCase
     private lateinit var extractZipForPreviewUseCase: ExtractZipForPreviewUseCase
     private lateinit var checkDuplicateUseCase: CheckDuplicateUseCase
+    private lateinit var cleanupExtractedFilesUseCase: CleanupExtractedFilesUseCase
     private lateinit var preferencesDataStore: PreferencesDataStore
     private lateinit var viewModel: ImportViewModel
 
@@ -52,6 +54,7 @@ class ImportViewModelTest {
         extractTextUseCase = mockk(relaxed = true)
         extractZipForPreviewUseCase = mockk(relaxed = true)
         checkDuplicateUseCase = mockk(relaxed = true)
+        cleanupExtractedFilesUseCase = mockk(relaxed = true)
         preferencesDataStore = mockk(relaxed = true) {
             every { hasShownEmojiTip } returns flowOf(false)
         }
@@ -62,6 +65,7 @@ class ImportViewModelTest {
             extractTextUseCase = extractTextUseCase,
             extractZipForPreviewUseCase = extractZipForPreviewUseCase,
             checkDuplicateUseCase = checkDuplicateUseCase,
+            cleanupExtractedFilesUseCase = cleanupExtractedFilesUseCase,
             userActionTracker = mockk(relaxed = true),
             preferencesDataStore = preferencesDataStore,
         )
@@ -495,6 +499,55 @@ class ImportViewModelTest {
             assertThat(state.hasImages).isTrue()
             assertThat(state.canImport).isTrue()
         }
+    }
+
+    // endregion
+
+    // region Cleanup after import
+
+    @Test
+    fun `ClearAll cleans up extracted files`() = runTest {
+        viewModel.onIntent(ImportIntent.ClearAll)
+        advanceUntilIdle()
+
+        io.mockk.verify { cleanupExtractedFilesUseCase() }
+    }
+
+    @Test
+    fun `performImport cleans up extracted files after completion`() = runTest {
+        val uri = mockk<Uri> { every { lastPathSegment } returns "meme.jpg" }
+        val meme = mockk<Meme>()
+
+        coEvery { suggestEmojisUseCase(any()) } returns emptyList()
+        coEvery { extractTextUseCase(any()) } returns null
+        coEvery { importImageUseCase(any(), any()) } returns Result.success(meme)
+        coEvery { checkDuplicateUseCase(any()) } returns false
+
+        viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uri)))
+        advanceUntilIdle()
+
+        viewModel.onIntent(ImportIntent.StartImport)
+        advanceUntilIdle()
+
+        io.mockk.verify { cleanupExtractedFilesUseCase() }
+    }
+
+    @Test
+    fun `performImport cleans up extracted files even on failure`() = runTest {
+        val uri = mockk<Uri> { every { lastPathSegment } returns "meme.jpg" }
+
+        coEvery { suggestEmojisUseCase(any()) } returns emptyList()
+        coEvery { extractTextUseCase(any()) } returns null
+        coEvery { importImageUseCase(any(), any()) } returns Result.failure(RuntimeException("fail"))
+        coEvery { checkDuplicateUseCase(any()) } returns false
+
+        viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uri)))
+        advanceUntilIdle()
+
+        viewModel.onIntent(ImportIntent.StartImport)
+        advanceUntilIdle()
+
+        io.mockk.verify { cleanupExtractedFilesUseCase() }
     }
 
     // endregion

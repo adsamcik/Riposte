@@ -35,12 +35,13 @@
 
     <!-- Progress Screen -->
     <string name="import_progress_title">Importuji memy</string>
-    <string name="import_progress_count">%1$d z %2$d</string>
+    <string name="import_progress_count">%1$d z %2$d (%3$d%%)</string>
 
     <!-- Emoji Overflow -->
     <string name="import_emoji_overflow">+%d</string>
 
     <!-- Status Messages -->
+    <string name="import_status_checking_duplicates">Kontroluji duplikáty…</string>
     <string name="import_status_extracting">Rozbaluji balíček…</string>
     <string name="import_status_zip_extract_errors">%d soubor(ů) nebylo možné extrahovat z balíčku</string>
     <string name="import_error_bundle_failed">Nepodařilo se importovat balíček</string>

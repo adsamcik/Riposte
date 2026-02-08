@@ -286,6 +286,7 @@ fun ImportScreen(
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
                             .fillMaxWidth()
+                            .windowInsetsPadding(WindowInsets.navigationBars)
                             .padding(16.dp),
                     ) {
                         Icon(Icons.Default.Check, contentDescription = stringResource(R.string.import_content_description_confirm_import))
@@ -762,6 +763,7 @@ internal fun ImportProgressContent(
     modifier: Modifier = Modifier,
 ) {
     val progressCount = (progress * total).toInt()
+    val progressPercent = (progress * 100).toInt()
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -769,9 +771,16 @@ internal fun ImportProgressContent(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        CircularProgressIndicator(
-            modifier = Modifier.size(64.dp),
-        )
+        if (isIndeterminate) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(64.dp),
+            )
+        } else {
+            CircularProgressIndicator(
+                progress = { progress },
+                modifier = Modifier.size(64.dp),
+            )
+        }
         Spacer(Modifier.height(24.dp))
         Text(
             text = stringResource(R.string.import_progress_title),
@@ -780,7 +789,7 @@ internal fun ImportProgressContent(
         Spacer(Modifier.height(8.dp))
         if (!isIndeterminate) {
             Text(
-                text = stringResource(R.string.import_progress_count, progressCount, total),
+                text = stringResource(R.string.import_progress_count, progressCount, total, progressPercent),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
