@@ -83,7 +83,6 @@ appcompat = "1.7.0"
 # Code Quality Tools
 detekt = "1.23.7"
 ktlint = "1.5.0"
-ktlint-compose-rules = "0.4.26"
 
 [libraries]
 # Core AndroidX
@@ -132,7 +131,6 @@ datastore-preferences = { group = "androidx.datastore", name = "datastore-prefer
 paging-runtime = { group = "androidx.paging", name = "paging-runtime", version.ref = "paging" }
 paging-common = { group = "androidx.paging", name = "paging-common", version.ref = "paging" }
 paging-compose = { group = "androidx.paging", name = "paging-compose", version.ref = "paging" }
-paging-testing = { group = "androidx.paging", name = "paging-testing", version.ref = "paging" }
 
 # Coroutines
 coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }
@@ -209,7 +207,6 @@ appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "a
 
 # Code Quality Tools
 detekt-formatting = { group = "io.gitlab.arturbosch.detekt", name = "detekt-formatting", version.ref = "detekt" }
-ktlint-compose-rules = { group = "io.nlopez.compose.rules", name = "ktlint", version.ref = "ktlint-compose-rules" }
 
 [bundles]
 compose = [

@@ -134,50 +134,6 @@ data class MemeMetadata(
      */
     fun toEmojiTags(): List<EmojiTag> = emojis.map { EmojiTag.fromEmoji(it) }
     
-    /**
-     * Gets the localized content for a specific language.
-     * 
-     * @param languageCode BCP 47 language code (e.g., "en", "cs", "de")
-     * @return LocalizedContent for the language, or null if not available
-     */
-    fun getLocalization(languageCode: String): LocalizedContent? =
-        localizations[languageCode]
-    
-    /**
-     * Gets the title in the specified language, falling back to primary title.
-     * 
-     * @param languageCode BCP 47 language code
-     * @return Localized title, or primary title if not available
-     */
-    fun getTitleForLanguage(languageCode: String): String? =
-        localizations[languageCode]?.title ?: title
-    
-    /**
-     * Gets the description in the specified language, falling back to primary.
-     * 
-     * @param languageCode BCP 47 language code
-     * @return Localized description, or primary description if not available
-     */
-    fun getDescriptionForLanguage(languageCode: String): String? =
-        localizations[languageCode]?.description ?: description
-    
-    /**
-     * Gets the tags in the specified language, falling back to primary tags.
-     * 
-     * @param languageCode BCP 47 language code
-     * @return Localized tags, or primary tags if not available
-     */
-    fun getTagsForLanguage(languageCode: String): List<String> =
-        localizations[languageCode]?.tags?.takeIf { it.isNotEmpty() } ?: tags
-    
-    /**
-     * Returns all available language codes (primary + localizations).
-     */
-    fun availableLanguages(): Set<String> = buildSet {
-        primaryLanguage?.let { add(it) }
-        addAll(localizations.keys)
-    }
-    
     companion object {
         const val CURRENT_SCHEMA_VERSION = "1.1"
         

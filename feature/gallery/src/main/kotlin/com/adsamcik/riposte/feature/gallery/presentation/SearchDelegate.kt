@@ -53,7 +53,6 @@ class SearchDelegate @Inject constructor(
                 .distinctUntilChanged()
                 .collectLatest { query ->
                     if (query.isNotBlank()) {
-                        loadSuggestions(query)
                         performSearch(query, activeEmojiFilters = emptySet(), scope = scope)
                     } else {
                         _state.update {
@@ -224,10 +223,6 @@ class SearchDelegate @Inject constructor(
             val normalizedMemeEmojis = result.meme.emojiTags.map { normalizeEmoji(it.emoji) }
             normalizedFilters.any { it in normalizedMemeEmojis }
         }
-    }
-
-    private fun loadSuggestions(query: String) {
-        // Suggestions loaded inline — no separate scope needed since called from collectLatest
     }
 
     companion object {
