@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- App Bar -->
-    <string name="gallery_title">Meme My Mood</string>
+    <string name="gallery_title">Riposte</string>
 
     <!-- Menu Items -->
     <string name="gallery_menu_all_memes">All Memes</string>

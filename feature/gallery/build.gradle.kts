@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "com.mememymood.feature.gallery"
+    namespace = "com.adsamcik.riposte.feature.gallery"
     compileSdk = 36
 
     defaultConfig {
@@ -35,6 +35,7 @@ dependencies {
     implementation(project(":core:database"))
     implementation(project(":core:datastore"))
     implementation(project(":core:ml"))
+    implementation(project(":core:search"))
 
     // Compose
     implementation(platform(libs.compose.bom))
