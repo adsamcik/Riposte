@@ -1,6 +1,6 @@
-# Meme My Mood CLI
+# Riposte CLI
 
-A command-line tool for annotating meme images using the GitHub Copilot SDK. Generates metadata files compatible with the [Meme My Mood](https://github.com/meme-my-mood/meme-my-mood) Android app.
+A command-line tool for annotating meme images using the GitHub Copilot SDK. Generates metadata files compatible with the [Riposte](https://github.com/riposte/riposte) Android app.
 
 ## Features
 
@@ -32,7 +32,7 @@ A command-line tool for annotating meme images using the GitHub Copilot SDK. Gen
 ### From source (recommended)
 
 ```bash
-cd tools/meme-my-mood-cli
+cd tools/riposte-cli
 
 # Create and activate virtual environment
 python -m venv .venv
@@ -50,14 +50,14 @@ pip install -e .
 ### Quick setup (Windows)
 
 ```bash
-cd tools/meme-my-mood-cli
+cd tools/riposte-cli
 .\scripts\setup.ps1
 ```
 
 ### Quick setup (macOS/Linux)
 
 ```bash
-cd tools/meme-my-mood-cli
+cd tools/riposte-cli
 ./scripts/setup.sh
 ```
 
@@ -89,7 +89,7 @@ meme-cli annotate ./my-memes --model gpt-4.1
 
 ### 3. Import to Android App
 
-Transfer the generated `.meme.zip` file to your Android device and open it with Meme My Mood.
+Transfer the generated `.meme.zip` file to your Android device and open it with Riposte.
 
 ## Commands
 
@@ -237,8 +237,8 @@ Authentication, model management, and API calls are all handled by the Copilot C
 
 ```bash
 # Clone the repository
-git clone https://github.com/meme-my-mood/meme-my-mood
-cd meme-my-mood/tools/meme-my-mood-cli
+git clone https://github.com/riposte/riposte
+cd riposte/tools/riposte-cli
 
 # Create and activate virtual environment
 python -m venv .venv

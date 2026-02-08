@@ -18,8 +18,8 @@ from rich.progress import (
     TaskProgressColumn,
 )
 
-from meme_my_mood_cli import __version__
-from meme_my_mood_cli.copilot import (
+from riposte_cli import __version__
+from riposte_cli.copilot import (
     analyze_image_async,
     get_rate_limiter,
     reset_rate_limiter,
@@ -28,7 +28,7 @@ from meme_my_mood_cli.copilot import (
     RateLimitError,
     ServerError,
 )
-from meme_my_mood_cli.hashing import (
+from riposte_cli.hashing import (
     deduplicate_images,
     get_image_hash,
     load_hash_manifest,
@@ -580,5 +580,5 @@ def annotate(
         console.print(f"\n[bold blue]📦 Created bundle: {zip_path}[/bold blue]")
         console.print(
             "[dim]Transfer this file to your Android device "
-            "and open with Meme My Mood[/dim]"
+            "and open with Riposte[/dim]"
         )

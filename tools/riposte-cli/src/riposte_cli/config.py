@@ -1,4 +1,4 @@
-"""Configuration and credential management for meme-my-mood-cli."""
+"""Configuration and credential management for riposte-cli."""
 
 import json
 import os
@@ -25,7 +25,7 @@ def get_config_dir() -> Path:
     else:
         config_home = Path.home()
     
-    config_dir = config_home / "meme-my-mood-cli"
+    config_dir = config_home / "riposte-cli"
     config_dir.mkdir(parents=True, exist_ok=True)
     return config_dir
 

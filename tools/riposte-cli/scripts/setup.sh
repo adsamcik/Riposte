@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Set up the meme-my-mood-cli development environment.
+# Set up the riposte-cli development environment.
 # Creates a Python virtual environment and installs dependencies.
 #
 
@@ -11,7 +11,7 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 VENV_PATH="$PROJECT_ROOT/.venv"
 REQUIRE_PYTHON="3.10"
 
-echo "Setting up meme-my-mood-cli..."
+echo "Setting up riposte-cli..."
 echo ""
 
 # Check Python version
@@ -48,7 +48,7 @@ source "$VENV_PATH/bin/activate"
 echo "Upgrading pip..."
 python -m pip install --upgrade pip
 
-echo "Installing meme-my-mood-cli in development mode..."
+echo "Installing riposte-cli in development mode..."
 cd "$PROJECT_ROOT"
 pip install -e ".[dev]"
 

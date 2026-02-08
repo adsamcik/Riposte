@@ -3,13 +3,13 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "meme-my-mood-cli"
+name = "riposte-cli"
 version = "1.0.0"
-description = "CLI tool for annotating meme images with GitHub Copilot AI for Meme My Mood Android app"
+description = "CLI tool for annotating meme images with GitHub Copilot AI for Riposte Android app"
 readme = "README.md"
 license = "MIT"
 authors = [
-    { name = "Meme My Mood", email = "meme-my-mood@example.com" }
+    { name = "Riposte", email = "riposte@example.com" }
 ]
 keywords = ["meme", "emoji", "ai", "copilot", "image-annotation", "cli"]
 classifiers = [
@@ -47,15 +47,15 @@ build = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/meme-my-mood/meme-my-mood"
-Repository = "https://github.com/meme-my-mood/meme-my-mood"
-Issues = "https://github.com/meme-my-mood/meme-my-mood/issues"
+Homepage = "https://github.com/riposte/riposte"
+Repository = "https://github.com/riposte/riposte"
+Issues = "https://github.com/riposte/riposte/issues"
 
 [project.scripts]
-meme-cli = "meme_my_mood_cli.main:cli"
+meme-cli = "riposte_cli.main:cli"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/meme_my_mood_cli"]
+packages = ["src/riposte_cli"]
 
 [tool.ruff]
 line-length = 100

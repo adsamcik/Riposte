@@ -16,20 +16,20 @@ from pathlib import Path
 block_cipher = None
 
 # Get the source directory
-src_dir = Path('src/meme_my_mood_cli')
+src_dir = Path('src/riposte_cli')
 
 a = Analysis(
-    ['src/meme_my_mood_cli/main.py'],
+    ['src/riposte_cli/main.py'],
     pathex=[],
     binaries=[],
     datas=[],
     hiddenimports=[
-        'meme_my_mood_cli',
-        'meme_my_mood_cli.commands',
-        'meme_my_mood_cli.commands.auth',
-        'meme_my_mood_cli.commands.annotate',
-        'meme_my_mood_cli.config',
-        'meme_my_mood_cli.copilot',
+        'riposte_cli',
+        'riposte_cli.commands',
+        'riposte_cli.commands.auth',
+        'riposte_cli.commands.annotate',
+        'riposte_cli.config',
+        'riposte_cli.copilot',
         # Dependencies
         'click',
         'httpx',

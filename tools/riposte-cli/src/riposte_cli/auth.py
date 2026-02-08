@@ -1,4 +1,4 @@
-"""Authentication commands for meme-my-mood-cli.
+"""Authentication commands for riposte-cli.
 
 With the Copilot SDK, authentication is handled by the Copilot CLI.
 This module provides commands to check and verify the CLI installation.

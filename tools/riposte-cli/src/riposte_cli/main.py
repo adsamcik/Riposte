@@ -1,19 +1,19 @@
-"""Main CLI entry point for meme-my-mood-cli."""
+"""Main CLI entry point for riposte-cli."""
 
 import click
 
-from meme_my_mood_cli.auth import auth
-from meme_my_mood_cli.commands.annotate import annotate
+from riposte_cli.auth import auth
+from riposte_cli.commands.annotate import annotate
 
 
 @click.group()
-@click.version_option(package_name="meme-my-mood-cli")
+@click.version_option(package_name="riposte-cli")
 def cli():
-    """Meme My Mood CLI - AI-powered meme annotation tool.
+    """Riposte CLI - AI-powered meme annotation tool.
 
     Annotate meme images with emojis, titles, descriptions, and tags
     using GitHub Copilot AI. Outputs JSON sidecar files compatible
-    with the Meme My Mood Android app.
+    with the Riposte Android app.
 
     \b
     Quick Start:

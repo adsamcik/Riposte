@@ -1,7 +1,7 @@
 #!/usr/bin/env pwsh
 <#
 .SYNOPSIS
-    Set up the meme-my-mood-cli development environment.
+    Set up the riposte-cli development environment.
 
 .DESCRIPTION
     Creates a Python virtual environment and installs dependencies.
@@ -17,7 +17,7 @@ $ProjectRoot = Split-Path -Parent $PSScriptRoot
 $VenvPath = Join-Path $ProjectRoot ".venv"
 $RequirePython = "3.10"
 
-Write-Host "Setting up meme-my-mood-cli..." -ForegroundColor Cyan
+Write-Host "Setting up riposte-cli..." -ForegroundColor Cyan
 Write-Host ""
 
 # Check Python version
@@ -60,7 +60,7 @@ Write-Host "Activating virtual environment..." -ForegroundColor Cyan
 Write-Host "Upgrading pip..." -ForegroundColor Cyan
 python -m pip install --upgrade pip
 
-Write-Host "Installing meme-my-mood-cli in development mode..." -ForegroundColor Cyan
+Write-Host "Installing riposte-cli in development mode..." -ForegroundColor Cyan
 Push-Location $ProjectRoot
 pip install -e ".[dev]"
 Pop-Location
