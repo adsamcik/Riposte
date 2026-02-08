@@ -1,4 +1,4 @@
-# 🔍 Meme My Mood - Comprehensive Code Review Report
+# 🔍 Riposte - Comprehensive Code Review Report
 
 **Review Date:** January 28, 2026  
 **Review Scope:** Full codebase audit  
@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-The **Meme My Mood** codebase demonstrates **solid engineering practices** with well-structured Clean Architecture, consistent MVI pattern implementation, and comprehensive test coverage. The project follows modern Android development standards with Kotlin 2.3.0, Jetpack Compose, and Hilt DI.
+The **Riposte** codebase demonstrates **solid engineering practices** with well-structured Clean Architecture, consistent MVI pattern implementation, and comprehensive test coverage. The project follows modern Android development standards with Kotlin 2.3.0, Jetpack Compose, and Hilt DI.
 
 However, there are **critical security vulnerabilities**, **architectural issues**, and **performance concerns** that should be addressed before production deployment.
 
@@ -40,7 +40,7 @@ However, there are **critical security vulnerabilities**, **architectural issues
 
 ### 🟠 HIGH: ZIP Slip Path Traversal Vulnerability
 
-**Location:** [ZipImporter.kt](feature/import/src/main/kotlin/com/mememymood/feature/import_feature/data/ZipImporter.kt#L132-L138)
+**Location:** [ZipImporter.kt](feature/import/src/main/kotlin/com/Riposte/feature/import_feature/data/ZipImporter.kt#L132-L138)
 
 **Description:** The ZIP extraction code checks for entries containing `/` (line 113) but does **not validate canonical paths**. A malicious ZIP with entries like `..\..\malicious.exe` on Windows could write files outside the intended directory.
 
@@ -70,7 +70,7 @@ if (!canonicalPath.startsWith(extractDir.canonicalPath + File.separator)) {
 
 ### 🟡 MEDIUM: FTS Query Injection
 
-**Location:** [MemeSearchDao.kt](core/database/src/main/kotlin/com/mememymood/core/database/dao/MemeSearchDao.kt#L62-L68)
+**Location:** [MemeSearchDao.kt](core/database/src/main/kotlin/com/Riposte/core/database/dao/MemeSearchDao.kt#L62-L68)
 
 **Description:** The `searchTitleAndDescription` method concatenates user input directly into an FTS MATCH clause.
 
@@ -91,7 +91,7 @@ fun searchTitleAndDescription(query: String): Flow<List<MemeEntity>>
 
 ### 🟡 MEDIUM: Incomplete FTS Query Sanitization
 
-**Location:** [SearchRepositoryImpl.kt](feature/search/src/main/kotlin/com/mememymood/feature/search/data/SearchRepositoryImpl.kt) - `prepareFtsQuery` function
+**Location:** [SearchRepositoryImpl.kt](feature/search/src/main/kotlin/com/Riposte/feature/search/data/SearchRepositoryImpl.kt) - `prepareFtsQuery` function
 
 **Issue:** Only escapes double quotes but not other FTS4 special characters (`*`, `-`, `OR`, `AND`, `NOT`, `:`, parentheses).
 
@@ -172,8 +172,8 @@ This violates the rule that feature modules should only depend on core modules.
 
 **Locations:**
 
-- [SearchUseCases.kt](feature/search/src/main/kotlin/com/mememymood/feature/search/domain/usecase/SearchUseCases.kt)
-- [ShareUseCases.kt](feature/share/src/main/kotlin/com/mememymood/feature/share/domain/usecase/ShareUseCases.kt)
+- [SearchUseCases.kt](feature/search/src/main/kotlin/com/Riposte/feature/search/domain/usecase/SearchUseCases.kt)
+- [ShareUseCases.kt](feature/share/src/main/kotlin/com/Riposte/feature/share/domain/usecase/ShareUseCases.kt)
 
 **Recommendation:** Choose one pattern consistently. Individual use cases are preferred for better adherence to Single Responsibility Principle.
 
@@ -196,7 +196,7 @@ This violates the rule that feature modules should only depend on core modules.
 
 ### 🟡 MEDIUM: No Pagination for Gallery
 
-**Location:** [MemeDao.kt](core/database/src/main/kotlin/com/mememymood/core/database/dao/MemeDao.kt#L21-L23)
+**Location:** [MemeDao.kt](core/database/src/main/kotlin/com/Riposte/core/database/dao/MemeDao.kt#L21-L23)
 
 **Issue:** `getAllMemes()` returns ALL memes without pagination:
 
@@ -218,7 +218,7 @@ fun getMemesPagingSource(): PagingSource<Int, MemeEntity>
 
 ### 🟡 MEDIUM: Semantic Search Loads All Embeddings
 
-**Location:** [SearchRepositoryImpl.kt](feature/search/src/main/kotlin/com/mememymood/feature/search/data/SearchRepositoryImpl.kt#L52-L84)
+**Location:** [SearchRepositoryImpl.kt](feature/search/src/main/kotlin/com/Riposte/feature/search/data/SearchRepositoryImpl.kt#L52-L84)
 
 **Issue:** `searchSemantic()` loads all embeddings into memory:
 
@@ -329,23 +329,23 @@ fun provideImageLoader(context: Context): ImageLoader =
 **Issue 1:** Schema version mismatch
 
 - Tests expect `schemaVersion: "1.0"` but code produces `"1.1"`
-- **Location:** [test_annotate.py](tools/meme-my-mood-cli/tests/test_annotate.py)
+- **Location:** [test_annotate.py](tools/riposte-cli/tests/test_annotate.py)
 
 **Issue 2:** Missing function imports
 
 - Tests import `load_credentials`, `save_credentials` which don't exist
-- **Location:** [test_config.py](tools/meme-my-mood-cli/tests/test_config.py)
+- **Location:** [test_config.py](tools/riposte-cli/tests/test_config.py)
 
 **Issue 3:** Test without assertions
 
 - `test_supported_extensions` has no assertions
-- **Location:** [test_annotate.py](tools/meme-my-mood-cli/tests/test_annotate.py)
+- **Location:** [test_annotate.py](tools/riposte-cli/tests/test_annotate.py)
 
 ---
 
 ### 🟠 HIGH: Rate Limiter Double-Counting
 
-**Location:** [annotate.py](tools/meme-my-mood-cli/src/meme_my_mood_cli/commands/annotate.py)
+**Location:** [annotate.py](tools/riposte-cli/src/riposte_cli/commands/annotate.py)
 
 **Issue:** `record_failure()` is called in both `copilot.py` (when creating RateLimitError) AND in `annotate.py` (exception handler), causing double backoff.
 
@@ -355,7 +355,7 @@ fun provideImageLoader(context: Context): ImageLoader =
 
 ### 🟠 HIGH: Missing Exception Chaining
 
-**Location:** [copilot.py](tools/meme-my-mood-cli/src/meme_my_mood_cli/copilot.py)
+**Location:** [copilot.py](tools/riposte-cli/src/riposte_cli/copilot.py)
 
 **Issue:** Exception raises lose original stack trace:
 
@@ -457,7 +457,7 @@ raise RateLimitError(...)  # Missing "from" clause
 
 ## Conclusion
 
-**Meme My Mood** is a well-engineered Android application with strong architectural foundations and excellent test coverage. The codebase demonstrates modern Android development best practices and would benefit from addressing the identified security vulnerabilities (particularly the ZIP Slip issue) before production release.
+**Riposte** is a well-engineered Android application with strong architectural foundations and excellent test coverage. The codebase demonstrates modern Android development best practices and would benefit from addressing the identified security vulnerabilities (particularly the ZIP Slip issue) before production release.
 
 The CLI tool is functional and well-designed but requires fixing test failures and minor error handling improvements.
 

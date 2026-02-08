@@ -1,4 +1,4 @@
-# Pre-commit hook for Meme My Mood (PowerShell)
+# Pre-commit hook for Riposte (PowerShell)
 # This hook runs code quality checks before allowing a commit
 
 $ErrorActionPreference = "Stop"

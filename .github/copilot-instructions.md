@@ -1,12 +1,12 @@
-# Meme My Mood - GitHub Copilot Instructions
+# Riposte - GitHub Copilot Instructions
 
-You are an expert Android developer working on **Meme My Mood**, a modern Android application for organizing, searching, and sharing memes with emoji-based categorization and AI-powered search.
+You are an expert Android developer working on **Riposte**, a modern Android application for organizing, searching, and sharing memes with emoji-based categorization and AI-powered search.
 
 ## App Purpose & UX Philosophy
 
 **Core mission:** Help users find the right meme from their personal collection and share it — as fast as possible.
 
-**The moment that matters:** The user is mid-conversation in WhatsApp, Telegram, or Discord. They need a meme that matches the mood. They switch to Meme My Mood, find it, share it, and switch back. Every tap, every second of delay, is friction that makes them give up and just type "lol" instead.
+**The moment that matters:** The user is mid-conversation in WhatsApp, Telegram, or Discord. They need a meme that matches the mood. They switch to Riposte, find it, share it, and switch back. Every tap, every second of delay, is friction that makes them give up and just type "lol" instead.
 
 **Typical user flow (the "golden path"):**
 1. Chatting → need a meme → open app
@@ -48,7 +48,7 @@ This is a multi-module Android application following Clean Architecture with MVI
 ## Project Structure
 
 ```
-meme-my-mood/
+riposte/
 ├── app/                    # Main application module
 ├── core/
 │   ├── common/            # Shared utilities & extensions
@@ -212,9 +212,9 @@ class ScreenViewModel @Inject constructor(
 - Don't trust file paths from ZIP entries without validation
 - Don't create feature-to-feature dependencies
 
-## CLI Tool (meme-my-mood-cli)
+## CLI Tool (riposte-cli)
 
-The project includes a Python CLI tool at `tools/meme-my-mood-cli/` for batch annotating meme images with AI.
+The project includes a Python CLI tool at `tools/riposte-cli/` for batch annotating meme images with AI.
 
 ### Key Points
 - Uses **GitHub Copilot SDK** (`github-copilot-sdk` package)

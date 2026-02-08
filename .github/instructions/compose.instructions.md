@@ -1,5 +1,5 @@
 ---
-description: 'Jetpack Compose UI guidelines for the Meme My Mood Android project'
+description: 'Jetpack Compose UI guidelines for the Riposte Android project'
 applyTo: '**/ui/**/*.kt,**/feature/**/*.kt,**/composable/**/*.kt,**/*Screen.kt,**/*Component.kt'
 ---
 
@@ -26,7 +26,7 @@ fun MemeCard(
 @Preview(showBackground = true)
 @Composable
 private fun MemeCardPreview() {
-    MemeMyMoodTheme {
+    RiposteTheme {
         MemeCard(
             meme = previewMeme,
             onClick = {},

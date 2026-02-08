@@ -1,4 +1,4 @@
-# Meme My Mood - Import Formats Guide
+# Riposte - Import Formats Guide
 
 This document describes the image formats supported by the import feature and how emoji/metadata information can be embedded in each format.
 
@@ -17,7 +17,7 @@ All formats are processed and converted to JPEG for internal storage to ensure c
 
 ## How Emoji Information is Embedded
 
-Meme My Mood uses **XMP (Extensible Metadata Platform)** to embed emoji associations and metadata directly within image files. This makes memes self-describing and portable.
+Riposte uses **XMP (Extensible Metadata Platform)** to embed emoji associations and metadata directly within image files. This makes memes self-describing and portable.
 
 ### Embedding Methods
 
@@ -41,7 +41,7 @@ meme.jpg.xmp       # Metadata sidecar file
 <x:xmpmeta xmlns:x="adobe:ns:meta/">
   <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
     <rdf:Description rdf:about=""
-      xmlns:mmm="http://meme-my-mood.app/1.0/"
+      xmlns:mmm="http://riposte.app/1.0/"
       xmlns:dc="http://purl.org/dc/elements/1.1/">
       
       <mmm:schemaVersion>1.0</mmm:schemaVersion>
@@ -77,7 +77,7 @@ When exporting/sharing memes (without stripping metadata), XMP is embedded direc
 ### Namespace
 
 ```
-URI:    http://meme-my-mood.app/1.0/
+URI:    http://riposte.app/1.0/
 Prefix: mmm
 ```
 
@@ -150,7 +150,7 @@ Create a `.xmp` file with the same base name as your image:
 <x:xmpmeta xmlns:x="adobe:ns:meta/">
   <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
     <rdf:Description rdf:about=""
-      xmlns:mmm="http://meme-my-mood.app/1.0/"
+      xmlns:mmm="http://riposte.app/1.0/"
       xmlns:dc="http://purl.org/dc/elements/1.1/">
       <mmm:schemaVersion>1.0</mmm:schemaVersion>
       <mmm:emojis>

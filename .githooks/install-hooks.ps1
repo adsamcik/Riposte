@@ -1,4 +1,4 @@
-# Install Git hooks for Meme My Mood (PowerShell)
+# Install Git hooks for Riposte (PowerShell)
 
 Write-Host "📦 Installing Git hooks..." -ForegroundColor Cyan
 

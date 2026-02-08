@@ -77,7 +77,7 @@ Edit `BaselineProfileGenerator.kt` to add critical user journeys:
 
 ```kotlin
 rule.collect(
-    packageName = "com.mememymood",
+    packageName = "com.adsamcik.riposte",
     includeInStartupProfile = true
 ) {
     // App startup

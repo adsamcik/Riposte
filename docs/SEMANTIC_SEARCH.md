@@ -1,6 +1,6 @@
 # Semantic Search Implementation
 
-This document describes the semantic search feature in Meme My Mood, which uses Google's EmbeddingGemma model via the AI Edge RAG SDK for high-quality on-device semantic embeddings.
+This document describes the semantic search feature in Riposte, which uses Google's EmbeddingGemma model via the AI Edge RAG SDK for high-quality on-device semantic embeddings.
 
 ## Overview
 

@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Meme My Mood is a multi-module Android application for organizing, searching, and sharing memes with emoji-based categorization and AI-powered semantic search.
+Riposte is a multi-module Android application for organizing, searching, and sharing memes with emoji-based categorization and AI-powered semantic search.
 
 ## Tech Stack
 
@@ -19,7 +19,7 @@ Meme My Mood is a multi-module Android application for organizing, searching, an
 ## Project Structure
 
 ```text
-meme-my-mood/
+riposte/
 ├── app/                    # Main application, wires modules together
 ├── core/
 │   ├── common/            # Shared utilities, navigation routes, extensions
@@ -37,7 +37,7 @@ meme-my-mood/
 │   └── settings/          # App preferences
 ├── baselineprofile/       # Startup performance optimization
 ├── docs/                  # Technical documentation
-└── tools/meme-my-mood-cli/ # Python CLI for batch AI annotation
+└── tools/riposte-cli/ # Python CLI for batch AI annotation
 ```
 
 ## Development Commands
@@ -62,7 +62,7 @@ meme-my-mood/
 ./gradlew :app:generateBaselineProfile
 
 # CLI tool (requires venv)
-cd tools/meme-my-mood-cli
+cd tools/riposte-cli
 scripts/setup.ps1  # or setup.sh
 meme-cli annotate <directory> --zip
 meme-cli annotate <directory> --languages en,cs --force
@@ -146,7 +146,7 @@ Pager(config = PagingConfig(pageSize = 20)) { ... }.flow
 | `core/database/MemeDatabase.kt` | Room database with migrations |
 | `core/ml/SemanticSearchEngine.kt` | Hybrid FTS + vector search |
 | `core/model/Meme.kt` | Primary domain model |
-| `app/src/main/.../MemeMoodNavHost.kt` | Navigation graph |
+| `app/src/main/.../RiposteNavHost.kt` | Navigation graph |
 | `docs/METADATA_FORMAT.md` | XMP metadata schema spec |
 | `docs/SEMANTIC_SEARCH.md` | Search implementation details |
 | `.github/instructions/` | Domain-specific coding guidelines |
@@ -183,7 +183,7 @@ When working in this codebase:
 
 ## CLI Tool Notes
 
-The Python CLI at `tools/meme-my-mood-cli/` annotates images with AI:
+The Python CLI at `tools/riposte-cli/` annotates images with AI:
 
 - Uses GitHub Copilot SDK (`github-copilot-sdk`)
 - Outputs JSON sidecar files per image (schema v1.1)

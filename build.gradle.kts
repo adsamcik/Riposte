@@ -1,4 +1,4 @@
-// Top-level build file for Meme My Mood
+// Top-level build file for Riposte
 plugins {
     alias(libs.plugins.android.application) apply false
     alias(libs.plugins.android.library) apply false

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Install Git hooks for Meme My Mood
+# Install Git hooks for Riposte
 
 echo "📦 Installing Git hooks..."
 

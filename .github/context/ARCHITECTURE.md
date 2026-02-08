@@ -87,7 +87,7 @@ core:testing
 
 **Purpose**: SQLite persistence via Room with FTS4 full-text search
 
-**Location**: `core/database/src/main/kotlin/com/mememymood/core/database/`
+**Location**: `core/database/src/main/kotlin/com/Riposte/core/database/`
 
 **Key Files**:
 
@@ -108,7 +108,7 @@ core:testing
 
 **Purpose**: On-device AI for text recognition, image labeling, and semantic embeddings
 
-**Location**: `core/ml/src/main/kotlin/com/mememymood/core/ml/`
+**Location**: `core/ml/src/main/kotlin/com/Riposte/core/ml/`
 
 **Key Files**:
 
@@ -129,7 +129,7 @@ core:testing
 
 **Purpose**: Domain models shared across all modules
 
-**Location**: `core/model/src/main/kotlin/com/mememymood/core/model/`
+**Location**: `core/model/src/main/kotlin/com/Riposte/core/model/`
 
 **Key Files**:
 
@@ -146,7 +146,7 @@ core:testing
 
 **Purpose**: Design system with Material 3 theming and reusable components
 
-**Location**: `core/ui/src/main/kotlin/com/mememymood/core/ui/`
+**Location**: `core/ui/src/main/kotlin/com/Riposte/core/ui/`
 
 **Key Files**:
 
@@ -163,7 +163,7 @@ core:testing
 
 **Purpose**: Shared utilities, navigation routes, extension functions
 
-**Location**: `core/common/src/main/kotlin/com/mememymood/core/common/`
+**Location**: `core/common/src/main/kotlin/com/Riposte/core/common/`
 
 **Key Files**:
 
@@ -178,7 +178,7 @@ core:testing
 
 **Purpose**: Main gallery grid, meme detail view, favorites management
 
-**Location**: `feature/gallery/src/main/kotlin/com/mememymood/feature/gallery/`
+**Location**: `feature/gallery/src/main/kotlin/com/Riposte/feature/gallery/`
 
 **Key Files**:
 
@@ -201,7 +201,7 @@ core:testing
 
 **Purpose**: Hybrid full-text and semantic search
 
-**Location**: `feature/search/src/main/kotlin/com/mememymood/feature/search/`
+**Location**: `feature/search/src/main/kotlin/com/Riposte/feature/search/`
 
 **Key Files**:
 
@@ -216,7 +216,7 @@ core:testing
 
 **Purpose**: Import images from gallery, files, or ZIP bundles
 
-**Location**: `feature/import/src/main/kotlin/com/mememymood/feature/import_feature/`
+**Location**: `feature/import/src/main/kotlin/com/Riposte/feature/import_feature/`
 
 **Key Files**:
 
@@ -231,7 +231,7 @@ core:testing
 
 **Purpose**: Share memes with configurable format, quality, and size
 
-**Location**: `feature/share/src/main/kotlin/com/mememymood/feature/share/`
+**Location**: `feature/share/src/main/kotlin/com/Riposte/feature/share/`
 
 **Key Files**:
 
@@ -246,7 +246,7 @@ core:testing
 
 **Purpose**: App preferences and configuration
 
-**Location**: `feature/settings/src/main/kotlin/com/mememymood/feature/settings/`
+**Location**: `feature/settings/src/main/kotlin/com/Riposte/feature/settings/`
 
 **Key Files**:
 

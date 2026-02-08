@@ -1,5 +1,5 @@
 #!/bin/bash
-# Pre-commit hook for Meme My Mood
+# Pre-commit hook for Riposte
 # This hook runs code quality checks before allowing a commit
 
 set -e

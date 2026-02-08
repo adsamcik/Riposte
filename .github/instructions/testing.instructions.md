@@ -1,5 +1,5 @@
 ---
-description: 'Testing guidelines for the Meme My Mood Android project'
+description: 'Testing guidelines for the Riposte Android project'
 applyTo: '**/test/**/*.kt,**/androidTest/**/*.kt,**/*Test.kt,**/*Tests.kt'
 ---
 

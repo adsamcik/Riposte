@@ -1,12 +1,12 @@
-# Meme My Mood - XMP Metadata Format Specification
+# Riposte - XMP Metadata Format Specification
 
 ## Version 1.1
 
-This document specifies the XMP metadata format used by Meme My Mood to embed meme information directly into image files.
+This document specifies the XMP metadata format used by Riposte to embed meme information directly into image files.
 
 ## Overview
 
-Meme My Mood uses XMP (Extensible Metadata Platform) to store emoji associations and other metadata directly within image files. This makes memes self-describing and allows them to be shared while preserving their metadata.
+Riposte uses XMP (Extensible Metadata Platform) to store emoji associations and other metadata directly within image files. This makes memes self-describing and allows them to be shared while preserving their metadata.
 
 ### Why XMP?
 
@@ -21,7 +21,7 @@ Meme My Mood uses XMP (Extensible Metadata Platform) to store emoji associations
 ## Namespace
 
 ```
-Namespace URI: http://meme-my-mood.app/1.1/
+Namespace URI: http://riposte.app/1.1/
 Namespace Prefix: mmm
 ```
 
@@ -208,7 +208,7 @@ Use BCP 47 language tags:
   <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
     <rdf:Description 
       rdf:about=""
-      xmlns:mmm="http://meme-my-mood.app/1.0/"
+      xmlns:mmm="http://riposte.app/1.0/"
       xmlns:dc="http://purl.org/dc/elements/1.1/">
       
       <!-- Schema Version -->

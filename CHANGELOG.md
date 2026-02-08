@@ -54,7 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Coil 3 for efficient image loading
 - Comprehensive test suite (~1,050 tests)
 
-### CLI Tool (meme-my-mood-cli)
+### CLI Tool (riposte-cli)
 
 - Python CLI for batch annotating meme images with AI
 - GitHub Copilot SDK integration for image analysis
@@ -63,5 +63,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Adaptive rate limiting with exponential backoff
 - Schema v1.1 with localization support
 
-[Unreleased]: https://github.com/yourusername/meme-my-mood/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/yourusername/meme-my-mood/releases/tag/v0.1.0
+[Unreleased]: https://github.com/yourusername/riposte/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/yourusername/riposte/releases/tag/v0.1.0

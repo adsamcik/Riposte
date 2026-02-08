@@ -3,11 +3,11 @@
 > **Last Updated:** January 25, 2026
 > 
 > **⚠️ DEPRECATED:** The CLI now uses the **GitHub Copilot SDK** instead of direct API calls.
-> See `tools/meme-my-mood-cli/README.md` for current usage.
+> See `tools/riposte-cli/README.md` for current usage.
 
 ## Overview
 
-This document describes the direct GitHub Models API. The **meme-my-mood-cli** tool previously used this API but has been migrated to use the **GitHub Copilot SDK** (`github-copilot-sdk` package), which provides:
+This document describes the direct GitHub Models API. The **riposte-cli** tool previously used this API but has been migrated to use the **GitHub Copilot SDK** (`github-copilot-sdk` package), which provides:
 
 - Automatic authentication via Copilot CLI
 - Built-in session management
@@ -126,12 +126,12 @@ Supported image formats:
 
 Images are base64-encoded and sent as data URLs in the request.
 
-## Usage in meme-my-mood-cli
+## Usage in riposte-cli
 
-The CLI wraps this API in `src/meme_my_mood_cli/copilot.py`:
+The CLI wraps this API in `src/riposte_cli/copilot.py`:
 
 ```python
-from meme_my_mood_cli.copilot import analyze_image
+from riposte_cli.copilot import analyze_image
 
 result = analyze_image(
     image_path=Path("meme.jpg"),

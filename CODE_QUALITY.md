@@ -1,6 +1,6 @@
 # Code Quality & Best Practices
 
-This document describes the code quality tools, practices, and workflows established for the Meme My Mood project.
+This document describes the code quality tools, practices, and workflows established for the Riposte project.
 
 ## Overview
 
@@ -107,18 +107,18 @@ Reusable Gradle plugins that extract common build configuration.
 **Location:** `buildSrc/`
 
 **Available Plugins:**
-1. `meme-my-mood.android.library` - Base Android library configuration
-2. `meme-my-mood.android.compose` - Compose setup
-3. `meme-my-mood.android.hilt` - Hilt dependency injection
-4. `meme-my-mood.android.testing` - Test dependencies
-5. `meme-my-mood.android.jacoco` - Code coverage
+1. `riposte.android.library` - Base Android library configuration
+2. `riposte.android.compose` - Compose setup
+3. `riposte.android.hilt` - Hilt dependency injection
+4. `riposte.android.testing` - Test dependencies
+5. `riposte.android.jacoco` - Code coverage
 
 **Usage Example:**
 ```kotlin
 plugins {
-    id("meme-my-mood.android.library")
-    id("meme-my-mood.android.compose")
-    id("meme-my-mood.android.hilt")
+    id("riposte.android.library")
+    id("riposte.android.compose")
+    id("riposte.android.hilt")
 }
 ```
 
@@ -162,8 +162,8 @@ plugins {
 **Status Badges:**
 Add to README.md:
 ```markdown
-[![CI](https://github.com/yourusername/meme-my-mood/workflows/CI/badge.svg)](https://github.com/yourusername/meme-my-mood/actions/workflows/ci.yml)
-[![Code Quality](https://github.com/yourusername/meme-my-mood/workflows/Code%20Quality/badge.svg)](https://github.com/yourusername/meme-my-mood/actions/workflows/code-quality.yml)
+[![CI](https://github.com/yourusername/riposte/workflows/CI/badge.svg)](https://github.com/yourusername/riposte/actions/workflows/ci.yml)
+[![Code Quality](https://github.com/yourusername/riposte/workflows/Code%20Quality/badge.svg)](https://github.com/yourusername/riposte/actions/workflows/code-quality.yml)
 ```
 
 ## Git Hooks

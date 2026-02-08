@@ -5,7 +5,7 @@
 | Type | Pattern | Example | Notes |
 |------|---------|---------|-------|
 | Source directories | `src/main/kotlin/` | - | Not `java/` |
-| Package names | lowercase | `com.mememymood.feature.gallery` | |
+| Package names | lowercase | `com.adsamcik.riposte.feature.gallery` | |
 | Classes | PascalCase | `MemeRepository`, `GalleryViewModel` | |
 | Interfaces | PascalCase, no prefix | `SearchRepository` | Not `ISearchRepository` |
 | Functions | camelCase | `getMemeById()` | |

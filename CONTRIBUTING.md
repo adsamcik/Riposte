@@ -1,6 +1,6 @@
-# Contributing to Meme My Mood
+# Contributing to Riposte
 
-Thank you for your interest in contributing to Meme My Mood! This document provides guidelines and instructions for contributing to the project.
+Thank you for your interest in contributing to Riposte! This document provides guidelines and instructions for contributing to the project.
 
 ## Table of Contents
 
@@ -32,7 +32,7 @@ We are committed to providing a welcoming and inclusive experience for everyone.
 ### Repository Structure
 
 ```
-meme-my-mood/
+riposte/
 ├── app/                    # Main application module
 ├── core/                   # Shared core modules
 │   ├── common/            # Utilities, navigation routes
@@ -48,7 +48,7 @@ meme-my-mood/
 │   ├── search/            # Search functionality
 │   ├── share/             # Sharing
 │   └── settings/          # App settings
-└── tools/meme-my-mood-cli/ # Python CLI tool
+└── tools/riposte-cli/ # Python CLI tool
 ```
 
 ## Development Setup
@@ -57,8 +57,8 @@ meme-my-mood/
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/meme-my-mood.git
-cd meme-my-mood
+git clone https://github.com/yourusername/riposte.git
+cd riposte
 
 # Build debug APK (standard model - recommended)
 ./gradlew :app:assembleStandardDebug
@@ -88,7 +88,7 @@ All builds target universal (all architectures). See [BUILD_FLAVORS.md](docs/BUI
 ### CLI Tool Setup
 
 ```bash
-cd tools/meme-my-mood-cli
+cd tools/riposte-cli
 
 # Windows
 scripts/setup.ps1
@@ -290,4 +290,4 @@ Include:
 
 ---
 
-Thank you for contributing to Meme My Mood! 🎭
+Thank you for contributing to Riposte! 🎭

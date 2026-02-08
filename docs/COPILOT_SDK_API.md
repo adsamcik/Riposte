@@ -5,7 +5,7 @@
 
 ## Overview
 
-The **meme-my-mood-cli** now uses the GitHub Copilot SDK for image analysis. The SDK provides a clean Python API that communicates with the Copilot CLI via JSON-RPC.
+The **riposte-cli** now uses the GitHub Copilot SDK for image analysis. The SDK provides a clean Python API that communicates with the Copilot CLI via JSON-RPC.
 
 **Key Benefits:**
 - Automatic authentication via Copilot CLI
@@ -554,9 +554,9 @@ elif any(code in error_message for code in ["500", "502", "504"]):
 
 ---
 
-## Application to Meme My Mood CLI
+## Application to Riposte CLI
 
-For the `meme-my-mood-cli` tool, the SDK can be used to analyze meme images:
+For the `riposte-cli` tool, the SDK can be used to analyze meme images:
 
 ```python
 import asyncio

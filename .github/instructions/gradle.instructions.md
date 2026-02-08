@@ -1,5 +1,5 @@
 ---
-description: 'Gradle build configuration guidelines for the Meme My Mood Android project'
+description: 'Gradle build configuration guidelines for the Riposte Android project'
 applyTo: '**/*.gradle.kts,**/gradle.properties,**/libs.versions.toml,**/settings.gradle.kts'
 ---
 

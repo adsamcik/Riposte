@@ -1,6 +1,6 @@
 # Android Build Flavors
 
-Meme My Mood uses product flavors to optimize APK size by controlling which embedding models are included.
+Riposte uses product flavors to optimize APK size by controlling which embedding models are included.
 
 ## Overview
 

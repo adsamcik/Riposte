@@ -1,4 +1,4 @@
-# Meme My Mood 🎭
+# Riposte 🎭
 
 A modern Android app for organizing, searching, and sharing memes with emoji-based categorization and AI-powered search.
 
@@ -30,7 +30,7 @@ This project follows the 2026 Android best practices:
 ## Project Structure
 
 ```
-meme-my-mood/
+riposte/
 ├── app/                    # Main application module
 ├── core/
 │   ├── common/            # Shared utilities & extensions
@@ -60,7 +60,7 @@ meme-my-mood/
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/meme-my-mood.git
+git clone https://github.com/yourusername/riposte.git
 
 # Open in Android Studio and sync
 # Or build from command line:

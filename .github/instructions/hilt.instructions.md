@@ -1,5 +1,5 @@
 ---
-description: 'Hilt dependency injection guidelines for the Meme My Mood Android project'
+description: 'Hilt dependency injection guidelines for the Riposte Android project'
 applyTo: '**/di/**/*.kt,**/*Module.kt,**/*ViewModel.kt'
 ---
 

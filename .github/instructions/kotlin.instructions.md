@@ -1,5 +1,5 @@
 ---
-description: 'Kotlin language guidelines for the Meme My Mood Android project'
+description: 'Kotlin language guidelines for the Riposte Android project'
 applyTo: '**/*.kt'
 ---
 

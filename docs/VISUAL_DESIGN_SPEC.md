@@ -1,4 +1,4 @@
-# Meme My Mood - Visual Design Specification
+# Riposte - Visual Design Specification
 
 > **Final Visual Design v1.0** — January 2026  
 > Synthesizes Red Team findings, Devil's Advocate feedback, and user requirements into concrete design decisions.

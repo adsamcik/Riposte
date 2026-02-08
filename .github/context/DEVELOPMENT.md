@@ -14,7 +14,7 @@ For CLI tool:
 
 | Requirement         | Version | Notes                 |
 | ------------------- | ------- | --------------------- |
-| Python              | 3.11+   | For meme-my-mood-cli  |
+| Python              | 3.11+   | For riposte-cli  |
 | GitHub Copilot CLI  | Latest  | Authentication for AI |
 
 ## Setup
@@ -23,8 +23,8 @@ For CLI tool:
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/meme-my-mood.git
-cd meme-my-mood
+git clone https://github.com/yourusername/riposte.git
+cd riposte
 
 # Open in Android Studio and sync Gradle
 # Or build from command line:
@@ -39,11 +39,11 @@ echo "sdk.dir=/path/to/android/sdk" > local.properties
 
 ```powershell
 # Windows
-cd tools/meme-my-mood-cli
+cd tools/riposte-cli
 .\scripts\setup.ps1
 
 # Linux/macOS
-cd tools/meme-my-mood-cli
+cd tools/riposte-cli
 ./scripts/setup.sh
 
 # Authenticate with Copilot
@@ -180,7 +180,7 @@ keytool -genkey -v -keystore release.keystore -alias release -keyalg RSA -keysiz
     build.gradle.kts
     src/
       main/
-        kotlin/com/mememymood/feature/newfeature/
+        kotlin/com/Riposte/feature/newfeature/
           di/
             NewFeatureModule.kt
           domain/
@@ -199,7 +199,7 @@ keytool -genkey -v -keystore release.keystore -alias release -keyalg RSA -keysiz
           values/
             strings.xml
       test/
-        kotlin/com/mememymood/feature/newfeature/
+        kotlin/com/Riposte/feature/newfeature/
           presentation/
             NewFeatureViewModelTest.kt
    ```
@@ -223,7 +223,7 @@ keytool -genkey -v -keystore release.keystore -alias release -keyalg RSA -keysiz
 }
 
 android {
-    namespace = "com.mememymood.feature.newfeature"
+    namespace = "com.adsamcik.riposte.feature.newfeature"
     // ... standard config
 }
 
@@ -236,7 +236,7 @@ dependencies {
 }
    ```
 
-1. Add navigation in app module's `MemeMoodNavHost.kt`
+1. Add navigation in app module's `RiposteNavHost.kt`
 
 ### Adding a New Dependency
 
@@ -303,7 +303,7 @@ dependencies {
 
 ```bash
 # Activate virtual environment
-cd tools/meme-my-mood-cli
+cd tools/riposte-cli
 .\.venv\Scripts\Activate.ps1  # Windows
 # source .venv/bin/activate  # Linux/macOS
 

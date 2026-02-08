@@ -1,5 +1,5 @@
 ---
-description: 'Room database guidelines for the Meme My Mood Android project'
+description: 'Room database guidelines for the Riposte Android project'
 applyTo: '**/database/**/*.kt,**/*Dao.kt,**/*Entity.kt,**/*Database.kt'
 ---
 
