@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "com.mememymood.feature.share"
+    namespace = "com.adsamcik.riposte.feature.share"
     compileSdk = 36
 
     defaultConfig {

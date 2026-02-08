@@ -14,7 +14,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "meme-my-mood"
+rootProject.name = "riposte"
 
 // App module
 include(":app")
@@ -30,10 +30,10 @@ include(":core:datastore")
 include(":core:ml")
 include(":core:model")
 include(":core:testing")
+include(":core:search")
 
 // Feature modules
 include(":feature:gallery")
 include(":feature:import")
-include(":feature:search")
 include(":feature:share")
 include(":feature:settings")

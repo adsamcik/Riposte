@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Meme My Mood</string>
+    <string name="app_name">Riposte</string>
     
     <!-- Gallery -->
-    <string name="gallery_title">Meme My Mood</string>
+    <string name="gallery_title">Riposte</string>
     <string name="gallery_empty_title">Noch keine Memes</string>
     <string name="gallery_empty_message">Importiere ein paar Memes, um loszulegen!</string>
     

@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "com.mememymood.core.common"
+    namespace = "com.adsamcik.riposte.core.common"
     compileSdk = 36
 
     defaultConfig {

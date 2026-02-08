@@ -1,4 +1,4 @@
-# Meme My Mood ProGuard Rules
+# Riposte ProGuard Rules
 # Optimized for R8 Full Mode with cutting-edge Android practices
 
 # ============================================================
@@ -20,7 +20,7 @@
 }
 
 # Keep serializable navigation routes
--keep @kotlinx.serialization.Serializable class com.mememymood.core.common.navigation.** { *; }
+-keep @kotlinx.serialization.Serializable class com.adsamcik.riposte.core.common.navigation.** { *; }
 
 # ============================================================
 # DEPENDENCY INJECTION (Hilt)
@@ -93,7 +93,7 @@
 # ============================================================
 
 # Keep data classes for serialization
--keep class com.mememymood.core.model.** { *; }
+-keep class com.adsamcik.riposte.core.model.** { *; }
 
 # ============================================================
 # COMPOSE

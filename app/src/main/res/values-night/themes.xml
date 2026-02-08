@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Splash screen theme for dark mode -->
-    <style name="Theme.MemeMood.Splash" parent="Theme.SplashScreen">
+    <style name="Theme.Riposte.Splash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/splash_background</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
         <item name="windowSplashScreenIconBackgroundColor">@color/splash_icon_background</item>
-        <item name="postSplashScreenTheme">@style/Theme.MemeMood</item>
+        <item name="postSplashScreenTheme">@style/Theme.Riposte</item>
     </style>
 
     <!-- Main app theme for dark mode -->
-    <style name="Theme.MemeMood" parent="Theme.AppCompat.DayNight.NoActionBar">
+    <style name="Theme.Riposte" parent="Theme.AppCompat.DayNight.NoActionBar">
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">false</item>

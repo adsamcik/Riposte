@@ -6,12 +6,12 @@ plugins {
 }
 
 android {
-    namespace = "com.mememymood.core.testing"
+    namespace = "com.adsamcik.riposte.core.testing"
     compileSdk = 36
 
     defaultConfig {
         minSdk = 31
-        testInstrumentationRunner = "com.mememymood.core.testing.HiltTestRunner"
+        testInstrumentationRunner = "com.adsamcik.riposte.core.testing.HiltTestRunner"
     }
 
     compileOptions {

@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.mememymood.baselineprofile"
+    namespace = "com.adsamcik.riposte.baselineprofile"
     compileSdk = 36
 
     defaultConfig {

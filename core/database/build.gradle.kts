@@ -8,7 +8,7 @@ plugins {
 }
 
 android {
-    namespace = "com.mememymood.core.database"
+    namespace = "com.adsamcik.riposte.core.database"
     compileSdk = 36
 
     defaultConfig {
@@ -28,6 +28,7 @@ room {
 
 dependencies {
     implementation(project(":core:model"))
+    implementation(project(":core:common"))
 
     // Room
     implementation(libs.bundles.room)

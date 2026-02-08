@@ -9,6 +9,7 @@
     <!-- Section Headers -->
     <string name="settings_section_appearance">Appearance</string>
     <string name="settings_section_search">Search</string>
+    <string name="settings_section_sharing">Sharing</string>
     <string name="settings_section_storage">Storage</string>
     <string name="settings_section_about">About</string>
     
@@ -34,6 +35,10 @@
     <string name="settings_search_history_title">Search History</string>
     <string name="settings_search_history_subtitle">Save recent searches</string>
     
+    <!-- Sharing Section -->
+    <string name="settings_use_native_share_title">Use system share dialog</string>
+    <string name="settings_use_native_share_subtitle">Use Android\'s built-in share sheet instead of in-app quick share</string>
+
     <!-- Storage Section -->
     <string name="settings_clear_cache_title">Clear Cache</string>
     <string name="settings_clear_cache_subtitle">Free up %1$s</string>

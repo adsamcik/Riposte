@@ -5,12 +5,12 @@
 -->
 <full-backup-content>
     <!-- Include -->
-    <include domain="database" path="meme_my_mood.db" />
+    <include domain="database" path="riposte.db" />
     <include domain="file" path="memes/" />
-    <include domain="sharedpref" path="meme_my_mood_preferences.preferences_pb" />
+    <include domain="sharedpref" path="riposte_preferences.preferences_pb" />
     
     <!-- Exclude temporary database files (cache is automatically excluded) -->
-    <exclude domain="database" path="meme_my_mood.db-journal" />
-    <exclude domain="database" path="meme_my_mood.db-wal" />
-    <exclude domain="database" path="meme_my_mood.db-shm" />
+    <exclude domain="database" path="riposte.db-journal" />
+    <exclude domain="database" path="riposte.db-wal" />
+    <exclude domain="database" path="riposte.db-shm" />
 </full-backup-content>

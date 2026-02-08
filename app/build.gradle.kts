@@ -11,17 +11,17 @@ plugins {
 }
 
 android {
-    namespace = "com.mememymood"
+    namespace = "com.adsamcik.riposte"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.mememymood"
+        applicationId = "com.adsamcik.riposte"
         minSdk = 31
         targetSdk = 36
         versionCode = 1
         versionName = "0.1.0"
 
-        testInstrumentationRunner = "com.mememymood.core.testing.HiltTestRunner"
+        testInstrumentationRunner = "com.adsamcik.riposte.core.testing.HiltTestRunner"
         
         vectorDrawables {
             useSupportLibrary = true
@@ -200,9 +200,11 @@ dependencies {
     // Feature modules
     implementation(project(":feature:gallery"))
     implementation(project(":feature:import"))
-    implementation(project(":feature:search"))
     implementation(project(":feature:share"))
     implementation(project(":feature:settings"))
+
+    // Core search (logic-only, no UI)
+    implementation(project(":core:search"))
 
     // Core Android
     implementation(libs.core.ktx)

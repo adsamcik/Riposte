@@ -8,7 +8,7 @@ plugins {
 }
 
 android {
-    namespace = "com.mememymood.feature.settings"
+    namespace = "com.adsamcik.riposte.feature.settings"
     compileSdk = 36
 
     defaultConfig {
