@@ -5,12 +5,15 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.adsamcik.riposte.core.common.review.UserActionTracker
+import com.adsamcik.riposte.core.database.repository.ShareTargetRepository
+import com.adsamcik.riposte.core.datastore.PreferencesDataStore
 import com.adsamcik.riposte.core.model.EmojiTag
 import com.adsamcik.riposte.feature.gallery.R
 import com.adsamcik.riposte.feature.gallery.domain.usecase.DeleteMemesUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GetMemeByIdUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GetSimilarMemesUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.RecordMemeViewUseCase
+import com.adsamcik.riposte.feature.gallery.domain.usecase.SimilarMemesStatus
 import com.adsamcik.riposte.feature.gallery.domain.usecase.ToggleFavoriteUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.UpdateMemeUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -19,6 +22,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -35,6 +39,8 @@ class MemeDetailViewModel @Inject constructor(
     private val recordMemeViewUseCase: RecordMemeViewUseCase,
     private val getSimilarMemesUseCase: GetSimilarMemesUseCase,
     private val userActionTracker: UserActionTracker,
+    private val preferencesDataStore: PreferencesDataStore,
+    private val shareTargetRepository: ShareTargetRepository,
 ) : ViewModel() {
 
     private val memeId: Long = savedStateHandle.get<Long>("memeId") ?: -1L
@@ -70,6 +76,10 @@ class MemeDetailViewModel @Inject constructor(
             is MemeDetailIntent.Dismiss -> dismiss()
             is MemeDetailIntent.LoadSimilarMemes -> loadSimilarMemes()
             is MemeDetailIntent.NavigateToSimilarMeme -> navigateToMeme(intent.memeId)
+            is MemeDetailIntent.SelectShareTarget -> selectShareTarget(intent.target)
+            is MemeDetailIntent.QuickShareMore -> quickShareMore()
+            is MemeDetailIntent.DismissQuickShare -> dismissQuickShare()
+            is MemeDetailIntent.CopyToClipboard -> copyToClipboard()
         }
     }
 
@@ -207,9 +217,21 @@ class MemeDetailViewModel @Inject constructor(
     }
 
     private fun share() {
-        // Delegate to share screen for consistent sharing experience
-        // This removes the feature:gallery -> feature:share dependency
-        openShareScreen()
+        viewModelScope.launch {
+            val useNative = preferencesDataStore.sharingPreferences.first().useNativeShareDialog
+            if (useNative) {
+                openShareScreen()
+                return@launch
+            }
+            val meme = _uiState.value.meme ?: run {
+                openShareScreen()
+                return@launch
+            }
+            val targets = shareTargetRepository.getTopShareTargets(limit = 6)
+            _uiState.update {
+                it.copy(quickShareMeme = meme, quickShareTargets = targets)
+            }
+        }
     }
 
     private fun saveChanges() {
@@ -283,11 +305,18 @@ class MemeDetailViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoadingSimilar = true) }
             try {
-                val similar = getSimilarMemesUseCase(memeId)
-                _uiState.update { it.copy(similarMemes = similar, isLoadingSimilar = false) }
+                val status = getSimilarMemesUseCase(memeId)
+                _uiState.update { it.copy(similarMemesStatus = status, isLoadingSimilar = false) }
             } catch (e: Exception) {
                 android.util.Log.e("MemeDetailViewModel", "Failed to load similar memes", e)
-                _uiState.update { it.copy(isLoadingSimilar = false) }
+                _uiState.update {
+                    it.copy(
+                        similarMemesStatus = SimilarMemesStatus.Error(
+                            e.message ?: "Unknown error",
+                        ),
+                        isLoadingSimilar = false,
+                    )
+                }
             }
         }
     }
@@ -295,6 +324,43 @@ class MemeDetailViewModel @Inject constructor(
     private fun navigateToMeme(memeId: Long) {
         viewModelScope.launch {
             _effects.send(MemeDetailEffect.NavigateToMeme(memeId))
+        }
+    }
+
+    private fun selectShareTarget(target: com.adsamcik.riposte.core.model.ShareTarget) {
+        val meme = _uiState.value.quickShareMeme ?: return
+        viewModelScope.launch {
+            shareTargetRepository.recordShare(target)
+            _uiState.update { it.copy(quickShareMeme = null, quickShareTargets = emptyList()) }
+            val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                type = meme.mimeType
+                val uri = androidx.core.content.FileProvider.getUriForFile(
+                    context,
+                    "${context.packageName}.fileprovider",
+                    java.io.File(meme.filePath),
+                )
+                putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                setClassName(target.packageName, target.activityName)
+            }
+            _effects.send(MemeDetailEffect.LaunchQuickShare(intent))
+        }
+    }
+
+    private fun quickShareMore() {
+        _uiState.update { it.copy(quickShareMeme = null, quickShareTargets = emptyList()) }
+        openShareScreen()
+    }
+
+    private fun dismissQuickShare() {
+        _uiState.update { it.copy(quickShareMeme = null, quickShareTargets = emptyList()) }
+    }
+
+    private fun copyToClipboard() {
+        val meme = _uiState.value.quickShareMeme ?: _uiState.value.meme ?: return
+        _uiState.update { it.copy(quickShareMeme = null, quickShareTargets = emptyList()) }
+        viewModelScope.launch {
+            _effects.send(MemeDetailEffect.CopyToClipboard(meme.id))
         }
     }
 }

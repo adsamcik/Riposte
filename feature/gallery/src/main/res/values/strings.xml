@@ -75,6 +75,10 @@
     <!-- Similar Memes Section -->
     <string name="gallery_detail_section_similar">More Like This</string>
     <string name="gallery_cd_similar_meme">Similar meme: %s</string>
+    <string name="gallery_similar_hint_generating">Embeddings still generating…</string>
+    <string name="gallery_similar_hint_no_candidates">Import more memes to see recommendations</string>
+    <string name="gallery_similar_hint_none_found">No similar memes found</string>
+    <string name="gallery_similar_hint_error">Couldn\'t load recommendations</string>
 
     <!-- Details Section -->
     <string name="gallery_detail_section_details">Details</string>

@@ -1,9 +1,8 @@
 package com.adsamcik.riposte.feature.gallery.presentation
 
-import android.content.Intent
-
 import androidx.compose.foundation.background
 import android.content.res.Configuration
+import com.adsamcik.riposte.feature.gallery.domain.usecase.SimilarMemesStatus
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -123,13 +122,40 @@ fun MemeDetailScreen(
                 is MemeDetailEffect.NavigateBack -> onNavigateBack()
                 is MemeDetailEffect.NavigateToShare -> onNavigateToShare(effect.memeId)
                 is MemeDetailEffect.NavigateToMeme -> onNavigateToMeme(effect.memeId)
-                is MemeDetailEffect.LaunchShareIntent -> {
-                    context.startActivity(Intent.createChooser(effect.intent, context.getString(R.string.gallery_share_chooser_title)))
+                is MemeDetailEffect.LaunchQuickShare -> {
+                    context.startActivity(effect.intent)
                 }
                 is MemeDetailEffect.ShowSnackbar -> snackbarHostState.showSnackbar(effect.message)
                 is MemeDetailEffect.ShowError -> snackbarHostState.showSnackbar(effect.message)
+                is MemeDetailEffect.CopyToClipboard -> {
+                    val meme = uiState.meme
+                    if (meme != null) {
+                        val uri = androidx.core.content.FileProvider.getUriForFile(
+                            context,
+                            "${context.packageName}.fileprovider",
+                            java.io.File(meme.filePath),
+                        )
+                        val clip = android.content.ClipData.newUri(context.contentResolver, meme.title ?: meme.fileName, uri)
+                        val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                        clipboard.setPrimaryClip(clip)
+                        snackbarHostState.showSnackbar(context.getString(com.adsamcik.riposte.core.ui.R.string.quick_share_copy_clipboard))
+                    }
+                }
             }
         }
+    }
+
+    // Quick share bottom sheet
+    val quickShareMeme = uiState.quickShareMeme
+    if (quickShareMeme != null) {
+        com.adsamcik.riposte.core.ui.component.QuickShareBottomSheet(
+            meme = quickShareMeme,
+            frequentTargets = uiState.quickShareTargets,
+            onTargetSelected = { target -> viewModel.onIntent(MemeDetailIntent.SelectShareTarget(target)) },
+            onMoreClick = { viewModel.onIntent(MemeDetailIntent.QuickShareMore) },
+            onCopyToClipboard = { viewModel.onIntent(MemeDetailIntent.CopyToClipboard) },
+            onDismiss = { viewModel.onIntent(MemeDetailIntent.DismissQuickShare) },
+        )
     }
 
     MemeDetailScreenContent(
@@ -628,7 +654,7 @@ private fun MemeInfoSheet(
 
             // Similar memes section
             SimilarMemesSection(
-                similarMemes = uiState.similarMemes,
+                status = uiState.similarMemesStatus,
                 isLoading = uiState.isLoadingSimilar,
                 onMemeClick = { onIntent(MemeDetailIntent.NavigateToSimilarMeme(it)) },
             )
@@ -655,12 +681,13 @@ private fun formatFileSize(bytes: Long): String {
 
 @Composable
 private fun SimilarMemesSection(
-    similarMemes: List<com.adsamcik.riposte.core.model.Meme>,
+    status: SimilarMemesStatus?,
     isLoading: Boolean,
     onMemeClick: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    if (!isLoading && similarMemes.isEmpty()) return
+    // Nothing to show yet — still initializing
+    if (!isLoading && status == null) return
 
     Column(modifier = modifier.fillMaxWidth()) {
         Spacer(Modifier.height(16.dp))
@@ -683,22 +710,52 @@ private fun SimilarMemesSection(
                 )
             }
         } else {
-            LazyRow(
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                items(
-                    items = similarMemes,
-                    key = { it.id },
-                ) { meme ->
-                    SimilarMemeCard(
-                        meme = meme,
-                        onClick = { onMemeClick(meme.id) },
-                    )
+            when (status) {
+                is SimilarMemesStatus.Found -> {
+                    LazyRow(
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        items(
+                            items = status.memes,
+                            key = { it.id },
+                        ) { meme ->
+                            SimilarMemeCard(
+                                meme = meme,
+                                onClick = { onMemeClick(meme.id) },
+                            )
+                        }
+                    }
                 }
+                is SimilarMemesStatus.NoEmbeddingForMeme -> {
+                    SimilarMemesHint(stringResource(R.string.gallery_similar_hint_generating))
+                }
+                is SimilarMemesStatus.NoCandidates -> {
+                    SimilarMemesHint(stringResource(R.string.gallery_similar_hint_no_candidates))
+                }
+                is SimilarMemesStatus.NoSimilarFound -> {
+                    SimilarMemesHint(stringResource(R.string.gallery_similar_hint_none_found))
+                }
+                is SimilarMemesStatus.Error -> {
+                    SimilarMemesHint(stringResource(R.string.gallery_similar_hint_error))
+                }
+                null -> { /* handled by early return above */ }
             }
         }
     }
+}
+
+@Composable
+private fun SimilarMemesHint(
+    text: String,
+    modifier: Modifier = Modifier,
+) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = modifier.padding(vertical = 12.dp),
+    )
 }
 
 @Composable
