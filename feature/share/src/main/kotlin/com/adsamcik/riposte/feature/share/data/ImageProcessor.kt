@@ -45,6 +45,10 @@ class ImageProcessor @Inject constructor(
             quality = config.quality,
         )
 
+        // Save dimensions before recycling
+        val resultWidth = resizedBitmap.width
+        val resultHeight = resizedBitmap.height
+
         // Clean up intermediate bitmaps
         if (resizedBitmap != originalBitmap) {
             originalBitmap.recycle()
@@ -64,8 +68,8 @@ class ImageProcessor @Inject constructor(
 
         return ProcessResult.Success(
             file = outputFile,
-            width = resizedBitmap.width,
-            height = resizedBitmap.height,
+            width = resultWidth,
+            height = resultHeight,
             fileSize = outputFile.length(),
         )
     }

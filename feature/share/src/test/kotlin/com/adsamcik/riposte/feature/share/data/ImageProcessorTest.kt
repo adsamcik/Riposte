@@ -9,6 +9,7 @@ import com.adsamcik.riposte.core.model.ShareConfig
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkStatic
+import io.mockk.spyk
 import io.mockk.unmockkStatic
 import io.mockk.verify
 import org.junit.After
@@ -268,6 +269,178 @@ class ImageProcessorTest {
         )
 
         assertThat(result).isInstanceOf(ImageProcessor.ProcessResult.Success::class.java)
+
+        unmockkStatic(BitmapFactory::class)
+        outputFile.delete()
+        inputBitmap.recycle()
+    }
+
+    @Test
+    fun `processImage captures dimensions before bitmap recycle when resizing`() {
+        // Regression test: simulates real Android behavior where accessing
+        // a recycled bitmap's properties throws IllegalStateException.
+        var sourceRecycled = false
+        val sourceBitmap = mockk<Bitmap> {
+            every { width } answers {
+                if (sourceRecycled) throw IllegalStateException("recycled bitmap")
+                2000
+            }
+            every { height } answers {
+                if (sourceRecycled) throw IllegalStateException("recycled bitmap")
+                1000
+            }
+            every { recycle() } answers { sourceRecycled = true }
+        }
+
+        var resizedRecycled = false
+        val resizedBitmap = mockk<Bitmap> {
+            every { width } answers {
+                if (resizedRecycled) throw IllegalStateException("recycled bitmap")
+                500
+            }
+            every { height } answers {
+                if (resizedRecycled) throw IllegalStateException("recycled bitmap")
+                250
+            }
+            every { compress(any(), any(), any()) } returns true
+            every { recycle() } answers { resizedRecycled = true }
+        }
+
+        mockkStatic(BitmapFactory::class)
+        every { BitmapFactory.decodeFile(any()) } returns sourceBitmap
+
+        val spyProcessor = spyk(imageProcessor)
+        every { spyProcessor.resizeBitmap(any(), any(), any()) } returns resizedBitmap
+
+        val outputFile = File.createTempFile("test", ".jpg")
+        val config = ShareConfig(
+            format = ImageFormat.JPEG,
+            quality = 80,
+            maxWidth = 500,
+            maxHeight = 500,
+            stripMetadata = true,
+        )
+
+        val result = spyProcessor.processImage("/test/path.jpg", config, outputFile)
+
+        assertThat(result).isInstanceOf(ImageProcessor.ProcessResult.Success::class.java)
+        val success = result as ImageProcessor.ProcessResult.Success
+        assertThat(success.width).isEqualTo(500)
+        assertThat(success.height).isEqualTo(250)
+
+        unmockkStatic(BitmapFactory::class)
+        outputFile.delete()
+    }
+
+    @Test
+    fun `processImage captures dimensions before bitmap recycle without resizing`() {
+        // Regression test: when image is within max bounds, the same bitmap is returned
+        // from resizeBitmap and then recycled. Dimensions must be captured before recycle.
+        var recycled = false
+        val sourceBitmap = mockk<Bitmap> {
+            every { width } answers {
+                if (recycled) throw IllegalStateException("recycled bitmap")
+                500
+            }
+            every { height } answers {
+                if (recycled) throw IllegalStateException("recycled bitmap")
+                500
+            }
+            every { compress(any(), any(), any()) } returns true
+            every { recycle() } answers { recycled = true }
+        }
+
+        mockkStatic(BitmapFactory::class)
+        every { BitmapFactory.decodeFile(any()) } returns sourceBitmap
+
+        val outputFile = File.createTempFile("test", ".jpg")
+        val config = ShareConfig(
+            format = ImageFormat.JPEG,
+            quality = 80,
+            maxWidth = 1000,
+            maxHeight = 1000,
+            stripMetadata = true,
+        )
+
+        val result = imageProcessor.processImage("/test/path.jpg", config, outputFile)
+
+        assertThat(result).isInstanceOf(ImageProcessor.ProcessResult.Success::class.java)
+        val success = result as ImageProcessor.ProcessResult.Success
+        assertThat(success.width).isEqualTo(500)
+        assertThat(success.height).isEqualTo(500)
+
+        unmockkStatic(BitmapFactory::class)
+        outputFile.delete()
+    }
+
+    @Test
+    fun `processImage with null max dimensions uses original size`() {
+        val inputBitmap = createRealBitmap(800, 600)
+        mockkStatic(BitmapFactory::class)
+        every { BitmapFactory.decodeFile(any()) } returns inputBitmap
+
+        val outputFile = File.createTempFile("test", ".jpg")
+        val config = ShareConfig(
+            format = ImageFormat.JPEG,
+            quality = 80,
+            maxWidth = null,
+            maxHeight = null,
+        )
+
+        val result = imageProcessor.processImage("/test/path.jpg", config, outputFile)
+
+        assertThat(result).isInstanceOf(ImageProcessor.ProcessResult.Success::class.java)
+        val success = result as ImageProcessor.ProcessResult.Success
+        assertThat(success.width).isEqualTo(800)
+        assertThat(success.height).isEqualTo(600)
+
+        unmockkStatic(BitmapFactory::class)
+        outputFile.delete()
+        inputBitmap.recycle()
+    }
+
+    @Test
+    fun `processImage preserves aspect ratio in result dimensions`() {
+        val inputBitmap = createRealBitmap(1920, 1080)
+        mockkStatic(BitmapFactory::class)
+        every { BitmapFactory.decodeFile(any()) } returns inputBitmap
+
+        val outputFile = File.createTempFile("test", ".jpg")
+        val config = ShareConfig(
+            format = ImageFormat.JPEG,
+            quality = 80,
+            maxWidth = 800,
+            maxHeight = 800,
+        )
+
+        val result = imageProcessor.processImage("/test/path.jpg", config, outputFile)
+
+        assertThat(result).isInstanceOf(ImageProcessor.ProcessResult.Success::class.java)
+        val success = result as ImageProcessor.ProcessResult.Success
+        assertThat(success.width).isEqualTo(800)
+        assertThat(success.height).isEqualTo(450)
+
+        unmockkStatic(BitmapFactory::class)
+        outputFile.delete()
+    }
+
+    @Test
+    fun `processImage returns positive file size on success`() {
+        val inputBitmap = createRealBitmap(100, 100)
+        mockkStatic(BitmapFactory::class)
+        every { BitmapFactory.decodeFile(any()) } returns inputBitmap
+
+        val outputFile = File.createTempFile("test", ".jpg")
+        val config = ShareConfig(
+            format = ImageFormat.JPEG,
+            quality = 80,
+        )
+
+        val result = imageProcessor.processImage("/test/path.jpg", config, outputFile)
+
+        assertThat(result).isInstanceOf(ImageProcessor.ProcessResult.Success::class.java)
+        val success = result as ImageProcessor.ProcessResult.Success
+        assertThat(success.fileSize).isGreaterThan(0L)
 
         unmockkStatic(BitmapFactory::class)
         outputFile.delete()
