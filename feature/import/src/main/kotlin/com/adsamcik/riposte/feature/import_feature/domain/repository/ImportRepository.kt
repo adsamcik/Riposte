@@ -55,4 +55,14 @@ interface ImportRepository {
      * Check if an image already exists in the database.
      */
     suspend fun isDuplicate(uri: Uri): Boolean
+
+    /**
+     * Find the existing meme ID for a duplicate image, or null if not a duplicate.
+     */
+    suspend fun findDuplicateMemeId(uri: Uri): Long?
+
+    /**
+     * Update metadata (title, description, emojis, text content) for an existing meme.
+     */
+    suspend fun updateMemeMetadata(memeId: Long, metadata: MemeMetadata): Result<Unit>
 }

@@ -53,6 +53,16 @@ data class ImportUiState(
     val showDuplicateDialog: Boolean = false,
 
     /**
+     * Indices of duplicates that have changed metadata compared to existing memes.
+     */
+    val duplicatesWithChangedMetadata: Set<Int> = emptySet(),
+
+    /**
+     * Map of duplicate image index to existing meme ID in the database.
+     */
+    val duplicateMemeIds: Map<Int, Long> = emptyMap(),
+
+    /**
      * Result of the import operation, shown in summary screen.
      */
     val importResult: ImportResult? = null,

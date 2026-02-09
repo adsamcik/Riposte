@@ -103,6 +103,11 @@ sealed interface ImportIntent {
     data object SkipDuplicates : ImportIntent
 
     /**
+     * Update metadata for duplicate images that have changed metadata, skip others.
+     */
+    data object UpdateDuplicateMetadata : ImportIntent
+
+    /**
      * Dismiss the duplicate dialog.
      */
     data object DismissDuplicateDialog : ImportIntent

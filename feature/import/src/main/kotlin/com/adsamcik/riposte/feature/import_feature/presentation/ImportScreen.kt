@@ -303,12 +303,23 @@ fun ImportScreen(
                 onDismissRequest = { viewModel.onIntent(ImportIntent.DismissDuplicateDialog) },
                 title = { Text(stringResource(R.string.import_duplicate_dialog_title)) },
                 text = {
-                    Text(
-                        stringResource(
-                            R.string.import_duplicate_dialog_message,
-                            uiState.duplicateIndices.size,
-                        ),
-                    )
+                    Column {
+                        Text(
+                            stringResource(
+                                R.string.import_duplicate_dialog_message,
+                                uiState.duplicateIndices.size,
+                            ),
+                        )
+                        if (uiState.duplicatesWithChangedMetadata.isNotEmpty()) {
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                stringResource(
+                                    R.string.import_duplicate_metadata_changed,
+                                    uiState.duplicatesWithChangedMetadata.size,
+                                ),
+                            )
+                        }
+                    }
                 },
                 confirmButton = {
                     TextButton(onClick = { viewModel.onIntent(ImportIntent.ImportDuplicatesAnyway) }) {
@@ -316,8 +327,15 @@ fun ImportScreen(
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = { viewModel.onIntent(ImportIntent.SkipDuplicates) }) {
-                        Text(stringResource(R.string.import_duplicate_skip))
+                    Column {
+                        if (uiState.duplicatesWithChangedMetadata.isNotEmpty()) {
+                            TextButton(onClick = { viewModel.onIntent(ImportIntent.UpdateDuplicateMetadata) }) {
+                                Text(stringResource(R.string.import_duplicate_update_metadata))
+                            }
+                        }
+                        TextButton(onClick = { viewModel.onIntent(ImportIntent.SkipDuplicates) }) {
+                            Text(stringResource(R.string.import_duplicate_skip))
+                        }
                     }
                 },
             )

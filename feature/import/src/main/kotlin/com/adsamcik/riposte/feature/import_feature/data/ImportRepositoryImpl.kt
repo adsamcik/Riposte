@@ -307,6 +307,83 @@ class ImportRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun findDuplicateMemeId(uri: Uri): Long? = withContext(Dispatchers.IO) {
+        try {
+            val bitmap = loadAndResizeBitmap(uri) ?: return@withContext null
+            val tempFile = File.createTempFile("dup_check_", ".jpg", context.cacheDir)
+            try {
+                FileOutputStream(tempFile).use { out ->
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
+                }
+                val hash = calculateFileHash(tempFile)
+                memeDao.getMemeByHash(hash)?.id
+            } finally {
+                tempFile.delete()
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    override suspend fun updateMemeMetadata(
+        memeId: Long,
+        metadata: MemeMetadata,
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val existing = memeDao.getMemeById(memeId)
+                ?: return@withContext Result.failure(Exception("Meme not found"))
+
+            // Update entity fields
+            val updated = existing.copy(
+                emojiTagsJson = metadata.emojis.joinToString(","),
+                title = metadata.title ?: existing.title,
+                description = metadata.description ?: existing.description,
+                textContent = metadata.textContent ?: existing.textContent,
+                primaryLanguage = metadata.primaryLanguage ?: existing.primaryLanguage,
+            )
+            memeDao.updateMeme(updated)
+
+            // Replace emoji tags
+            emojiTagDao.deleteEmojiTagsForMeme(memeId)
+            val emojiTagEntities = metadata.emojis.map { emoji ->
+                val emojiTag = EmojiTag.fromEmoji(emoji)
+                EmojiTagEntity(
+                    memeId = memeId,
+                    emoji = emoji,
+                    emojiName = emojiTag.name,
+                )
+            }
+            if (emojiTagEntities.isNotEmpty()) {
+                emojiTagDao.insertEmojiTags(emojiTagEntities)
+            }
+
+            // Regenerate embedding
+            val searchText = buildSearchText(
+                updated.title,
+                updated.description,
+                updated.textContent,
+                metadata.emojis,
+            )
+            if (searchText.isNotBlank()) {
+                embeddingManager.generateAndStoreEmbedding(memeId, searchText)
+            }
+
+            // Update XMP metadata in image file
+            val xmpMetadata = MemeMetadata(
+                schemaVersion = AppConstants.METADATA_SCHEMA_VERSION,
+                emojis = metadata.emojis,
+                title = metadata.title,
+                description = metadata.description,
+                appVersion = AppConstants.APP_VERSION,
+            )
+            xmpMetadataHandler.writeMetadata(existing.filePath, xmpMetadata)
+
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     private suspend fun loadAndResizeBitmap(uri: Uri): Bitmap? = withContext(Dispatchers.IO) {
         try {
             context.contentResolver.openInputStream(uri)?.use { input ->

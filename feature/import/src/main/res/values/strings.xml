@@ -53,8 +53,14 @@
     <!-- Duplicate Detection Dialog -->
     <string name="import_duplicate_dialog_title">Duplicates Found</string>
     <string name="import_duplicate_dialog_message">%d image(s) already exist in your library.</string>
+    <string name="import_duplicate_metadata_changed">%d of these have updated metadata.</string>
     <string name="import_duplicate_import_anyway">Import Anyway</string>
     <string name="import_duplicate_skip">Skip Duplicates</string>
+    <string name="import_duplicate_update_metadata">Update Metadata</string>
+
+    <!-- Metadata Update -->
+    <string name="import_status_updating_metadata">Updating metadata…</string>
+    <string name="import_metadata_updated_count">Updated metadata for %d meme(s)</string>
 
     <!-- Import Result Summary -->
     <string name="import_result_title">Import Complete</string>

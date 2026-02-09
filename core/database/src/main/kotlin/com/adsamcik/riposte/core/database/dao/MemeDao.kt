@@ -155,6 +155,12 @@ interface MemeDao {
     suspend fun memeExistsByHash(hash: String): Boolean
 
     /**
+     * Get a meme by its file hash, or null if not found.
+     */
+    @Query("SELECT * FROM memes WHERE fileHash = :hash LIMIT 1")
+    suspend fun getMemeByHash(hash: String): MemeEntity?
+
+    /**
      * Get all memes as a PagingSource for efficient pagination.
      * Used for large collections (1000+ memes).
      */

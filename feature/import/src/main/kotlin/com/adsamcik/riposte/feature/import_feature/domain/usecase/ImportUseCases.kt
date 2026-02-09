@@ -78,6 +78,28 @@ class CheckDuplicateUseCase @Inject constructor(
 }
 
 /**
+ * Use case for finding the existing meme ID of a duplicate image.
+ */
+class FindDuplicateMemeIdUseCase @Inject constructor(
+    private val repository: ImportRepository,
+) {
+    suspend operator fun invoke(uri: Uri): Long? {
+        return repository.findDuplicateMemeId(uri)
+    }
+}
+
+/**
+ * Use case for updating metadata on an existing meme.
+ */
+class UpdateMemeMetadataUseCase @Inject constructor(
+    private val repository: ImportRepository,
+) {
+    suspend operator fun invoke(memeId: Long, metadata: MemeMetadata): Result<Unit> {
+        return repository.updateMemeMetadata(memeId, metadata)
+    }
+}
+
+/**
  * Use case for cleaning up temporary files created during ZIP extraction.
  */
 class CleanupExtractedFilesUseCase @Inject constructor(

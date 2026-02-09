@@ -11,8 +11,10 @@ import com.adsamcik.riposte.feature.import_feature.domain.usecase.CheckDuplicate
 import com.adsamcik.riposte.feature.import_feature.domain.usecase.CleanupExtractedFilesUseCase
 import com.adsamcik.riposte.feature.import_feature.domain.usecase.ExtractTextUseCase
 import com.adsamcik.riposte.feature.import_feature.domain.usecase.ExtractZipForPreviewUseCase
+import com.adsamcik.riposte.feature.import_feature.domain.usecase.FindDuplicateMemeIdUseCase
 import com.adsamcik.riposte.feature.import_feature.domain.usecase.ImportImageUseCase
 import com.adsamcik.riposte.feature.import_feature.domain.usecase.SuggestEmojisUseCase
+import com.adsamcik.riposte.feature.import_feature.domain.usecase.UpdateMemeMetadataUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.Channel
@@ -34,6 +36,8 @@ class ImportViewModel @Inject constructor(
     private val extractTextUseCase: ExtractTextUseCase,
     private val extractZipForPreviewUseCase: ExtractZipForPreviewUseCase,
     private val checkDuplicateUseCase: CheckDuplicateUseCase,
+    private val findDuplicateMemeIdUseCase: FindDuplicateMemeIdUseCase,
+    private val updateMemeMetadataUseCase: UpdateMemeMetadataUseCase,
     private val cleanupExtractedFilesUseCase: CleanupExtractedFilesUseCase,
     private val userActionTracker: UserActionTracker,
     private val preferencesDataStore: PreferencesDataStore,
@@ -73,6 +77,7 @@ class ImportViewModel @Inject constructor(
             is ImportIntent.PickZipBundle -> pickZipBundle()
             is ImportIntent.ImportDuplicatesAnyway -> importDuplicatesAnyway()
             is ImportIntent.SkipDuplicates -> skipDuplicates()
+            is ImportIntent.UpdateDuplicateMetadata -> updateDuplicateMetadata()
             is ImportIntent.DismissDuplicateDialog -> dismissDuplicateDialog()
             is ImportIntent.RetryFailedImports -> retryFailedImports()
             is ImportIntent.DismissImportResult -> dismissImportResult()
@@ -276,10 +281,19 @@ class ImportViewModel @Inject constructor(
             // Check for duplicates first
             val images = _uiState.value.selectedImages
             val duplicateIndices = mutableSetOf<Int>()
+            val duplicateMemeIds = mutableMapOf<Int, Long>()
+            val duplicatesWithChangedMetadata = mutableSetOf<Int>()
+
             images.forEachIndexed { index, image ->
                 try {
-                    if (checkDuplicateUseCase(image.uri)) {
+                    val existingMemeId = findDuplicateMemeIdUseCase(image.uri)
+                    if (existingMemeId != null) {
                         duplicateIndices.add(index)
+                        duplicateMemeIds[index] = existingMemeId
+                        // Check if the incoming image has metadata that differs
+                        if (image.emojis.isNotEmpty() || image.title != null || image.description != null) {
+                            duplicatesWithChangedMetadata.add(index)
+                        }
                     }
                 } catch (_: Exception) {
                     // Ignore check errors, proceed with import
@@ -292,6 +306,8 @@ class ImportViewModel @Inject constructor(
                         isImporting = false,
                         statusMessage = null,
                         duplicateIndices = duplicateIndices,
+                        duplicateMemeIds = duplicateMemeIds,
+                        duplicatesWithChangedMetadata = duplicatesWithChangedMetadata,
                         showDuplicateDialog = true,
                     )
                 }
@@ -303,7 +319,14 @@ class ImportViewModel @Inject constructor(
     }
 
     private fun importDuplicatesAnyway() {
-        _uiState.update { it.copy(showDuplicateDialog = false, duplicateIndices = emptySet()) }
+        _uiState.update {
+            it.copy(
+                showDuplicateDialog = false,
+                duplicateIndices = emptySet(),
+                duplicatesWithChangedMetadata = emptySet(),
+                duplicateMemeIds = emptyMap(),
+            )
+        }
         val images = _uiState.value.selectedImages
         importJob = viewModelScope.launch { performImport(images) }
     }
@@ -315,11 +338,76 @@ class ImportViewModel @Inject constructor(
                 selectedImages = state.selectedImages.filterIndexed { index, _ -> index !in dupes },
                 showDuplicateDialog = false,
                 duplicateIndices = emptySet(),
+                duplicatesWithChangedMetadata = emptySet(),
+                duplicateMemeIds = emptyMap(),
             )
         }
         val images = _uiState.value.selectedImages
         if (images.isEmpty()) return
         importJob = viewModelScope.launch { performImport(images) }
+    }
+
+    private fun updateDuplicateMetadata() {
+        val state = _uiState.value
+        val dupes = state.duplicateIndices
+        val changedDupes = state.duplicatesWithChangedMetadata
+        val memeIds = state.duplicateMemeIds
+
+        _uiState.update {
+            it.copy(
+                showDuplicateDialog = false,
+                isImporting = true,
+                importProgress = -1f,
+                statusMessage = context.getString(R.string.import_status_updating_metadata),
+            )
+        }
+
+        importJob = viewModelScope.launch {
+            var updatedCount = 0
+
+            // Update metadata for duplicates that have changes
+            for (index in changedDupes) {
+                val image = state.selectedImages.getOrNull(index) ?: continue
+                val memeId = memeIds[index] ?: continue
+
+                val metadata = MemeMetadata(
+                    emojis = image.emojis.map { it.emoji }.ifEmpty { listOf("😀") },
+                    title = image.title,
+                    description = image.description,
+                    textContent = image.extractedText,
+                )
+
+                val result = updateMemeMetadataUseCase(memeId, metadata)
+                if (result.isSuccess) updatedCount++
+            }
+
+            if (updatedCount > 0) {
+                _effects.send(
+                    ImportEffect.ShowSnackbar(
+                        context.getString(R.string.import_metadata_updated_count, updatedCount),
+                    ),
+                )
+            }
+
+            // Remove all duplicates and import remaining non-duplicates
+            _uiState.update { s ->
+                s.copy(
+                    selectedImages = s.selectedImages.filterIndexed { index, _ -> index !in dupes },
+                    duplicateIndices = emptySet(),
+                    duplicatesWithChangedMetadata = emptySet(),
+                    duplicateMemeIds = emptyMap(),
+                    isImporting = false,
+                    statusMessage = null,
+                )
+            }
+
+            val remainingImages = _uiState.value.selectedImages
+            if (remainingImages.isNotEmpty()) {
+                performImport(remainingImages)
+            } else {
+                _effects.send(ImportEffect.NavigateToGallery)
+            }
+        }
     }
 
     private fun dismissDuplicateDialog() {
