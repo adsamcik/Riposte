@@ -37,6 +37,7 @@ data class SettingsUiState(
     val defaultFormat: ImageFormat = ImageFormat.WEBP,
     val defaultQuality: Int = 85,
     val defaultMaxDimension: Int = 1080,
+    val stripMetadata: Boolean = true,
 
     // Search
     val enableSemanticSearch: Boolean = true,

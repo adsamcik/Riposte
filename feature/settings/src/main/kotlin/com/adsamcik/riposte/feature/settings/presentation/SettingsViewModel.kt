@@ -24,6 +24,7 @@ import com.adsamcik.riposte.feature.settings.domain.usecase.SetDynamicColorsUseC
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetEnableSemanticSearchUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetGridDensityUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetSaveSearchHistoryUseCase
+import com.adsamcik.riposte.feature.settings.domain.usecase.SetStripMetadataUseCase
 import com.adsamcik.riposte.core.common.di.IoDispatcher
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -60,6 +61,7 @@ class SettingsViewModel @Inject constructor(
     private val setDefaultFormatUseCase: SetDefaultFormatUseCase,
     private val setDefaultQualityUseCase: SetDefaultQualityUseCase,
     private val setDefaultMaxDimensionUseCase: SetDefaultMaxDimensionUseCase,
+    private val setStripMetadataUseCase: SetStripMetadataUseCase,
     private val setGridDensityUseCase: SetGridDensityUseCase,
     private val exportPreferencesUseCase: ExportPreferencesUseCase,
     private val importPreferencesUseCase: ImportPreferencesUseCase,
@@ -112,6 +114,7 @@ class SettingsViewModel @Inject constructor(
                     defaultFormat = sharingPrefs.defaultFormat,
                     defaultQuality = sharingPrefs.defaultQuality,
                     defaultMaxDimension = sharingPrefs.maxWidth,
+                    stripMetadata = sharingPrefs.stripMetadata,
                     enableSemanticSearch = appPrefs.enableSemanticSearch,
                     saveSearchHistory = appPrefs.saveSearchHistory,
                     appVersion = getAppVersion(),
@@ -148,6 +151,7 @@ class SettingsViewModel @Inject constructor(
             is SettingsIntent.SetDefaultFormat -> setDefaultFormat(intent.format)
             is SettingsIntent.SetDefaultQuality -> setDefaultQuality(intent.quality)
             is SettingsIntent.SetDefaultMaxDimension -> setDefaultMaxDimension(intent.dimension)
+            is SettingsIntent.SetStripMetadata -> setStripMetadata(intent.strip)
 
             // Search
             is SettingsIntent.SetEnableSemanticSearch -> setEnableSemanticSearch(intent.enabled)
@@ -241,6 +245,12 @@ class SettingsViewModel @Inject constructor(
     private fun setDefaultMaxDimension(dimension: Int) {
         viewModelScope.launch {
             setDefaultMaxDimensionUseCase(dimension)
+        }
+    }
+
+    private fun setStripMetadata(strip: Boolean) {
+        viewModelScope.launch {
+            setStripMetadataUseCase(strip)
         }
     }
 

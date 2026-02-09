@@ -34,6 +34,27 @@
     <string name="settings_search_history_title">Suchverlauf</string>
     <string name="settings_search_history_subtitle">Letzte Suchen speichern</string>
     
+    <!-- Sharing Section -->
+    <string name="settings_section_sharing">Teilen</string>
+    <string name="settings_use_native_share_title">System-Teilen-Dialog verwenden</string>
+    <string name="settings_use_native_share_subtitle">Androids eingebautes Teilen-Menü statt In-App-Schnellteilen verwenden</string>
+    <string name="settings_share_format_title">Bildformat</string>
+    <string name="settings_share_format_subtitle">Format beim Teilen von Memes</string>
+    <string name="settings_share_format_jpeg">Standard (JPEG)</string>
+    <string name="settings_share_format_png">Verlustfrei (PNG)</string>
+    <string name="settings_share_format_webp">Kleinste (WebP)</string>
+    <string name="settings_share_quality_title">Kompressionsqualität</string>
+    <string name="settings_share_quality_subtitle">Höhere Qualität bedeutet größere Datei</string>
+    <string name="settings_share_quality_value">%1$d%%</string>
+    <string name="settings_share_max_size_title">Max. Bildgröße</string>
+    <string name="settings_share_max_size_subtitle">Geteilte Bilder werden auf diese Größe verkleinert</string>
+    <string name="settings_share_size_small">Klein (480px)</string>
+    <string name="settings_share_size_medium">Mittel (720px)</string>
+    <string name="settings_share_size_large">Groß (1080px)</string>
+    <string name="settings_share_size_original">Original (2048px)</string>
+    <string name="settings_share_strip_metadata_title">Emoji-Tags einschließen</string>
+    <string name="settings_share_strip_metadata_subtitle">Emoji-Tags und Meme-Infos an geteilte Dateien anhängen</string>
+
     <!-- Storage Section -->
     <string name="settings_clear_cache_title">Cache leeren</string>
     <string name="settings_clear_cache_subtitle">%1$s freigeben</string>

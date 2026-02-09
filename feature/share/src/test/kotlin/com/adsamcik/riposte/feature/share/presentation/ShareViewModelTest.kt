@@ -8,7 +8,6 @@ import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
 import com.adsamcik.riposte.core.model.EmojiTag
-import com.adsamcik.riposte.core.model.ImageFormat
 import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.core.model.ShareConfig
 import com.adsamcik.riposte.feature.share.R
@@ -16,7 +15,6 @@ import com.adsamcik.riposte.feature.share.data.ImageProcessor
 import com.adsamcik.riposte.feature.share.domain.BitmapLoader
 import com.adsamcik.riposte.feature.share.domain.usecase.ShareUseCases
 import io.mockk.coEvery
-import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
@@ -135,89 +133,6 @@ class ShareViewModelTest {
 
     // endregion
 
-    // region Intent Handling Tests
-
-    @Test
-    fun `SetFormat updates config format`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
-
-        viewModel.onIntent(ShareIntent.SetFormat(ImageFormat.PNG))
-        advanceUntilIdle()
-
-        assertThat(viewModel.uiState.value.config.format).isEqualTo(ImageFormat.PNG)
-    }
-
-    @Test
-    fun `SetFormat to PNG results in non-lossy format hiding quality slider`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
-
-        viewModel.onIntent(ShareIntent.SetFormat(ImageFormat.PNG))
-        advanceUntilIdle()
-
-        assertThat(viewModel.uiState.value.config.format.isLossy).isFalse()
-    }
-
-    @Test
-    fun `SetFormat to JPEG results in lossy format showing quality slider`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
-
-        viewModel.onIntent(ShareIntent.SetFormat(ImageFormat.JPEG))
-        advanceUntilIdle()
-
-        assertThat(viewModel.uiState.value.config.format.isLossy).isTrue()
-    }
-
-    @Test
-    fun `SetFormat to WEBP results in lossy format showing quality slider`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
-
-        viewModel.onIntent(ShareIntent.SetFormat(ImageFormat.WEBP))
-        advanceUntilIdle()
-
-        assertThat(viewModel.uiState.value.config.format.isLossy).isTrue()
-    }
-
-    @Test
-    fun `SetQuality updates config quality`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
-
-        viewModel.onIntent(ShareIntent.SetQuality(75))
-        advanceUntilIdle()
-
-        assertThat(viewModel.uiState.value.config.quality).isEqualTo(75)
-    }
-
-    @Test
-    fun `SetMaxDimension updates config dimensions`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
-
-        viewModel.onIntent(ShareIntent.SetMaxDimension(720))
-        advanceUntilIdle()
-
-        val config = viewModel.uiState.value.config
-        assertThat(config.maxWidth).isEqualTo(720)
-        assertThat(config.maxHeight).isEqualTo(720)
-    }
-
-    @Test
-    fun `SetStripMetadata updates config`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
-
-        viewModel.onIntent(ShareIntent.SetStripMetadata(true))
-        advanceUntilIdle()
-
-        assertThat(viewModel.uiState.value.config.stripMetadata).isTrue()
-    }
-
-    // endregion
-
     // region Share Tests
 
     @Test
@@ -330,21 +245,6 @@ class ShareViewModelTest {
             val effect = awaitItem()
             assertThat(effect).isEqualTo(ShareEffect.NavigateBack)
         }
-    }
-
-    // endregion
-
-    // region Config Update Tests
-
-    @Test
-    fun `updating config triggers estimateFileSize`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
-
-        viewModel.onIntent(ShareIntent.SetQuality(50))
-        advanceUntilIdle()
-
-        coVerify { shareUseCases.estimateFileSize(any(), any()) }
     }
 
     // endregion

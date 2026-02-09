@@ -68,6 +68,11 @@ interface SettingsRepository {
     suspend fun setDefaultMaxDimension(dimension: Int)
 
     /**
+     * Updates the strip metadata setting for sharing.
+     */
+    suspend fun setStripMetadata(strip: Boolean)
+
+    /**
      * Updates the grid density preference.
      */
     suspend fun setGridDensity(preference: UserDensityPreference)

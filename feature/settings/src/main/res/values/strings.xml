@@ -38,6 +38,22 @@
     <!-- Sharing Section -->
     <string name="settings_use_native_share_title">Use system share dialog</string>
     <string name="settings_use_native_share_subtitle">Use Android\'s built-in share sheet instead of in-app quick share</string>
+    <string name="settings_share_format_title">Image Format</string>
+    <string name="settings_share_format_subtitle">Format used when sharing memes</string>
+    <string name="settings_share_format_jpeg">Standard (JPEG)</string>
+    <string name="settings_share_format_png">Lossless (PNG)</string>
+    <string name="settings_share_format_webp">Smallest (WebP)</string>
+    <string name="settings_share_quality_title">Compression Quality</string>
+    <string name="settings_share_quality_subtitle">Higher quality means larger file size</string>
+    <string name="settings_share_quality_value">%1$d%%</string>
+    <string name="settings_share_max_size_title">Max Image Size</string>
+    <string name="settings_share_max_size_subtitle">Shared images will be scaled down to this size</string>
+    <string name="settings_share_size_small">Small (480px)</string>
+    <string name="settings_share_size_medium">Medium (720px)</string>
+    <string name="settings_share_size_large">Large (1080px)</string>
+    <string name="settings_share_size_original">Original (2048px)</string>
+    <string name="settings_share_strip_metadata_title">Include emoji tags</string>
+    <string name="settings_share_strip_metadata_subtitle">Attach emoji tags and meme info to shared files</string>
 
     <!-- Storage Section -->
     <string name="settings_clear_cache_title">Clear Cache</string>

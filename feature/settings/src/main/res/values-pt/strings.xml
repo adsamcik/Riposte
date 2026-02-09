@@ -34,6 +34,27 @@
     <string name="settings_search_history_title">Histórico de Pesquisa</string>
     <string name="settings_search_history_subtitle">Salvar pesquisas recentes</string>
     
+    <!-- Sharing Section -->
+    <string name="settings_section_sharing">Compartilhamento</string>
+    <string name="settings_use_native_share_title">Usar diálogo de compartilhamento do sistema</string>
+    <string name="settings_use_native_share_subtitle">Usar a folha de compartilhamento do Android em vez do compartilhamento rápido no app</string>
+    <string name="settings_share_format_title">Formato de imagem</string>
+    <string name="settings_share_format_subtitle">Formato usado ao compartilhar memes</string>
+    <string name="settings_share_format_jpeg">Padrão (JPEG)</string>
+    <string name="settings_share_format_png">Sem perdas (PNG)</string>
+    <string name="settings_share_format_webp">Menor (WebP)</string>
+    <string name="settings_share_quality_title">Qualidade de compressão</string>
+    <string name="settings_share_quality_subtitle">Maior qualidade significa arquivo maior</string>
+    <string name="settings_share_quality_value">%1$d%%</string>
+    <string name="settings_share_max_size_title">Tamanho máximo da imagem</string>
+    <string name="settings_share_max_size_subtitle">Imagens compartilhadas serão reduzidas a este tamanho</string>
+    <string name="settings_share_size_small">Pequeno (480px)</string>
+    <string name="settings_share_size_medium">Médio (720px)</string>
+    <string name="settings_share_size_large">Grande (1080px)</string>
+    <string name="settings_share_size_original">Original (2048px)</string>
+    <string name="settings_share_strip_metadata_title">Incluir tags de emoji</string>
+    <string name="settings_share_strip_metadata_subtitle">Anexar tags de emoji e info do meme a arquivos compartilhados</string>
+
     <!-- Storage Section -->
     <string name="settings_clear_cache_title">Limpar Cache</string>
     <string name="settings_clear_cache_subtitle">Liberar %1$s</string>

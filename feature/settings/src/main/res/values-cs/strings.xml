@@ -34,6 +34,27 @@
     <string name="settings_search_history_title">Historie vyhledávání</string>
     <string name="settings_search_history_subtitle">Ukládat poslední hledání</string>
     
+    <!-- Sharing Section -->
+    <string name="settings_section_sharing">Sdílení</string>
+    <string name="settings_use_native_share_title">Systémový dialog sdílení</string>
+    <string name="settings_use_native_share_subtitle">Použít systémový dialog pro sdílení místo rychlého sdílení v aplikaci</string>
+    <string name="settings_share_format_title">Formát obrázku</string>
+    <string name="settings_share_format_subtitle">Formát použitý při sdílení memů</string>
+    <string name="settings_share_format_jpeg">Standardní (JPEG)</string>
+    <string name="settings_share_format_png">Bezztrátový (PNG)</string>
+    <string name="settings_share_format_webp">Nejmenší (WebP)</string>
+    <string name="settings_share_quality_title">Kvalita komprese</string>
+    <string name="settings_share_quality_subtitle">Vyšší kvalita znamená větší soubor</string>
+    <string name="settings_share_quality_value">%1$d%%</string>
+    <string name="settings_share_max_size_title">Max. velikost obrázku</string>
+    <string name="settings_share_max_size_subtitle">Sdílené obrázky budou zmenšeny na tuto velikost</string>
+    <string name="settings_share_size_small">Malý (480px)</string>
+    <string name="settings_share_size_medium">Střední (720px)</string>
+    <string name="settings_share_size_large">Velký (1080px)</string>
+    <string name="settings_share_size_original">Originál (2048px)</string>
+    <string name="settings_share_strip_metadata_title">Zahrnout emoji štítky</string>
+    <string name="settings_share_strip_metadata_subtitle">Připojit emoji štítky a info o meme ke sdíleným souborům</string>
+
     <!-- Storage Section -->
     <string name="settings_clear_cache_title">Vymazat mezipaměť</string>
     <string name="settings_clear_cache_subtitle">Uvolnit %1$s</string>

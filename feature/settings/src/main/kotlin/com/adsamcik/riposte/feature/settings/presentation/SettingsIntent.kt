@@ -18,6 +18,7 @@ sealed interface SettingsIntent {
     data class SetDefaultFormat(val format: ImageFormat) : SettingsIntent
     data class SetDefaultQuality(val quality: Int) : SettingsIntent
     data class SetDefaultMaxDimension(val dimension: Int) : SettingsIntent
+    data class SetStripMetadata(val strip: Boolean) : SettingsIntent
 
     // Search
     data class SetEnableSemanticSearch(val enabled: Boolean) : SettingsIntent

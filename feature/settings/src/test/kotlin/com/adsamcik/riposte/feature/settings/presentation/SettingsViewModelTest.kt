@@ -24,6 +24,7 @@ import com.adsamcik.riposte.feature.settings.domain.usecase.SetDynamicColorsUseC
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetEnableSemanticSearchUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetGridDensityUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetSaveSearchHistoryUseCase
+import com.adsamcik.riposte.feature.settings.domain.usecase.SetStripMetadataUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -66,6 +67,7 @@ class SettingsViewModelTest {
     private lateinit var setUseNativeShareDialogUseCase: SetUseNativeShareDialogUseCase
     private lateinit var setDefaultQualityUseCase: SetDefaultQualityUseCase
     private lateinit var setDefaultMaxDimensionUseCase: SetDefaultMaxDimensionUseCase
+    private lateinit var setStripMetadataUseCase: SetStripMetadataUseCase
     private lateinit var setGridDensityUseCase: SetGridDensityUseCase
     private lateinit var exportPreferencesUseCase: ExportPreferencesUseCase
     private lateinit var importPreferencesUseCase: ImportPreferencesUseCase
@@ -105,6 +107,7 @@ class SettingsViewModelTest {
         setUseNativeShareDialogUseCase = mockk(relaxed = true)
         setDefaultQualityUseCase = mockk(relaxed = true)
         setDefaultMaxDimensionUseCase = mockk(relaxed = true)
+        setStripMetadataUseCase = mockk(relaxed = true)
         setGridDensityUseCase = mockk(relaxed = true)
         exportPreferencesUseCase = mockk(relaxed = true)
         importPreferencesUseCase = mockk(relaxed = true)
@@ -132,6 +135,7 @@ class SettingsViewModelTest {
             setUseNativeShareDialogUseCase = setUseNativeShareDialogUseCase,
             setDefaultQualityUseCase = setDefaultQualityUseCase,
             setDefaultMaxDimensionUseCase = setDefaultMaxDimensionUseCase,
+            setStripMetadataUseCase = setStripMetadataUseCase,
             setGridDensityUseCase = setGridDensityUseCase,
             exportPreferencesUseCase = exportPreferencesUseCase,
             importPreferencesUseCase = importPreferencesUseCase,

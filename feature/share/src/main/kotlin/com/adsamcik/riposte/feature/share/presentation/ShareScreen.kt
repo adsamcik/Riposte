@@ -2,16 +2,10 @@ package com.adsamcik.riposte.feature.share.presentation
 
 import android.content.res.Configuration
 import android.graphics.Bitmap
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -28,36 +22,24 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.Slider
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -66,22 +48,14 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.LiveRegionMode
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
-import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.stateDescription
-import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import com.adsamcik.riposte.feature.share.R
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.adsamcik.riposte.core.model.ImageFormat
 import com.adsamcik.riposte.core.ui.component.EmptyState
 import com.adsamcik.riposte.core.ui.component.LoadingScreen
 import com.adsamcik.riposte.core.ui.modifier.animatedPressScale
@@ -236,8 +210,6 @@ private fun ShareContent(
     onIntent: (ShareIntent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var settingsExpanded by remember { mutableStateOf(false) }
-
     Column(
         modifier = modifier
             .verticalScroll(rememberScrollState())
@@ -254,62 +226,6 @@ private fun ShareContent(
 
         // Simplified file size banner
         FileSizeBanner(estimatedFileSize = uiState.estimatedFileSize)
-
-        Spacer(Modifier.height(16.dp))
-
-        // Expandable settings header
-        SettingsHeader(
-            expanded = settingsExpanded,
-            onToggle = { settingsExpanded = !settingsExpanded },
-        )
-
-        // Collapsible settings section
-        AnimatedVisibility(
-            visible = settingsExpanded,
-            enter = expandVertically(),
-            exit = shrinkVertically(),
-        ) {
-            Column {
-                Spacer(Modifier.height(16.dp))
-
-                FormatSelector(
-                    selectedFormat = uiState.config.format,
-                    onFormatChange = { onIntent(ShareIntent.SetFormat(it)) },
-                )
-
-                AnimatedVisibility(
-                    visible = uiState.config.format.isLossy,
-                    enter = expandVertically(),
-                    exit = shrinkVertically(),
-                    modifier = Modifier.testTag("quality_slider_section"),
-                ) {
-                    Column {
-                        Spacer(Modifier.height(16.dp))
-
-                        QualitySlider(
-                            quality = uiState.config.quality,
-                            onQualityChange = { onIntent(ShareIntent.SetQuality(it)) },
-                        )
-                    }
-                }
-
-                Spacer(Modifier.height(16.dp))
-
-                SizePresets(
-                    selectedDimension = uiState.config.maxWidth ?: 1080,
-                    onDimensionChange = { onIntent(ShareIntent.SetMaxDimension(it)) },
-                )
-
-                Spacer(Modifier.height(16.dp))
-
-                SettingToggle(
-                    title = stringResource(R.string.share_setting_keep_metadata_title),
-                    description = stringResource(R.string.share_setting_keep_metadata_description),
-                    checked = !uiState.config.stripMetadata,
-                    onCheckedChange = { onIntent(ShareIntent.SetStripMetadata(!it)) },
-                )
-            }
-        }
 
         Spacer(Modifier.height(24.dp))
 
@@ -417,201 +333,6 @@ private fun FileSizeBanner(
             style = MaterialTheme.typography.bodyMedium,
             color = messageColor,
             modifier = modifier.padding(horizontal = 16.dp),
-        )
-    }
-}
-
-@Composable
-private fun SettingsHeader(
-    expanded: Boolean,
-    onToggle: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val toggleDescription = if (expanded) {
-        stringResource(R.string.share_settings_collapse)
-    } else {
-        stringResource(R.string.share_settings_expand)
-    }
-
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .clickable(onClick = onToggle)
-            .heightIn(min = 48.dp)
-            .padding(vertical = 12.dp, horizontal = 4.dp)
-            .semantics { contentDescription = toggleDescription },
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = stringResource(R.string.share_settings_header),
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Icon(
-            imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun FormatSelector(
-    selectedFormat: ImageFormat,
-    onFormatChange: (ImageFormat) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(modifier = modifier) {
-        Text(
-            text = stringResource(R.string.share_format_label),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.semantics { heading() },
-        )
-        Spacer(Modifier.height(8.dp))
-        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-            val formats = listOf(
-                ImageFormat.JPEG to stringResource(R.string.share_format_jpeg_description),
-                ImageFormat.PNG to stringResource(R.string.share_format_png_description),
-                ImageFormat.WEBP to stringResource(R.string.share_format_webp_description),
-            )
-            formats.forEachIndexed { index, (format, label) ->
-                SegmentedButton(
-                    selected = selectedFormat == format,
-                    onClick = { onFormatChange(format) },
-                    shape = SegmentedButtonDefaults.itemShape(index = index, count = formats.size),
-                ) {
-                    Text(label)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun QualitySlider(
-    quality: Int,
-    onQualityChange: (Int) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(modifier = modifier) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Text(
-                text = stringResource(R.string.share_quality_label),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                text = stringResource(R.string.share_quality_percentage, quality),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary,
-            )
-        }
-        Slider(
-            value = quality.toFloat(),
-            onValueChange = { onQualityChange(it.toInt()) },
-            valueRange = 10f..100f,
-            steps = 8,
-        )
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Text(
-                text = stringResource(R.string.share_quality_smaller_file),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                text = stringResource(R.string.share_quality_better_quality),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-}
-
-@Composable
-private fun SizePresets(
-    selectedDimension: Int,
-    onDimensionChange: (Int) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(modifier = modifier) {
-        Text(
-            text = stringResource(R.string.share_size_max_label),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.semantics { heading() },
-        )
-        Spacer(Modifier.height(8.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            val presets = listOf(
-                480 to stringResource(R.string.share_size_preset_small),
-                720 to stringResource(R.string.share_size_preset_medium),
-                1080 to stringResource(R.string.share_size_preset_large),
-                2048 to stringResource(R.string.share_size_preset_original),
-            )
-            presets.forEach { (dimension, label) ->
-                FilterChip(
-                    selected = selectedDimension == dimension,
-                    onClick = { onDimensionChange(dimension) },
-                    label = { Text(label) },
-                    modifier = Modifier.weight(1f),
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun SettingToggle(
-    title: String,
-    description: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val stateText = if (checked) {
-        stringResource(com.adsamcik.riposte.core.ui.R.string.ui_toggle_state_on)
-    } else {
-        stringResource(com.adsamcik.riposte.core.ui.R.string.ui_toggle_state_off)
-    }
-    
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = 12.dp)
-            .semantics(mergeDescendants = true) {
-                role = Role.Switch
-                stateDescription = stateText
-            },
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodyLarge,
-            )
-            Text(
-                text = description,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        Switch(
-            checked = checked,
-            onCheckedChange = onCheckedChange,
         )
     }
 }

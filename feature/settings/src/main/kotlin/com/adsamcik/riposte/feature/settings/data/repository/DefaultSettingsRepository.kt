@@ -76,6 +76,11 @@ class DefaultSettingsRepository @Inject constructor(
         )
     }
 
+    override suspend fun setStripMetadata(strip: Boolean) {
+        val current = preferencesDataStore.sharingPreferences.first()
+        preferencesDataStore.updateSharingPreferences(current.copy(stripMetadata = strip))
+    }
+
     override suspend fun setGridDensity(preference: UserDensityPreference) {
         val current = preferencesDataStore.appPreferences.first()
         preferencesDataStore.updateAppPreferences(current.copy(userDensityPreference = preference))

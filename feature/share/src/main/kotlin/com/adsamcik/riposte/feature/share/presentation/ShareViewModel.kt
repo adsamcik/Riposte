@@ -6,7 +6,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.adsamcik.riposte.core.common.review.UserActionTracker
 import com.adsamcik.riposte.core.model.ImageFormat
-import com.adsamcik.riposte.core.model.ShareConfig
 import com.adsamcik.riposte.feature.share.R
 import com.adsamcik.riposte.feature.share.data.ImageProcessor
 import com.adsamcik.riposte.feature.share.domain.BitmapLoader
@@ -14,8 +13,6 @@ import com.adsamcik.riposte.feature.share.domain.usecase.ShareUseCases
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -42,23 +39,14 @@ class ShareViewModel @Inject constructor(
     private val _effects = Channel<ShareEffect>(Channel.BUFFERED)
     val effects = _effects.receiveAsFlow()
 
-    private var previewUpdateJob: Job? = null
-
     init {
         loadMeme()
     }
 
     fun onIntent(intent: ShareIntent) {
         when (intent) {
-            is ShareIntent.SetFormat -> updateConfig { it.copy(format = intent.format) }
-            is ShareIntent.SetQuality -> updateConfig { it.copy(quality = intent.quality) }
-            is ShareIntent.SetMaxDimension -> updateConfig { 
-                it.copy(maxWidth = intent.dimension, maxHeight = intent.dimension) 
-            }
-            is ShareIntent.SetStripMetadata -> updateConfig { it.copy(stripMetadata = intent.strip) }
             is ShareIntent.Share -> share()
             is ShareIntent.SaveToGallery -> saveToGallery()
-            is ShareIntent.RefreshPreview -> updatePreview()
             is ShareIntent.NavigateBack -> navigateBack()
         }
     }
@@ -91,24 +79,12 @@ class ShareViewModel @Inject constructor(
                 }
 
                 updatePreview()
+                updateEstimatedSize()
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(isLoading = false, errorMessage = e.message)
                 }
             }
-        }
-    }
-
-    private fun updateConfig(transform: (ShareConfig) -> ShareConfig) {
-        _uiState.update { state ->
-            state.copy(config = transform(state.config))
-        }
-        updateEstimatedSize()
-        // Debounced preview refresh to avoid thrashing during slider drags
-        previewUpdateJob?.cancel()
-        previewUpdateJob = viewModelScope.launch {
-            delay(300)
-            updatePreview()
         }
     }
 
@@ -136,8 +112,6 @@ class ShareViewModel @Inject constructor(
                         isProcessing = false,
                     )
                 }
-
-                updateEstimatedSize()
             } catch (e: Exception) {
                 _uiState.update { it.copy(isProcessing = false) }
             }

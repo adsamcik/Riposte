@@ -44,7 +44,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -59,10 +61,12 @@ import com.adsamcik.riposte.feature.settings.R
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.adsamcik.riposte.core.model.DarkMode
+import com.adsamcik.riposte.core.model.ImageFormat
 import com.adsamcik.riposte.core.model.UserDensityPreference
 import com.adsamcik.riposte.feature.settings.presentation.component.ClickableSettingItem
 import com.adsamcik.riposte.feature.settings.presentation.component.DialogSettingItem
 import com.adsamcik.riposte.feature.settings.presentation.component.SettingsSection
+import com.adsamcik.riposte.feature.settings.presentation.component.SliderSettingItem
 import com.adsamcik.riposte.feature.settings.presentation.component.SwitchSettingItem
 import kotlinx.coroutines.flow.collectLatest
 import java.text.DateFormat
@@ -355,6 +359,63 @@ fun SettingsScreen(
             // Sharing Section
             item {
                 SettingsSection(title = stringResource(R.string.settings_section_sharing)) {
+                    DialogSettingItem(
+                        title = stringResource(R.string.settings_share_format_title),
+                        subtitle = stringResource(R.string.settings_share_format_subtitle),
+                        selectedValue = uiState.defaultFormat,
+                        values = listOf(ImageFormat.JPEG, ImageFormat.PNG, ImageFormat.WEBP),
+                        onValueChange = { onIntent(SettingsIntent.SetDefaultFormat(it)) },
+                        valueLabel = { format ->
+                            when (format) {
+                                ImageFormat.JPEG -> stringResource(R.string.settings_share_format_jpeg)
+                                ImageFormat.PNG -> stringResource(R.string.settings_share_format_png)
+                                ImageFormat.WEBP -> stringResource(R.string.settings_share_format_webp)
+                                ImageFormat.GIF -> "GIF"
+                            }
+                        },
+                    )
+
+                    if (uiState.defaultFormat.isLossy) {
+                        var localQuality by remember { mutableFloatStateOf(uiState.defaultQuality.toFloat()) }
+                        LaunchedEffect(uiState.defaultQuality) {
+                            localQuality = uiState.defaultQuality.toFloat()
+                        }
+                        SliderSettingItem(
+                            title = stringResource(R.string.settings_share_quality_title),
+                            subtitle = stringResource(R.string.settings_share_quality_subtitle),
+                            value = localQuality,
+                            onValueChange = { localQuality = it },
+                            onValueChangeFinished = { onIntent(SettingsIntent.SetDefaultQuality(localQuality.toInt())) },
+                            valueRange = 10f..100f,
+                            steps = 8,
+                            valueLabel = { stringResource(R.string.settings_share_quality_value, it.toInt()) },
+                        )
+                    }
+
+                    DialogSettingItem(
+                        title = stringResource(R.string.settings_share_max_size_title),
+                        subtitle = stringResource(R.string.settings_share_max_size_subtitle),
+                        selectedValue = uiState.defaultMaxDimension,
+                        values = listOf(480, 720, 1080, 2048),
+                        onValueChange = { onIntent(SettingsIntent.SetDefaultMaxDimension(it)) },
+                        valueLabel = { dimension ->
+                            when (dimension) {
+                                480 -> stringResource(R.string.settings_share_size_small)
+                                720 -> stringResource(R.string.settings_share_size_medium)
+                                1080 -> stringResource(R.string.settings_share_size_large)
+                                2048 -> stringResource(R.string.settings_share_size_original)
+                                else -> "${dimension}px"
+                            }
+                        },
+                    )
+
+                    SwitchSettingItem(
+                        title = stringResource(R.string.settings_share_strip_metadata_title),
+                        subtitle = stringResource(R.string.settings_share_strip_metadata_subtitle),
+                        checked = !uiState.stripMetadata,
+                        onCheckedChange = { onIntent(SettingsIntent.SetStripMetadata(!it)) },
+                    )
+
                     SwitchSettingItem(
                         title = stringResource(R.string.settings_use_native_share_title),
                         subtitle = stringResource(R.string.settings_use_native_share_subtitle),

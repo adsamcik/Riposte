@@ -109,6 +109,15 @@ class SetDefaultMaxDimensionUseCase @Inject constructor(
 }
 
 /**
+ * Use case for updating strip metadata setting for sharing.
+ */
+class SetStripMetadataUseCase @Inject constructor(
+    private val repository: SettingsRepository,
+) {
+    suspend operator fun invoke(strip: Boolean) = repository.setStripMetadata(strip)
+}
+
+/**
  * Use case for updating grid density preference.
  */
 class SetGridDensityUseCase @Inject constructor(
