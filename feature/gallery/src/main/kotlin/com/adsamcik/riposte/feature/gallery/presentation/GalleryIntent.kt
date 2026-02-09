@@ -95,11 +95,6 @@ sealed interface GalleryIntent {
     data object ClearEmojiFilters : GalleryIntent
 
     /**
-     * Change the sort option.
-     */
-    data class SetSortOption(val option: SortOption) : GalleryIntent
-
-    /**
      * User selected a specific share target from the quick share sheet.
      */
     data class SelectShareTarget(val target: com.adsamcik.riposte.core.model.ShareTarget) : GalleryIntent

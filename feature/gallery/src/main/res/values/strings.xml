@@ -55,18 +55,9 @@
     <!-- Loading State -->
     <string name="gallery_loading_message">Loading memes…</string>
 
-    <!-- Sort Options -->
-    <string name="gallery_sort_recent">Recent</string>
-    <string name="gallery_sort_most_used">Most Used</string>
-    <string name="gallery_sort_emoji_group">Emoji</string>
-    <string name="gallery_cd_sort">Sort</string>
-
     <!-- Error State -->
     <string name="gallery_error_default">Error</string>
     <string name="gallery_action_retry">Retry</string>
-
-    <!-- Share -->
-    <string name="gallery_share_chooser_title">Share Meme</string>
 
     <!-- Meme Detail - Labels -->
     <string name="gallery_detail_label_title">Title</string>
@@ -114,10 +105,6 @@
     <string name="gallery_snackbar_changes_saved">Changes saved</string>
     <string name="gallery_snackbar_save_failed">Failed to save changes</string>
     <string name="gallery_snackbar_unsaved_changes">You have unsaved changes</string>
-
-    <!-- Quick Share Bottom Sheet -->
-    <string name="gallery_quick_share_title">Share to…</string>
-    <string name="gallery_quick_share_more">More</string>
 
     <!-- Detail Action Labels (Edit Mode) -->
     <string name="gallery_detail_action_cancel">Cancel</string>

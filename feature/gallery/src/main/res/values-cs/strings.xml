@@ -52,20 +52,11 @@
     <string name="gallery_empty_title">Zatím žádné memy</string>
     <string name="gallery_empty_message">Importuj nějaké memy a můžeme začít!</string>
 
-    <!-- Sort Options -->
-    <string name="gallery_sort_recent">Nedávné</string>
-    <string name="gallery_sort_most_used">Nejpoužívanější</string>
-    <string name="gallery_sort_emoji_group">Emoji</string>
-    <string name="gallery_cd_sort">Řazení</string>
-
     <!-- Loading State -->
     <string name="gallery_loading_message">Načítám memy…</string>
 
     <!-- Error State -->
     <string name="gallery_error_default">Chyba</string>
-
-    <!-- Share -->
-    <string name="gallery_share_chooser_title">Sdílet meme</string>
 
     <!-- Meme Detail - Labels -->
     <string name="gallery_detail_label_title">Název</string>
@@ -113,10 +104,6 @@
     <string name="gallery_snackbar_changes_saved">Změny uloženy</string>
     <string name="gallery_snackbar_save_failed">Nepodařilo se uložit změny</string>
     <string name="gallery_snackbar_unsaved_changes">Máš neuložené změny</string>
-
-    <!-- Quick Share Bottom Sheet -->
-    <string name="gallery_quick_share_title">Sdílet přes…</string>
-    <string name="gallery_quick_share_more">Více</string>
 
     <!-- Detail Action Labels (Edit Mode) -->
     <string name="gallery_detail_action_cancel">Zrušit</string>

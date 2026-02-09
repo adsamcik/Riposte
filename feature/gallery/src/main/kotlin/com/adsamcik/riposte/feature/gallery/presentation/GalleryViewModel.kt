@@ -29,10 +29,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
@@ -63,20 +60,10 @@ class GalleryViewModel @Inject constructor(
 
     /**
      * Paged memes flow for the "All" filter.
-     * Reacts to sort option changes and re-queries the database accordingly.
+     * Sorted by primary emoji tag for emoji-based grouping.
      */
-    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-    val pagedMemes: Flow<PagingData<Meme>> = _uiState
-        .map { it.sortOption }
-        .distinctUntilChanged()
-        .flatMapLatest { sortOption ->
-            val sortBy = when (sortOption) {
-                SortOption.Recent -> "recent"
-                SortOption.MostUsed -> "most_used"
-                SortOption.EmojiGroup -> "emoji"
-            }
-            getPagedMemesUseCase(viewModelScope, sortBy)
-        }
+    val pagedMemes: Flow<PagingData<Meme>> =
+        getPagedMemesUseCase(viewModelScope, "emoji")
 
     private val _effects = Channel<GalleryEffect>(Channel.BUFFERED)
     val effects = merge(_effects.receiveAsFlow(), searchDelegate.effects)
@@ -118,7 +105,6 @@ class GalleryViewModel @Inject constructor(
             is GalleryIntent.QuickShare -> quickShare(intent.memeId)
             is GalleryIntent.ToggleEmojiFilter -> toggleEmojiFilter(intent.emoji)
             is GalleryIntent.ClearEmojiFilters -> clearEmojiFilters()
-            is GalleryIntent.SetSortOption -> setSortOption(intent.option)
             is GalleryIntent.SelectShareTarget -> selectShareTarget(intent.target)
             is GalleryIntent.QuickShareMore -> quickShareMore()
             is GalleryIntent.DismissQuickShare -> dismissQuickShare()
@@ -391,7 +377,18 @@ class GalleryViewModel @Inject constructor(
         viewModelScope.launch {
             shareTargetRepository.recordShare(target)
             _uiState.update { it.copy(quickShareMeme = null, quickShareTargets = emptyList()) }
-            _effects.send(GalleryEffect.LaunchQuickShare(meme, target))
+            val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                type = meme.mimeType
+                val uri = androidx.core.content.FileProvider.getUriForFile(
+                    context,
+                    "${context.packageName}.fileprovider",
+                    java.io.File(meme.filePath),
+                )
+                putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                setClassName(target.packageName, target.activityName)
+            }
+            _effects.send(GalleryEffect.LaunchQuickShare(intent))
         }
     }
 
@@ -430,14 +427,9 @@ class GalleryViewModel @Inject constructor(
         }
     }
 
-    private fun setSortOption(option: SortOption) {
-        _uiState.update { it.copy(sortOption = option) }
-        recomputeDerivedState()
-    }
-
     /**
      * Recomputes derived state (uniqueEmojis, filteredMemes) from the current memes list.
-     * Called whenever memes, emoji filters, or sort option change.
+     * Called whenever memes or emoji filters change.
      */
     private fun recomputeDerivedState() {
         val state = _uiState.value
@@ -458,22 +450,13 @@ class GalleryViewModel @Inject constructor(
             }
         }
 
-        val sorted = applySortOption(filtered, state.sortOption)
-
         _uiState.update {
             it.copy(
                 uniqueEmojis = uniqueEmojis,
-                filteredMemes = sorted,
+                filteredMemes = sortByEmojiGroup(filtered),
             )
         }
     }
-
-    private fun applySortOption(memes: List<Meme>, sortOption: SortOption): List<Meme> =
-        when (sortOption) {
-            SortOption.Recent -> memes.sortedByDescending { it.importedAt }
-            SortOption.MostUsed -> memes.sortedByDescending { it.useCount }
-            SortOption.EmojiGroup -> sortByEmojiGroup(memes)
-        }
 
     /**
      * Groups memes by primary emoji, orders groups by aggregate engagement score

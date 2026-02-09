@@ -5,18 +5,6 @@ import com.adsamcik.riposte.core.model.SearchResult
 import com.adsamcik.riposte.core.model.UserDensityPreference
 
 /**
- * Sort options for the gallery.
- */
-enum class SortOption {
-    /** Most recently imported first. */
-    Recent,
-    /** Most frequently used first. */
-    MostUsed,
-    /** Grouped by primary emoji tag. */
-    EmojiGroup,
-}
-
-/**
  * Screen mode: browsing (default) or searching (query active).
  */
 enum class ScreenMode {
@@ -95,11 +83,6 @@ data class GalleryUiState(
      * Persisted in ViewModel so they survive navigation/recomposition.
      */
     val activeEmojiFilters: Set<String> = emptySet(),
-
-    /**
-     * Current sort option.
-     */
-    val sortOption: SortOption = SortOption.Recent,
 
     /**
      * Unique emojis with counts, derived from the current meme list.
