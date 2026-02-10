@@ -90,6 +90,7 @@ class XmpMetadataHandler @Inject constructor(
         val createdAtStr = extractValue(xmpData, "$XMP_PREFIX:createdAt")
         val appVersion = extractValue(xmpData, "$XMP_PREFIX:appVersion")
         val source = extractValue(xmpData, "$XMP_PREFIX:source")
+        val basedOn = extractValue(xmpData, "$XMP_PREFIX:basedOn")
         val tags = extractTags(xmpData)
 
         return MemeMetadata(
@@ -100,6 +101,7 @@ class XmpMetadataHandler @Inject constructor(
             createdAt = createdAtStr,
             appVersion = appVersion,
             source = source,
+            basedOn = basedOn,
             tags = tags,
         )
     }
@@ -216,6 +218,11 @@ class XmpMetadataHandler @Inject constructor(
             // Source
             metadata.source?.let { source ->
                 appendLine("""      <$XMP_PREFIX:source>${escapeXml(source)}</$XMP_PREFIX:source>""")
+            }
+            
+            // Based On (cultural source)
+            metadata.basedOn?.let { basedOn ->
+                appendLine("""      <$XMP_PREFIX:basedOn>${escapeXml(basedOn)}</$XMP_PREFIX:basedOn>""")
             }
             
             // Tags

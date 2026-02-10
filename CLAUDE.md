@@ -162,7 +162,7 @@ Pager(config = PagingConfig(pageSize = 20)) { ... }.flow
 - **Modifier parameter**: Always pass `modifier: Modifier = Modifier` as last param in composables
 - **ZIP import**: Validates paths to prevent ZIP Slip attacks (canonical path validation)
 - **Feature module isolation**: Feature modules must NOT depend on other features (use navigation)
-- **Metadata schema**: v1.1 supports `primaryLanguage` and `localizations` for i18n
+- **Metadata schema**: v1.3 supports `primaryLanguage`, `localizations` for i18n, and `basedOn` for meme origin
 - **CLI tool**: Uses GitHub Copilot SDK, requires `copilot auth login` first
 - **Paging for All filter**: Use `usePaging=true` for All memes, regular lists for filtered views
 
@@ -186,7 +186,7 @@ When working in this codebase:
 The Python CLI at `tools/riposte-cli/` annotates images with AI:
 
 - Uses GitHub Copilot SDK (`github-copilot-sdk`)
-- Outputs JSON sidecar files per image (schema v1.1)
+- Outputs JSON sidecar files per image (schema v1.3)
 - Rate limited with exponential backoff
 - Supports `--zip` to create importable ZIP bundles
 - Processing modes: `--force` (overwrite), `--continue` (skip existing), `--dry-run`

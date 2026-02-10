@@ -121,6 +121,14 @@ data class MemeMetadata(
      */
     @SerialName("searchPhrases")
     val searchPhrases: List<String> = emptyList(),
+
+    /**
+     * Cultural source the meme is based on, if recognizable.
+     * Examples: "Drake Hotline Bling", "The Witcher 3", "Star Wars"
+     * Added in schema v1.3.
+     */
+    @SerialName("basedOn")
+    val basedOn: String? = null,
     
     /**
      * BCP 47 language code of the primary content (title, description, tags).
@@ -148,7 +156,7 @@ data class MemeMetadata(
     fun toEmojiTags(): List<EmojiTag> = emojis.map { EmojiTag.fromEmoji(it) }
     
     companion object {
-        const val CURRENT_SCHEMA_VERSION = "1.2"
+        const val CURRENT_SCHEMA_VERSION = "1.3"
         
         // Legacy schema version for backward compatibility
         const val LEGACY_SCHEMA_VERSION = "1.0"

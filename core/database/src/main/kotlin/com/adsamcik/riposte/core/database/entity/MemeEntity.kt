@@ -133,6 +133,12 @@ data class MemeEntity(
      * SHA-256 hash of the imported image file for duplicate detection.
      */
     val fileHash: String? = null,
+
+    /**
+     * Cultural source the meme is based on (e.g., meme template, franchise, game).
+     * Examples: "Drake Hotline Bling", "The Witcher 3", "Star Wars"
+     */
+    val basedOn: String? = null,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -165,6 +171,7 @@ data class MemeEntity(
         if (viewCount != other.viewCount) return false
         if (lastViewedAt != other.lastViewedAt) return false
         if (fileHash != other.fileHash) return false
+        if (basedOn != other.basedOn) return false
 
         return true
     }
@@ -192,6 +199,7 @@ data class MemeEntity(
         result = 31 * result + viewCount
         result = 31 * result + (lastViewedAt?.hashCode() ?: 0)
         result = 31 * result + (fileHash?.hashCode() ?: 0)
+        result = 31 * result + (basedOn?.hashCode() ?: 0)
         return result
     }
 }

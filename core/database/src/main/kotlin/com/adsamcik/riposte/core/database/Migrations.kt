@@ -91,3 +91,15 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
         )
     }
 }
+
+/**
+ * Migration from version 3 to 4:
+ * - Adds basedOn column to memes table for cultural source recognition
+ * - Rebuilds FTS index to include basedOn
+ */
+val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE memes ADD COLUMN basedOn TEXT DEFAULT NULL")
+        db.execSQL("INSERT INTO memes_fts(memes_fts) VALUES('rebuild')")
+    }
+}

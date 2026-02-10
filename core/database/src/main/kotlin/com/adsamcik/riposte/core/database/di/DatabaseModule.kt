@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.adsamcik.riposte.core.database.MIGRATION_1_2
 import com.adsamcik.riposte.core.database.MIGRATION_2_3
+import com.adsamcik.riposte.core.database.MIGRATION_3_4
 import com.adsamcik.riposte.core.database.MemeDatabase
 import com.adsamcik.riposte.core.database.dao.EmojiTagDao
 import com.adsamcik.riposte.core.database.dao.ImportRequestDao
@@ -32,7 +33,7 @@ object DatabaseModule {
             MemeDatabase::class.java,
             "riposte.db"
         )
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
             .build()
     }
 

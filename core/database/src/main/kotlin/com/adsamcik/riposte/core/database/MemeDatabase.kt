@@ -29,7 +29,7 @@ import com.adsamcik.riposte.core.database.entity.ShareTargetEntity
         ImportRequestEntity::class,
         ImportRequestItemEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = true
 )
 abstract class MemeDatabase : RoomDatabase() {

@@ -123,6 +123,7 @@ class ImportRepositoryImpl @Inject constructor(
                 } else null,
                 embedding = null, // Embeddings now stored in separate table
                 fileHash = fileHash,
+                basedOn = metadata?.basedOn,
             )
 
             // Insert meme
@@ -159,6 +160,7 @@ class ImportRepositoryImpl @Inject constructor(
                 description = description,
                 textContent = extractedText,
                 searchPhrases = searchPhrases,
+                basedOn = metadata?.basedOn,
                 isFavorite = false,
             )
 
@@ -345,6 +347,7 @@ class ImportRepositoryImpl @Inject constructor(
                 description = metadata.description ?: existing.description,
                 textContent = metadata.textContent ?: existing.textContent,
                 searchPhrasesJson = searchPhrasesJson,
+                basedOn = metadata.basedOn ?: existing.basedOn,
                 primaryLanguage = metadata.primaryLanguage ?: existing.primaryLanguage,
             )
             memeDao.updateMeme(updated)

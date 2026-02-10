@@ -1,276 +1,142 @@
 # Riposte - GitHub Copilot Instructions
 
-You are an expert Android developer working on **Riposte**, a modern Android application for organizing, searching, and sharing memes with emoji-based categorization and AI-powered search.
+**Riposte** is a multi-module Android app for organizing, searching, and sharing memes with emoji-based categorization and AI-powered semantic search.
 
-## App Purpose & UX Philosophy
+## Build, Test & Lint Commands
 
-**Core mission:** Help users find the right meme from their personal collection and share it — as fast as possible.
-
-**The moment that matters:** The user is mid-conversation in WhatsApp, Telegram, or Discord. They need a meme that matches the mood. They switch to Riposte, find it, share it, and switch back. Every tap, every second of delay, is friction that makes them give up and just type "lol" instead.
-
-**Typical user flow (the "golden path"):**
-1. Chatting → need a meme → open app
-2. Browse gallery / tap an emoji mood / search by description
-3. Long-press → share directly (or tap → preview → share)
-4. Back to chat in under 10 seconds
-
-**Collection size:** 100–500+ memes/stickers. Big enough that browsing alone doesn't scale — users need emoji filtering, search, and smart suggestions to find things fast.
-
-**UX principles (Apple ethos):**
-- **Every feature serves the share moment.** If it doesn't help the user find or share a meme faster, question whether it belongs.
-- **Minimize taps to share.** Long-press = share. No intermediate menus. The fastest path to the primary action.
-- **Emoji-first navigation.** Emojis are the primary taxonomy. Users think "I need something funny" (😂) not "search for keyword 'humor'". Tapping an emoji should immediately show matching memes.
-- **Smart defaults, no configuration needed.** The app should work perfectly on first launch. Settings exist for power users, not as required setup.
-- **Import is setup, not the experience.** Importing/tagging is done once. The daily experience is find → share. Don't optimize import at the expense of the core loop.
-- **Speed is a feature.** Gallery loads instantly, search results appear as you type, sharing starts immediately. Performance is UX.
-
-## Project Overview
-
-This is a multi-module Android application following Clean Architecture with MVI pattern. The app allows users to import images, tag them with emojis, search using AI-powered semantic search, and share memes with customizable settings.
-
-## Tech Stack
-
-| Component | Technology | Version |
-|-----------|------------|---------|
-| Language | Kotlin | 2.3.0 |
-| UI Framework | Jetpack Compose | BOM 2025.12.00 |
-| Architecture | Clean Architecture + MVI | - |
-| Dependency Injection | Hilt | 2.58 |
-| Database | Room + FTS4 | 2.8.4 |
-| Async | Coroutines & Flow | 1.10.1 |
-| Paging | Paging 3 | 3.3.6 |
-| AI/ML | ML Kit + LiteRT | Latest |
-| Image Loading | Coil 3 | 3.3.0 |
-| Navigation | Type-safe Navigation Compose | 2.9.6 |
-| Build System | Gradle Version Catalogs | - |
-| Serialization | Kotlinx Serialization | 1.8.0 |
-
-## Project Structure
-
-```
-riposte/
-├── app/                    # Main application module
-├── core/
-│   ├── common/            # Shared utilities & extensions
-│   ├── database/          # Room database & DAOs
-│   ├── datastore/         # DataStore preferences
-│   ├── ml/                # ML Kit & LiteRT integration
-│   ├── model/             # Domain models
-│   ├── testing/           # Test utilities
-│   └── ui/                # Design system & components
-├── feature/
-│   ├── gallery/           # Meme gallery feature
-│   ├── import/            # Image import feature
-│   ├── search/            # Search feature
-│   ├── share/             # Sharing feature
-│   └── settings/          # Settings feature
-└── baselineprofile/       # Performance profiling
-```
-
-## Coding Standards
-
-### Kotlin Best Practices
-- Use Kotlin idioms: `let`, `apply`, `also`, `run`, `with` appropriately
-- Prefer immutable data structures (`val` over `var`, immutable collections)
-- Use data classes for domain models
-- Use sealed classes/interfaces for state and events
-- Leverage extension functions for cleaner APIs
-- Use inline functions for higher-order functions with lambdas
-- Prefer expression bodies for simple functions
-- Use named arguments for clarity in function calls with multiple parameters
-
-### Compose Guidelines
-- Follow unidirectional data flow (UDF)
-- Keep composables stateless when possible; hoist state
-- Use `remember` and `derivedStateOf` for expensive calculations
-- Prefer `LaunchedEffect` for side effects, `DisposableEffect` for cleanup
-- Use `collectAsStateWithLifecycle` for Flow collection in Compose
-- Create small, focused composables for reusability
-- Use Material 3 components and dynamic colors
-- Follow the slot-based API pattern for flexible composables
-- Annotate composables with `@Composable` and preview functions with `@Preview`
-
-### MVI Architecture
-- **State**: Single immutable UI state class per screen
-- **Intent**: Sealed class representing user actions
-- **ViewModel**: Process intents, update state, emit side effects
-- Use `StateFlow` for UI state, `SharedFlow` for one-time events
-- Keep business logic in Use Cases, not ViewModels
-
-### Clean Architecture Layers
-1. **Presentation** (feature modules): Compose UI, ViewModels
-2. **Domain** (core/model): Use Cases, Domain Models, Repository Interfaces
-3. **Data** (core/database, core/datastore): Repository Implementations, Data Sources
-
-### Dependency Injection (Hilt)
-- Use `@HiltViewModel` for ViewModels
-- Use `@Inject constructor` for dependencies
-- Define modules in `di` package within each module
-- Use `@Singleton` for app-wide singletons
-- Use `@ViewModelScoped` when appropriate
-
-### Room Database
-- Use suspend functions for database operations
-- Use Flow for observable queries
-- Define entities in the database module
-- Use type converters for complex types
-- Follow FTS4 patterns for full-text search
-- **Sanitize FTS queries** - remove special chars (`"*():`), operators (`OR`, `AND`, `NOT`)
-
-### Security Patterns
-- Validate ZIP entry paths before extraction (prevent ZIP Slip)
-- Use canonical path validation for file operations
-- Block cleartext HTTP traffic via `network_security_config.xml`
-- Sanitize user input before FTS MATCH clauses
-
-### Coroutines & Flow
-- Use `viewModelScope` in ViewModels
-- Prefer `Flow` over `suspend` for data streams
-- Use appropriate dispatchers: `IO` for database/network, `Default` for CPU
-- Handle exceptions with `catch` operator or try-catch
-- Use `stateIn` and `shareIn` for sharing flows
-
-### Testing
-- Write unit tests for ViewModels, Use Cases, and Repositories
-- Use MockK for mocking
-- Use Turbine for Flow testing
-- Write UI tests with Compose testing library
-- Use the test doubles in `core/testing`
-
-### Error Handling
-- Use Result or sealed classes for operation outcomes
-- Provide user-friendly error messages
-- Log errors appropriately for debugging
-- Never crash silently; always handle exceptions
-
-### Performance
-- Use baseline profiles for startup optimization
-- Optimize Compose recomposition with stable types
-- Use `@Stable` and `@Immutable` annotations appropriately
-- Lazy load images with Coil
-- Implement pagination for large lists (Paging3 for 1000+ items)
-- Use `PagingSource` from Room, `cachedIn(viewModelScope)` in ViewModel
-
-## Module Dependencies
-
-- Feature modules depend on `core` modules only
-- **Feature modules must NOT depend on other features** (use navigation/intents)
-- Core modules should not depend on feature modules
-- `app` module wires everything together
-- Use API/implementation separation in Gradle
-
-## Code Style
-
-- Follow Kotlin coding conventions
-- Use 4-space indentation
-- Maximum line length: 120 characters
-- Use trailing commas in multi-line declarations
-- Document public APIs with KDoc
-- Use meaningful variable and function names
-
-## Common Patterns
-
-### Screen State
-```kotlin
-data class ScreenUiState(
-    val isLoading: Boolean = false,
-    val items: List<Item> = emptyList(),
-    val error: String? = null
-)
-```
-
-### User Intent
-```kotlin
-sealed interface ScreenIntent {
-    data object LoadData : ScreenIntent
-    data class ItemClicked(val id: String) : ScreenIntent
-}
-```
-
-### ViewModel Pattern
-```kotlin
-@HiltViewModel
-class ScreenViewModel @Inject constructor(
-    private val useCase: UseCase
-) : ViewModel() {
-    private val _uiState = MutableStateFlow(ScreenUiState())
-    val uiState: StateFlow<ScreenUiState> = _uiState.asStateFlow()
-    
-    fun onIntent(intent: ScreenIntent) { /* ... */ }
-}
-```
-
-## DO NOT
-- Don't use deprecated APIs
-- Don't block the main thread
-- Don't hardcode strings (use string resources)
-- Don't ignore lint warnings without justification
-- Don't create God classes/objects
-- Don't mix UI logic with business logic
-- Don't use platform-specific code in shared modules
-- Don't concatenate user input into FTS queries
-- Don't trust file paths from ZIP entries without validation
-- Don't create feature-to-feature dependencies
-
-## CLI Tool (riposte-cli)
-
-The project includes a Python CLI tool at `tools/riposte-cli/` for batch annotating meme images with AI.
-
-### Key Points
-- Uses **GitHub Copilot SDK** (`github-copilot-sdk` package)
-- Requires GitHub Copilot CLI installed and in PATH
-- Authentication: Handled by Copilot CLI (`copilot auth login`)
-- Model: `gpt-4.1` (no provider prefix needed with SDK)
-- Outputs JSON sidecar files matching `MemeMetadata` schema
-- **No fallback behavior** - errors should propagate, not return placeholder data
-- **venv required** - run `scripts/setup.ps1` or `scripts/setup.sh`
-- **Multilingual support** - use `--languages` option (e.g., `--languages en,cs,de`)
-
-### Rate Limiting
-Based on GitHub Copilot SDK best practices (January 2026):
-- **1-second minimum delay** between requests (per SDK documentation)
-- Handles 429 (rate limit), 500, 502, 504 (server errors) with exponential backoff
-- Random jitter (25%) to prevent thundering herd
-- Adaptive throttling based on recent error rate
-- Server errors use shorter backoff (transient failures)
-- Up to 8 automatic retries per image before giving up
-
-### Metadata Schema (v1.1)
-```json
-{
-  "schemaVersion": "1.1",
-  "emojis": ["😂", "🔥"],
-  "title": "Plain descriptive title",
-  "description": "Brief description",
-  "tags": ["tag1", "tag2"],
-  "textContent": "Extracted text from image",
-  "createdAt": "2026-01-25T12:00:00+00:00",
-  "appVersion": "cli-1.0.0",
-  "primaryLanguage": "en",
-  "localizations": {
-    "cs": {
-      "title": "Jednoduchý popisný titul",
-      "description": "Stručný popis",
-      "tags": ["tag1", "tag2"]
-    }
-  }
-}
-```
-
-### Multilingual Usage
 ```bash
-# English only (default)
-meme-cli annotate ./memes
+# Build (standard flavor recommended for development)
+./gradlew :app:assembleStandardDebug
 
-# English primary, with Czech and German translations
-meme-cli annotate ./memes --languages en,cs,de
+# Run all unit tests
+./gradlew test
 
-# Czech only
-meme-cli annotate ./memes --languages cs
+# Run a single module's tests
+./gradlew :feature:gallery:test
+
+# Run a single test class
+./gradlew :feature:gallery:test --tests "*.GalleryViewModelTest"
+
+# Lint
+./gradlew lint
+
+# Static analysis
+./gradlew detekt
+
+# Format code (auto-fixes)
+./gradlew ktlintFormat
+
+# Check formatting without fixing
+./gradlew ktlintCheck
+
+# Test coverage report
+./gradlew testDebugUnitTestCoverage
 ```
 
-### Title Guidelines
-- Use plain, descriptive titles (max 50 chars)
-- Describe what's in the image, not clever wordplay
-- Good: "Person in gamer outfit pointing at camera"
-- Bad: "Gamer Vibes On Point"
+### Build Flavors
+
+The `embedding` product flavor dimension controls which on-device ML models are bundled:
+
+| Flavor | APK Size | Description |
+|--------|----------|-------------|
+| `lite` | ~177 MB | No embedding models, basic search only |
+| `standard` | ~350 MB | Generic model only — **recommended for dev** |
+| `qualcomm` | ~880 MB | Generic + Qualcomm-optimized |
+| `mediatek` | ~555 MB | Generic + MediaTek-optimized |
+| `full` | ~1.3 GB | All models — for testing |
+
+Flavor is part of the task name: `assembleStandardDebug`, `assembleLiteRelease`, etc.
+
+## Architecture
+
+Clean Architecture + MVI, split across multi-module Gradle project (`app/`, `core/`, `feature/`).
+
+### Module Dependency Rules
+
+- **Feature → Core only.** Feature modules must NOT depend on other features.
+- **Core modules must NOT depend on features.**
+- `app` module wires everything together (includes all features + all core modules).
+
+### MVI Per Screen
+
+Each feature screen has three sealed types plus a ViewModel:
+
+- **UiState**: Single immutable data class holding all screen state
+- **Intent**: Sealed interface of user actions
+- **Effect**: Sealed interface for one-time side effects (navigation, snackbars)
+- **ViewModel**: Processes intents → updates `StateFlow<UiState>` + emits effects via `Channel`
+
+Business logic lives in single-purpose **Use Case** classes (`operator fun invoke`), not in ViewModels.
+
+### Navigation
+
+Type-safe routes defined as `@Serializable` objects/data classes in `core/common`. The nav graph lives in `app/.../RiposteNavHost.kt`.
+
+### Pagination
+
+Gallery uses Paging3 for the "All" filter (1000+ memes). DAO returns `PagingSource`, repository wraps in `Pager`, ViewModel caches with `cachedIn(viewModelScope)`, UI collects with `collectAsLazyPagingItems()`. Filtered views use regular lists.
+
+### Search
+
+Three search modes: FTS4 text search, emoji tag filtering, and semantic vector search (MediaPipe/EmbeddingGemma embeddings). Hybrid search implementation in `core/ml/SemanticSearchEngine.kt`.
+
+### WorkManager + Hilt
+
+The app implements `Configuration.Provider` for `HiltWorkerFactory`. Workers use `@HiltWorker` annotation.
+
+## Key Conventions
+
+### Domain-Specific Instruction Files
+
+`.github/instructions/` contains detailed coding guidelines scoped by file pattern. These are automatically applied based on the file being edited:
+
+| File | Applies To |
+|------|-----------|
+| `compose.instructions.md` | UI composables, screen files |
+| `hilt.instructions.md` | DI modules, ViewModels |
+| `room-database.instructions.md` | DAOs, entities, database |
+| `testing.instructions.md` | Test files |
+| `kotlin.instructions.md` | All Kotlin files |
+| `gradle.instructions.md` | Build files, version catalogs |
+
+### Security
+
+- **FTS query sanitization**: Always remove special chars (`"*():`) and operators (`OR`, `AND`, `NOT`) from user input before FTS MATCH clauses. Never concatenate raw input.
+- **ZIP Slip prevention**: Validate ZIP entry paths with canonical path checking before extraction.
+- **No cleartext HTTP**: Enforced via `network_security_config.xml`.
+
+### Gotchas
+
+- Kotlin source dirs use `src/main/kotlin/`, not `src/main/java/`
+- `MemeFtsEntity` must stay in sync with `MemeEntity` field changes
+- When ML model version changes, embeddings are flagged `needsRegeneration`
+- Compose `modifier` parameter: always `modifier: Modifier = Modifier` as the **last** parameter
+- Dependencies go in `gradle/libs.versions.toml` (version catalog), not inline
+- Custom convention plugins live in `buildSrc/` (e.g., `riposte.android.library`, `riposte.android.compose`, `riposte.android.hilt`)
+- Metadata schema is v1.3 — supports `primaryLanguage`, `localizations` for i18n, and `basedOn` for meme origin
+
+### Testing Stack
+
+JUnit 4 + MockK + Turbine (Flow testing) + Truth (assertions). Test utilities and fakes in `core/testing`. Compose UI tests use `createAndroidComposeRule` with `HiltTestRunner`. Backtick test names: `` `when user clicks save then meme is persisted` ``.
+
+## UX Philosophy
+
+The core user flow is: chatting → need a meme → open app → find via emoji/search → share → back to chat **in under 10 seconds**. Every feature decision should serve this share moment. Emojis are the primary taxonomy. Speed is a feature — gallery loads instantly, search results appear as you type.
+
+## CLI Tool (`tools/riposte-cli/`)
+
+Python CLI for batch AI annotation of meme images using GitHub Copilot SDK.
+
+```bash
+cd tools/riposte-cli
+scripts/setup.ps1   # or setup.sh — creates venv
+meme-cli annotate ./memes                        # English only
+meme-cli annotate ./memes --languages en,cs,de   # With translations
+meme-cli annotate ./memes --zip --force           # ZIP bundle, overwrite existing
+```
+
+- Requires `copilot auth login` first
+- Uses `gpt-4.1` model via `github-copilot-sdk`
+- Outputs JSON sidecar files per image (schema v1.3)
+- No fallback behavior — errors propagate, not placeholder data
+- Rate limited: 1s minimum delay between requests, exponential backoff on 429/5xx, up to 8 retries

@@ -40,4 +40,9 @@ data class MemeFtsEntity(
      * Search phrases for FTS search.
      */
     val searchPhrasesJson: String?,
+
+    /**
+     * Cultural source for search (e.g., "Drake Hotline Bling", "The Witcher 3").
+     */
+    val basedOn: String?,
 )

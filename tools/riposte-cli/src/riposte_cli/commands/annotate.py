@@ -157,6 +157,7 @@ def create_sidecar_metadata(
     primary_language: str | None = None,
     localizations: dict[str, dict] | None = None,
     content_hash: str | None = None,
+    based_on: str | None = None,
 ) -> dict:
     """Create a metadata sidecar dictionary.
     
@@ -174,7 +175,7 @@ def create_sidecar_metadata(
         Metadata dictionary matching the schema.
     """
     metadata = {
-        "schemaVersion": "1.2",
+        "schemaVersion": "1.3",
         "emojis": emojis,
         "createdAt": datetime.now(timezone.utc).isoformat(),
         "appVersion": f"cli-{__version__}",
@@ -194,6 +195,8 @@ def create_sidecar_metadata(
         metadata["localizations"] = localizations
     if content_hash:
         metadata["contentHash"] = content_hash
+    if based_on:
+        metadata["basedOn"] = based_on
     
     return metadata
 
@@ -480,6 +483,7 @@ def annotate(
                             primary_language=primary_language,
                             localizations=result.get("localizations"),
                             content_hash=content_hash,
+                            based_on=result.get("basedOn"),
                         )
                         
                         # Write sidecar file
