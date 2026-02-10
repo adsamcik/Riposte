@@ -89,11 +89,7 @@ class ImportViewModel @Inject constructor(
                             isImporting = true,
                             importProgress = completed.toFloat() / total,
                             totalImportCount = total,
-                            statusMessage = context.getString(
-                                R.string.import_status_progress,
-                                completed,
-                                total,
-                            ),
+                            statusMessage = null,
                         )
                     }
                 }

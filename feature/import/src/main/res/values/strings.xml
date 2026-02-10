@@ -47,7 +47,6 @@
     <string name="import_status_checking_duplicates">Checking for duplicates…</string>
     <string name="import_status_extracting">Extracting bundle…</string>
     <string name="import_status_staging">Preparing images…</string>
-    <string name="import_status_progress">%1$d of %2$d</string>
     <string name="import_status_zip_extract_errors">%d file(s) could not be extracted from the bundle</string>
     <string name="import_error_bundle_failed">Failed to import bundle</string>
     <string name="import_error_images_failed">Failed to import images</string>
