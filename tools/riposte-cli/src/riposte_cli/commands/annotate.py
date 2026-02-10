@@ -152,8 +152,8 @@ def create_sidecar_metadata(
     emojis: list[str],
     title: str | None = None,
     description: str | None = None,
-    text_content: str | None = None,
     tags: list[str] | None = None,
+    search_phrases: list[str] | None = None,
     primary_language: str | None = None,
     localizations: dict[str, dict] | None = None,
     content_hash: str | None = None,
@@ -164,8 +164,8 @@ def create_sidecar_metadata(
         emojis: List of emoji characters.
         title: Optional title.
         description: Optional description.
-        text_content: Optional extracted text content.
         tags: Optional list of tags.
+        search_phrases: Optional list of natural language search phrases.
         primary_language: BCP 47 language code of the primary content.
         localizations: Optional dict of language code -> localized content.
         content_hash: SHA-256 hash of the image content for deduplication.
@@ -174,7 +174,7 @@ def create_sidecar_metadata(
         Metadata dictionary matching the schema.
     """
     metadata = {
-        "schemaVersion": "1.1",
+        "schemaVersion": "1.2",
         "emojis": emojis,
         "createdAt": datetime.now(timezone.utc).isoformat(),
         "appVersion": f"cli-{__version__}",
@@ -184,10 +184,10 @@ def create_sidecar_metadata(
         metadata["title"] = title
     if description:
         metadata["description"] = description
-    if text_content:
-        metadata["textContent"] = text_content
     if tags:
         metadata["tags"] = tags
+    if search_phrases:
+        metadata["searchPhrases"] = search_phrases
     if primary_language:
         metadata["primaryLanguage"] = primary_language
     if localizations:
@@ -475,8 +475,8 @@ def annotate(
                             emojis=result["emojis"],
                             title=result.get("title"),
                             description=result.get("description"),
-                            text_content=result.get("textContent"),
                             tags=result.get("tags"),
+                            search_phrases=result.get("searchPhrases"),
                             primary_language=primary_language,
                             localizations=result.get("localizations"),
                             content_hash=content_hash,

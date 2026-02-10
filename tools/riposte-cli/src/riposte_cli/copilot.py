@@ -43,18 +43,18 @@ class ServerError(CopilotError):
 # System prompt for meme analysis (single language)
 SYSTEM_PROMPT = """You are a meme analysis assistant. Analyze the provided meme image and return a JSON object with the following fields:
 
-1. "emojis": An array of 1-5 Unicode emoji characters that best represent the mood, emotion, or theme of the meme.
+1. "emojis": An array of 1-8 Unicode emoji characters that best represent the mood, emotion, or theme of the meme. Order from most significant/relevant to least significant. All emojis should be relevant.
 
 2. "title": A simple, descriptive title that plainly describes the meme content (max 50 characters). Don't try to be clever or catchy - just describe what's in the image. Examples: "Confused cat at computer", "Drake pointing meme", "Distracted boyfriend".
 
-3. "description": A brief description of what's happening in the meme (max 200 characters).
+3. "description": A thorough description covering: what's literally in the image, the mood or emotion it conveys, and any themes or cultural references it relates to (e.g., programming, Witcher, Harry Potter, GTA, science, etc.). If there is text visible in the image, incorporate it naturally into your description.
 
-4. "textContent": Any text visible in the meme image, extracted verbatim. If no text, omit this field.
+4. "tags": An array of 8-15 lowercase keywords covering: subject matter, emotion/mood, synonyms, common slang, meme format name if recognizable, and related cultural references.
 
-5. "tags": An array of 3-8 lowercase keywords/tags for searching.
+5. "searchPhrases": An array of 2-3 short natural language phrases someone might type when searching for this meme.
 
 Respond ONLY with valid JSON, no markdown or explanation. Example:
-{"emojis": ["😂", "🐱"], "title": "Confused cat at computer", "description": "A cat staring at code with a confused expression", "textContent": "When the code works but you don't know why", "tags": ["cat", "programming", "confused", "funny"]}"""
+{"emojis": ["😂", "🐱", "💻", "🤷"], "title": "Confused cat at computer", "description": "A cat sitting at a desk staring at a screen full of code with a bewildered expression. The text reads 'When the code works but you don't know why.' Captures the mass confusion and accidental success familiar to every programmer.", "tags": ["cat", "programming", "confused", "funny", "code", "developer", "it works", "bugs", "software", "humor", "relatable", "reaction"], "searchPhrases": ["that feeling when the code works", "confused programmer cat", "code works no idea why"]}"""
 
 
 def get_multilingual_system_prompt(languages: list[str]) -> str:
@@ -93,18 +93,18 @@ def get_multilingual_system_prompt(languages: list[str]) -> str:
         # Single language - use the standard prompt with language specification
         return f"""You are a meme analysis assistant. Analyze the provided meme image and return a JSON object with the following fields.
 
-IMPORTANT: All text fields (title, description, tags) must be in {primary_name} ({primary_lang}).
+IMPORTANT: All text fields (title, description, tags, searchPhrases) must be in {primary_name} ({primary_lang}).
 
 Fields:
-1. "emojis": An array of 1-5 Unicode emoji characters that best represent the mood, emotion, or theme of the meme.
+1. "emojis": An array of 1-8 Unicode emoji characters that best represent the mood, emotion, or theme of the meme. Order from most significant/relevant to least significant. All emojis should be relevant.
 
 2. "title": A simple, descriptive title in {primary_name} that plainly describes the meme content (max 50 characters). Don't try to be clever or catchy - just describe what's in the image.
 
-3. "description": A brief description in {primary_name} of what's happening in the meme (max 200 characters).
+3. "description": A thorough description in {primary_name} covering: what's literally in the image, the mood or emotion it conveys, and any themes or cultural references it relates to (e.g., programming, Witcher, Harry Potter, GTA, science, etc.). If there is text visible in the image, incorporate it naturally into your description.
 
-4. "textContent": Any text visible in the meme image, extracted verbatim (keep original language). If no text, omit this field.
+4. "tags": An array of 8-15 lowercase keywords/tags in {primary_name} covering: subject matter, emotion/mood, synonyms, common slang, meme format name if recognizable, and related cultural references.
 
-5. "tags": An array of 3-8 lowercase keywords/tags in {primary_name} for searching.
+5. "searchPhrases": An array of 2-3 short natural language phrases in {primary_name} someone might type when searching for this meme.
 
 Respond ONLY with valid JSON, no markdown or explanation."""
     
@@ -118,20 +118,20 @@ PRIMARY LANGUAGE: {primary_name} ({primary_lang})
 ADDITIONAL LANGUAGES: {additional_desc}
 
 Fields:
-1. "emojis": An array of 1-5 Unicode emoji characters that best represent the mood, emotion, or theme of the meme.
+1. "emojis": An array of 1-8 Unicode emoji characters that best represent the mood, emotion, or theme of the meme. Order from most significant/relevant to least significant. All emojis should be relevant.
 
 2. "title": A simple, descriptive title in {primary_name} that plainly describes the meme content (max 50 characters). Don't try to be clever or catchy - just describe what's in the image.
 
-3. "description": A brief description in {primary_name} of what's happening in the meme (max 200 characters).
+3. "description": A thorough description in {primary_name} covering: what's literally in the image, the mood or emotion it conveys, and any themes or cultural references it relates to (e.g., programming, Witcher, Harry Potter, GTA, science, etc.). If there is text visible in the image, incorporate it naturally into your description.
 
-4. "textContent": Any text visible in the meme image, extracted verbatim (keep original language). If no text, omit this field.
+4. "tags": An array of 8-15 lowercase keywords/tags in {primary_name} covering: subject matter, emotion/mood, synonyms, common slang, meme format name if recognizable, and related cultural references.
 
-5. "tags": An array of 3-8 lowercase keywords/tags in {primary_name} for searching.
+5. "searchPhrases": An array of 2-3 short natural language phrases in {primary_name} someone might type when searching for this meme.
 
-6. "localizations": An object containing translations for each additional language. Each key is a language code, and each value is an object with "title", "description", and "tags" fields in that language.
+6. "localizations": An object containing translations for each additional language. Each key is a language code, and each value is an object with "title", "description", "tags", and "searchPhrases" fields in that language.
 
 Respond ONLY with valid JSON, no markdown or explanation. Example with Czech and German localizations:
-{{"emojis": ["😂", "🐱"], "title": "Confused cat at computer", "description": "A cat staring at code with a confused expression", "textContent": "When the code works", "tags": ["cat", "programming", "confused"], "localizations": {{"cs": {{"title": "Zmatená kočka u počítače", "description": "Kočka zírá na kód se zmateným výrazem", "tags": ["kočka", "programování", "zmatený"]}}, "de": {{"title": "Verwirrte Katze am Computer", "description": "Eine Katze starrt verwirrt auf Code", "tags": ["katze", "programmierung", "verwirrt"]}}}}}}"""
+{{"emojis": ["😂", "🐱", "💻", "🤷"], "title": "Confused cat at computer", "description": "A cat sitting at a desk staring at a screen full of code with a bewildered expression. The text reads 'When the code works but you don't know why.' Captures the confusion and accidental success familiar to every programmer.", "tags": ["cat", "programming", "confused", "funny", "code", "developer", "it works", "bugs", "software", "humor", "relatable", "reaction"], "searchPhrases": ["that feeling when the code works", "confused programmer cat", "code works no idea why"], "localizations": {{"cs": {{"title": "Zmatená kočka u počítače", "description": "Kočka sedí u stolu a zírá na obrazovku plnou kódu se zmateným výrazem. Text říká 'Když kód funguje, ale nevíš proč.' Zachycuje zmatek a náhodný úspěch známý každému programátorovi.", "tags": ["kočka", "programování", "zmatený", "vtipné", "kód", "vývojář", "funguje to", "chyby", "software", "humor", "relatable", "reakce"], "searchPhrases": ["když kód funguje", "zmatený programátor kočka", "kód funguje nevím proč"]}}, "de": {{"title": "Verwirrte Katze am Computer", "description": "Eine Katze sitzt am Schreibtisch und starrt verwirrt auf einen Bildschirm voller Code. Der Text lautet 'Wenn der Code funktioniert, aber du nicht weißt warum.' Fängt die Verwirrung und den zufälligen Erfolg ein, den jeder Programmierer kennt.", "tags": ["katze", "programmierung", "verwirrt", "lustig", "code", "entwickler", "es funktioniert", "bugs", "software", "humor", "nachvollziehbar", "reaktion"], "searchPhrases": ["wenn der Code funktioniert", "verwirrte Programmierer Katze", "Code funktioniert keine Ahnung warum"]}}}}}}"""
 
 
 @dataclass
@@ -308,7 +308,7 @@ async def analyze_image_async(
             If None or empty, defaults to English only.
         
     Returns:
-        Dictionary with emojis, title, description, textContent, tags,
+        Dictionary with emojis, title, description, tags, searchPhrases,
         and optionally localizations for additional languages.
         
     Raises:
@@ -468,7 +468,7 @@ def analyze_image(
         languages: List of BCP 47 language codes for multilingual output.
         
     Returns:
-        Dictionary with emojis, title, description, textContent, tags,
+        Dictionary with emojis, title, description, tags, searchPhrases,
         and optionally localizations for additional languages.
         
     Raises:
