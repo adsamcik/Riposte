@@ -32,6 +32,13 @@
     <!-- Search Section -->
     <string name="settings_semantic_search_title">Semantic Search</string>
     <string name="settings_semantic_search_subtitle">AI-powered search for similar memes. Uses additional storage for AI model</string>
+    <string name="settings_embedding_model_title">Embedding Model</string>
+    <string name="settings_embedding_model_subtitle">%1$d-dimensional embeddings</string>
+    <string name="settings_embedding_model_version">%1$s v%2$s</string>
+    <string name="settings_search_index_title">Search Index</string>
+    <string name="settings_search_index_complete">All %1$d memes indexed</string>
+    <string name="settings_search_index_progress">%1$d of %2$d memes indexed</string>
+    <string name="settings_search_index_regenerating">%1$d of %2$d memes indexed, %3$d regenerating</string>
     <string name="settings_search_history_title">Search History</string>
     <string name="settings_search_history_subtitle">Save recent searches</string>
     

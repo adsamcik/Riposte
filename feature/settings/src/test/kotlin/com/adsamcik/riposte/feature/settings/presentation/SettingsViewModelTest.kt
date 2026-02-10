@@ -15,6 +15,7 @@ import com.adsamcik.riposte.feature.settings.domain.usecase.ExportPreferencesUse
 import com.adsamcik.riposte.feature.settings.domain.usecase.GetAppPreferencesUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.GetSharingPreferencesUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.ImportPreferencesUseCase
+import com.adsamcik.riposte.feature.settings.domain.usecase.ObserveEmbeddingStatisticsUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetDarkModeUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetDefaultFormatUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetUseNativeShareDialogUseCase
@@ -71,6 +72,7 @@ class SettingsViewModelTest {
     private lateinit var setGridDensityUseCase: SetGridDensityUseCase
     private lateinit var exportPreferencesUseCase: ExportPreferencesUseCase
     private lateinit var importPreferencesUseCase: ImportPreferencesUseCase
+    private lateinit var observeEmbeddingStatisticsUseCase: ObserveEmbeddingStatisticsUseCase
 
     private val appPreferencesFlow = MutableStateFlow(createDefaultAppPreferences())
     private val sharingPreferencesFlow = MutableStateFlow(createDefaultSharingPreferences())
@@ -111,9 +113,11 @@ class SettingsViewModelTest {
         setGridDensityUseCase = mockk(relaxed = true)
         exportPreferencesUseCase = mockk(relaxed = true)
         importPreferencesUseCase = mockk(relaxed = true)
+        observeEmbeddingStatisticsUseCase = mockk(relaxed = true)
 
         every { getAppPreferencesUseCase() } returns appPreferencesFlow
         every { getSharingPreferencesUseCase() } returns sharingPreferencesFlow
+        every { observeEmbeddingStatisticsUseCase() } returns kotlinx.coroutines.flow.emptyFlow()
     }
 
     @After
@@ -139,6 +143,7 @@ class SettingsViewModelTest {
             setGridDensityUseCase = setGridDensityUseCase,
             exportPreferencesUseCase = exportPreferencesUseCase,
             importPreferencesUseCase = importPreferencesUseCase,
+            observeEmbeddingStatisticsUseCase = observeEmbeddingStatisticsUseCase,
             ioDispatcher = testDispatcher,
         )
     }
@@ -381,7 +386,8 @@ class SettingsViewModelTest {
             is SettingsIntent.DismissImportConfirmDialog,
             is SettingsIntent.OpenLicenses,
             is SettingsIntent.OpenPrivacyPolicy,
-            is SettingsIntent.SetUseNativeShareDialog -> false
+            is SettingsIntent.SetUseNativeShareDialog,
+            is SettingsIntent.SetStripMetadata -> false
         }
         assertThat(isKeepMetadata).isFalse()
     }

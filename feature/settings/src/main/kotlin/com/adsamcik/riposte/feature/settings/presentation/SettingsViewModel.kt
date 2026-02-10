@@ -15,6 +15,7 @@ import com.adsamcik.riposte.feature.settings.domain.usecase.ExportPreferencesUse
 import com.adsamcik.riposte.feature.settings.domain.usecase.GetAppPreferencesUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.GetSharingPreferencesUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.ImportPreferencesUseCase
+import com.adsamcik.riposte.feature.settings.domain.usecase.ObserveEmbeddingStatisticsUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetDarkModeUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetDefaultFormatUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetUseNativeShareDialogUseCase
@@ -65,6 +66,7 @@ class SettingsViewModel @Inject constructor(
     private val setGridDensityUseCase: SetGridDensityUseCase,
     private val exportPreferencesUseCase: ExportPreferencesUseCase,
     private val importPreferencesUseCase: ImportPreferencesUseCase,
+    private val observeEmbeddingStatisticsUseCase: ObserveEmbeddingStatisticsUseCase,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) : ViewModel() {
 
@@ -87,6 +89,7 @@ class SettingsViewModel @Inject constructor(
         loadSettings()
         calculateCacheSize()
         loadCurrentLanguage()
+        observeEmbeddingStatistics()
     }
 
     private fun loadCurrentLanguage() {
@@ -97,6 +100,29 @@ class SettingsViewModel @Inject constructor(
                 currentLanguage = currentCode,
                 availableLanguages = supportedLanguages,
             )
+        }
+    }
+
+    private fun observeEmbeddingStatistics() {
+        viewModelScope.launch {
+            observeEmbeddingStatisticsUseCase()
+                .collect { statusInfo ->
+                    val stats = statusInfo.statistics
+                    val modelInfo = statusInfo.modelInfo
+                    _uiState.update {
+                        it.copy(
+                            embeddingSearchState = EmbeddingSearchState(
+                                modelName = modelInfo.name,
+                                modelVersion = modelInfo.version.substringAfter(":"),
+                                dimension = modelInfo.dimension,
+                                indexedCount = stats.validEmbeddingCount,
+                                totalCount = stats.validEmbeddingCount + stats.pendingEmbeddingCount,
+                                pendingCount = stats.pendingEmbeddingCount,
+                                regenerationCount = stats.regenerationNeededCount,
+                            ),
+                        )
+                    }
+                }
         }
     }
 

@@ -25,9 +25,11 @@ import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Hub
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Policy
 import androidx.compose.material.icons.filled.Psychology
+import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
@@ -346,6 +348,53 @@ fun SettingsScreen(
                         icon = Icons.Default.Psychology,
                     )
 
+                    if (uiState.enableSemanticSearch) {
+                        val embeddingState = uiState.embeddingSearchState
+                        if (embeddingState != null) {
+                            ClickableSettingItem(
+                                title = stringResource(R.string.settings_embedding_model_title),
+                                subtitle = stringResource(
+                                    R.string.settings_embedding_model_subtitle,
+                                    embeddingState.dimension,
+                                ),
+                                onClick = { },
+                                icon = Icons.Default.Hub,
+                                showChevron = false,
+                                trailingText = stringResource(
+                                    R.string.settings_embedding_model_version,
+                                    embeddingState.modelName,
+                                    embeddingState.modelVersion,
+                                ),
+                            )
+
+                            ClickableSettingItem(
+                                title = stringResource(R.string.settings_search_index_title),
+                                subtitle = if (embeddingState.isFullyIndexed) {
+                                    stringResource(
+                                        R.string.settings_search_index_complete,
+                                        embeddingState.indexedCount,
+                                    )
+                                } else if (embeddingState.regenerationCount > 0) {
+                                    stringResource(
+                                        R.string.settings_search_index_regenerating,
+                                        embeddingState.indexedCount,
+                                        embeddingState.totalCount,
+                                        embeddingState.regenerationCount,
+                                    )
+                                } else {
+                                    stringResource(
+                                        R.string.settings_search_index_progress,
+                                        embeddingState.indexedCount,
+                                        embeddingState.totalCount,
+                                    )
+                                },
+                                onClick = { },
+                                icon = Icons.Default.Storage,
+                                showChevron = false,
+                            )
+                        }
+                    }
+
                     SwitchSettingItem(
                         title = stringResource(R.string.settings_search_history_title),
                         subtitle = stringResource(R.string.settings_search_history_subtitle),
@@ -524,6 +573,15 @@ private fun SettingsScreenPreview() {
             uiState = SettingsUiState(
                 cacheSize = "24.5 MB",
                 appVersion = "1.0.0 (42)",
+                embeddingSearchState = EmbeddingSearchState(
+                    modelName = "embeddinggemma",
+                    modelVersion = "1.0.0",
+                    dimension = 768,
+                    indexedCount = 42,
+                    totalCount = 50,
+                    pendingCount = 8,
+                    regenerationCount = 0,
+                ),
             ),
             onIntent = {},
             onNavigateBack = {},

@@ -31,6 +31,13 @@
     <!-- Search Section -->
     <string name="settings_semantic_search_title">Sémantické vyhledávání</string>
     <string name="settings_semantic_search_subtitle">AI vyhledávání podobných memů. Vyžaduje další úložiště pro AI model</string>
+    <string name="settings_embedding_model_title">Model embeddingů</string>
+    <string name="settings_embedding_model_subtitle">%1$d-dimenzionální embeddingy</string>
+    <string name="settings_embedding_model_version">%1$s v%2$s</string>
+    <string name="settings_search_index_title">Index vyhledávání</string>
+    <string name="settings_search_index_complete">Všech %1$d memů indexováno</string>
+    <string name="settings_search_index_progress">%1$d z %2$d memů indexováno</string>
+    <string name="settings_search_index_regenerating">%1$d z %2$d memů indexováno, %3$d se regeneruje</string>
     <string name="settings_search_history_title">Historie vyhledávání</string>
     <string name="settings_search_history_subtitle">Ukládat poslední hledání</string>
     

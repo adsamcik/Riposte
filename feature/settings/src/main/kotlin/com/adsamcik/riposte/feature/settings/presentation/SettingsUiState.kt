@@ -18,6 +18,22 @@ data class AppLanguage(
 )
 
 /**
+ * State of the embedding search index.
+ */
+data class EmbeddingSearchState(
+    val modelName: String,
+    val modelVersion: String,
+    val dimension: Int,
+    val indexedCount: Int,
+    val totalCount: Int,
+    val pendingCount: Int,
+    val regenerationCount: Int,
+) {
+    val isFullyIndexed: Boolean
+        get() = pendingCount == 0 && regenerationCount == 0
+}
+
+/**
  * UI state for the Settings screen.
  */
 data class SettingsUiState(
@@ -42,6 +58,7 @@ data class SettingsUiState(
     // Search
     val enableSemanticSearch: Boolean = true,
     val saveSearchHistory: Boolean = true,
+    val embeddingSearchState: EmbeddingSearchState? = null,
 
     // Storage
     val cacheSize: String = "0 B",

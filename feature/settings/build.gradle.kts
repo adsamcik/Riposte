@@ -30,6 +30,7 @@ dependencies {
     implementation(project(":core:model"))
     implementation(project(":core:ui"))
     implementation(project(":core:datastore"))
+    implementation(project(":core:ml"))
 
     // Serialization
     implementation(libs.kotlinx.serialization.json)

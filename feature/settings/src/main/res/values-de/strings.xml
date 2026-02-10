@@ -31,6 +31,13 @@
     <!-- Search Section -->
     <string name="settings_semantic_search_title">Semantische Suche</string>
     <string name="settings_semantic_search_subtitle">KI-gestützte Suche nach ähnlichen Memes. Benötigt zusätzlichen Speicher für KI-Modell</string>
+    <string name="settings_embedding_model_title">Embedding-Modell</string>
+    <string name="settings_embedding_model_subtitle">%1$d-dimensionale Embeddings</string>
+    <string name="settings_embedding_model_version">%1$s v%2$s</string>
+    <string name="settings_search_index_title">Suchindex</string>
+    <string name="settings_search_index_complete">Alle %1$d Memes indexiert</string>
+    <string name="settings_search_index_progress">%1$d von %2$d Memes indexiert</string>
+    <string name="settings_search_index_regenerating">%1$d von %2$d Memes indexiert, %3$d werden regeneriert</string>
     <string name="settings_search_history_title">Suchverlauf</string>
     <string name="settings_search_history_subtitle">Letzte Suchen speichern</string>
     
