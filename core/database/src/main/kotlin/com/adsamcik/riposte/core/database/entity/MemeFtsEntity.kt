@@ -34,5 +34,10 @@ data class MemeFtsEntity(
     /**
      * OCR-extracted text for content search.
      */
-    val textContent: String?
+    val textContent: String?,
+
+    /**
+     * Search phrases for FTS search.
+     */
+    val searchPhrasesJson: String?,
 )

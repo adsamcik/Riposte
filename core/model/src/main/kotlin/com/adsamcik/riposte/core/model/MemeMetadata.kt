@@ -32,6 +32,12 @@ data class LocalizedContent(
      */
     @SerialName("tags")
     val tags: List<String> = emptyList(),
+
+    /**
+     * Localized natural language search phrases.
+     */
+    @SerialName("searchPhrases")
+    val searchPhrases: List<String> = emptyList(),
 )
 
 /**
@@ -108,6 +114,13 @@ data class MemeMetadata(
      */
     @SerialName("textContent")
     val textContent: String? = null,
+
+    /**
+     * Natural language search phrases someone might type to find this meme.
+     * Added in schema v1.2.
+     */
+    @SerialName("searchPhrases")
+    val searchPhrases: List<String> = emptyList(),
     
     /**
      * BCP 47 language code of the primary content (title, description, tags).
@@ -135,7 +148,7 @@ data class MemeMetadata(
     fun toEmojiTags(): List<EmojiTag> = emojis.map { EmojiTag.fromEmoji(it) }
     
     companion object {
-        const val CURRENT_SCHEMA_VERSION = "1.1"
+        const val CURRENT_SCHEMA_VERSION = "1.2"
         
         // Legacy schema version for backward compatibility
         const val LEGACY_SCHEMA_VERSION = "1.0"

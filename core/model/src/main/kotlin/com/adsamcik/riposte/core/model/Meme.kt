@@ -19,6 +19,7 @@ data class Meme(
     val title: String? = null,
     val description: String? = null,
     val textContent: String? = null,
+    val searchPhrases: List<String> = emptyList(),
     val isFavorite: Boolean = false,
     val createdAt: Long = importedAt,
     val useCount: Int = 0,

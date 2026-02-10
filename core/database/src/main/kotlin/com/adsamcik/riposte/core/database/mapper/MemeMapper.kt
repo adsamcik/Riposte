@@ -35,6 +35,7 @@ object MemeMapper {
             title = title,
             description = description,
             textContent = textContent,
+            searchPhrases = parseSearchPhrasesJson(searchPhrasesJson),
             isFavorite = isFavorite,
             createdAt = createdAt,
             useCount = useCount,
@@ -62,6 +63,7 @@ object MemeMapper {
             title = title,
             description = description,
             textContent = textContent,
+            searchPhrasesJson = serializeSearchPhrases(searchPhrases),
             isFavorite = isFavorite,
             createdAt = createdAt,
             useCount = useCount,
@@ -130,5 +132,25 @@ object MemeMapper {
     private fun serializeLocalizations(localizations: Map<String, LocalizedContent>): String? {
         if (localizations.isEmpty()) return null
         return json.encodeToString(localizations)
+    }
+
+    /**
+     * Parses search phrases from JSON string.
+     */
+    private fun parseSearchPhrasesJson(jsonString: String?): List<String> {
+        if (jsonString.isNullOrBlank()) return emptyList()
+        return try {
+            json.decodeFromString(jsonString)
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    /**
+     * Serializes search phrases to JSON string.
+     */
+    private fun serializeSearchPhrases(searchPhrases: List<String>): String? {
+        if (searchPhrases.isEmpty()) return null
+        return json.encodeToString(searchPhrases)
     }
 }

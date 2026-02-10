@@ -77,7 +77,13 @@ data class MemeEntity(
      * OCR-extracted text content from the image.
      */
     val textContent: String? = null,
-    
+
+    /**
+     * JSON array of natural language search phrases.
+     * Example: ["that feeling when code works", "confused programmer"]
+     */
+    val searchPhrasesJson: String? = null,
+
     /**
      * Serialized embedding vector for semantic search (FloatArray as ByteArray).
      */
@@ -146,6 +152,7 @@ data class MemeEntity(
         if (title != other.title) return false
         if (description != other.description) return false
         if (textContent != other.textContent) return false
+        if (searchPhrasesJson != other.searchPhrasesJson) return false
         if (embedding != null) {
             if (other.embedding == null) return false
             if (!embedding.contentEquals(other.embedding)) return false
@@ -175,6 +182,7 @@ data class MemeEntity(
         result = 31 * result + (title?.hashCode() ?: 0)
         result = 31 * result + (description?.hashCode() ?: 0)
         result = 31 * result + (textContent?.hashCode() ?: 0)
+        result = 31 * result + (searchPhrasesJson?.hashCode() ?: 0)
         result = 31 * result + (embedding?.contentHashCode() ?: 0)
         result = 31 * result + isFavorite.hashCode()
         result = 31 * result + createdAt.hashCode()
