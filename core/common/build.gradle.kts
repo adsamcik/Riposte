@@ -29,6 +29,9 @@ dependencies {
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
 
+    // Lifecycle (ProcessLifecycleOwner for app foreground/background tracking)
+    implementation(libs.lifecycle.process)
+
     // Coroutines
     implementation(libs.coroutines.core)
     implementation(libs.coroutines.android)

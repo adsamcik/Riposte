@@ -18,4 +18,11 @@ object AppConstants {
      * Metadata schema version for XMP and sidecar files.
      */
     const val METADATA_SCHEMA_VERSION = "1.1"
+
+    /**
+     * Unique work name for the meme import WorkManager worker.
+     * Shared across modules so Gallery can observe import status
+     * without depending on the import feature.
+     */
+    const val IMPORT_WORK_NAME = "meme_import_work"
 }

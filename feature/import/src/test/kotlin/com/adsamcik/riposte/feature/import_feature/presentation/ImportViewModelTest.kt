@@ -18,6 +18,7 @@ import com.adsamcik.riposte.feature.import_feature.domain.usecase.UpdateMemeMeta
 import com.adsamcik.riposte.feature.import_feature.data.worker.ImportStagingManager
 import com.adsamcik.riposte.core.database.dao.ImportRequestDao
 import androidx.work.Configuration
+import org.robolectric.annotation.Config
 import androidx.work.testing.WorkManagerTestInitHelper
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -41,6 +42,7 @@ import com.google.common.truth.Truth.assertThat
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
+@Config(manifest = Config.NONE)
 class ImportViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
@@ -55,17 +57,28 @@ class ImportViewModelTest {
     private lateinit var updateMemeMetadataUseCase: UpdateMemeMetadataUseCase
     private lateinit var cleanupExtractedFilesUseCase: CleanupExtractedFilesUseCase
     private lateinit var preferencesDataStore: PreferencesDataStore
+    private lateinit var importStagingManager: ImportStagingManager
+    private lateinit var importRequestDao: ImportRequestDao
     private lateinit var viewModel: ImportViewModel
 
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
-        context = RuntimeEnvironment.getApplication()
 
+        // Initialize WorkManager with real Robolectric context
+        val realContext = RuntimeEnvironment.getApplication()
         val config = Configuration.Builder()
             .setMinimumLoggingLevel(android.util.Log.DEBUG)
+            .setExecutor(java.util.concurrent.Executors.newSingleThreadExecutor())
             .build()
-        WorkManagerTestInitHelper.initializeTestWorkManager(context, config)
+        WorkManagerTestInitHelper.initializeTestWorkManager(realContext, config)
+
+        // Use relaxed mock for ViewModel context (getString returns empty strings)
+        context = mockk(relaxed = true) {
+            // Delegate WorkManager-related calls to real context
+            every { applicationContext } returns realContext
+            every { packageName } returns realContext.packageName
+        }
 
         importImageUseCase = mockk(relaxed = true)
         suggestEmojisUseCase = mockk(relaxed = true)
@@ -78,6 +91,10 @@ class ImportViewModelTest {
         preferencesDataStore = mockk(relaxed = true) {
             every { hasShownEmojiTip } returns flowOf(false)
         }
+        importStagingManager = mockk(relaxed = true) {
+            coEvery { stageImages(any()) } returns java.io.File(System.getProperty("java.io.tmpdir"), "staging")
+        }
+        importRequestDao = mockk(relaxed = true)
         viewModel = ImportViewModel(
             context = context,
             importImageUseCase = importImageUseCase,
@@ -90,8 +107,8 @@ class ImportViewModelTest {
             cleanupExtractedFilesUseCase = cleanupExtractedFilesUseCase,
             userActionTracker = mockk(relaxed = true),
             preferencesDataStore = preferencesDataStore,
-            importStagingManager = mockk(relaxed = true),
-            importRequestDao = mockk(relaxed = true),
+            importStagingManager = importStagingManager,
+            importRequestDao = importRequestDao,
         )
     }
 
@@ -458,13 +475,11 @@ class ImportViewModelTest {
     }
 
     @Test
-    fun `StartImport triggers import process`() = runTest {
+    fun `StartImport stages images and enqueues worker`() = runTest {
         val uri = mockk<Uri> { every { lastPathSegment } returns "meme.jpg" }
-        val meme = mockk<Meme>()
         
         coEvery { suggestEmojisUseCase(any()) } returns emptyList()
         coEvery { extractTextUseCase(any()) } returns null
-        coEvery { importImageUseCase(any(), any()) } returns Result.success(meme)
         coEvery { findDuplicateMemeIdUseCase(any()) } returns null
 
         viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uri)))
@@ -473,7 +488,10 @@ class ImportViewModelTest {
         viewModel.onIntent(ImportIntent.StartImport)
         advanceUntilIdle()
 
-        coVerify { importImageUseCase(any(), any()) }
+        // Import now stages images and enqueues a worker instead of importing directly
+        coVerify { importStagingManager.stageImages(any()) }
+        coVerify { importRequestDao.insertRequest(any()) }
+        coVerify { importRequestDao.insertItems(any()) }
     }
 
     @Test
@@ -538,13 +556,11 @@ class ImportViewModelTest {
     }
 
     @Test
-    fun `performImport cleans up extracted files after completion`() = runTest {
+    fun `performImport stages images for background processing`() = runTest {
         val uri = mockk<Uri> { every { lastPathSegment } returns "meme.jpg" }
-        val meme = mockk<Meme>()
 
         coEvery { suggestEmojisUseCase(any()) } returns emptyList()
         coEvery { extractTextUseCase(any()) } returns null
-        coEvery { importImageUseCase(any(), any()) } returns Result.success(meme)
         coEvery { findDuplicateMemeIdUseCase(any()) } returns null
 
         viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uri)))
@@ -553,17 +569,17 @@ class ImportViewModelTest {
         viewModel.onIntent(ImportIntent.StartImport)
         advanceUntilIdle()
 
-        io.mockk.verify { cleanupExtractedFilesUseCase() }
+        coVerify { importStagingManager.stageImages(any()) }
     }
 
     @Test
-    fun `performImport cleans up extracted files even on failure`() = runTest {
+    fun `performImport shows error on staging failure`() = runTest {
         val uri = mockk<Uri> { every { lastPathSegment } returns "meme.jpg" }
 
         coEvery { suggestEmojisUseCase(any()) } returns emptyList()
         coEvery { extractTextUseCase(any()) } returns null
-        coEvery { importImageUseCase(any(), any()) } returns Result.failure(RuntimeException("fail"))
         coEvery { findDuplicateMemeIdUseCase(any()) } returns null
+        coEvery { importStagingManager.stageImages(any()) } throws RuntimeException("staging failed")
 
         viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uri)))
         advanceUntilIdle()
@@ -571,7 +587,10 @@ class ImportViewModelTest {
         viewModel.onIntent(ImportIntent.StartImport)
         advanceUntilIdle()
 
-        io.mockk.verify { cleanupExtractedFilesUseCase() }
+        viewModel.uiState.test {
+            val state = awaitItem()
+            assertThat(state.isImporting).isFalse()
+        }
     }
 
     // endregion

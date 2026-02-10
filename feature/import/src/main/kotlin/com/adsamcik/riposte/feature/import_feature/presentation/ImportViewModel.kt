@@ -3,10 +3,18 @@ package com.adsamcik.riposte.feature.import_feature.presentation
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
+import com.adsamcik.riposte.core.common.AppConstants
 import com.adsamcik.riposte.core.common.review.UserActionTracker
+import com.adsamcik.riposte.core.database.dao.ImportRequestDao
+import com.adsamcik.riposte.core.database.entity.ImportRequestEntity
+import com.adsamcik.riposte.core.database.entity.ImportRequestItemEntity
 import com.adsamcik.riposte.core.datastore.PreferencesDataStore
 import com.adsamcik.riposte.core.model.MemeMetadata
 import com.adsamcik.riposte.feature.import_feature.R
+import com.adsamcik.riposte.feature.import_feature.data.worker.ImportStagingManager
+import com.adsamcik.riposte.feature.import_feature.data.worker.ImportWorker
 import com.adsamcik.riposte.feature.import_feature.domain.usecase.CheckDuplicateUseCase
 import com.adsamcik.riposte.feature.import_feature.domain.usecase.CleanupExtractedFilesUseCase
 import com.adsamcik.riposte.feature.import_feature.domain.usecase.ExtractTextUseCase
@@ -17,8 +25,8 @@ import com.adsamcik.riposte.feature.import_feature.domain.usecase.SuggestEmojisU
 import com.adsamcik.riposte.feature.import_feature.domain.usecase.UpdateMemeMetadataUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,6 +34,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
@@ -41,6 +50,8 @@ class ImportViewModel @Inject constructor(
     private val cleanupExtractedFilesUseCase: CleanupExtractedFilesUseCase,
     private val userActionTracker: UserActionTracker,
     private val preferencesDataStore: PreferencesDataStore,
+    private val importStagingManager: ImportStagingManager,
+    private val importRequestDao: ImportRequestDao,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ImportUiState())
@@ -50,6 +61,114 @@ class ImportViewModel @Inject constructor(
     val effects = _effects.receiveAsFlow()
 
     private var importJob: Job? = null
+
+    init {
+        observeImportWork()
+    }
+
+    /** Observes active import work via WorkManager for progress and completion. */
+    private fun observeImportWork() {
+        viewModelScope.launch {
+            WorkManager.getInstance(context)
+                .getWorkInfosForUniqueWorkFlow(AppConstants.IMPORT_WORK_NAME)
+                .collect { workInfos ->
+                    val workInfo = workInfos.firstOrNull() ?: return@collect
+                    handleWorkInfoUpdate(workInfo)
+                }
+        }
+    }
+
+    private suspend fun handleWorkInfoUpdate(workInfo: WorkInfo) {
+        when (workInfo.state) {
+            WorkInfo.State.RUNNING -> {
+                val completed = workInfo.progress.getInt(ImportWorker.KEY_COMPLETED, 0)
+                val total = workInfo.progress.getInt(ImportWorker.KEY_TOTAL, 0)
+                if (total > 0) {
+                    _uiState.update {
+                        it.copy(
+                            isImporting = true,
+                            importProgress = completed.toFloat() / total,
+                            totalImportCount = total,
+                            statusMessage = context.getString(
+                                R.string.import_status_progress,
+                                completed,
+                                total,
+                            ),
+                        )
+                    }
+                }
+            }
+
+            WorkInfo.State.SUCCEEDED -> {
+                val completed = workInfo.outputData.getInt(ImportWorker.KEY_COMPLETED, 0)
+                val failed = workInfo.outputData.getInt(ImportWorker.KEY_FAILED, 0)
+                handleImportComplete(completed, failed)
+            }
+
+            WorkInfo.State.FAILED -> {
+                _uiState.update {
+                    it.copy(
+                        isImporting = false,
+                        statusMessage = null,
+                        importResult = ImportResult(
+                            successCount = 0,
+                            failureCount = 0,
+                        ),
+                    )
+                }
+                _effects.send(
+                    ImportEffect.ShowError(
+                        context.getString(R.string.import_error_images_failed),
+                    ),
+                )
+            }
+
+            WorkInfo.State.CANCELLED -> {
+                _uiState.update {
+                    it.copy(isImporting = false, importProgress = 0f, statusMessage = null)
+                }
+            }
+
+            else -> { /* ENQUEUED, BLOCKED — no UI update needed */ }
+        }
+    }
+
+    private suspend fun handleImportComplete(successCount: Int, failedCount: Int) {
+        cleanupExtractedFilesUseCase()
+
+        _uiState.update {
+            it.copy(
+                isImporting = false,
+                statusMessage = null,
+                importResult = ImportResult(
+                    successCount = successCount,
+                    failureCount = failedCount,
+                ),
+            )
+        }
+
+        if (successCount > 0) {
+            userActionTracker.trackPositiveAction()
+            _effects.send(ImportEffect.ImportComplete(successCount))
+            if (!preferencesDataStore.hasShownEmojiTip.first()) {
+                preferencesDataStore.setEmojiTipShown()
+                _effects.send(
+                    ImportEffect.ShowSnackbar(
+                        context.getString(R.string.import_tip_emoji_tagging),
+                    ),
+                )
+            }
+            if (failedCount == 0) {
+                _effects.send(ImportEffect.NavigateToGallery)
+            }
+        } else {
+            _effects.send(
+                ImportEffect.ShowError(
+                    context.getString(R.string.import_error_images_failed),
+                ),
+            )
+        }
+    }
 
     override fun onCleared() {
         super.onCleared()
@@ -415,75 +534,79 @@ class ImportViewModel @Inject constructor(
     }
 
     private suspend fun performImport(images: List<ImportImage>) {
-        _uiState.update { it.copy(isImporting = true, importProgress = 0f, statusMessage = null) }
-
-        var successCount = 0
-        val failedImages = mutableListOf<ImportImage>()
-
-        try {
-            images.forEachIndexed { index, image ->
-                _uiState.update { it.copy(statusMessage = image.fileName) }
-
-                val metadata = if (image.emojis.isNotEmpty()) {
-                    MemeMetadata(
-                        emojis = image.emojis.map { it.emoji },
-                        title = image.title,
-                        description = image.description,
-                    )
-                } else {
-                    null
-                }
-
-                val result = importImageUseCase(image.uri, metadata)
-                if (result.isSuccess) {
-                    successCount++
-                } else {
-                    failedImages.add(image)
-                }
-
-                _uiState.update {
-                    it.copy(importProgress = (index + 1).toFloat() / images.size)
-                }
-            }
-        } finally {
-            cleanupExtractedFilesUseCase()
-        }
-
         _uiState.update {
             it.copy(
-                isImporting = false,
-                statusMessage = null,
-                importResult = ImportResult(
-                    successCount = successCount,
-                    failureCount = failedImages.size,
-                    failedImages = failedImages,
-                ),
+                isImporting = true,
+                importProgress = -1f,
+                statusMessage = context.getString(R.string.import_status_staging),
             )
         }
 
-        if (successCount > 0) {
-            userActionTracker.trackPositiveAction()
-            _effects.send(ImportEffect.ImportComplete(successCount))
-            // Show emoji tagging tip once after first successful import
-            if (!preferencesDataStore.hasShownEmojiTip.first()) {
-                preferencesDataStore.setEmojiTipShown()
-                _effects.send(
-                    ImportEffect.ShowSnackbar(
-                        context.getString(R.string.import_tip_emoji_tagging),
-                    ),
+        try {
+            val requestId = UUID.randomUUID().toString()
+
+            // Stage images from content URIs to internal storage
+            val stagingInputs = images.mapIndexed { index, image ->
+                ImportStagingManager.StagingInput(
+                    id = "${requestId}_$index",
+                    uri = image.uri,
                 )
             }
-            if (failedImages.isEmpty()) {
-                _effects.send(ImportEffect.NavigateToGallery)
+            val stagingDir = importStagingManager.stageImages(stagingInputs)
+
+            // Create import request items
+            val items = images.mapIndexed { index, image ->
+                ImportRequestItemEntity(
+                    id = "${requestId}_$index",
+                    requestId = requestId,
+                    stagedFilePath = java.io.File(stagingDir, "${requestId}_$index").absolutePath,
+                    originalFileName = image.fileName,
+                    emojis = image.emojis.joinToString(",") { it.emoji },
+                    title = image.title,
+                    description = image.description,
+                    extractedText = image.extractedText,
+                )
             }
-        } else {
-            _effects.send(ImportEffect.ShowError(context.getString(R.string.import_error_images_failed)))
+
+            // Persist import request to Room
+            val request = ImportRequestEntity(
+                id = requestId,
+                status = ImportRequestEntity.STATUS_PENDING,
+                imageCount = images.size,
+                stagingDir = stagingDir.absolutePath,
+                createdAt = System.currentTimeMillis(),
+                updatedAt = System.currentTimeMillis(),
+            )
+            importRequestDao.insertRequest(request)
+            importRequestDao.insertItems(items)
+
+            // Enqueue the worker — progress is observed via observeImportWork()
+            ImportWorker.enqueue(context, requestId)
+
+            _uiState.update {
+                it.copy(
+                    importProgress = 0f,
+                    totalImportCount = it.selectedImages.size,
+                    statusMessage = null,
+                    selectedImages = emptyList(),
+                )
+            }
+        } catch (e: Exception) {
+            _uiState.update {
+                it.copy(isImporting = false, statusMessage = null)
+            }
+            _effects.send(
+                ImportEffect.ShowError(
+                    e.message ?: context.getString(R.string.import_error_images_failed),
+                ),
+            )
         }
     }
 
     private fun cancelImport() {
         importJob?.cancel()
         importJob = null
+        WorkManager.getInstance(context).cancelUniqueWork(AppConstants.IMPORT_WORK_NAME)
         _uiState.update { it.copy(isImporting = false, importProgress = 0f, statusMessage = null) }
     }
 

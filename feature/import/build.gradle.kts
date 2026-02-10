@@ -47,6 +47,11 @@ dependencies {
     // Image Loading
     implementation(libs.coil.compose)
 
+    // WorkManager (for background import processing)
+    implementation(libs.workmanager.runtime)
+    implementation(libs.hilt.work)
+    ksp(libs.hilt.work.compiler)
+
     // Serialization
     implementation(libs.kotlinx.serialization.json)
 
@@ -57,6 +62,7 @@ dependencies {
     // Testing
     testImplementation(libs.bundles.testing)
     testImplementation(libs.robolectric)
+    testImplementation(libs.workmanager.testing)
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.androidx.test.core.ktx)
     testImplementation(project(":core:testing"))

@@ -83,8 +83,8 @@ class ImportRepositoryImpl @Inject constructor(
             // Use pre-extracted text from metadata if available, otherwise run OCR
             val extractedText = metadata?.textContent ?: extractTextFromBitmap(bitmap)
 
-            // Build search text for embedding generation
-            val searchText = buildSearchText(title, description, extractedText, emojis)
+            // Parse search phrases from metadata
+            val searchPhrases = metadata?.searchPhrases ?: emptyList()
 
             // Create XMP metadata and embed in image
             val xmpMetadata = if (emojis.isNotEmpty()) {
@@ -118,6 +118,9 @@ class ImportRepositoryImpl @Inject constructor(
                 title = title ?: originalFileName,
                 description = description,
                 textContent = extractedText,
+                searchPhrasesJson = if (searchPhrases.isNotEmpty()) {
+                    kotlinx.serialization.json.Json.encodeToString(searchPhrases)
+                } else null,
                 embedding = null, // Embeddings now stored in separate table
                 fileHash = fileHash,
             )
@@ -125,10 +128,8 @@ class ImportRepositoryImpl @Inject constructor(
             // Insert meme
             val memeId = memeDao.insertMeme(memeEntity)
 
-            // Generate and store embedding in the new embeddings table
-            if (searchText.isNotBlank()) {
-                embeddingManager.generateAndStoreEmbedding(memeId, searchText)
-            }
+            // Schedule background embedding generation
+            embeddingManager.scheduleBackgroundGeneration()
 
             // Insert emoji tags
             val emojiTagEntities = emojis.map { emoji ->
@@ -157,6 +158,7 @@ class ImportRepositoryImpl @Inject constructor(
                 title = memeEntity.title,
                 description = description,
                 textContent = extractedText,
+                searchPhrases = searchPhrases,
                 isFavorite = false,
             )
 
@@ -334,11 +336,15 @@ class ImportRepositoryImpl @Inject constructor(
                 ?: return@withContext Result.failure(Exception("Meme not found"))
 
             // Update entity fields
+            val searchPhrasesJson = if (metadata.searchPhrases.isNotEmpty()) {
+                kotlinx.serialization.json.Json.encodeToString(metadata.searchPhrases)
+            } else existing.searchPhrasesJson
             val updated = existing.copy(
                 emojiTagsJson = metadata.emojis.joinToString(","),
                 title = metadata.title ?: existing.title,
                 description = metadata.description ?: existing.description,
                 textContent = metadata.textContent ?: existing.textContent,
+                searchPhrasesJson = searchPhrasesJson,
                 primaryLanguage = metadata.primaryLanguage ?: existing.primaryLanguage,
             )
             memeDao.updateMeme(updated)
@@ -357,16 +363,9 @@ class ImportRepositoryImpl @Inject constructor(
                 emojiTagDao.insertEmojiTags(emojiTagEntities)
             }
 
-            // Regenerate embedding
-            val searchText = buildSearchText(
-                updated.title,
-                updated.description,
-                updated.textContent,
-                metadata.emojis,
-            )
-            if (searchText.isNotBlank()) {
-                embeddingManager.generateAndStoreEmbedding(memeId, searchText)
-            }
+            // Mark embeddings for regeneration in background
+            embeddingManager.markForRegeneration(memeId)
+            embeddingManager.scheduleBackgroundGeneration()
 
             // Update XMP metadata in image file
             val xmpMetadata = MemeMetadata(
@@ -443,22 +442,6 @@ class ImportRepositoryImpl @Inject constructor(
 
     private suspend fun extractTextFromBitmap(bitmap: Bitmap): String? {
         return textRecognizer.recognizeText(bitmap)
-    }
-
-    private fun buildSearchText(
-        title: String?,
-        description: String?,
-        extractedText: String?,
-        emojis: List<String>,
-    ): String {
-        return buildString {
-            title?.let { append(it).append(" ") }
-            description?.let { append(it).append(" ") }
-            extractedText?.let { append(it).append(" ") }
-            emojis.forEach { emoji ->
-                append(EmojiTag.fromEmoji(emoji).name.replace("_", " ")).append(" ")
-            }
-        }.trim()
     }
 
     private fun calculateFileHash(file: File): String {

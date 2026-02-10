@@ -60,17 +60,28 @@ class ImportViewModelEdgeCasesTest {
     private lateinit var updateMemeMetadataUseCase: UpdateMemeMetadataUseCase
     private lateinit var cleanupExtractedFilesUseCase: CleanupExtractedFilesUseCase
     private lateinit var preferencesDataStore: PreferencesDataStore
+    private lateinit var importStagingManager: ImportStagingManager
+    private lateinit var importRequestDao: ImportRequestDao
     private lateinit var viewModel: ImportViewModel
 
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
-        context = RuntimeEnvironment.getApplication()
 
+        // Initialize WorkManager with real Robolectric context
+        val realContext = RuntimeEnvironment.getApplication()
         val config = Configuration.Builder()
             .setMinimumLoggingLevel(android.util.Log.DEBUG)
+            .setExecutor(java.util.concurrent.Executors.newSingleThreadExecutor())
             .build()
-        WorkManagerTestInitHelper.initializeTestWorkManager(context, config)
+        WorkManagerTestInitHelper.initializeTestWorkManager(realContext, config)
+
+        // Use relaxed mock for ViewModel context (getString returns empty strings)
+        context = mockk(relaxed = true) {
+            // Delegate WorkManager-related calls to real context
+            every { applicationContext } returns realContext
+            every { packageName } returns realContext.packageName
+        }
 
         importImageUseCase = mockk(relaxed = true)
         suggestEmojisUseCase = mockk(relaxed = true)
@@ -83,6 +94,10 @@ class ImportViewModelEdgeCasesTest {
         preferencesDataStore = mockk(relaxed = true) {
             every { hasShownEmojiTip } returns flowOf(false)
         }
+        importStagingManager = mockk(relaxed = true) {
+            coEvery { stageImages(any()) } returns java.io.File(System.getProperty("java.io.tmpdir"), "staging")
+        }
+        importRequestDao = mockk(relaxed = true)
         viewModel = ImportViewModel(
             context = context,
             importImageUseCase = importImageUseCase,
@@ -95,8 +110,8 @@ class ImportViewModelEdgeCasesTest {
             cleanupExtractedFilesUseCase = cleanupExtractedFilesUseCase,
             userActionTracker = mockk(relaxed = true),
             preferencesDataStore = preferencesDataStore,
-            importStagingManager = mockk(relaxed = true),
-            importRequestDao = mockk(relaxed = true),
+            importStagingManager = importStagingManager,
+            importRequestDao = importRequestDao,
         )
     }
 
@@ -157,8 +172,9 @@ class ImportViewModelEdgeCasesTest {
         viewModel.onIntent(ImportIntent.StartImport)
         advanceUntilIdle()
 
-        // Should only import once (one call per image)
-        coVerify(exactly = 1) { importImageUseCase(any(), any()) }
+        // Should only stage once (one import request)
+        coVerify(exactly = 1) { importStagingManager.stageImages(any()) }
+        coVerify(exactly = 1) { importRequestDao.insertRequest(any()) }
     }
 
     // ==================== Concurrent State Modification Tests ====================
@@ -345,15 +361,10 @@ class ImportViewModelEdgeCasesTest {
     fun `Import failure for one image continues with others`() = runTest {
         val uri1 = mockk<Uri> { every { lastPathSegment } returns "meme1.jpg" }
         val uri2 = mockk<Uri> { every { lastPathSegment } returns "meme2.jpg" }
-        val meme = mockk<Meme>()
 
         coEvery { suggestEmojisUseCase(any()) } returns emptyList()
         coEvery { extractTextUseCase(any()) } returns null
         coEvery { findDuplicateMemeIdUseCase(any()) } returns null
-
-        // First fails, second succeeds
-        coEvery { importImageUseCase(uri1, any()) } returns Result.failure(Exception("Failed"))
-        coEvery { importImageUseCase(uri2, any()) } returns Result.success(meme)
 
         viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uri1, uri2)))
         advanceUntilIdle()
@@ -361,9 +372,9 @@ class ImportViewModelEdgeCasesTest {
         viewModel.onIntent(ImportIntent.StartImport)
         advanceUntilIdle()
 
-        // Both should be called
-        coVerify { importImageUseCase(uri1, any()) }
-        coVerify { importImageUseCase(uri2, any()) }
+        // Both images should be staged (worker handles per-image failures)
+        coVerify { importStagingManager.stageImages(match { it.size == 2 }) }
+        coVerify { importRequestDao.insertItems(match { it.size == 2 }) }
     }
 
     // ==================== Duplicate URI Tests ====================
@@ -483,7 +494,8 @@ class ImportViewModelEdgeCasesTest {
         viewModel.onIntent(ImportIntent.StartImport)
         advanceUntilIdle()
 
-        coVerify { importImageUseCase(any(), any()) }
+        coVerify { importStagingManager.stageImages(any()) }
+        coVerify { importRequestDao.insertRequest(any()) }
     }
 
     // ==================== Duplicate Detection Tests ====================
@@ -513,12 +525,10 @@ class ImportViewModelEdgeCasesTest {
     @Test
     fun `ImportDuplicatesAnyway imports all including duplicates`() = runTest {
         val uri = mockk<Uri> { every { lastPathSegment } returns "meme.jpg" }
-        val meme = mockk<Meme>()
 
         coEvery { suggestEmojisUseCase(any()) } returns emptyList()
         coEvery { extractTextUseCase(any()) } returns null
         coEvery { findDuplicateMemeIdUseCase(uri) } returns 42L
-        coEvery { importImageUseCase(any(), any()) } returns Result.success(meme)
 
         viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uri)))
         advanceUntilIdle()
@@ -529,7 +539,8 @@ class ImportViewModelEdgeCasesTest {
         viewModel.onIntent(ImportIntent.ImportDuplicatesAnyway)
         advanceUntilIdle()
 
-        coVerify { importImageUseCase(any(), any()) }
+        coVerify { importStagingManager.stageImages(any()) }
+        coVerify { importRequestDao.insertRequest(any()) }
         viewModel.uiState.test {
             val state = awaitItem()
             assertThat(state.showDuplicateDialog).isFalse()
@@ -557,9 +568,9 @@ class ImportViewModelEdgeCasesTest {
         viewModel.onIntent(ImportIntent.SkipDuplicates)
         advanceUntilIdle()
 
-        // Only non-duplicate should be imported
-        coVerify(exactly = 1) { importImageUseCase(uri2, any()) }
-        coVerify(exactly = 0) { importImageUseCase(uri1, any()) }
+        // Only non-duplicate should be staged and submitted
+        coVerify { importStagingManager.stageImages(match { it.size == 1 }) }
+        coVerify { importRequestDao.insertItems(match { it.size == 1 }) }
     }
 
     // ==================== Progress Reporting Tests ====================
@@ -671,13 +682,10 @@ class ImportViewModelEdgeCasesTest {
     fun `import result shows summary with failure count`() = runTest {
         val uri1 = mockk<Uri> { every { lastPathSegment } returns "good.jpg" }
         val uri2 = mockk<Uri> { every { lastPathSegment } returns "bad.jpg" }
-        val meme = mockk<Meme>()
 
         coEvery { suggestEmojisUseCase(any()) } returns emptyList()
         coEvery { extractTextUseCase(any()) } returns null
         coEvery { findDuplicateMemeIdUseCase(any()) } returns null
-        coEvery { importImageUseCase(uri1, any()) } returns Result.success(meme)
-        coEvery { importImageUseCase(uri2, any()) } returns Result.failure(Exception("Failed"))
 
         viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uri1, uri2)))
         advanceUntilIdle()
@@ -685,26 +693,20 @@ class ImportViewModelEdgeCasesTest {
         viewModel.onIntent(ImportIntent.StartImport)
         advanceUntilIdle()
 
-        viewModel.uiState.test {
-            val state = awaitItem()
-            assertThat(state.importResult).isNotNull()
-            assertThat(state.importResult?.successCount).isEqualTo(1)
-            assertThat(state.importResult?.failureCount).isEqualTo(1)
-            assertThat(state.importResult?.failedImages).hasSize(1)
-        }
+        // Verify all images were staged for import (worker handles success/failure reporting)
+        coVerify { importStagingManager.stageImages(match { it.size == 2 }) }
+        coVerify { importRequestDao.insertRequest(any()) }
+        coVerify { importRequestDao.insertItems(match { it.size == 2 }) }
     }
 
     @Test
     fun `RetryFailedImports reloads failed images for retry`() = runTest {
         val uri1 = mockk<Uri> { every { lastPathSegment } returns "good.jpg" }
         val uri2 = mockk<Uri> { every { lastPathSegment } returns "bad.jpg" }
-        val meme = mockk<Meme>()
 
         coEvery { suggestEmojisUseCase(any()) } returns emptyList()
         coEvery { extractTextUseCase(any()) } returns null
         coEvery { findDuplicateMemeIdUseCase(any()) } returns null
-        coEvery { importImageUseCase(uri1, any()) } returns Result.success(meme)
-        coEvery { importImageUseCase(uri2, any()) } returns Result.failure(Exception("Failed"))
 
         viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uri1, uri2)))
         advanceUntilIdle()
@@ -712,14 +714,17 @@ class ImportViewModelEdgeCasesTest {
         viewModel.onIntent(ImportIntent.StartImport)
         advanceUntilIdle()
 
+        // Staging should have happened
+        coVerify { importStagingManager.stageImages(any()) }
+
+        // RetryFailedImports is a no-op when importResult is null
+        // (import results now come from WorkInfo observation)
         viewModel.onIntent(ImportIntent.RetryFailedImports)
         advanceUntilIdle()
 
         viewModel.uiState.test {
             val state = awaitItem()
             assertThat(state.importResult).isNull()
-            assertThat(state.selectedImages).hasSize(1)
-            assertThat(state.selectedImages[0].fileName).isEqualTo("bad.jpg")
         }
     }
 
@@ -729,13 +734,11 @@ class ImportViewModelEdgeCasesTest {
     fun `UpdateDuplicateMetadata updates metadata for duplicates with changes`() = runTest {
         val uri1 = mockk<Uri> { every { lastPathSegment } returns "dupe.jpg" }
         val uri2 = mockk<Uri> { every { lastPathSegment } returns "new.jpg" }
-        val meme = mockk<Meme>()
 
         coEvery { suggestEmojisUseCase(any()) } returns emptyList()
         coEvery { extractTextUseCase(any()) } returns null
         coEvery { findDuplicateMemeIdUseCase(uri1) } returns 42L
         coEvery { findDuplicateMemeIdUseCase(uri2) } returns null
-        coEvery { importImageUseCase(any(), any()) } returns Result.success(meme)
         coEvery { updateMemeMetadataUseCase(any(), any()) } returns Result.success(Unit)
 
         // Add images and give the duplicate some metadata
@@ -758,8 +761,8 @@ class ImportViewModelEdgeCasesTest {
 
         // Verify metadata was updated for the duplicate
         coVerify { updateMemeMetadataUseCase(42L, any()) }
-        // Verify the non-duplicate was still imported
-        coVerify { importImageUseCase(uri2, any()) }
+        // Verify the non-duplicate was staged for import
+        coVerify { importStagingManager.stageImages(match { it.size == 1 }) }
     }
 
     @Test

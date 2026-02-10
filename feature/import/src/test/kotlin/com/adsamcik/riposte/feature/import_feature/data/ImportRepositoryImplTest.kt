@@ -120,7 +120,6 @@ class ImportRepositoryImplTest {
 
         coEvery { memeDao.insertMeme(capture(memeEntitySlot)) } returns memeId
         coEvery { textRecognizer.recognizeText(any<Bitmap>()) } returns "Sample text"
-        coEvery { embeddingManager.generateAndStoreEmbedding(any(), any()) } returns true
 
         // Act
         val result = repository.importImage(uri, null)
@@ -168,7 +167,7 @@ class ImportRepositoryImplTest {
     }
 
     @Test
-    fun `importImage generates embedding when text is available`() = runTest {
+    fun `importImage schedules background embedding generation`() = runTest {
         // Arrange
         val uri = createTestImageUri()
         val memeId = 3L
@@ -181,7 +180,8 @@ class ImportRepositoryImplTest {
 
         // Assert
         assertThat(result.isSuccess).isTrue()
-        coVerify { embeddingManager.generateAndStoreEmbedding(memeId, any()) }
+        coVerify { embeddingManager.scheduleBackgroundGeneration() }
+        coVerify(exactly = 0) { embeddingManager.generateAndStoreEmbedding(any(), any(), any()) }
     }
 
     @Test

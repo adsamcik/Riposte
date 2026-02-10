@@ -3,6 +3,7 @@ package com.adsamcik.riposte
 import android.app.Application
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
+import com.adsamcik.riposte.core.common.lifecycle.AppLifecycleTracker
 import com.adsamcik.riposte.sharing.SharingShortcutUpdater
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
@@ -25,10 +26,14 @@ class RiposteApplication : Application(), Configuration.Provider {
     @Inject
     lateinit var sharingShortcutUpdater: SharingShortcutUpdater
 
+    @Inject
+    lateinit var appLifecycleTracker: AppLifecycleTracker
+
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     override fun onCreate() {
         super.onCreate()
+        appLifecycleTracker.init()
         sharingShortcutUpdater.start(applicationScope)
     }
 
