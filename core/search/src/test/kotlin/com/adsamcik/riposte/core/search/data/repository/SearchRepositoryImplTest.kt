@@ -9,6 +9,7 @@ import com.adsamcik.riposte.core.database.dao.MemeSearchDao
 import com.adsamcik.riposte.core.database.entity.MemeEntity
 import com.adsamcik.riposte.core.database.entity.MemeWithEmbeddingData
 import com.adsamcik.riposte.core.datastore.PreferencesDataStore
+import com.adsamcik.riposte.core.ml.MemeWithEmbeddings
 import com.adsamcik.riposte.core.ml.SemanticSearchEngine
 import com.adsamcik.riposte.core.model.AppPreferences
 import com.adsamcik.riposte.core.model.DarkMode
@@ -185,7 +186,7 @@ class SearchRepositoryImplTest {
     }
 
     @Test
-    fun `searchSemantic uses semantic search engine`() = runTest {
+    fun `searchSemantic uses multi-vector semantic search engine`() = runTest {
         val embedding = createTestEmbedding(128)
         val testEmbeddingData = testMemeEntities.map { createMemeWithEmbeddingData(it, embedding) }
         coEvery { memeEmbeddingDao.getMemesWithEmbeddings() } returns testEmbeddingData
@@ -198,7 +199,7 @@ class SearchRepositoryImplTest {
             )
         }
         coEvery { 
-            semanticSearchEngine.findSimilar(
+            semanticSearchEngine.findSimilarMultiVector(
                 query = "test",
                 candidates = any(),
                 limit = 20
@@ -208,7 +209,7 @@ class SearchRepositoryImplTest {
         val results = repository.searchSemantic("test", 20)
 
         assertThat(results).hasSize(3)
-        coVerify { semanticSearchEngine.findSimilar("test", any(), 20) }
+        coVerify { semanticSearchEngine.findSimilarMultiVector("test", any(), 20) }
     }
 
     // endregion
@@ -237,7 +238,7 @@ class SearchRepositoryImplTest {
             )
         )
         coEvery { 
-            semanticSearchEngine.findSimilar(any(), any(), any()) 
+            semanticSearchEngine.findSimilarMultiVector(any(), any(), any()) 
         } returns semanticResults
 
         val results = repository.searchHybrid("test", 20)
@@ -264,7 +265,7 @@ class SearchRepositoryImplTest {
         val results = repository.searchHybrid("test", 20)
 
         assertThat(results).hasSize(3)
-        coVerify(exactly = 0) { semanticSearchEngine.findSimilar(any(), any(), any()) }
+        coVerify(exactly = 0) { semanticSearchEngine.findSimilarMultiVector(any(), any(), any()) }
     }
 
     @Test
@@ -305,7 +306,7 @@ class SearchRepositoryImplTest {
                 matchType = MatchType.SEMANTIC
             )
         )
-        coEvery { semanticSearchEngine.findSimilar(any(), any(), any()) } returns semanticResult
+        coEvery { semanticSearchEngine.findSimilarMultiVector(any(), any(), any()) } returns semanticResult
 
         val results = repository.searchHybrid("test", 20)
 
@@ -505,7 +506,8 @@ class SearchRepositoryImplTest {
 
     private fun createMemeWithEmbeddingData(
         entity: MemeEntity,
-        embedding: ByteArray
+        embedding: ByteArray,
+        embeddingType: String = "content",
     ): MemeWithEmbeddingData {
         return MemeWithEmbeddingData(
             memeId = entity.id,
@@ -516,6 +518,7 @@ class SearchRepositoryImplTest {
             textContent = entity.textContent,
             emojiTagsJson = entity.emojiTagsJson,
             embedding = embedding,
+            embeddingType = embeddingType,
             dimension = embedding.size / 4,
             modelVersion = "test:1.0.0"
         )

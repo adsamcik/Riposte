@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import com.adsamcik.riposte.core.database.dao.MemeEmbeddingDao
 import com.adsamcik.riposte.core.database.entity.MemeEmbeddingEntity
+import com.adsamcik.riposte.core.model.EmbeddingType
 import com.adsamcik.riposte.core.ml.worker.EmbeddingGenerationWorker
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
@@ -47,9 +48,14 @@ class EmbeddingManager @Inject constructor(
      * 
      * @param memeId The ID of the meme.
      * @param searchText The text to generate embedding from (title, description, etc.).
+     * @param embeddingType The type of embedding slot (defaults to CONTENT).
      * @return True if successful, false otherwise.
      */
-    suspend fun generateAndStoreEmbedding(memeId: Long, searchText: String): Boolean {
+    suspend fun generateAndStoreEmbedding(
+        memeId: Long,
+        searchText: String,
+        embeddingType: EmbeddingType = EmbeddingType.CONTENT,
+    ): Boolean {
         return try {
             val embedding = embeddingGenerator.generateFromText(searchText)
             if (isZeroEmbedding(embedding)) {
@@ -59,6 +65,7 @@ class EmbeddingManager @Inject constructor(
             
             val entity = MemeEmbeddingEntity(
                 memeId = memeId,
+                embeddingType = embeddingType.key,
                 embedding = encodeEmbedding(embedding),
                 dimension = embedding.size,
                 modelVersion = versionManager.currentModelVersion,

@@ -25,6 +25,23 @@ interface SemanticSearchEngine {
     ): List<SearchResult>
 
     /**
+     * Finds memes similar to the given query using max-pooling across multiple embedding slots.
+     * For each meme, the highest cosine similarity across all slots is used as the score.
+     *
+     * @param query The search query text.
+     * @param candidates List of memes with their multi-slot embeddings.
+     * @param limit Maximum number of results to return.
+     * @param threshold Minimum similarity score (0.0 to 1.0) for results.
+     * @return List of search results sorted by relevance.
+     */
+    suspend fun findSimilarMultiVector(
+        query: String,
+        candidates: List<MemeWithEmbeddings>,
+        limit: Int = 20,
+        threshold: Float = 0.3f,
+    ): List<SearchResult>
+
+    /**
      * Calculates the cosine similarity between two embedding vectors.
      * 
      * @param embedding1 First embedding vector.
@@ -54,7 +71,7 @@ interface SemanticSearchEngine {
  */
 data class MemeWithEmbedding(
     val meme: Meme,
-    val embedding: FloatArray
+    val embedding: FloatArray,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -74,3 +91,13 @@ data class MemeWithEmbedding(
         return result
     }
 }
+
+/**
+ * A meme with multiple embedding slots for multi-vector search.
+ * Each slot represents a different semantic aspect (content, intent, etc.).
+ * Search uses max-pooling: the highest similarity across all slots wins.
+ */
+data class MemeWithEmbeddings(
+    val meme: Meme,
+    val embeddings: Map<String, FloatArray>,
+)

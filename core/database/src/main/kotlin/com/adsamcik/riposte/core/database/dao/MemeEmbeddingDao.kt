@@ -75,6 +75,7 @@ interface MemeEmbeddingDao {
             m.textContent,
             m.emojiTagsJson,
             e.embedding,
+            e.embeddingType,
             e.dimension,
             e.modelVersion
         FROM memes m
@@ -97,6 +98,7 @@ interface MemeEmbeddingDao {
             m.textContent,
             m.emojiTagsJson,
             e.embedding,
+            e.embeddingType,
             e.dimension,
             e.modelVersion
         FROM memes m

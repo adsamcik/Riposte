@@ -5,7 +5,7 @@ import com.adsamcik.riposte.core.database.dao.MemeDao
 import com.adsamcik.riposte.core.database.dao.MemeEmbeddingDao
 import com.adsamcik.riposte.core.database.dao.MemeSearchDao
 import com.adsamcik.riposte.core.datastore.PreferencesDataStore
-import com.adsamcik.riposte.core.ml.MemeWithEmbedding
+import com.adsamcik.riposte.core.ml.MemeWithEmbeddings
 import com.adsamcik.riposte.core.ml.SemanticSearchEngine
 import com.adsamcik.riposte.core.model.EmojiTag
 import com.adsamcik.riposte.core.model.MatchType
@@ -58,34 +58,39 @@ class SearchRepositoryImpl @Inject constructor(
             return emptyList()
         }
 
-        val candidates = memesWithEmbeddings.mapNotNull { data ->
-            val embeddingBytes = data.embedding ?: return@mapNotNull null
-            
+        // Group embedding rows by memeId for multi-vector max-pooling
+        val groupedByMeme = memesWithEmbeddings
+            .filter { it.embedding != null }
+            .groupBy { it.memeId }
+
+        val candidates = groupedByMeme.map { (_, rows) ->
+            val first = rows.first()
             val meme = Meme(
-                id = data.memeId,
-                filePath = data.filePath,
-                fileName = data.fileName,
+                id = first.memeId,
+                filePath = first.filePath,
+                fileName = first.fileName,
                 mimeType = "image/jpeg",
                 width = 0,
                 height = 0,
                 fileSizeBytes = 0,
                 importedAt = 0,
-                emojiTags = data.emojiTagsJson
+                emojiTags = first.emojiTagsJson
                     .split(",")
                     .filter { it.isNotBlank() }
                     .map { EmojiTag.fromEmoji(it.trim()) },
-                title = data.title,
-                description = data.description,
-                textContent = data.textContent,
+                title = first.title,
+                description = first.description,
+                textContent = first.textContent,
             )
-            
-            MemeWithEmbedding(
-                meme = meme,
-                embedding = decodeEmbedding(embeddingBytes)
-            )
+
+            val embeddingsByType = rows
+                .filter { it.embedding != null && it.embeddingType != null }
+                .associate { (it.embeddingType ?: "content") to decodeEmbedding(it.embedding!!) }
+
+            MemeWithEmbeddings(meme = meme, embeddings = embeddingsByType)
         }
 
-        return semanticSearchEngine.findSimilar(
+        return semanticSearchEngine.findSimilarMultiVector(
             query = query,
             candidates = candidates,
             limit = limit,

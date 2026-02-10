@@ -68,8 +68,8 @@ class DefaultSemanticSearchEngine @Inject constructor(
     override suspend fun findSimilarMultiVector(
         query: String,
         candidates: List<MemeWithEmbeddings>,
-        limit: Int = 20,
-        threshold: Float = 0.3f,
+        limit: Int,
+        threshold: Float,
     ): List<SearchResult> = withContext(Dispatchers.Default) {
         if (candidates.isEmpty()) return@withContext emptyList()
 

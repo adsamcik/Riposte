@@ -3,7 +3,6 @@ package com.adsamcik.riposte.core.ml.worker
 import com.adsamcik.riposte.core.database.dao.MemeDao
 import com.adsamcik.riposte.core.database.dao.MemeEmbeddingDao
 import com.adsamcik.riposte.core.database.entity.MemeEmbeddingEntity
-import com.adsamcik.riposte.core.model.EmojiTag
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -31,20 +30,13 @@ class DefaultEmbeddingWorkRepository @Inject constructor(
         
         return allMemeIds.mapNotNull { memeId ->
             memeDao.getMemeById(memeId)?.let { entity ->
-                // Convert emoji JSON to names for embedding
-                val emojiNames = entity.emojiTagsJson
-                    .split(",")
-                    .filter { it.isNotBlank() }
-                    .map { EmojiTag.fromEmoji(it.trim()).name.replace("_", " ") }
-                    .joinToString(" ")
-                
                 MemeDataForEmbedding(
                     id = entity.id,
                     filePath = entity.filePath,
                     title = entity.title,
                     description = entity.description,
                     textContent = entity.textContent,
-                    emojiNames = emojiNames.ifBlank { null }
+                    searchPhrases = entity.searchPhrasesJson,
                 )
             }
         }
@@ -55,10 +47,12 @@ class DefaultEmbeddingWorkRepository @Inject constructor(
         embedding: ByteArray,
         dimension: Int,
         modelVersion: String,
-        sourceTextHash: String?
+        sourceTextHash: String?,
+        embeddingType: String,
     ) {
         val embeddingEntity = MemeEmbeddingEntity(
             memeId = memeId,
+            embeddingType = embeddingType,
             embedding = embedding,
             dimension = dimension,
             modelVersion = modelVersion,

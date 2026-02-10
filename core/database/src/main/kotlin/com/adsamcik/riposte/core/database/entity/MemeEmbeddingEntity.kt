@@ -27,7 +27,8 @@ import androidx.room.PrimaryKey
         )
     ],
     indices = [
-        Index(value = ["memeId"], unique = true),
+        Index(value = ["memeId", "embeddingType"], unique = true),
+        Index(value = ["memeId"]),
         Index(value = ["modelVersion"]),
         Index(value = ["generatedAt"]),
         Index(value = ["needsRegeneration"])
@@ -41,6 +42,12 @@ data class MemeEmbeddingEntity(
      * Foreign key to the meme this embedding belongs to.
      */
     val memeId: Long,
+    
+    /**
+     * Type of embedding (e.g., "content", "intent").
+     * Each meme can have one embedding per type.
+     */
+    val embeddingType: String = "content",
     
     /**
      * The embedding vector serialized as ByteArray.
@@ -106,6 +113,7 @@ data class MemeEmbeddingEntity(
 
         if (id != other.id) return false
         if (memeId != other.memeId) return false
+        if (embeddingType != other.embeddingType) return false
         if (!embedding.contentEquals(other.embedding)) return false
         if (dimension != other.dimension) return false
         if (modelVersion != other.modelVersion) return false
@@ -121,6 +129,7 @@ data class MemeEmbeddingEntity(
     override fun hashCode(): Int {
         var result = id.hashCode()
         result = 31 * result + memeId.hashCode()
+        result = 31 * result + embeddingType.hashCode()
         result = 31 * result + embedding.contentHashCode()
         result = 31 * result + dimension
         result = 31 * result + modelVersion.hashCode()
@@ -160,6 +169,7 @@ data class MemeWithEmbeddingData(
     val textContent: String?,
     val emojiTagsJson: String,
     val embedding: ByteArray?,
+    val embeddingType: String?,
     val dimension: Int?,
     val modelVersion: String?
 ) {

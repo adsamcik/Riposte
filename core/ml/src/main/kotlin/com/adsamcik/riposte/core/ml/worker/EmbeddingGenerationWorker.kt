@@ -13,6 +13,7 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import com.adsamcik.riposte.core.ml.EmbeddingGenerator
+import com.adsamcik.riposte.core.model.EmbeddingType
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.Dispatchers
@@ -62,23 +63,35 @@ class EmbeddingGenerationWorker @AssistedInject constructor(
 
             pendingMemes.forEach { memeData ->
                 try {
-                    // Build search text from meme data
-                    val searchText = buildSearchText(memeData)
-                    
-                    // Generate embedding
-                    val embedding = embeddingGenerator.generateFromText(searchText)
-                    
-                    // Generate source text hash for tracking
-                    val sourceHash = generateHash(searchText)
-                    
-                    // Store embedding
-                    embeddingRepository.saveEmbedding(
-                        memeId = memeData.id,
-                        embedding = encodeEmbedding(embedding),
-                        dimension = embedding.size,
-                        modelVersion = CURRENT_MODEL_VERSION,
-                        sourceTextHash = sourceHash
-                    )
+                    // Generate content embedding (title + description)
+                    val contentText = buildContentText(memeData)
+                    if (contentText.isNotBlank()) {
+                        val embedding = embeddingGenerator.generateFromText(contentText)
+                        val sourceHash = generateHash(contentText)
+                        embeddingRepository.saveEmbedding(
+                            memeId = memeData.id,
+                            embedding = encodeEmbedding(embedding),
+                            dimension = embedding.size,
+                            modelVersion = CURRENT_MODEL_VERSION,
+                            sourceTextHash = sourceHash,
+                            embeddingType = EmbeddingType.CONTENT.key,
+                        )
+                    }
+
+                    // Generate intent embedding (searchPhrases)
+                    val intentText = buildIntentText(memeData)
+                    if (intentText.isNotBlank()) {
+                        val embedding = embeddingGenerator.generateFromText(intentText)
+                        val sourceHash = generateHash(intentText)
+                        embeddingRepository.saveEmbedding(
+                            memeId = memeData.id,
+                            embedding = encodeEmbedding(embedding),
+                            dimension = embedding.size,
+                            modelVersion = CURRENT_MODEL_VERSION,
+                            sourceTextHash = sourceHash,
+                            embeddingType = EmbeddingType.INTENT.key,
+                        )
+                    }
                     
                     successCount++
                 } catch (e: Exception) {
@@ -105,7 +118,7 @@ class EmbeddingGenerationWorker @AssistedInject constructor(
 
             // If there are more memes, schedule another run
             if (remainingCount > 0) {
-                return@withContext Result.success(outputData)
+                enqueue(context)
             }
 
             Result.success(outputData)
@@ -121,13 +134,29 @@ class EmbeddingGenerationWorker @AssistedInject constructor(
         }
     }
 
-    private fun buildSearchText(memeData: MemeDataForEmbedding): String {
+    /**
+     * Build text for content embedding slot: title + description.
+     */
+    private fun buildContentText(memeData: MemeDataForEmbedding): String {
         return buildString {
-            memeData.title?.let { append(it).append(" ") }
-            memeData.description?.let { append(it).append(" ") }
-            memeData.textContent?.let { append(it).append(" ") }
-            memeData.emojiNames?.let { append(it).append(" ") }
-        }.trim()
+            memeData.title?.let { append(it).append(". ") }
+            memeData.description?.let { append(it).append(". ") }
+            memeData.textContent?.let { append(it).append(". ") }
+        }.trim().trimEnd('.')
+    }
+
+    /**
+     * Build text for intent embedding slot: searchPhrases.
+     */
+    private fun buildIntentText(memeData: MemeDataForEmbedding): String {
+        val jsonString = memeData.searchPhrases?.takeIf { it.isNotBlank() } ?: return ""
+        val phrases = try {
+            kotlinx.serialization.json.Json.decodeFromString<List<String>>(jsonString)
+        } catch (_: Exception) {
+            // Fallback: treat as comma-separated if not valid JSON
+            jsonString.split(",").map { it.trim() }
+        }
+        return phrases.joinToString(". ")
     }
 
     private fun encodeEmbedding(embedding: FloatArray): ByteArray {
@@ -223,7 +252,7 @@ data class MemeDataForEmbedding(
     val title: String?,
     val description: String?,
     val textContent: String?,
-    val emojiNames: String?,
+    val searchPhrases: String?,
 )
 
 /**
@@ -244,7 +273,8 @@ interface EmbeddingWorkRepository {
         embedding: ByteArray,
         dimension: Int,
         modelVersion: String,
-        sourceTextHash: String?
+        sourceTextHash: String?,
+        embeddingType: String = "content",
     )
     
     /**
