@@ -117,7 +117,7 @@ fun EmojiChip(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = "${emojiTag.emoji} ${emojiTag.name.replace("_", " ")}",
+                    text = "${emojiTag.emoji} ${emojiTag.name}",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                 )

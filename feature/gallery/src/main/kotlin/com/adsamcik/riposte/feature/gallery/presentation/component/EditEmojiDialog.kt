@@ -44,38 +44,12 @@ import com.adsamcik.riposte.feature.gallery.R
 
 /**
  * Common emojis for quick selection.
+ * TODO: Replace with emojis from the user's meme collection (query from DB) plus freeform input.
  */
-private val commonEmojis = mapOf(
-    "😀" to "grinning_face",
-    "😂" to "face_with_tears_of_joy",
-    "🤣" to "rolling_on_the_floor_laughing",
-    "😊" to "smiling_face_with_smiling_eyes",
-    "😍" to "smiling_face_with_heart_eyes",
-    "🥺" to "pleading_face",
-    "😭" to "loudly_crying_face",
-    "😤" to "face_with_steam_from_nose",
-    "😡" to "pouting_face",
-    "🤔" to "thinking_face",
-    "😏" to "smirking_face",
-    "😴" to "sleeping_face",
-    "🤯" to "exploding_head",
-    "🥳" to "partying_face",
-    "😎" to "smiling_face_with_sunglasses",
-    "🤡" to "clown_face",
-    "👀" to "eyes",
-    "💀" to "skull",
-    "🔥" to "fire",
-    "💯" to "hundred_points",
-    "❤️" to "red_heart",
-    "💔" to "broken_heart",
-    "👍" to "thumbs_up",
-    "👎" to "thumbs_down",
-    "👏" to "clapping_hands",
-    "🙏" to "folded_hands",
-    "💪" to "flexed_biceps",
-    "🎉" to "party_popper",
-    "✨" to "sparkles",
-    "🌟" to "glowing_star",
+private val commonEmojis = listOf(
+    "😀", "😂", "🤣", "😊", "😍", "🥺", "😭", "😤", "😡", "🤔",
+    "😏", "😴", "🤯", "🥳", "😎", "🤡", "👀", "💀", "🔥", "💯",
+    "❤️", "💔", "👍", "👎", "👏", "🙏", "💪", "🎉", "✨", "🌟",
 )
 
 /**
@@ -94,11 +68,10 @@ fun EditEmojiDialog(
 
     val filteredEmojis = remember(searchQuery) {
         if (searchQuery.isBlank()) {
-            commonEmojis.entries.toList()
+            commonEmojis
         } else {
-            commonEmojis.entries.filter { (emoji, name) ->
-                name.contains(searchQuery, ignoreCase = true) ||
-                        emoji.contains(searchQuery)
+            commonEmojis.filter { emoji ->
+                emoji.contains(searchQuery)
             }
         }
     }
@@ -145,10 +118,8 @@ fun EditEmojiDialog(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         selectedEmojis.forEach { emoji ->
-                            val name = commonEmojis[emoji] ?: "emoji"
                             EmojiChip(
                                 emoji = emoji,
-                                name = name,
                                 isSelected = true,
                                 showRemove = true,
                                 onClick = { onRemoveEmoji(emoji) },
@@ -169,11 +140,10 @@ fun EditEmojiDialog(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    filteredEmojis.forEach { (emoji, name) ->
+                    filteredEmojis.forEach { emoji ->
                         val isSelected = selectedEmojis.contains(emoji)
                         EmojiChip(
                             emoji = emoji,
-                            name = name,
                             isSelected = isSelected,
                             showRemove = false,
                             onClick = {
@@ -200,7 +170,6 @@ fun EditEmojiDialog(
 @Composable
 private fun EmojiChip(
     emoji: String,
-    name: String,
     isSelected: Boolean,
     showRemove: Boolean,
     onClick: () -> Unit,

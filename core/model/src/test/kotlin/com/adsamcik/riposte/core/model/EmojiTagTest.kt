@@ -131,67 +131,67 @@ class EmojiTagTest {
 
     // fromEmoji companion function tests
     @Test
-    fun `fromEmoji creates tag with known emoji`() {
+    fun `fromEmoji creates tag with emoji as name`() {
         val tag = EmojiTag.fromEmoji("😂")
 
         assertThat(tag.emoji).isEqualTo("😂")
-        assertThat(tag.name).isEqualTo("face_with_tears_of_joy")
+        assertThat(tag.name).isEqualTo("😂")
     }
 
     @Test
-    fun `fromEmoji maps grinning face correctly`() {
+    fun `fromEmoji works with any emoji`() {
         val tag = EmojiTag.fromEmoji("😀")
 
         assertThat(tag.emoji).isEqualTo("😀")
-        assertThat(tag.name).isEqualTo("grinning_face")
+        assertThat(tag.name).isEqualTo("😀")
     }
 
     @Test
-    fun `fromEmoji maps fire emoji correctly`() {
+    fun `fromEmoji works with fire emoji`() {
         val tag = EmojiTag.fromEmoji("🔥")
 
         assertThat(tag.emoji).isEqualTo("🔥")
-        assertThat(tag.name).isEqualTo("fire")
+        assertThat(tag.name).isEqualTo("🔥")
     }
 
     @Test
-    fun `fromEmoji maps skull emoji correctly`() {
+    fun `fromEmoji works with skull emoji`() {
         val tag = EmojiTag.fromEmoji("💀")
 
         assertThat(tag.emoji).isEqualTo("💀")
-        assertThat(tag.name).isEqualTo("skull")
+        assertThat(tag.name).isEqualTo("💀")
     }
 
     @Test
-    fun `fromEmoji maps thumbs up correctly`() {
+    fun `fromEmoji works with thumbs up`() {
         val tag = EmojiTag.fromEmoji("👍")
 
         assertThat(tag.emoji).isEqualTo("👍")
-        assertThat(tag.name).isEqualTo("thumbs_up")
+        assertThat(tag.name).isEqualTo("👍")
     }
 
     @Test
-    fun `fromEmoji maps party popper correctly`() {
+    fun `fromEmoji works with party popper`() {
         val tag = EmojiTag.fromEmoji("🎉")
 
         assertThat(tag.emoji).isEqualTo("🎉")
-        assertThat(tag.name).isEqualTo("party_popper")
+        assertThat(tag.name).isEqualTo("🎉")
     }
 
     @Test
-    fun `fromEmoji returns unknown for unmapped emoji`() {
+    fun `fromEmoji works with unmapped emoji`() {
         val tag = EmojiTag.fromEmoji("🦄")
 
         assertThat(tag.emoji).isEqualTo("🦄")
-        assertThat(tag.name).isEqualTo("unknown_emoji")
+        assertThat(tag.name).isEqualTo("🦄")
     }
 
     @Test
-    fun `fromEmoji returns unknown for random string`() {
+    fun `fromEmoji works with arbitrary string`() {
         val tag = EmojiTag.fromEmoji("not_an_emoji")
 
         assertThat(tag.emoji).isEqualTo("not_an_emoji")
-        assertThat(tag.name).isEqualTo("unknown_emoji")
+        assertThat(tag.name).isEqualTo("not_an_emoji")
     }
 
     @Test
@@ -208,45 +208,17 @@ class EmojiTagTest {
         assertThat(tag.keywords).isEmpty()
     }
 
-    // Test all common emoji mappings
     @Test
-    fun `fromEmoji maps all common emojis`() {
-        val expectedMappings = mapOf(
-            "😀" to "grinning_face",
-            "😂" to "face_with_tears_of_joy",
-            "🤣" to "rolling_on_the_floor_laughing",
-            "😊" to "smiling_face_with_smiling_eyes",
-            "😍" to "smiling_face_with_heart_eyes",
-            "🥺" to "pleading_face",
-            "😭" to "loudly_crying_face",
-            "😤" to "face_with_steam_from_nose",
-            "😡" to "pouting_face",
-            "🤔" to "thinking_face",
-            "😏" to "smirking_face",
-            "😴" to "sleeping_face",
-            "🤯" to "exploding_head",
-            "🥳" to "partying_face",
-            "😎" to "smiling_face_with_sunglasses",
-            "🤡" to "clown_face",
-            "👀" to "eyes",
-            "💀" to "skull",
-            "🔥" to "fire",
-            "💯" to "hundred_points",
-            "❤️" to "red_heart",
-            "💔" to "broken_heart",
-            "👍" to "thumbs_up",
-            "👎" to "thumbs_down",
-            "👏" to "clapping_hands",
-            "🙏" to "folded_hands",
-            "💪" to "flexed_biceps",
-            "🎉" to "party_popper",
-            "✨" to "sparkles",
-            "🌟" to "glowing_star"
+    fun `fromEmoji sets name to emoji for any input`() {
+        val testEmojis = listOf(
+            "😀", "😂", "🤣", "😊", "😍", "🥺", "😭", "😤", "😡", "🤔",
+            "😏", "😴", "🤯", "🥳", "😎", "🤡", "👀", "💀", "🔥", "💯",
+            "❤️", "💔", "👍", "👎", "👏", "🙏", "💪", "🎉", "✨", "🌟",
         )
 
-        expectedMappings.forEach { (emoji, expectedName) ->
+        testEmojis.forEach { emoji ->
             val tag = EmojiTag.fromEmoji(emoji)
-            assertThat(tag.name).isEqualTo(expectedName)
+            assertThat(tag.name).isEqualTo(emoji)
         }
     }
 }
