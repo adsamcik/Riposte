@@ -243,7 +243,7 @@ fun ImportScreen(
                 uiState.isImporting -> {
                     ImportProgressContent(
                         progress = uiState.importProgress,
-                        total = uiState.selectedImages.size,
+                        total = uiState.totalImportCount,
                         currentFileName = uiState.statusMessage,
                         isIndeterminate = uiState.isProgressIndeterminate,
                         onCancel = { viewModel.onIntent(ImportIntent.CancelImport) },

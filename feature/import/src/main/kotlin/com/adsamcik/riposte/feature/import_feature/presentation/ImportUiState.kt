@@ -23,6 +23,11 @@ data class ImportUiState(
     val importProgress: Float = 0f,
 
     /**
+     * Total number of images being imported (persisted across selectedImages clear).
+     */
+    val totalImportCount: Int = 0,
+
+    /**
      * Current status message.
      */
     val statusMessage: String? = null,
