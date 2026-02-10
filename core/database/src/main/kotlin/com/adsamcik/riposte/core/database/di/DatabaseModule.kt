@@ -2,8 +2,11 @@ package com.adsamcik.riposte.core.database.di
 
 import android.content.Context
 import androidx.room.Room
+import com.adsamcik.riposte.core.database.MIGRATION_1_2
+import com.adsamcik.riposte.core.database.MIGRATION_2_3
 import com.adsamcik.riposte.core.database.MemeDatabase
 import com.adsamcik.riposte.core.database.dao.EmojiTagDao
+import com.adsamcik.riposte.core.database.dao.ImportRequestDao
 import com.adsamcik.riposte.core.database.dao.MemeDao
 import com.adsamcik.riposte.core.database.dao.MemeEmbeddingDao
 import com.adsamcik.riposte.core.database.dao.MemeSearchDao
@@ -29,6 +32,7 @@ object DatabaseModule {
             MemeDatabase::class.java,
             "riposte.db"
         )
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
             .build()
     }
 
@@ -60,5 +64,11 @@ object DatabaseModule {
     @Singleton
     fun provideShareTargetDao(database: MemeDatabase): ShareTargetDao {
         return database.shareTargetDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideImportRequestDao(database: MemeDatabase): ImportRequestDao {
+        return database.importRequestDao()
     }
 }
