@@ -5,6 +5,7 @@ import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
+import com.adsamcik.riposte.core.common.crash.CrashLogManager
 import com.adsamcik.riposte.core.model.AppPreferences
 import com.adsamcik.riposte.core.model.DarkMode
 import com.adsamcik.riposte.core.model.ImageFormat
@@ -73,6 +74,7 @@ class SettingsViewModelTest {
     private lateinit var exportPreferencesUseCase: ExportPreferencesUseCase
     private lateinit var importPreferencesUseCase: ImportPreferencesUseCase
     private lateinit var observeEmbeddingStatisticsUseCase: ObserveEmbeddingStatisticsUseCase
+    private lateinit var crashLogManager: CrashLogManager
 
     private val appPreferencesFlow = MutableStateFlow(createDefaultAppPreferences())
     private val sharingPreferencesFlow = MutableStateFlow(createDefaultSharingPreferences())
@@ -114,6 +116,7 @@ class SettingsViewModelTest {
         exportPreferencesUseCase = mockk(relaxed = true)
         importPreferencesUseCase = mockk(relaxed = true)
         observeEmbeddingStatisticsUseCase = mockk(relaxed = true)
+        crashLogManager = mockk(relaxed = true)
 
         every { getAppPreferencesUseCase() } returns appPreferencesFlow
         every { getSharingPreferencesUseCase() } returns sharingPreferencesFlow
@@ -144,6 +147,7 @@ class SettingsViewModelTest {
             exportPreferencesUseCase = exportPreferencesUseCase,
             importPreferencesUseCase = importPreferencesUseCase,
             observeEmbeddingStatisticsUseCase = observeEmbeddingStatisticsUseCase,
+            crashLogManager = crashLogManager,
             ioDispatcher = testDispatcher,
         )
     }

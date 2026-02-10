@@ -103,4 +103,12 @@
     <string name="settings_snackbar_export_failed">Exportación fallida: %1$s</string>
     <string name="settings_snackbar_import_failed">Importación fallida: %1$s</string>
     <string name="settings_snackbar_import_success">Ajustes importados exitosamente</string>
+
+    <!-- Diagnostics Section -->
+    <string name="settings_section_diagnostics">Diagnósticos</string>
+    <string name="settings_crash_share_title">Compartir informes de fallos</string>
+    <string name="settings_crash_share_subtitle">%1$d informe(s) de fallo disponible(s)</string>
+    <string name="settings_crash_share_subtitle_empty">Sin informes de fallos</string>
+    <string name="settings_crash_clear_title">Borrar informes de fallos</string>
+    <string name="settings_crash_cleared">Informes de fallos borrados</string>
 </resources>

@@ -116,4 +116,12 @@
     <string name="settings_snackbar_export_failed">Export selhal: %1$s</string>
     <string name="settings_snackbar_import_failed">Import selhal: %1$s</string>
     <string name="settings_snackbar_import_success">Nastavení úspěšně importováno</string>
+
+    <!-- Diagnostics Section -->
+    <string name="settings_section_diagnostics">Diagnostika</string>
+    <string name="settings_crash_share_title">Sdílet záznamy o pádech</string>
+    <string name="settings_crash_share_subtitle">%1$d záznam(ů) o pádu k dispozici</string>
+    <string name="settings_crash_share_subtitle_empty">Žádné záznamy o pádech</string>
+    <string name="settings_crash_clear_title">Vymazat záznamy o pádech</string>
+    <string name="settings_crash_cleared">Záznamy o pádech vymazány</string>
 </resources>

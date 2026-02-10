@@ -109,6 +109,14 @@
     <string name="settings_export_complete">Exported to %1$s</string>
     <string name="settings_import_complete">Imported %1$d memes</string>
 
+    <!-- Diagnostics Section -->
+    <string name="settings_section_diagnostics">Diagnostics</string>
+    <string name="settings_crash_share_title">Share Crash Logs</string>
+    <string name="settings_crash_share_subtitle">%1$d crash report(s) available</string>
+    <string name="settings_crash_share_subtitle_empty">No crash reports</string>
+    <string name="settings_crash_clear_title">Clear Crash Logs</string>
+    <string name="settings_crash_cleared">Crash logs cleared</string>
+
     <!-- Additional Snackbar Messages -->
     <string name="settings_snackbar_cache_cleared">Cache cleared successfully</string>
     <string name="settings_snackbar_cache_clear_failed">Failed to clear cache</string>

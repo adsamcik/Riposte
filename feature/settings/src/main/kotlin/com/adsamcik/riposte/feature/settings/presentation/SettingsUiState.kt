@@ -78,5 +78,8 @@ data class SettingsUiState(
     // About
     val appVersion: String = "1.0.0",
 
+    // Crash Logs
+    val crashLogCount: Int = 0,
+
     val isLoading: Boolean = true,
 )

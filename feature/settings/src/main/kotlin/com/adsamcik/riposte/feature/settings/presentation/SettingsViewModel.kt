@@ -27,6 +27,7 @@ import com.adsamcik.riposte.feature.settings.domain.usecase.SetGridDensityUseCas
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetSaveSearchHistoryUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetStripMetadataUseCase
 import com.adsamcik.riposte.core.common.di.IoDispatcher
+import com.adsamcik.riposte.core.common.crash.CrashLogManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
@@ -67,6 +68,7 @@ class SettingsViewModel @Inject constructor(
     private val exportPreferencesUseCase: ExportPreferencesUseCase,
     private val importPreferencesUseCase: ImportPreferencesUseCase,
     private val observeEmbeddingStatisticsUseCase: ObserveEmbeddingStatisticsUseCase,
+    private val crashLogManager: CrashLogManager,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) : ViewModel() {
 
@@ -90,6 +92,7 @@ class SettingsViewModel @Inject constructor(
         calculateCacheSize()
         loadCurrentLanguage()
         observeEmbeddingStatistics()
+        refreshCrashLogCount()
     }
 
     private fun loadCurrentLanguage() {
@@ -207,6 +210,10 @@ class SettingsViewModel @Inject constructor(
             // About
             is SettingsIntent.OpenLicenses -> openLicenses()
             is SettingsIntent.OpenPrivacyPolicy -> openPrivacyPolicy()
+
+            // Crash Logs
+            is SettingsIntent.ShareCrashLogs -> shareCrashLogs()
+            is SettingsIntent.ClearCrashLogs -> clearCrashLogs()
         }
     }
 
@@ -474,6 +481,41 @@ class SettingsViewModel @Inject constructor(
     private fun dismissImportConfirmDialog() {
         _uiState.update {
             it.copy(showImportConfirmDialog = false, pendingImportJson = null, importBackupTimestamp = null)
+        }
+    }
+
+    // endregion
+
+    // region Crash Logs
+
+    private fun refreshCrashLogCount() {
+        viewModelScope.launch {
+            val count = withContext(ioDispatcher) { crashLogManager.getCrashLogCount() }
+            _uiState.update { it.copy(crashLogCount = count) }
+        }
+    }
+
+    private fun shareCrashLogs() {
+        viewModelScope.launch {
+            val report = withContext(ioDispatcher) { crashLogManager.getShareableReport() }
+            if (report.isNotEmpty()) {
+                _effects.send(
+                    SettingsEffect.ShareText(
+                        text = report,
+                        title = context.getString(R.string.settings_crash_share_title),
+                    ),
+                )
+            }
+        }
+    }
+
+    private fun clearCrashLogs() {
+        viewModelScope.launch {
+            withContext(ioDispatcher) { crashLogManager.clearAll() }
+            _uiState.update { it.copy(crashLogCount = 0) }
+            _effects.send(
+                SettingsEffect.ShowSnackbar(context.getString(R.string.settings_crash_cleared)),
+            )
         }
     }
 

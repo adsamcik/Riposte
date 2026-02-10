@@ -48,4 +48,8 @@ sealed interface SettingsIntent {
     // About
     data object OpenLicenses : SettingsIntent
     data object OpenPrivacyPolicy : SettingsIntent
+
+    // Crash Logs
+    data object ShareCrashLogs : SettingsIntent
+    data object ClearCrashLogs : SettingsIntent
 }

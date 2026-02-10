@@ -1,5 +1,6 @@
 package com.adsamcik.riposte.feature.settings.presentation
 
+import android.content.Intent
 import android.content.res.Configuration
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -18,8 +19,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Brightness4
+import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.CleaningServices
 import androidx.compose.material.icons.filled.ColorLens
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Language
@@ -133,6 +136,16 @@ fun SettingsScreen(
                 }
                 is SettingsEffect.ShowError -> {
                     snackbarHostState.showSnackbar(effect.message)
+                }
+                is SettingsEffect.ShareText -> {
+                    val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_TEXT, effect.text)
+                        putExtra(Intent.EXTRA_SUBJECT, effect.title)
+                    }
+                    context.startActivity(
+                        Intent.createChooser(sendIntent, effect.title),
+                    )
                 }
             }
         }
@@ -504,6 +517,32 @@ fun SettingsScreen(
                         onClick = { onIntent(SettingsIntent.ImportData) },
                         icon = Icons.Default.Download,
                     )
+                }
+            }
+
+            // Diagnostics Section
+            item {
+                SettingsSection(title = stringResource(R.string.settings_section_diagnostics)) {
+                    ClickableSettingItem(
+                        title = stringResource(R.string.settings_crash_share_title),
+                        subtitle = if (uiState.crashLogCount > 0) {
+                            stringResource(R.string.settings_crash_share_subtitle, uiState.crashLogCount)
+                        } else {
+                            stringResource(R.string.settings_crash_share_subtitle_empty)
+                        },
+                        onClick = { onIntent(SettingsIntent.ShareCrashLogs) },
+                        icon = Icons.Default.BugReport,
+                        enabled = uiState.crashLogCount > 0,
+                    )
+
+                    if (uiState.crashLogCount > 0) {
+                        ClickableSettingItem(
+                            title = stringResource(R.string.settings_crash_clear_title),
+                            onClick = { onIntent(SettingsIntent.ClearCrashLogs) },
+                            icon = Icons.Default.Delete,
+                            showChevron = false,
+                        )
+                    }
                 }
             }
 
