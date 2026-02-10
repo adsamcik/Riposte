@@ -1,11 +1,18 @@
 package com.adsamcik.riposte.feature.gallery.presentation
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -25,6 +32,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
@@ -32,6 +40,7 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import com.adsamcik.riposte.core.model.Meme
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
@@ -40,8 +49,8 @@ import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.BottomAppBar
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -66,6 +75,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
@@ -91,6 +103,7 @@ import com.adsamcik.riposte.core.ui.component.ErrorState
 import com.adsamcik.riposte.core.ui.component.LoadingScreen
 import com.adsamcik.riposte.core.ui.component.MemeCardCompact
 import com.adsamcik.riposte.core.ui.modifier.animatedPressScale
+import com.adsamcik.riposte.core.ui.theme.MoodShapes
 import com.adsamcik.riposte.core.ui.theme.rememberGridColumns
 import com.adsamcik.riposte.feature.gallery.R
 import androidx.compose.ui.text.style.TextOverflow
@@ -354,20 +367,42 @@ private fun GalleryScreenContent(
                 enter = slideInVertically { it } + fadeIn(),
                 exit = slideOutVertically { it } + fadeOut()
             ) {
-                BottomAppBar(
-                    actions = {
-                        IconButton(onClick = { onIntent(GalleryIntent.ShareSelected) }) {
-                            Icon(Icons.Default.Share, contentDescription = stringResource(R.string.gallery_cd_share))
+                BottomAppBar {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            IconButton(onClick = { onIntent(GalleryIntent.ShareSelected) }) {
+                                Icon(Icons.Default.Share, contentDescription = stringResource(R.string.gallery_cd_share))
+                            }
+                            Text(
+                                text = stringResource(R.string.gallery_cd_share),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
                         }
-                        IconButton(onClick = { onIntent(GalleryIntent.DeleteSelected) }) {
-                            Icon(
-                                Icons.Default.Delete,
-                                contentDescription = stringResource(R.string.gallery_cd_delete),
-                                tint = MaterialTheme.colorScheme.error
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            IconButton(onClick = { onIntent(GalleryIntent.DeleteSelected) }) {
+                                Icon(
+                                    Icons.Default.Delete,
+                                    contentDescription = stringResource(R.string.gallery_cd_delete),
+                                    tint = MaterialTheme.colorScheme.error,
+                                )
+                            }
+                            Text(
+                                text = stringResource(R.string.gallery_cd_delete),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.error,
                             )
                         }
                     }
-                )
+                }
             }
         },
         floatingActionButton = {
@@ -922,7 +957,8 @@ private fun EmojiSectionHeader(
  * Individual meme grid item with selection support and hold-to-share gesture.
  *
  * In normal mode, tap opens the meme and holding for 600ms triggers quick share
- * with a circular progress overlay. In selection mode, tap toggles selection.
+ * with a circular progress overlay. In selection mode, tap toggles selection
+ * with a circular check indicator and animated overlay.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -933,12 +969,41 @@ internal fun MemeGridItem(
     memeDescription: String,
     onIntent: (GalleryIntent) -> Unit,
 ) {
-    val scrimColor = MaterialTheme.colorScheme.scrim.copy(alpha = 0.3f)
     val selectedText = stringResource(com.adsamcik.riposte.core.ui.R.string.ui_state_selected)
     val notSelectedText = stringResource(com.adsamcik.riposte.core.ui.R.string.ui_state_not_selected)
 
     if (isSelectionMode) {
         val interactionSource = remember { MutableInteractionSource() }
+        val primaryColor = MaterialTheme.colorScheme.primary
+
+        // Animated selection states
+        val overlayAlpha by animateFloatAsState(
+            targetValue = if (isSelected) 0.25f else 0f,
+            animationSpec = tween(durationMillis = 150),
+            label = "overlayAlpha",
+        )
+        val borderWidth by animateDpAsState(
+            targetValue = if (isSelected) 3.dp else 0.dp,
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessMedium,
+            ),
+            label = "borderWidth",
+        )
+        val checkScale by animateFloatAsState(
+            targetValue = if (isSelected) 1f else 0.6f,
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessMedium,
+            ),
+            label = "checkScale",
+        )
+        val checkBgColor by animateColorAsState(
+            targetValue = if (isSelected) primaryColor else Color.Black.copy(alpha = 0.35f),
+            animationSpec = tween(durationMillis = 150),
+            label = "checkBgColor",
+        )
+
         Box(
             modifier = Modifier
                 .animatedPressScale(interactionSource)
@@ -958,24 +1023,63 @@ internal fun MemeGridItem(
                 meme = meme,
             )
 
-            // Selection overlay
-            androidx.compose.foundation.Canvas(
-                modifier = Modifier.matchParentSize()
+            // Animated scrim overlay (respects card shape)
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .clip(MoodShapes.MemeCard)
+                    .background(MaterialTheme.colorScheme.scrim.copy(alpha = overlayAlpha)),
+            )
+
+            // Primary color border for selected items
+            if (borderWidth > 0.dp) {
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .border(
+                            width = borderWidth,
+                            color = primaryColor,
+                            shape = MoodShapes.MemeCard,
+                        ),
+                )
+            }
+
+            // Circular check indicator
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(6.dp)
+                    .size(24.dp)
+                    .graphicsLayer {
+                        scaleX = checkScale
+                        scaleY = checkScale
+                    }
+                    .background(
+                        color = checkBgColor,
+                        shape = CircleShape,
+                    )
+                    .then(
+                        if (!isSelected) {
+                            Modifier.border(
+                                width = 1.5.dp,
+                                color = Color.White.copy(alpha = 0.8f),
+                                shape = CircleShape,
+                            )
+                        } else {
+                            Modifier
+                        },
+                    ),
+                contentAlignment = Alignment.Center,
             ) {
                 if (isSelected) {
-                    drawRect(
-                        color = scrimColor
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(16.dp),
                     )
                 }
             }
-
-            androidx.compose.material3.Checkbox(
-                checked = isSelected,
-                onCheckedChange = { onIntent(GalleryIntent.ToggleSelection(meme.id)) },
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(4.dp)
-            )
         }
     } else {
         val interactionSource = remember { MutableInteractionSource() }
