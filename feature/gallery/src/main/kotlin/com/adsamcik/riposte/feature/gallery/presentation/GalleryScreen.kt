@@ -124,17 +124,26 @@ fun GalleryScreen(
                     deleteCount = effect.count
                     showDeleteDialog = true
                 }
-                is GalleryEffect.OpenShareSheet -> {
-                    if (effect.memeIds.size == 1) {
-                        onNavigateToMeme(effect.memeIds.first())
-                    }
-                }
                 is GalleryEffect.ShowError -> snackbarHostState.showSnackbar(effect.message)
                 is GalleryEffect.NavigateToShare -> onNavigateToShare(effect.memeId)
                 is GalleryEffect.LaunchQuickShare -> {
                     context.startActivity(effect.intent)
                 }
                 is GalleryEffect.TriggerHapticFeedback -> { /* Handled by Compose haptic feedback */ }
+                is GalleryEffect.CopyToClipboard -> {
+                    val meme = uiState.memes.find { it.id == effect.memeId }
+                    if (meme != null) {
+                        val uri = androidx.core.content.FileProvider.getUriForFile(
+                            context,
+                            "${context.packageName}.fileprovider",
+                            java.io.File(meme.filePath),
+                        )
+                        val clip = android.content.ClipData.newUri(context.contentResolver, meme.title ?: meme.fileName, uri)
+                        val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                        clipboard.setPrimaryClip(clip)
+                        snackbarHostState.showSnackbar(context.getString(com.adsamcik.riposte.core.ui.R.string.quick_share_copy_clipboard))
+                    }
+                }
             }
         }
     }
@@ -251,6 +260,7 @@ private fun GalleryScreenContent(
             frequentTargets = uiState.quickShareTargets,
             onTargetSelected = { target -> onIntent(GalleryIntent.SelectShareTarget(target)) },
             onMoreClick = { onIntent(GalleryIntent.QuickShareMore) },
+            onCopyToClipboard = { onIntent(GalleryIntent.CopyToClipboard) },
             onDismiss = { onIntent(GalleryIntent.DismissQuickShare) },
         )
     }
@@ -791,6 +801,12 @@ private fun GalleryContent(
             )
         }
 
+        // Import progress/status banner
+        ImportStatusBanner(
+            status = uiState.importStatus,
+            onDismiss = { onIntent(GalleryIntent.DismissImportStatus) },
+        )
+
         Box {
             LazyVerticalGrid(
                 state = gridState,
@@ -1051,6 +1067,99 @@ private fun RecentSearchItem(
                 contentDescription = stringResource(com.adsamcik.riposte.core.search.R.string.search_recent_delete),
                 modifier = Modifier.size(18.dp),
             )
+        }
+    }
+}
+
+/**
+ * Banner showing background import status: progress, completion, or failure.
+ * Slides in/out with animation and can be dismissed for completed/failed states.
+ */
+@Composable
+private fun ImportStatusBanner(
+    status: ImportWorkStatus,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    AnimatedVisibility(
+        visible = status !is ImportWorkStatus.Idle,
+        enter = slideInVertically() + fadeIn(),
+        exit = slideOutVertically() + fadeOut(),
+    ) {
+        val containerColor = when (status) {
+            is ImportWorkStatus.InProgress -> MaterialTheme.colorScheme.primaryContainer
+            is ImportWorkStatus.Completed -> MaterialTheme.colorScheme.secondaryContainer
+            is ImportWorkStatus.Failed -> MaterialTheme.colorScheme.errorContainer
+            is ImportWorkStatus.Idle -> MaterialTheme.colorScheme.surface
+        }
+        val contentColor = when (status) {
+            is ImportWorkStatus.InProgress -> MaterialTheme.colorScheme.onPrimaryContainer
+            is ImportWorkStatus.Completed -> MaterialTheme.colorScheme.onSecondaryContainer
+            is ImportWorkStatus.Failed -> MaterialTheme.colorScheme.onErrorContainer
+            is ImportWorkStatus.Idle -> MaterialTheme.colorScheme.onSurface
+        }
+
+        Row(
+            modifier = modifier
+                .fillMaxWidth()
+                .background(containerColor)
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            when (status) {
+                is ImportWorkStatus.InProgress -> {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp,
+                        color = contentColor,
+                    )
+                    Text(
+                        text = stringResource(R.string.gallery_import_in_progress, status.completed, status.total),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = contentColor,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                is ImportWorkStatus.Completed -> {
+                    val text = if (status.failed > 0) {
+                        stringResource(R.string.gallery_import_completed_with_errors, status.completed, status.failed)
+                    } else {
+                        stringResource(R.string.gallery_import_completed, status.completed)
+                    }
+                    Text(
+                        text = text,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = contentColor,
+                        modifier = Modifier.weight(1f),
+                    )
+                    IconButton(onClick = onDismiss, modifier = Modifier.size(20.dp)) {
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = stringResource(R.string.gallery_cd_dismiss_import_status),
+                            tint = contentColor,
+                            modifier = Modifier.size(16.dp),
+                        )
+                    }
+                }
+                is ImportWorkStatus.Failed -> {
+                    Text(
+                        text = stringResource(R.string.gallery_import_failed),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = contentColor,
+                        modifier = Modifier.weight(1f),
+                    )
+                    IconButton(onClick = onDismiss, modifier = Modifier.size(20.dp)) {
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = stringResource(R.string.gallery_cd_dismiss_import_status),
+                            tint = contentColor,
+                            modifier = Modifier.size(16.dp),
+                        )
+                    }
+                }
+                is ImportWorkStatus.Idle -> { /* Nothing to show */ }
+            }
         }
     }
 }

@@ -20,4 +20,8 @@ sealed interface MemeDetailIntent {
     data object Dismiss : MemeDetailIntent
     data object LoadSimilarMemes : MemeDetailIntent
     data class NavigateToSimilarMeme(val memeId: Long) : MemeDetailIntent
+    data class SelectShareTarget(val target: com.adsamcik.riposte.core.model.ShareTarget) : MemeDetailIntent
+    data object QuickShareMore : MemeDetailIntent
+    data object DismissQuickShare : MemeDetailIntent
+    data object CopyToClipboard : MemeDetailIntent
 }

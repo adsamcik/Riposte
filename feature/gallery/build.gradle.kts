@@ -55,6 +55,9 @@ dependencies {
     implementation(libs.coroutines.core)
     implementation(libs.coroutines.android)
 
+    // WorkManager (to observe import status)
+    implementation(libs.workmanager.runtime)
+
     // Paging
     implementation(libs.paging.runtime)
     implementation(libs.paging.compose)

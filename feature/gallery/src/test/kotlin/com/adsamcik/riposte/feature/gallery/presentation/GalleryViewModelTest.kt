@@ -531,22 +531,24 @@ class GalleryViewModelTest {
     // region Share Intent Tests
 
     @Test
-    fun `ShareSelected emits OpenShareSheet effect`() = runTest {
+    fun `ShareSelected with single meme delegates to quickShare`() = runTest {
+        coEvery { preferencesDataStore.sharingPreferences } returns flowOf(
+            com.adsamcik.riposte.core.model.SharingPreferences(useNativeShareDialog = true),
+        )
         viewModel = createViewModel()
         advanceUntilIdle()
         viewModel.onIntent(GalleryIntent.StartSelection(1))
-        viewModel.onIntent(GalleryIntent.ToggleSelection(2))
 
         turbineScope {
             val effects = viewModel.effects.testIn(backgroundScope)
-            
+
             viewModel.onIntent(GalleryIntent.ShareSelected)
             advanceUntilIdle()
 
             val effect = effects.awaitItem()
-            assertThat(effect).isInstanceOf(GalleryEffect.OpenShareSheet::class.java)
-            assertThat((effect as GalleryEffect.OpenShareSheet).memeIds).containsExactly(1L, 2L)
-            
+            assertThat(effect).isInstanceOf(GalleryEffect.NavigateToShare::class.java)
+            assertThat((effect as GalleryEffect.NavigateToShare).memeId).isEqualTo(1L)
+
             effects.cancel()
         }
     }

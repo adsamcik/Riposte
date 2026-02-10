@@ -115,6 +115,13 @@ data class GalleryUiState(
      * Search-specific state slice.
      */
     val searchState: SearchSliceState = SearchSliceState(),
+
+    /**
+     * Status of a background import, if any.
+     * Observed via WorkManager so gallery can show progress without
+     * depending on the import feature module.
+     */
+    val importStatus: ImportWorkStatus = ImportWorkStatus.Idle,
 ) {
     /**
      * Whether any memes are selected.
@@ -140,4 +147,14 @@ sealed interface GalleryFilter {
     data object All : GalleryFilter
     data object Favorites : GalleryFilter
     data class ByEmoji(val emoji: String) : GalleryFilter
+}
+
+/**
+ * Status of background import work observed via WorkManager.
+ */
+sealed interface ImportWorkStatus {
+    data object Idle : ImportWorkStatus
+    data class InProgress(val completed: Int, val total: Int) : ImportWorkStatus
+    data class Completed(val completed: Int, val failed: Int) : ImportWorkStatus
+    data class Failed(val message: String? = null) : ImportWorkStatus
 }

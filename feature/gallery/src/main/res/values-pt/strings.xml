@@ -50,9 +50,6 @@
     <!-- Error State -->
     <string name="gallery_error_default">Erro</string>
 
-    <!-- Share -->
-    <string name="gallery_share_chooser_title">Compartilhar Meme</string>
-
     <!-- Meme Detail - Labels -->
     <string name="gallery_detail_label_title">Título</string>
     <string name="gallery_detail_label_description">Descrição</string>

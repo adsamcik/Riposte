@@ -109,6 +109,11 @@ sealed interface GalleryIntent {
      */
     data object DismissQuickShare : GalleryIntent
 
+    /**
+     * Copy the meme to clipboard from the quick share sheet.
+     */
+    data object CopyToClipboard : GalleryIntent
+
     // ── Search intents (inline search) ──
 
     /**
@@ -135,4 +140,9 @@ sealed interface GalleryIntent {
      * Clear all recent search history.
      */
     data object ClearRecentSearches : GalleryIntent
+
+    /**
+     * Dismiss the import completion/failure banner.
+     */
+    data object DismissImportStatus : GalleryIntent
 }

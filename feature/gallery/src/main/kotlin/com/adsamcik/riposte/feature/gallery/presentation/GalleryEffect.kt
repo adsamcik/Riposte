@@ -25,11 +25,6 @@ sealed interface GalleryEffect {
     data class ShowDeleteConfirmation(val count: Int) : GalleryEffect
 
     /**
-     * Open share sheet with selected memes.
-     */
-    data class OpenShareSheet(val memeIds: List<Long>) : GalleryEffect
-
-    /**
      * Show error message.
      */
     data class ShowError(val message: String) : GalleryEffect
@@ -40,20 +35,17 @@ sealed interface GalleryEffect {
     data class NavigateToShare(val memeId: Long) : GalleryEffect
 
     /**
-     * Launch share intent directly.
-     */
-    data class LaunchShareIntent(val intent: android.content.Intent) : GalleryEffect
-
-    /**
      * Launch a quick share to a specific app target.
      */
-    data class LaunchQuickShare(
-        val meme: com.adsamcik.riposte.core.model.Meme,
-        val target: com.adsamcik.riposte.core.model.ShareTarget,
-    ) : GalleryEffect
+    data class LaunchQuickShare(val intent: android.content.Intent) : GalleryEffect
 
     /**
      * Trigger haptic feedback for UI interactions.
      */
     data object TriggerHapticFeedback : GalleryEffect
+
+    /**
+     * Copy meme image to clipboard.
+     */
+    data class CopyToClipboard(val memeId: Long) : GalleryEffect
 }

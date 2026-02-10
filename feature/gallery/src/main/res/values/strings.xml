@@ -120,4 +120,11 @@
     <string name="gallery_discard_changes_title">Discard changes?</string>
     <string name="gallery_discard_changes_message">You have unsaved changes that will be lost.</string>
     <string name="gallery_button_keep_editing">Keep editing</string>
+
+    <!-- Import Status Banner -->
+    <string name="gallery_import_in_progress">Importing memes… %1$d of %2$d</string>
+    <string name="gallery_import_completed">Imported %1$d memes</string>
+    <string name="gallery_import_completed_with_errors">Imported %1$d memes, %2$d failed</string>
+    <string name="gallery_import_failed">Import failed</string>
+    <string name="gallery_cd_dismiss_import_status">Dismiss import status</string>
 </resources>

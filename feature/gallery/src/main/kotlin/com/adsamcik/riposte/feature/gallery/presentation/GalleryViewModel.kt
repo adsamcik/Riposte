@@ -83,6 +83,7 @@ class GalleryViewModel @Inject constructor(
         checkShareTip()
         searchDelegate.init(viewModelScope)
         observeSearchState()
+        observeImportWork()
     }
 
     fun onIntent(intent: GalleryIntent) {
@@ -108,6 +109,8 @@ class GalleryViewModel @Inject constructor(
             is GalleryIntent.SelectShareTarget -> selectShareTarget(intent.target)
             is GalleryIntent.QuickShareMore -> quickShareMore()
             is GalleryIntent.DismissQuickShare -> dismissQuickShare()
+            is GalleryIntent.CopyToClipboard -> copyToClipboard()
+            is GalleryIntent.DismissImportStatus -> dismissImportStatus()
             // Search intents — delegate
             is GalleryIntent.UpdateSearchQuery,
             is GalleryIntent.ClearSearch,
@@ -130,6 +133,42 @@ class GalleryViewModel @Inject constructor(
                     }
                     state.copy(searchState = searchState, screenMode = mode)
                 }
+            }
+        }
+    }
+
+    /** Observe WorkManager for active import work and update UI state. */
+    private fun observeImportWork() {
+        viewModelScope.launch {
+            try {
+                androidx.work.WorkManager.getInstance(context)
+                    .getWorkInfosForUniqueWorkFlow(com.adsamcik.riposte.core.common.AppConstants.IMPORT_WORK_NAME)
+                    .collectLatest { workInfos ->
+                        val workInfo = workInfos.firstOrNull()
+                        val status = when (workInfo?.state) {
+                            androidx.work.WorkInfo.State.RUNNING -> {
+                                val completed = workInfo.progress.getInt("completed", 0)
+                                val total = workInfo.progress.getInt("total", 0)
+                                if (total > 0) {
+                                    ImportWorkStatus.InProgress(completed, total)
+                                } else {
+                                    ImportWorkStatus.InProgress(0, 0)
+                                }
+                            }
+                            androidx.work.WorkInfo.State.SUCCEEDED -> {
+                                val completed = workInfo.outputData.getInt("completed", 0)
+                                val failed = workInfo.outputData.getInt("failed", 0)
+                                ImportWorkStatus.Completed(completed, failed)
+                            }
+                            androidx.work.WorkInfo.State.FAILED -> {
+                                ImportWorkStatus.Failed()
+                            }
+                            else -> ImportWorkStatus.Idle
+                        }
+                        _uiState.update { it.copy(importStatus = status) }
+                    }
+            } catch (_: IllegalStateException) {
+                // WorkManager not initialized — safe to ignore in tests
             }
         }
     }
@@ -337,8 +376,42 @@ class GalleryViewModel @Inject constructor(
     }
 
     private fun shareSelected() {
+        val selectedIds = _uiState.value.selectedMemeIds.toList()
+        if (selectedIds.isEmpty()) return
+
+        if (selectedIds.size == 1) {
+            // Single meme: use preference-aware quick share path
+            clearSelection()
+            quickShare(selectedIds.first())
+            return
+        }
+
+        // Multiple memes: build ACTION_SEND_MULTIPLE intent with system chooser
         viewModelScope.launch {
-            _effects.send(GalleryEffect.OpenShareSheet(_uiState.value.selectedMemeIds.toList()))
+            val memes = selectedIds.mapNotNull { id ->
+                _uiState.value.memes.find { it.id == id }
+                    ?: getMemeByIdUseCase(id)
+            }
+            if (memes.isEmpty()) return@launch
+
+            val uris = ArrayList(
+                memes.map { meme ->
+                    androidx.core.content.FileProvider.getUriForFile(
+                        context,
+                        "${context.packageName}.fileprovider",
+                        java.io.File(meme.filePath),
+                    )
+                },
+            )
+            val intent = android.content.Intent(android.content.Intent.ACTION_SEND_MULTIPLE).apply {
+                type = "image/*"
+                putParcelableArrayListExtra(android.content.Intent.EXTRA_STREAM, uris)
+                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            clearSelection()
+            _effects.send(
+                GalleryEffect.LaunchQuickShare(android.content.Intent.createChooser(intent, null)),
+            )
         }
     }
 
@@ -402,6 +475,18 @@ class GalleryViewModel @Inject constructor(
 
     private fun dismissQuickShare() {
         _uiState.update { it.copy(quickShareMeme = null, quickShareTargets = emptyList()) }
+    }
+
+    private fun copyToClipboard() {
+        val meme = _uiState.value.quickShareMeme ?: return
+        _uiState.update { it.copy(quickShareMeme = null, quickShareTargets = emptyList()) }
+        viewModelScope.launch {
+            _effects.send(GalleryEffect.CopyToClipboard(meme.id))
+        }
+    }
+
+    private fun dismissImportStatus() {
+        _uiState.update { it.copy(importStatus = ImportWorkStatus.Idle) }
     }
 
     private fun toggleEmojiFilter(emoji: String) {
