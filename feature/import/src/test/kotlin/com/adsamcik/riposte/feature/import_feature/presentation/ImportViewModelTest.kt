@@ -11,8 +11,14 @@ import com.adsamcik.riposte.feature.import_feature.domain.usecase.CheckDuplicate
 import com.adsamcik.riposte.feature.import_feature.domain.usecase.CleanupExtractedFilesUseCase
 import com.adsamcik.riposte.feature.import_feature.domain.usecase.ExtractTextUseCase
 import com.adsamcik.riposte.feature.import_feature.domain.usecase.ExtractZipForPreviewUseCase
+import com.adsamcik.riposte.feature.import_feature.domain.usecase.FindDuplicateMemeIdUseCase
 import com.adsamcik.riposte.feature.import_feature.domain.usecase.ImportImageUseCase
 import com.adsamcik.riposte.feature.import_feature.domain.usecase.SuggestEmojisUseCase
+import com.adsamcik.riposte.feature.import_feature.domain.usecase.UpdateMemeMetadataUseCase
+import com.adsamcik.riposte.feature.import_feature.data.worker.ImportStagingManager
+import com.adsamcik.riposte.core.database.dao.ImportRequestDao
+import androidx.work.Configuration
+import androidx.work.testing.WorkManagerTestInitHelper
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -28,9 +34,13 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 import com.google.common.truth.Truth.assertThat
 
 @OptIn(ExperimentalCoroutinesApi::class)
+@RunWith(RobolectricTestRunner::class)
 class ImportViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
@@ -41,6 +51,8 @@ class ImportViewModelTest {
     private lateinit var extractTextUseCase: ExtractTextUseCase
     private lateinit var extractZipForPreviewUseCase: ExtractZipForPreviewUseCase
     private lateinit var checkDuplicateUseCase: CheckDuplicateUseCase
+    private lateinit var findDuplicateMemeIdUseCase: FindDuplicateMemeIdUseCase
+    private lateinit var updateMemeMetadataUseCase: UpdateMemeMetadataUseCase
     private lateinit var cleanupExtractedFilesUseCase: CleanupExtractedFilesUseCase
     private lateinit var preferencesDataStore: PreferencesDataStore
     private lateinit var viewModel: ImportViewModel
@@ -48,12 +60,20 @@ class ImportViewModelTest {
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
-        context = mockk(relaxed = true)
+        context = RuntimeEnvironment.getApplication()
+
+        val config = Configuration.Builder()
+            .setMinimumLoggingLevel(android.util.Log.DEBUG)
+            .build()
+        WorkManagerTestInitHelper.initializeTestWorkManager(context, config)
+
         importImageUseCase = mockk(relaxed = true)
         suggestEmojisUseCase = mockk(relaxed = true)
         extractTextUseCase = mockk(relaxed = true)
         extractZipForPreviewUseCase = mockk(relaxed = true)
         checkDuplicateUseCase = mockk(relaxed = true)
+        findDuplicateMemeIdUseCase = mockk(relaxed = true)
+        updateMemeMetadataUseCase = mockk(relaxed = true)
         cleanupExtractedFilesUseCase = mockk(relaxed = true)
         preferencesDataStore = mockk(relaxed = true) {
             every { hasShownEmojiTip } returns flowOf(false)
@@ -65,9 +85,13 @@ class ImportViewModelTest {
             extractTextUseCase = extractTextUseCase,
             extractZipForPreviewUseCase = extractZipForPreviewUseCase,
             checkDuplicateUseCase = checkDuplicateUseCase,
+            findDuplicateMemeIdUseCase = findDuplicateMemeIdUseCase,
+            updateMemeMetadataUseCase = updateMemeMetadataUseCase,
             cleanupExtractedFilesUseCase = cleanupExtractedFilesUseCase,
             userActionTracker = mockk(relaxed = true),
             preferencesDataStore = preferencesDataStore,
+            importStagingManager = mockk(relaxed = true),
+            importRequestDao = mockk(relaxed = true),
         )
     }
 
@@ -441,7 +465,7 @@ class ImportViewModelTest {
         coEvery { suggestEmojisUseCase(any()) } returns emptyList()
         coEvery { extractTextUseCase(any()) } returns null
         coEvery { importImageUseCase(any(), any()) } returns Result.success(meme)
-        coEvery { checkDuplicateUseCase(any()) } returns false
+        coEvery { findDuplicateMemeIdUseCase(any()) } returns null
 
         viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uri)))
         advanceUntilIdle()
@@ -521,7 +545,7 @@ class ImportViewModelTest {
         coEvery { suggestEmojisUseCase(any()) } returns emptyList()
         coEvery { extractTextUseCase(any()) } returns null
         coEvery { importImageUseCase(any(), any()) } returns Result.success(meme)
-        coEvery { checkDuplicateUseCase(any()) } returns false
+        coEvery { findDuplicateMemeIdUseCase(any()) } returns null
 
         viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uri)))
         advanceUntilIdle()
@@ -539,7 +563,7 @@ class ImportViewModelTest {
         coEvery { suggestEmojisUseCase(any()) } returns emptyList()
         coEvery { extractTextUseCase(any()) } returns null
         coEvery { importImageUseCase(any(), any()) } returns Result.failure(RuntimeException("fail"))
-        coEvery { checkDuplicateUseCase(any()) } returns false
+        coEvery { findDuplicateMemeIdUseCase(any()) } returns null
 
         viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uri)))
         advanceUntilIdle()

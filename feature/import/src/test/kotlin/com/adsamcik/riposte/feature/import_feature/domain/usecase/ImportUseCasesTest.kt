@@ -207,4 +207,60 @@ class ImportUseCasesTest {
 
         assertThat(result).isEmpty()
     }
+
+    // FindDuplicateMemeIdUseCase tests
+
+    @Test
+    fun `FindDuplicateMemeIdUseCase returns meme id when duplicate found`() = runTest {
+        val uri = mockk<Uri>()
+        coEvery { repository.findDuplicateMemeId(uri) } returns 42L
+
+        val findDuplicateMemeIdUseCase = FindDuplicateMemeIdUseCase(repository)
+        val result = findDuplicateMemeIdUseCase(uri)
+
+        assertThat(result).isEqualTo(42L)
+        coVerify { repository.findDuplicateMemeId(uri) }
+    }
+
+    @Test
+    fun `FindDuplicateMemeIdUseCase returns null when not a duplicate`() = runTest {
+        val uri = mockk<Uri>()
+        coEvery { repository.findDuplicateMemeId(uri) } returns null
+
+        val findDuplicateMemeIdUseCase = FindDuplicateMemeIdUseCase(repository)
+        val result = findDuplicateMemeIdUseCase(uri)
+
+        assertThat(result).isNull()
+    }
+
+    // UpdateMemeMetadataUseCase tests
+
+    @Test
+    fun `UpdateMemeMetadataUseCase calls repository and returns success`() = runTest {
+        val metadata = MemeMetadata(
+            emojis = listOf("😂", "🔥"),
+            title = "Updated Title",
+            description = "Updated Description",
+        )
+        coEvery { repository.updateMemeMetadata(42L, metadata) } returns Result.success(Unit)
+
+        val updateMemeMetadataUseCase = UpdateMemeMetadataUseCase(repository)
+        val result = updateMemeMetadataUseCase(42L, metadata)
+
+        assertThat(result.isSuccess).isTrue()
+        coVerify { repository.updateMemeMetadata(42L, metadata) }
+    }
+
+    @Test
+    fun `UpdateMemeMetadataUseCase returns failure when repository fails`() = runTest {
+        val metadata = MemeMetadata(emojis = listOf("😂"), title = "Test")
+        val error = RuntimeException("Meme not found")
+        coEvery { repository.updateMemeMetadata(99L, metadata) } returns Result.failure(error)
+
+        val updateMemeMetadataUseCase = UpdateMemeMetadataUseCase(repository)
+        val result = updateMemeMetadataUseCase(99L, metadata)
+
+        assertThat(result.isFailure).isTrue()
+        assertThat(result.exceptionOrNull()).isEqualTo(error)
+    }
 }

@@ -11,8 +11,14 @@ import com.adsamcik.riposte.feature.import_feature.domain.usecase.CheckDuplicate
 import com.adsamcik.riposte.feature.import_feature.domain.usecase.CleanupExtractedFilesUseCase
 import com.adsamcik.riposte.feature.import_feature.domain.usecase.ExtractTextUseCase
 import com.adsamcik.riposte.feature.import_feature.domain.usecase.ExtractZipForPreviewUseCase
+import com.adsamcik.riposte.feature.import_feature.domain.usecase.FindDuplicateMemeIdUseCase
 import com.adsamcik.riposte.feature.import_feature.domain.usecase.ImportImageUseCase
 import com.adsamcik.riposte.feature.import_feature.domain.usecase.SuggestEmojisUseCase
+import com.adsamcik.riposte.feature.import_feature.domain.usecase.UpdateMemeMetadataUseCase
+import com.adsamcik.riposte.feature.import_feature.data.worker.ImportStagingManager
+import com.adsamcik.riposte.core.database.dao.ImportRequestDao
+import androidx.work.Configuration
+import androidx.work.testing.WorkManagerTestInitHelper
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -30,12 +36,16 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 
 /**
  * Edge case tests for [ImportViewModel] covering cancellation, concurrency,
  * error handling, and race conditions.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
+@RunWith(RobolectricTestRunner::class)
 class ImportViewModelEdgeCasesTest {
 
     private val testDispatcher = StandardTestDispatcher()
@@ -46,6 +56,8 @@ class ImportViewModelEdgeCasesTest {
     private lateinit var extractTextUseCase: ExtractTextUseCase
     private lateinit var extractZipForPreviewUseCase: ExtractZipForPreviewUseCase
     private lateinit var checkDuplicateUseCase: CheckDuplicateUseCase
+    private lateinit var findDuplicateMemeIdUseCase: FindDuplicateMemeIdUseCase
+    private lateinit var updateMemeMetadataUseCase: UpdateMemeMetadataUseCase
     private lateinit var cleanupExtractedFilesUseCase: CleanupExtractedFilesUseCase
     private lateinit var preferencesDataStore: PreferencesDataStore
     private lateinit var viewModel: ImportViewModel
@@ -53,12 +65,20 @@ class ImportViewModelEdgeCasesTest {
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
-        context = mockk(relaxed = true)
+        context = RuntimeEnvironment.getApplication()
+
+        val config = Configuration.Builder()
+            .setMinimumLoggingLevel(android.util.Log.DEBUG)
+            .build()
+        WorkManagerTestInitHelper.initializeTestWorkManager(context, config)
+
         importImageUseCase = mockk(relaxed = true)
         suggestEmojisUseCase = mockk(relaxed = true)
         extractTextUseCase = mockk(relaxed = true)
         extractZipForPreviewUseCase = mockk(relaxed = true)
         checkDuplicateUseCase = mockk(relaxed = true)
+        findDuplicateMemeIdUseCase = mockk(relaxed = true)
+        updateMemeMetadataUseCase = mockk(relaxed = true)
         cleanupExtractedFilesUseCase = mockk(relaxed = true)
         preferencesDataStore = mockk(relaxed = true) {
             every { hasShownEmojiTip } returns flowOf(false)
@@ -70,9 +90,13 @@ class ImportViewModelEdgeCasesTest {
             extractTextUseCase = extractTextUseCase,
             extractZipForPreviewUseCase = extractZipForPreviewUseCase,
             checkDuplicateUseCase = checkDuplicateUseCase,
+            findDuplicateMemeIdUseCase = findDuplicateMemeIdUseCase,
+            updateMemeMetadataUseCase = updateMemeMetadataUseCase,
             cleanupExtractedFilesUseCase = cleanupExtractedFilesUseCase,
             userActionTracker = mockk(relaxed = true),
             preferencesDataStore = preferencesDataStore,
+            importStagingManager = mockk(relaxed = true),
+            importRequestDao = mockk(relaxed = true),
         )
     }
 
@@ -89,7 +113,7 @@ class ImportViewModelEdgeCasesTest {
 
         coEvery { suggestEmojisUseCase(any()) } returns emptyList()
         coEvery { extractTextUseCase(any()) } returns null
-        coEvery { checkDuplicateUseCase(any()) } returns false
+        coEvery { findDuplicateMemeIdUseCase(any()) } returns null
         // Slow import to allow cancellation
         coEvery { importImageUseCase(any(), any()) } coAnswers {
             delay(10_000)
@@ -122,7 +146,7 @@ class ImportViewModelEdgeCasesTest {
         coEvery { suggestEmojisUseCase(any()) } returns emptyList()
         coEvery { extractTextUseCase(any()) } returns null
         coEvery { importImageUseCase(any(), any()) } returns Result.success(meme)
-        coEvery { checkDuplicateUseCase(any()) } returns false
+        coEvery { findDuplicateMemeIdUseCase(any()) } returns null
 
         viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uri)))
         advanceUntilIdle()
@@ -325,7 +349,7 @@ class ImportViewModelEdgeCasesTest {
 
         coEvery { suggestEmojisUseCase(any()) } returns emptyList()
         coEvery { extractTextUseCase(any()) } returns null
-        coEvery { checkDuplicateUseCase(any()) } returns false
+        coEvery { findDuplicateMemeIdUseCase(any()) } returns null
 
         // First fails, second succeeds
         coEvery { importImageUseCase(uri1, any()) } returns Result.failure(Exception("Failed"))
@@ -443,7 +467,7 @@ class ImportViewModelEdgeCasesTest {
         coEvery { suggestEmojisUseCase(any()) } returns emptyList()
         coEvery { extractTextUseCase(any()) } returns null
         coEvery { importImageUseCase(any(), any()) } returns Result.success(meme)
-        coEvery { checkDuplicateUseCase(any()) } returns false
+        coEvery { findDuplicateMemeIdUseCase(any()) } returns null
 
         viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uri)))
         advanceUntilIdle()
@@ -470,7 +494,7 @@ class ImportViewModelEdgeCasesTest {
 
         coEvery { suggestEmojisUseCase(any()) } returns emptyList()
         coEvery { extractTextUseCase(any()) } returns null
-        coEvery { checkDuplicateUseCase(uri) } returns true
+        coEvery { findDuplicateMemeIdUseCase(uri) } returns 42L
 
         viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uri)))
         advanceUntilIdle()
@@ -493,7 +517,7 @@ class ImportViewModelEdgeCasesTest {
 
         coEvery { suggestEmojisUseCase(any()) } returns emptyList()
         coEvery { extractTextUseCase(any()) } returns null
-        coEvery { checkDuplicateUseCase(uri) } returns true
+        coEvery { findDuplicateMemeIdUseCase(uri) } returns 42L
         coEvery { importImageUseCase(any(), any()) } returns Result.success(meme)
 
         viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uri)))
@@ -520,8 +544,8 @@ class ImportViewModelEdgeCasesTest {
 
         coEvery { suggestEmojisUseCase(any()) } returns emptyList()
         coEvery { extractTextUseCase(any()) } returns null
-        coEvery { checkDuplicateUseCase(uri1) } returns true
-        coEvery { checkDuplicateUseCase(uri2) } returns false
+        coEvery { findDuplicateMemeIdUseCase(uri1) } returns 42L
+        coEvery { findDuplicateMemeIdUseCase(uri2) } returns null
         coEvery { importImageUseCase(any(), any()) } returns Result.success(meme)
 
         viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uri1, uri2)))
@@ -547,9 +571,9 @@ class ImportViewModelEdgeCasesTest {
         coEvery { suggestEmojisUseCase(any()) } returns emptyList()
         coEvery { extractTextUseCase(any()) } returns null
         // Slow duplicate check to observe intermediate state
-        coEvery { checkDuplicateUseCase(any()) } coAnswers {
+        coEvery { findDuplicateMemeIdUseCase(any()) } coAnswers {
             delay(1000)
-            false
+            null
         }
         coEvery { importImageUseCase(any(), any()) } returns Result.success(mockk<Meme>())
 
@@ -575,7 +599,7 @@ class ImportViewModelEdgeCasesTest {
 
         coEvery { suggestEmojisUseCase(any()) } returns emptyList()
         coEvery { extractTextUseCase(any()) } returns null
-        coEvery { checkDuplicateUseCase(any()) } returns false
+        coEvery { findDuplicateMemeIdUseCase(any()) } returns null
         coEvery { importImageUseCase(any(), any()) } returns Result.success(meme)
 
         viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uri1, uri2)))
@@ -598,7 +622,7 @@ class ImportViewModelEdgeCasesTest {
 
         coEvery { suggestEmojisUseCase(any()) } returns emptyList()
         coEvery { extractTextUseCase(any()) } returns null
-        coEvery { checkDuplicateUseCase(uri) } returns true
+        coEvery { findDuplicateMemeIdUseCase(uri) } returns 42L
 
         viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uri)))
         advanceUntilIdle()
@@ -619,7 +643,7 @@ class ImportViewModelEdgeCasesTest {
 
         coEvery { suggestEmojisUseCase(any()) } returns emptyList()
         coEvery { extractTextUseCase(any()) } returns null
-        coEvery { checkDuplicateUseCase(any()) } returns false
+        coEvery { findDuplicateMemeIdUseCase(any()) } returns null
         coEvery { importImageUseCase(any(), any()) } coAnswers {
             delay(10_000)
             Result.success(mockk<Meme>())
@@ -651,7 +675,7 @@ class ImportViewModelEdgeCasesTest {
 
         coEvery { suggestEmojisUseCase(any()) } returns emptyList()
         coEvery { extractTextUseCase(any()) } returns null
-        coEvery { checkDuplicateUseCase(any()) } returns false
+        coEvery { findDuplicateMemeIdUseCase(any()) } returns null
         coEvery { importImageUseCase(uri1, any()) } returns Result.success(meme)
         coEvery { importImageUseCase(uri2, any()) } returns Result.failure(Exception("Failed"))
 
@@ -678,7 +702,7 @@ class ImportViewModelEdgeCasesTest {
 
         coEvery { suggestEmojisUseCase(any()) } returns emptyList()
         coEvery { extractTextUseCase(any()) } returns null
-        coEvery { checkDuplicateUseCase(any()) } returns false
+        coEvery { findDuplicateMemeIdUseCase(any()) } returns null
         coEvery { importImageUseCase(uri1, any()) } returns Result.success(meme)
         coEvery { importImageUseCase(uri2, any()) } returns Result.failure(Exception("Failed"))
 
@@ -696,6 +720,144 @@ class ImportViewModelEdgeCasesTest {
             assertThat(state.importResult).isNull()
             assertThat(state.selectedImages).hasSize(1)
             assertThat(state.selectedImages[0].fileName).isEqualTo("bad.jpg")
+        }
+    }
+
+    // ==================== Update Duplicate Metadata Tests ====================
+
+    @Test
+    fun `UpdateDuplicateMetadata updates metadata for duplicates with changes`() = runTest {
+        val uri1 = mockk<Uri> { every { lastPathSegment } returns "dupe.jpg" }
+        val uri2 = mockk<Uri> { every { lastPathSegment } returns "new.jpg" }
+        val meme = mockk<Meme>()
+
+        coEvery { suggestEmojisUseCase(any()) } returns emptyList()
+        coEvery { extractTextUseCase(any()) } returns null
+        coEvery { findDuplicateMemeIdUseCase(uri1) } returns 42L
+        coEvery { findDuplicateMemeIdUseCase(uri2) } returns null
+        coEvery { importImageUseCase(any(), any()) } returns Result.success(meme)
+        coEvery { updateMemeMetadataUseCase(any(), any()) } returns Result.success(Unit)
+
+        // Add images and give the duplicate some metadata
+        viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uri1, uri2)))
+        advanceUntilIdle()
+        viewModel.onIntent(ImportIntent.EditImage(0))
+        advanceUntilIdle()
+        viewModel.onIntent(ImportIntent.AddEmoji(EmojiTag("😂", "face_with_tears_of_joy")))
+        viewModel.onIntent(ImportIntent.UpdateTitle("Updated Title"))
+        viewModel.onIntent(ImportIntent.CloseEditor)
+        advanceUntilIdle()
+
+        // Start import triggers duplicate dialog
+        viewModel.onIntent(ImportIntent.StartImport)
+        advanceUntilIdle()
+
+        // Choose update metadata
+        viewModel.onIntent(ImportIntent.UpdateDuplicateMetadata)
+        advanceUntilIdle()
+
+        // Verify metadata was updated for the duplicate
+        coVerify { updateMemeMetadataUseCase(42L, any()) }
+        // Verify the non-duplicate was still imported
+        coVerify { importImageUseCase(uri2, any()) }
+    }
+
+    @Test
+    fun `UpdateDuplicateMetadata navigates to gallery when only duplicates`() = runTest {
+        val uri = mockk<Uri> { every { lastPathSegment } returns "dupe.jpg" }
+
+        coEvery { suggestEmojisUseCase(any()) } returns emptyList()
+        coEvery { extractTextUseCase(any()) } returns null
+        coEvery { findDuplicateMemeIdUseCase(uri) } returns 42L
+        coEvery { updateMemeMetadataUseCase(any(), any()) } returns Result.success(Unit)
+
+        viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uri)))
+        advanceUntilIdle()
+        viewModel.onIntent(ImportIntent.EditImage(0))
+        advanceUntilIdle()
+        viewModel.onIntent(ImportIntent.AddEmoji(EmojiTag("😂", "face_with_tears_of_joy")))
+        viewModel.onIntent(ImportIntent.CloseEditor)
+        advanceUntilIdle()
+
+        viewModel.onIntent(ImportIntent.StartImport)
+        advanceUntilIdle()
+
+        viewModel.effects.test {
+            viewModel.onIntent(ImportIntent.UpdateDuplicateMetadata)
+            advanceUntilIdle()
+
+            // Should get snackbar + navigate to gallery since no non-duplicates remain
+            val effects = mutableListOf<ImportEffect>()
+            effects.add(awaitItem())
+            effects.add(awaitItem())
+            assertThat(effects).contains(ImportEffect.NavigateToGallery)
+        }
+    }
+
+    @Test
+    fun `StartImport tracks duplicatesWithChangedMetadata only for images with metadata`() = runTest {
+        val uri1 = mockk<Uri> { every { lastPathSegment } returns "dupe_with_meta.jpg" }
+        val uri2 = mockk<Uri> { every { lastPathSegment } returns "dupe_no_meta.jpg" }
+
+        coEvery { suggestEmojisUseCase(any()) } returns emptyList()
+        coEvery { extractTextUseCase(any()) } returns null
+        coEvery { findDuplicateMemeIdUseCase(uri1) } returns 42L
+        coEvery { findDuplicateMemeIdUseCase(uri2) } returns 43L
+
+        // Add images
+        viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uri1, uri2)))
+        advanceUntilIdle()
+
+        // Give only the first image metadata
+        viewModel.onIntent(ImportIntent.EditImage(0))
+        advanceUntilIdle()
+        viewModel.onIntent(ImportIntent.AddEmoji(EmojiTag("😂", "face_with_tears_of_joy")))
+        viewModel.onIntent(ImportIntent.CloseEditor)
+        advanceUntilIdle()
+
+        viewModel.onIntent(ImportIntent.StartImport)
+        advanceUntilIdle()
+
+        viewModel.uiState.test {
+            val state = awaitItem()
+            assertThat(state.showDuplicateDialog).isTrue()
+            assertThat(state.duplicateIndices).hasSize(2)
+            // Only the first image has changed metadata
+            assertThat(state.duplicatesWithChangedMetadata).containsExactly(0)
+            assertThat(state.duplicateMemeIds).containsEntry(0, 42L)
+            assertThat(state.duplicateMemeIds).containsEntry(1, 43L)
+        }
+    }
+
+    @Test
+    fun `ImportDuplicatesAnyway clears metadata tracking state`() = runTest {
+        val uri = mockk<Uri> { every { lastPathSegment } returns "dupe.jpg" }
+        val meme = mockk<Meme>()
+
+        coEvery { suggestEmojisUseCase(any()) } returns emptyList()
+        coEvery { extractTextUseCase(any()) } returns null
+        coEvery { findDuplicateMemeIdUseCase(uri) } returns 42L
+        coEvery { importImageUseCase(any(), any()) } returns Result.success(meme)
+
+        viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uri)))
+        advanceUntilIdle()
+        viewModel.onIntent(ImportIntent.EditImage(0))
+        advanceUntilIdle()
+        viewModel.onIntent(ImportIntent.AddEmoji(EmojiTag("😂", "face_with_tears_of_joy")))
+        viewModel.onIntent(ImportIntent.CloseEditor)
+        advanceUntilIdle()
+
+        viewModel.onIntent(ImportIntent.StartImport)
+        advanceUntilIdle()
+
+        viewModel.onIntent(ImportIntent.ImportDuplicatesAnyway)
+        advanceUntilIdle()
+
+        viewModel.uiState.test {
+            val state = awaitItem()
+            assertThat(state.duplicatesWithChangedMetadata).isEmpty()
+            assertThat(state.duplicateMemeIds).isEmpty()
+            assertThat(state.showDuplicateDialog).isFalse()
         }
     }
 }
