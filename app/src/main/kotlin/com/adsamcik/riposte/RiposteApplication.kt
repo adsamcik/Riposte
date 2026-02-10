@@ -3,12 +3,15 @@ package com.adsamcik.riposte
 import android.app.Application
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
+import com.adsamcik.riposte.core.common.AppConstants
+import com.adsamcik.riposte.core.common.crash.CrashReportWriter
 import com.adsamcik.riposte.core.common.lifecycle.AppLifecycleTracker
 import com.adsamcik.riposte.sharing.SharingShortcutUpdater
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import java.io.File
 import javax.inject.Inject
 
 /**
@@ -33,8 +36,14 @@ class RiposteApplication : Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
+        installCrashHandler()
         appLifecycleTracker.init()
         sharingShortcutUpdater.start(applicationScope)
+    }
+
+    private fun installCrashHandler() {
+        val crashDir = File(filesDir, CrashReportWriter.CRASH_DIR_NAME)
+        CrashReportWriter(crashDir, AppConstants.APP_VERSION).install()
     }
 
     override val workManagerConfiguration: Configuration
