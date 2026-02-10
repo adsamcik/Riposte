@@ -7,6 +7,7 @@
     <!-- Search Bar Actions -->
     <string name="search_action_close">Fechar pesquisa</string>
     <string name="search_action_voice">Pesquisa por voz</string>
+    <string name="search_action_search">Pesquisar</string>
     <string name="search_action_clear">Limpar pesquisa</string>
 
     <!-- Search Modes -->
@@ -27,6 +28,7 @@
     <!-- Suggestions Section -->
     <string name="search_suggestions_title">Sugestões</string>
     <string name="search_suggestions_content_description">Sugestão: %1$s</string>
+    <string name="search_suggestions_icon">Sugestão</string>
 
     <!-- Recent Searches Section -->
     <string name="search_recent_title">Pesquisas Recentes</string>
@@ -34,6 +36,7 @@
     <string name="search_recent_clear_all_content_description">Limpar todas as pesquisas recentes</string>
     <string name="search_recent_item_content_description">Pesquisa recente: %1$s. Deslize para a esquerda para excluir.</string>
     <string name="search_recent_delete">Excluir</string>
+    <string name="search_recent_icon">Pesquisa recente</string>
 
     <!-- Results Toolbar -->
     <string name="search_results_sort_content_description">Ordenar resultados por %1$s</string>
@@ -46,6 +49,7 @@
     <string name="search_empty_description">Encontre memes por texto, descrição ou use a pesquisa semântica com IA</string>
 
     <!-- Search Tips -->
+    <string name="search_tip_smart_search">💡 Dica: Experimente a pesquisa Inteligente para encontrar memes pelo significado!</string>
     <string name="search_tips_title">💡 Dicas de Pesquisa</string>
     <string name="search_tip_keywords">Use palavras-chave como \"gato\", \"engraçado\", \"reação\"</string>
     <string name="search_tip_ai_mode">Experimente o modo IA para linguagem natural: \"meme sobre segundas-feiras\"</string>
@@ -60,5 +64,8 @@
 
     <!-- Result Card -->
     <string name="search_result_card_content_description">%1$s, melhor resultado</string>
+
+    <!-- Error Messages -->
+    <string name="search_error_failed">Falha na pesquisa</string>
 
 </resources>

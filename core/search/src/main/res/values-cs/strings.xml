@@ -28,6 +28,7 @@
     <!-- Suggestions Section -->
     <string name="search_suggestions_title">Návrhy</string>
     <string name="search_suggestions_content_description">Návrh: %1$s</string>
+    <string name="search_suggestions_icon">Návrh</string>
 
     <!-- Recent Searches Section -->
     <string name="search_recent_title">Poslední hledání</string>
@@ -35,6 +36,7 @@
     <string name="search_recent_clear_all_content_description">Vymazat všechna poslední hledání</string>
     <string name="search_recent_item_content_description">Poslední hledání: %1$s. Přejeď doleva pro smazání.</string>
     <string name="search_recent_delete">Smazat</string>
+    <string name="search_recent_icon">Poslední hledání</string>
 
     <!-- Results Toolbar -->
     <string name="search_results_sort_content_description">Seřadit výsledky podle %1$s</string>

@@ -9,9 +9,14 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.sqrt
 
+@RunWith(RobolectricTestRunner::class)
+@Config(manifest = Config.NONE)
 class DefaultSemanticSearchEngineTest {
 
     @MockK
@@ -360,6 +365,128 @@ class DefaultSemanticSearchEngineTest {
         assertThat(results[0].meme.id).isEqualTo(3L)
     }
 
+    // ==================== Find Similar Multi-Vector Tests ====================
+
+    @Test
+    fun `findSimilarMultiVector returns empty list when candidates is empty`() = runTest {
+        coEvery { mockEmbeddingGenerator.generateFromText(any()) } returns FloatArray(3)
+
+        val results = searchEngine.findSimilarMultiVector(
+            query = "test query",
+            candidates = emptyList()
+        )
+
+        assertThat(results).isEmpty()
+    }
+
+    @Test
+    fun `findSimilarMultiVector uses max-pooling across slots`() = runTest {
+        val queryEmbedding = floatArrayOf(1f, 0f, 0f)
+        coEvery { mockEmbeddingGenerator.generateFromText("test") } returns queryEmbedding
+
+        val candidates = listOf(
+            MemeWithEmbeddings(
+                meme = createTestMeme(1L),
+                embeddings = mapOf(
+                    "content" to floatArrayOf(0.5f, 0.5f, 0f),  // ~0.71 similarity
+                    "intent" to floatArrayOf(1f, 0f, 0f),        // 1.0 similarity (max)
+                )
+            ),
+            MemeWithEmbeddings(
+                meme = createTestMeme(2L),
+                embeddings = mapOf(
+                    "content" to floatArrayOf(0.8f, 0.2f, 0f),  // ~0.97 similarity (max)
+                    "intent" to floatArrayOf(0.3f, 0.7f, 0f),   // ~0.39 similarity
+                )
+            )
+        )
+
+        val results = searchEngine.findSimilarMultiVector(
+            query = "test",
+            candidates = candidates,
+            threshold = 0f
+        )
+
+        // Meme 1 should be first (max=1.0 from intent), meme 2 second (max=0.97 from content)
+        assertThat(results).hasSize(2)
+        assertThat(results[0].meme.id).isEqualTo(1L)
+        assertThat(results[0].relevanceScore).isWithin(0.001f).of(1.0f)
+        assertThat(results[1].meme.id).isEqualTo(2L)
+    }
+
+    @Test
+    fun `findSimilarMultiVector filters below threshold`() = runTest {
+        val queryEmbedding = floatArrayOf(1f, 0f, 0f)
+        coEvery { mockEmbeddingGenerator.generateFromText("test") } returns queryEmbedding
+
+        val candidates = listOf(
+            MemeWithEmbeddings(
+                meme = createTestMeme(1L),
+                embeddings = mapOf("content" to floatArrayOf(1f, 0f, 0f))
+            ),
+            MemeWithEmbeddings(
+                meme = createTestMeme(2L),
+                embeddings = mapOf("content" to floatArrayOf(0.3f, 0.7f, 0f)) // ~0.39 similarity
+            )
+        )
+
+        val results = searchEngine.findSimilarMultiVector(
+            query = "test",
+            candidates = candidates,
+            threshold = 0.5f
+        )
+
+        assertThat(results).hasSize(1)
+        assertThat(results[0].meme.id).isEqualTo(1L)
+    }
+
+    @Test
+    fun `findSimilarMultiVector skips slots with mismatched dimensions`() = runTest {
+        val queryEmbedding = floatArrayOf(1f, 0f, 0f)
+        coEvery { mockEmbeddingGenerator.generateFromText("test") } returns queryEmbedding
+
+        val candidates = listOf(
+            MemeWithEmbeddings(
+                meme = createTestMeme(1L),
+                embeddings = mapOf(
+                    "content" to floatArrayOf(0.5f, 0.5f, 0f),        // matching dimension
+                    "intent" to floatArrayOf(1f, 0f, 0f, 0f, 0f),     // wrong dimension, skipped
+                )
+            )
+        )
+
+        val results = searchEngine.findSimilarMultiVector(
+            query = "test",
+            candidates = candidates,
+            threshold = 0f
+        )
+
+        assertThat(results).hasSize(1)
+        // Should use the content slot similarity (~0.71)
+        assertThat(results[0].relevanceScore).isWithin(0.01f).of(0.707f)
+    }
+
+    @Test
+    fun `findSimilarMultiVector sets match type to SEMANTIC`() = runTest {
+        val queryEmbedding = floatArrayOf(1f, 0f, 0f)
+        coEvery { mockEmbeddingGenerator.generateFromText("test") } returns queryEmbedding
+
+        val candidates = listOf(
+            MemeWithEmbeddings(
+                meme = createTestMeme(1L),
+                embeddings = mapOf("content" to floatArrayOf(1f, 0f, 0f))
+            )
+        )
+
+        val results = searchEngine.findSimilarMultiVector(
+            query = "test",
+            candidates = candidates,
+            threshold = 0f
+        )
+
+        assertThat(results[0].matchType).isEqualTo(MatchType.SEMANTIC)
+    }
+
     // ==================== State and Lifecycle Tests ====================
 
     @Test
@@ -455,8 +582,8 @@ class DefaultSemanticSearchEngineTest {
 
     // ==================== Helper Functions ====================
 
-    private fun createMemeWithEmbedding(id: Long, embedding: FloatArray): MemeWithEmbedding {
-        val meme = Meme(
+    private fun createTestMeme(id: Long): Meme {
+        return Meme(
             id = id,
             filePath = "/test/path/$id.jpg",
             fileName = "test_$id.jpg",
@@ -467,6 +594,10 @@ class DefaultSemanticSearchEngineTest {
             importedAt = System.currentTimeMillis(),
             emojiTags = listOf(EmojiTag("😂", "face_with_tears_of_joy"))
         )
+    }
+
+    private fun createMemeWithEmbedding(id: Long, embedding: FloatArray): MemeWithEmbedding {
+        val meme = createTestMeme(id)
         return MemeWithEmbedding(meme, embedding)
     }
 }

@@ -110,7 +110,6 @@ import kotlinx.coroutines.flow.collectLatest
 @Composable
 fun ImportScreen(
     onNavigateBack: () -> Unit,
-    onImportComplete: () -> Unit,
     viewModel: ImportViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -142,7 +141,7 @@ fun ImportScreen(
                     zipPickerLauncher.launch(arrayOf("application/zip"))
                 }
                 is ImportEffect.ImportComplete -> {
-                    onImportComplete()
+                    // No navigation here — the ImportResultSummary UI handles it
                 }
                 is ImportEffect.ShowError -> {
                     snackbarHostState.showSnackbar(effect.message)
@@ -642,22 +641,23 @@ private fun EditImageSheet(
     onDone: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // TODO: Replace with emojis from the user's meme collection (query from DB) plus freeform input.
     val commonEmojis = listOf(
-        EmojiTag("😂", "face_with_tears_of_joy"),
-        EmojiTag("❤️", "red_heart"),
-        EmojiTag("🔥", "fire"),
-        EmojiTag("😍", "smiling_face_with_heart_eyes"),
-        EmojiTag("🤣", "rolling_on_the_floor_laughing"),
-        EmojiTag("😊", "smiling_face_with_smiling_eyes"),
-        EmojiTag("🙏", "folded_hands"),
-        EmojiTag("😭", "loudly_crying_face"),
-        EmojiTag("😘", "face_blowing_a_kiss"),
-        EmojiTag("💯", "hundred_points"),
-        EmojiTag("🤔", "thinking_face"),
-        EmojiTag("👀", "eyes"),
-        EmojiTag("💀", "skull"),
-        EmojiTag("🎉", "party_popper"),
-        EmojiTag("✨", "sparkles"),
+        EmojiTag("😂", "😂"),
+        EmojiTag("❤️", "❤️"),
+        EmojiTag("🔥", "🔥"),
+        EmojiTag("😍", "😍"),
+        EmojiTag("🤣", "🤣"),
+        EmojiTag("😊", "😊"),
+        EmojiTag("🙏", "🙏"),
+        EmojiTag("😭", "😭"),
+        EmojiTag("😘", "😘"),
+        EmojiTag("💯", "💯"),
+        EmojiTag("🤔", "🤔"),
+        EmojiTag("👀", "👀"),
+        EmojiTag("💀", "💀"),
+        EmojiTag("🎉", "🎉"),
+        EmojiTag("✨", "✨"),
     )
     Column(
         modifier = modifier

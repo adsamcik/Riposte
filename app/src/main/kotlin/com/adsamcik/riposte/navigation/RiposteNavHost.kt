@@ -81,9 +81,6 @@ fun RiposteNavHost(
             onNavigateBack = {
                 navController.popBackStack()
             },
-            onImportComplete = {
-                navController.popBackStack()
-            }
         )
 
         // Settings screen

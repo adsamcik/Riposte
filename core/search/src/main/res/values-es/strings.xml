@@ -7,6 +7,7 @@
     <!-- Search Bar Actions -->
     <string name="search_action_close">Cerrar búsqueda</string>
     <string name="search_action_voice">Búsqueda por voz</string>
+    <string name="search_action_search">Buscar</string>
     <string name="search_action_clear">Limpiar búsqueda</string>
 
     <!-- Search Modes -->
@@ -27,6 +28,7 @@
     <!-- Suggestions Section -->
     <string name="search_suggestions_title">Sugerencias</string>
     <string name="search_suggestions_content_description">Sugerencia: %1$s</string>
+    <string name="search_suggestions_icon">Sugerencia</string>
 
     <!-- Recent Searches Section -->
     <string name="search_recent_title">Búsquedas Recientes</string>
@@ -34,6 +36,7 @@
     <string name="search_recent_clear_all_content_description">Limpiar todas las búsquedas recientes</string>
     <string name="search_recent_item_content_description">Búsqueda reciente: %1$s. Desliza a la izquierda para eliminar.</string>
     <string name="search_recent_delete">Eliminar</string>
+    <string name="search_recent_icon">Búsqueda reciente</string>
 
     <!-- Results Toolbar -->
     <string name="search_results_sort_content_description">Ordenar resultados por %1$s</string>
@@ -46,6 +49,7 @@
     <string name="search_empty_description">Encuentra memes por texto, descripción, o usa la búsqueda semántica con IA</string>
 
     <!-- Search Tips -->
+    <string name="search_tip_smart_search">💡 Consejo: ¡Prueba la búsqueda Inteligente para encontrar memes por significado!</string>
     <string name="search_tips_title">💡 Consejos de Búsqueda</string>
     <string name="search_tip_keywords">Usa palabras clave como \"gato\", \"gracioso\", \"reacción\"</string>
     <string name="search_tip_ai_mode">Prueba el modo IA para lenguaje natural: \"meme sobre los lunes\"</string>
@@ -60,5 +64,8 @@
 
     <!-- Result Card -->
     <string name="search_result_card_content_description">%1$s, mejor resultado</string>
+
+    <!-- Error Messages -->
+    <string name="search_error_failed">Error en la búsqueda</string>
 
 </resources>

@@ -6,10 +6,12 @@ import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
 import com.adsamcik.riposte.core.model.EmojiTag
 import com.adsamcik.riposte.core.model.Meme
+import com.adsamcik.riposte.core.model.SharingPreferences
 import com.adsamcik.riposte.feature.gallery.domain.usecase.DeleteMemesUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GetMemeByIdUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GetSimilarMemesUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.RecordMemeViewUseCase
+import com.adsamcik.riposte.feature.gallery.domain.usecase.SimilarMemesStatus
 import com.adsamcik.riposte.feature.gallery.domain.usecase.ToggleFavoriteUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.UpdateMemeUseCase
 import com.adsamcik.riposte.feature.gallery.R
@@ -19,6 +21,7 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -81,7 +84,7 @@ class MemeDetailViewModelTest {
 
         // Default mock setup
         coEvery { getMemeByIdUseCase(1L) } returns testMeme
-        coEvery { getSimilarMemesUseCase(any(), any()) } returns emptyList()
+        coEvery { getSimilarMemesUseCase(any(), any()) } returns SimilarMemesStatus.NoCandidates
     }
 
     @After
@@ -100,6 +103,12 @@ class MemeDetailViewModelTest {
             recordMemeViewUseCase = recordMemeViewUseCase,
             getSimilarMemesUseCase = getSimilarMemesUseCase,
             userActionTracker = mockk(relaxed = true),
+            preferencesDataStore = mockk(relaxed = true) {
+            every { sharingPreferences } returns flowOf(
+                SharingPreferences.DEFAULT.copy(useNativeShareDialog = true),
+            )
+        },
+            shareTargetRepository = mockk(relaxed = true),
         )
     }
 

@@ -7,6 +7,7 @@
     <!-- Search Bar Actions -->
     <string name="search_action_close">Suche schließen</string>
     <string name="search_action_voice">Sprachsuche</string>
+    <string name="search_action_search">Suchen</string>
     <string name="search_action_clear">Suchanfrage löschen</string>
 
     <!-- Search Modes -->
@@ -27,6 +28,7 @@
     <!-- Suggestions Section -->
     <string name="search_suggestions_title">Vorschläge</string>
     <string name="search_suggestions_content_description">Vorschlag: %1$s</string>
+    <string name="search_suggestions_icon">Vorschlag</string>
 
     <!-- Recent Searches Section -->
     <string name="search_recent_title">Letzte Suchen</string>
@@ -34,6 +36,7 @@
     <string name="search_recent_clear_all_content_description">Alle letzten Suchen löschen</string>
     <string name="search_recent_item_content_description">Letzte Suche: %1$s. Wische nach links zum Löschen.</string>
     <string name="search_recent_delete">Löschen</string>
+    <string name="search_recent_icon">Letzte Suche</string>
 
     <!-- Results Toolbar -->
     <string name="search_results_sort_content_description">Ergebnisse sortieren nach %1$s</string>
@@ -46,6 +49,7 @@
     <string name="search_empty_description">Finde Memes nach Text, Beschreibung oder nutze die KI-gestützte semantische Suche</string>
 
     <!-- Search Tips -->
+    <string name="search_tip_smart_search">💡 Tipp: Probiere die Intelligente Suche, um Memes nach Bedeutung zu finden!</string>
     <string name="search_tips_title">💡 Suchtipps</string>
     <string name="search_tip_keywords">Verwende Stichwörter wie \"Katze\", \"lustig\", \"Reaktion\"</string>
     <string name="search_tip_ai_mode">Probiere den KI-Modus für natürliche Sprache: \"Meme über Montage\"</string>
@@ -60,5 +64,8 @@
 
     <!-- Result Card -->
     <string name="search_result_card_content_description">%1$s, beste Übereinstimmung</string>
+
+    <!-- Error Messages -->
+    <string name="search_error_failed">Suche fehlgeschlagen</string>
 
 </resources>

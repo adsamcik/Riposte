@@ -13,12 +13,10 @@ fun NavController.navigateToImport(navOptions: NavOptions? = null) {
 
 fun NavGraphBuilder.importScreen(
     onNavigateBack: () -> Unit,
-    onImportComplete: () -> Unit
 ) {
     composable<ImportRoute> {
         ImportScreen(
             onNavigateBack = onNavigateBack,
-            onImportComplete = onImportComplete
         )
     }
 }
