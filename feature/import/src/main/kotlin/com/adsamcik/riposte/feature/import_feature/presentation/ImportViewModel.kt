@@ -96,12 +96,15 @@ class ImportViewModel @Inject constructor(
             }
 
             WorkInfo.State.SUCCEEDED -> {
+                // Ignore stale terminal states from previous imports
+                if (!_uiState.value.isImporting) return
                 val completed = workInfo.outputData.getInt(ImportWorker.KEY_COMPLETED, 0)
                 val failed = workInfo.outputData.getInt(ImportWorker.KEY_FAILED, 0)
                 handleImportComplete(completed, failed)
             }
 
             WorkInfo.State.FAILED -> {
+                if (!_uiState.value.isImporting) return
                 _uiState.update {
                     it.copy(
                         isImporting = false,
@@ -120,6 +123,7 @@ class ImportViewModel @Inject constructor(
             }
 
             WorkInfo.State.CANCELLED -> {
+                if (!_uiState.value.isImporting) return
                 _uiState.update {
                     it.copy(isImporting = false, importProgress = 0f, statusMessage = null)
                 }
