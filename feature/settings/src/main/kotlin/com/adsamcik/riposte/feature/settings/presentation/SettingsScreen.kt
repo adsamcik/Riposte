@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -171,6 +172,7 @@ fun SettingsScreen(
     onIntent: (SettingsIntent) -> Unit,
     onNavigateBack: () -> Unit,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
+    modifier: Modifier = Modifier,
 ) {
     // Clear cache confirmation dialog
     if (uiState.showClearCacheDialog) {
@@ -179,11 +181,13 @@ fun SettingsScreen(
             title = { Text(stringResource(R.string.settings_clear_cache_dialog_title)) },
             text = { Text(stringResource(R.string.settings_clear_cache_dialog_message, uiState.cacheSize)) },
             confirmButton = {
-                TextButton(onClick = { onIntent(SettingsIntent.ConfirmClearCache) }) {
-                    Text(
-                        text = stringResource(R.string.settings_clear_cache_dialog_confirm),
-                        color = MaterialTheme.colorScheme.error,
-                    )
+                TextButton(
+                    onClick = { onIntent(SettingsIntent.ConfirmClearCache) },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error,
+                    ),
+                ) {
+                    Text(text = stringResource(R.string.settings_clear_cache_dialog_confirm))
                 }
             },
             dismissButton = {
@@ -268,6 +272,7 @@ fun SettingsScreen(
     }
 
     Scaffold(
+        modifier = modifier,
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.settings_title)) },
@@ -302,7 +307,7 @@ fun SettingsScreen(
                         .padding(paddingValues),
             ) {
                 // Appearance Section
-                item {
+                item(key = "appearance") {
                     SettingsSection(title = stringResource(R.string.settings_section_appearance)) {
                         DialogSettingItem(
                             title = stringResource(R.string.settings_theme_title),
@@ -378,7 +383,7 @@ fun SettingsScreen(
                 }
 
                 // Search Section
-                item {
+                item(key = "search") {
                     SettingsSection(title = stringResource(R.string.settings_section_search)) {
                         SwitchSettingItem(
                             title = stringResource(R.string.settings_semantic_search_title),
@@ -454,7 +459,7 @@ fun SettingsScreen(
                 }
 
                 // Sharing Section
-                item {
+                item(key = "sharing") {
                     SettingsSection(title = stringResource(R.string.settings_section_sharing)) {
                         DialogSettingItem(
                             title = stringResource(R.string.settings_share_format_title),
@@ -527,7 +532,7 @@ fun SettingsScreen(
                 }
 
                 // Storage Section
-                item {
+                item(key = "storage") {
                     SettingsSection(title = stringResource(R.string.settings_section_storage)) {
                         val isCacheEmpty = uiState.cacheSize == "0 B"
                         if (!isCacheEmpty) {
@@ -557,7 +562,7 @@ fun SettingsScreen(
                 }
 
                 // Diagnostics Section
-                item {
+                item(key = "diagnostics") {
                     SettingsSection(title = stringResource(R.string.settings_section_diagnostics)) {
                         ClickableSettingItem(
                             title = stringResource(R.string.settings_crash_share_title),
@@ -588,7 +593,7 @@ fun SettingsScreen(
                 }
 
                 // About Section
-                item {
+                item(key = "about") {
                     SettingsSection(title = stringResource(R.string.settings_section_about)) {
                         ClickableSettingItem(
                             title = stringResource(R.string.settings_version_title),
