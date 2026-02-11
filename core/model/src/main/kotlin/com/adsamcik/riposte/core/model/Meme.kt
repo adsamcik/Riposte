@@ -39,8 +39,9 @@ data class Meme(
      * Returns true if the meme has any searchable text content.
      */
     val hasSearchableContent: Boolean
-        get() = !title.isNullOrBlank() || 
-                !description.isNullOrBlank() || 
+        get() =
+            !title.isNullOrBlank() ||
+                !description.isNullOrBlank() ||
                 !textContent.isNullOrBlank() ||
                 emojiTags.isNotEmpty()
 }

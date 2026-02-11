@@ -4,7 +4,6 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
 class EmojiTagTest {
-
     // Constructor and property tests
     @Test
     fun `emojiTag stores emoji and name correctly`() {
@@ -31,12 +30,13 @@ class EmojiTagTest {
     @Test
     fun `emojiTag stores all properties correctly`() {
         val keywords = listOf("happy", "laugh", "funny", "lol")
-        val tag = EmojiTag(
-            emoji = "😂",
-            name = "face_with_tears_of_joy",
-            category = "Smileys & Emotion",
-            keywords = keywords
-        )
+        val tag =
+            EmojiTag(
+                emoji = "😂",
+                name = "face_with_tears_of_joy",
+                category = "Smileys & Emotion",
+                keywords = keywords,
+            )
 
         assertThat(tag.emoji).isEqualTo("😂")
         assertThat(tag.name).isEqualTo("face_with_tears_of_joy")
@@ -47,12 +47,13 @@ class EmojiTagTest {
     // Copy tests
     @Test
     fun `copy creates identical tag when no changes`() {
-        val original = EmojiTag(
-            emoji = "🔥",
-            name = "fire",
-            category = "Symbols",
-            keywords = listOf("hot", "trending")
-        )
+        val original =
+            EmojiTag(
+                emoji = "🔥",
+                name = "fire",
+                category = "Symbols",
+                keywords = listOf("hot", "trending"),
+            )
         val copied = original.copy()
 
         assertThat(copied).isEqualTo(original)
@@ -80,18 +81,20 @@ class EmojiTagTest {
     // Equality tests
     @Test
     fun `emojiTags with same properties are equal`() {
-        val tag1 = EmojiTag(
-            emoji = "😂",
-            name = "face_with_tears_of_joy",
-            category = "Smileys",
-            keywords = listOf("laugh")
-        )
-        val tag2 = EmojiTag(
-            emoji = "😂",
-            name = "face_with_tears_of_joy",
-            category = "Smileys",
-            keywords = listOf("laugh")
-        )
+        val tag1 =
+            EmojiTag(
+                emoji = "😂",
+                name = "face_with_tears_of_joy",
+                category = "Smileys",
+                keywords = listOf("laugh"),
+            )
+        val tag2 =
+            EmojiTag(
+                emoji = "😂",
+                name = "face_with_tears_of_joy",
+                category = "Smileys",
+                keywords = listOf("laugh"),
+            )
 
         assertThat(tag1).isEqualTo(tag2)
         assertThat(tag1.hashCode()).isEqualTo(tag2.hashCode())
@@ -210,11 +213,12 @@ class EmojiTagTest {
 
     @Test
     fun `fromEmoji sets name to emoji for any input`() {
-        val testEmojis = listOf(
-            "😀", "😂", "🤣", "😊", "😍", "🥺", "😭", "😤", "😡", "🤔",
-            "😏", "😴", "🤯", "🥳", "😎", "🤡", "👀", "💀", "🔥", "💯",
-            "❤️", "💔", "👍", "👎", "👏", "🙏", "💪", "🎉", "✨", "🌟",
-        )
+        val testEmojis =
+            listOf(
+                "😀", "😂", "🤣", "😊", "😍", "🥺", "😭", "😤", "😡", "🤔",
+                "😏", "😴", "🤯", "🥳", "😎", "🤡", "👀", "💀", "🔥", "💯",
+                "❤️", "💔", "👍", "👎", "👏", "🙏", "💪", "🎉", "✨", "🌟",
+            )
 
         testEmojis.forEach { emoji ->
             val tag = EmojiTag.fromEmoji(emoji)

@@ -4,10 +4,9 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
 class SearchResultTest {
-
     private fun createTestMeme(
         id: Long = 1L,
-        title: String? = "Test Meme"
+        title: String? = "Test Meme",
     ) = Meme(
         id = id,
         filePath = "/storage/memes/test.jpg",
@@ -18,62 +17,67 @@ class SearchResultTest {
         fileSizeBytes = 1024L,
         importedAt = 1234567890L,
         emojiTags = emptyList(),
-        title = title
+        title = title,
     )
 
     // Constructor and property tests
     @Test
     fun `searchResult stores meme correctly`() {
         val meme = createTestMeme()
-        val result = SearchResult(
-            meme = meme,
-            relevanceScore = 0.9f,
-            matchType = MatchType.TEXT
-        )
+        val result =
+            SearchResult(
+                meme = meme,
+                relevanceScore = 0.9f,
+                matchType = MatchType.TEXT,
+            )
 
         assertThat(result.meme).isEqualTo(meme)
     }
 
     @Test
     fun `searchResult stores relevanceScore correctly`() {
-        val result = SearchResult(
-            meme = createTestMeme(),
-            relevanceScore = 0.75f,
-            matchType = MatchType.TEXT
-        )
+        val result =
+            SearchResult(
+                meme = createTestMeme(),
+                relevanceScore = 0.75f,
+                matchType = MatchType.TEXT,
+            )
 
         assertThat(result.relevanceScore).isEqualTo(0.75f)
     }
 
     @Test
     fun `searchResult stores matchType correctly`() {
-        val result = SearchResult(
-            meme = createTestMeme(),
-            relevanceScore = 0.5f,
-            matchType = MatchType.EMOJI
-        )
+        val result =
+            SearchResult(
+                meme = createTestMeme(),
+                relevanceScore = 0.5f,
+                matchType = MatchType.EMOJI,
+            )
 
         assertThat(result.matchType).isEqualTo(MatchType.EMOJI)
     }
 
     @Test
     fun `searchResult accepts minimum relevance score`() {
-        val result = SearchResult(
-            meme = createTestMeme(),
-            relevanceScore = 0.0f,
-            matchType = MatchType.TEXT
-        )
+        val result =
+            SearchResult(
+                meme = createTestMeme(),
+                relevanceScore = 0.0f,
+                matchType = MatchType.TEXT,
+            )
 
         assertThat(result.relevanceScore).isEqualTo(0.0f)
     }
 
     @Test
     fun `searchResult accepts maximum relevance score`() {
-        val result = SearchResult(
-            meme = createTestMeme(),
-            relevanceScore = 1.0f,
-            matchType = MatchType.SEMANTIC
-        )
+        val result =
+            SearchResult(
+                meme = createTestMeme(),
+                relevanceScore = 1.0f,
+                matchType = MatchType.SEMANTIC,
+            )
 
         assertThat(result.relevanceScore).isEqualTo(1.0f)
     }
@@ -81,11 +85,12 @@ class SearchResultTest {
     // Copy tests
     @Test
     fun `copy creates identical result when no changes`() {
-        val original = SearchResult(
-            meme = createTestMeme(),
-            relevanceScore = 0.8f,
-            matchType = MatchType.HYBRID
-        )
+        val original =
+            SearchResult(
+                meme = createTestMeme(),
+                relevanceScore = 0.8f,
+                matchType = MatchType.HYBRID,
+            )
         val copied = original.copy()
 
         assertThat(copied).isEqualTo(original)
@@ -93,11 +98,12 @@ class SearchResultTest {
 
     @Test
     fun `copy can change relevanceScore`() {
-        val original = SearchResult(
-            meme = createTestMeme(),
-            relevanceScore = 0.5f,
-            matchType = MatchType.TEXT
-        )
+        val original =
+            SearchResult(
+                meme = createTestMeme(),
+                relevanceScore = 0.5f,
+                matchType = MatchType.TEXT,
+            )
         val copied = original.copy(relevanceScore = 0.9f)
 
         assertThat(copied.relevanceScore).isEqualTo(0.9f)
@@ -107,11 +113,12 @@ class SearchResultTest {
 
     @Test
     fun `copy can change matchType`() {
-        val original = SearchResult(
-            meme = createTestMeme(),
-            relevanceScore = 0.7f,
-            matchType = MatchType.TEXT
-        )
+        val original =
+            SearchResult(
+                meme = createTestMeme(),
+                relevanceScore = 0.7f,
+                matchType = MatchType.TEXT,
+            )
         val copied = original.copy(matchType = MatchType.HYBRID)
 
         assertThat(copied.matchType).isEqualTo(MatchType.HYBRID)
@@ -122,11 +129,12 @@ class SearchResultTest {
     fun `copy can change meme`() {
         val meme1 = createTestMeme(id = 1L, title = "Meme 1")
         val meme2 = createTestMeme(id = 2L, title = "Meme 2")
-        val original = SearchResult(
-            meme = meme1,
-            relevanceScore = 0.6f,
-            matchType = MatchType.EMOJI
-        )
+        val original =
+            SearchResult(
+                meme = meme1,
+                relevanceScore = 0.6f,
+                matchType = MatchType.EMOJI,
+            )
         val copied = original.copy(meme = meme2)
 
         assertThat(copied.meme).isEqualTo(meme2)
@@ -137,16 +145,18 @@ class SearchResultTest {
     @Test
     fun `searchResults with same properties are equal`() {
         val meme = createTestMeme()
-        val result1 = SearchResult(
-            meme = meme,
-            relevanceScore = 0.8f,
-            matchType = MatchType.TEXT
-        )
-        val result2 = SearchResult(
-            meme = meme,
-            relevanceScore = 0.8f,
-            matchType = MatchType.TEXT
-        )
+        val result1 =
+            SearchResult(
+                meme = meme,
+                relevanceScore = 0.8f,
+                matchType = MatchType.TEXT,
+            )
+        val result2 =
+            SearchResult(
+                meme = meme,
+                relevanceScore = 0.8f,
+                matchType = MatchType.TEXT,
+            )
 
         assertThat(result1).isEqualTo(result2)
         assertThat(result1.hashCode()).isEqualTo(result2.hashCode())
@@ -154,16 +164,18 @@ class SearchResultTest {
 
     @Test
     fun `searchResults with different memes are not equal`() {
-        val result1 = SearchResult(
-            meme = createTestMeme(id = 1L),
-            relevanceScore = 0.8f,
-            matchType = MatchType.TEXT
-        )
-        val result2 = SearchResult(
-            meme = createTestMeme(id = 2L),
-            relevanceScore = 0.8f,
-            matchType = MatchType.TEXT
-        )
+        val result1 =
+            SearchResult(
+                meme = createTestMeme(id = 1L),
+                relevanceScore = 0.8f,
+                matchType = MatchType.TEXT,
+            )
+        val result2 =
+            SearchResult(
+                meme = createTestMeme(id = 2L),
+                relevanceScore = 0.8f,
+                matchType = MatchType.TEXT,
+            )
 
         assertThat(result1).isNotEqualTo(result2)
     }
@@ -171,16 +183,18 @@ class SearchResultTest {
     @Test
     fun `searchResults with different scores are not equal`() {
         val meme = createTestMeme()
-        val result1 = SearchResult(
-            meme = meme,
-            relevanceScore = 0.5f,
-            matchType = MatchType.TEXT
-        )
-        val result2 = SearchResult(
-            meme = meme,
-            relevanceScore = 0.9f,
-            matchType = MatchType.TEXT
-        )
+        val result1 =
+            SearchResult(
+                meme = meme,
+                relevanceScore = 0.5f,
+                matchType = MatchType.TEXT,
+            )
+        val result2 =
+            SearchResult(
+                meme = meme,
+                relevanceScore = 0.9f,
+                matchType = MatchType.TEXT,
+            )
 
         assertThat(result1).isNotEqualTo(result2)
     }
@@ -188,23 +202,24 @@ class SearchResultTest {
     @Test
     fun `searchResults with different matchTypes are not equal`() {
         val meme = createTestMeme()
-        val result1 = SearchResult(
-            meme = meme,
-            relevanceScore = 0.8f,
-            matchType = MatchType.TEXT
-        )
-        val result2 = SearchResult(
-            meme = meme,
-            relevanceScore = 0.8f,
-            matchType = MatchType.EMOJI
-        )
+        val result1 =
+            SearchResult(
+                meme = meme,
+                relevanceScore = 0.8f,
+                matchType = MatchType.TEXT,
+            )
+        val result2 =
+            SearchResult(
+                meme = meme,
+                relevanceScore = 0.8f,
+                matchType = MatchType.EMOJI,
+            )
 
         assertThat(result1).isNotEqualTo(result2)
     }
 }
 
 class MatchTypeTest {
-
     @Test
     fun `matchType has TEXT value`() {
         assertThat(MatchType.TEXT).isNotNull()
@@ -237,7 +252,7 @@ class MatchTypeTest {
     @Test
     fun `matchType values are in expected order`() {
         val values = MatchType.entries.toTypedArray()
-        
+
         assertThat(values[0]).isEqualTo(MatchType.TEXT)
         assertThat(values[1]).isEqualTo(MatchType.EMOJI)
         assertThat(values[2]).isEqualTo(MatchType.SEMANTIC)

@@ -11,45 +11,43 @@ data class ShareConfig(
      * Target image format for sharing.
      */
     val format: ImageFormat = ImageFormat.WEBP,
-    
     /**
      * Compression quality (0-100). Only applies to lossy formats.
      */
     val quality: Int = 85,
-    
     /**
      * Maximum width in pixels. Null means no scaling.
      */
     val maxWidth: Int? = 1080,
-    
     /**
      * Maximum height in pixels. Null means no scaling.
      */
     val maxHeight: Int? = 1080,
-    
     /**
      * Whether to strip metadata from the shared image.
      */
-    val stripMetadata: Boolean = true
+    val stripMetadata: Boolean = true,
 ) {
     companion object {
         val DEFAULT = ShareConfig()
-        
-        val HIGH_QUALITY = ShareConfig(
-            format = ImageFormat.PNG,
-            quality = 100,
-            maxWidth = null,
-            maxHeight = null,
-            stripMetadata = false
-        )
-        
-        val COMPACT = ShareConfig(
-            format = ImageFormat.WEBP,
-            quality = 70,
-            maxWidth = 800,
-            maxHeight = 800,
-            stripMetadata = true
-        )
+
+        val HIGH_QUALITY =
+            ShareConfig(
+                format = ImageFormat.PNG,
+                quality = 100,
+                maxWidth = null,
+                maxHeight = null,
+                stripMetadata = false,
+            )
+
+        val COMPACT =
+            ShareConfig(
+                format = ImageFormat.WEBP,
+                quality = 70,
+                maxWidth = 800,
+                maxHeight = 800,
+                stripMetadata = true,
+            )
     }
 }
 
@@ -61,38 +59,39 @@ enum class ImageFormat(
     val mimeType: String,
     val extension: String,
     val supportsTransparency: Boolean,
-    val isLossy: Boolean
+    val isLossy: Boolean,
 ) {
     JPEG(
         mimeType = "image/jpeg",
         extension = "jpg",
         supportsTransparency = false,
-        isLossy = true
+        isLossy = true,
     ),
     PNG(
         mimeType = "image/png",
         extension = "png",
         supportsTransparency = true,
-        isLossy = false
+        isLossy = false,
     ),
     WEBP(
         mimeType = "image/webp",
         extension = "webp",
         supportsTransparency = true,
-        isLossy = true
+        isLossy = true,
     ),
     GIF(
         mimeType = "image/gif",
         extension = "gif",
         supportsTransparency = true,
-        isLossy = false
-    );
+        isLossy = false,
+    ),
+    ;
 
     companion object {
         fun fromMimeType(mimeType: String): ImageFormat? {
             return entries.find { it.mimeType == mimeType }
         }
-        
+
         fun fromExtension(extension: String): ImageFormat? {
             return entries.find { it.extension.equals(extension, ignoreCase = true) }
         }
