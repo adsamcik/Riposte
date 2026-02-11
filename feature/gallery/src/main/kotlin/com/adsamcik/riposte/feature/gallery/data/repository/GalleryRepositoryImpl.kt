@@ -185,4 +185,10 @@ class GalleryRepositoryImpl
                 .map { entities -> entities.map { it.toDomain() } }
                 .flowOn(ioDispatcher)
         }
+
+        override fun getAllEmojisWithCounts(): Flow<List<Pair<String, Int>>> {
+            return emojiTagDao.getAllEmojisWithCounts()
+                .map { stats -> stats.map { it.emoji to it.count } }
+                .flowOn(ioDispatcher)
+        }
     }

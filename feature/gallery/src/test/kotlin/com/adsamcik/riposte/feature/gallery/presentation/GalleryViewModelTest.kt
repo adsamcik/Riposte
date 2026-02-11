@@ -11,6 +11,7 @@ import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.core.model.UserDensityPreference
 import com.adsamcik.riposte.feature.gallery.domain.usecase.DeleteMemesUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GetAllMemeIdsUseCase
+import com.adsamcik.riposte.feature.gallery.domain.usecase.GetAllEmojisWithCountsUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GetFavoritesUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GetMemeByIdUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GetMemesByEmojiUseCase
@@ -48,6 +49,7 @@ class GalleryViewModelTest {
     private lateinit var deleteMemesUseCase: DeleteMemesUseCase
     private lateinit var toggleFavoriteUseCase: ToggleFavoriteUseCase
     private lateinit var getAllMemeIdsUseCase: GetAllMemeIdsUseCase
+    private lateinit var getAllEmojisWithCountsUseCase: GetAllEmojisWithCountsUseCase
     private lateinit var getSuggestionsUseCase: GetSuggestionsUseCase
     private lateinit var shareTargetRepository: com.adsamcik.riposte.core.database.repository.ShareTargetRepository
     private lateinit var preferencesDataStore: PreferencesDataStore
@@ -89,6 +91,7 @@ class GalleryViewModelTest {
         deleteMemesUseCase = mockk()
         toggleFavoriteUseCase = mockk()
         getAllMemeIdsUseCase = mockk()
+        getAllEmojisWithCountsUseCase = mockk()
         getSuggestionsUseCase = GetSuggestionsUseCase()
         shareTargetRepository = mockk(relaxed = true)
         searchDelegate = mockk(relaxed = true)
@@ -105,6 +108,7 @@ class GalleryViewModelTest {
         coEvery { preferencesDataStore.updateLastSessionSuggestionIds(any()) } returns Unit
         coEvery { preferencesDataStore.setShareTipShown() } returns Unit
         coEvery { getAllMemeIdsUseCase() } returns testMemes.map { it.id }
+        every { getAllEmojisWithCountsUseCase() } returns flowOf(emptyList())
     }
 
     @After
@@ -123,6 +127,7 @@ class GalleryViewModelTest {
             deleteMemeUseCase = deleteMemesUseCase,
             toggleFavoriteUseCase = toggleFavoriteUseCase,
             getAllMemeIdsUseCase = getAllMemeIdsUseCase,
+            getAllEmojisWithCountsUseCase = getAllEmojisWithCountsUseCase,
             getSuggestionsUseCase = getSuggestionsUseCase,
             shareTargetRepository = shareTargetRepository,
             defaultDispatcher = testDispatcher,
@@ -751,10 +756,10 @@ class GalleryViewModelTest {
                 )
             every { getMemesUseCase() } returns flowOf(memesWithEmojis)
             every { getFavoritesUseCase() } returns flowOf(memesWithEmojis)
+            every { getAllEmojisWithCountsUseCase() } returns flowOf(
+                listOf("😂" to 2, "🔥" to 2, "💀" to 1),
+            )
             viewModel = createViewModel()
-            advanceUntilIdle()
-
-            viewModel.onIntent(GalleryIntent.SetFilter(GalleryFilter.Favorites))
             advanceUntilIdle()
 
             val emojis = viewModel.uiState.value.uniqueEmojis

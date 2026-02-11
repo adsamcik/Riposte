@@ -188,6 +188,7 @@ fun MemeCard(
 fun MemeCardCompact(
     meme: Meme,
     modifier: Modifier = Modifier,
+    showEmojis: Boolean = true,
     onClick: (() -> Unit)? = null,
     interactionSource: MutableInteractionSource? = null,
 ) {
@@ -235,7 +236,7 @@ fun MemeCardCompact(
                     .clearAndSetSemantics { },
             contentScale = ContentScale.Crop,
         )
-        if (meme.emojiTags.isNotEmpty()) {
+        if (showEmojis && meme.emojiTags.isNotEmpty()) {
             Row(
                 modifier =
                     Modifier

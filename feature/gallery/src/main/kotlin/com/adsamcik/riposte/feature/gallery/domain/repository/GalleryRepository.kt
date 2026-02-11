@@ -78,4 +78,9 @@ interface GalleryRepository {
      * Get recently viewed memes.
      */
     fun getRecentlyViewed(limit: Int = 20): Flow<List<Meme>>
+
+    /**
+     * Get all unique emojis with their usage counts, sorted by count descending.
+     */
+    fun getAllEmojisWithCounts(): Flow<List<Pair<String, Int>>>
 }

@@ -230,7 +230,7 @@ fun SettingsScreen(
             },
             dismissButton = {
                 TextButton(onClick = { onIntent(SettingsIntent.DismissExportOptionsDialog) }) {
-                    Text(stringResource(R.string.settings_clear_cache_dialog_cancel))
+                    Text(stringResource(R.string.settings_dialog_cancel))
                 }
             },
         )
@@ -261,7 +261,7 @@ fun SettingsScreen(
             },
             dismissButton = {
                 TextButton(onClick = { onIntent(SettingsIntent.DismissImportConfirmDialog) }) {
-                    Text(stringResource(R.string.settings_clear_cache_dialog_cancel))
+                    Text(stringResource(R.string.settings_dialog_cancel))
                 }
             },
         )

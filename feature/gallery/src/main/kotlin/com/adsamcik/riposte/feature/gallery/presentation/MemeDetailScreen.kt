@@ -251,10 +251,19 @@ private fun MemeDetailScreenContent(
 
     // Delete confirmation dialog
     if (uiState.showDeleteDialog) {
+        val memeName = uiState.meme?.title ?: uiState.meme?.fileName
         AlertDialog(
             onDismissRequest = { onIntent(MemeDetailIntent.DismissDeleteDialog) },
             title = { Text(stringResource(R.string.gallery_delete_single_title)) },
-            text = { Text(stringResource(R.string.gallery_delete_single_message)) },
+            text = {
+                Text(
+                    if (memeName != null) {
+                        stringResource(R.string.gallery_delete_single_message_named, memeName)
+                    } else {
+                        stringResource(R.string.gallery_delete_single_message)
+                    },
+                )
+            },
             confirmButton = {
                 TextButton(onClick = { onIntent(MemeDetailIntent.ConfirmDelete) }) {
                     Text(stringResource(R.string.gallery_button_delete), color = MaterialTheme.colorScheme.error)
@@ -392,7 +401,7 @@ private fun MemeDetailScreenContent(
                                 .windowInsetsPadding(WindowInsets.statusBars)
                                 .padding(8.dp)
                                 .background(
-                                    color = MaterialTheme.colorScheme.scrim.copy(alpha = 0.5f),
+                                    color = MaterialTheme.colorScheme.scrim.copy(alpha = 0.7f),
                                     shape = CircleShape,
                                 ),
                     ) {
@@ -466,7 +475,7 @@ private fun MemeInfoSheet(
                     onClick = { onIntent(MemeDetailIntent.Share) },
                     colors =
                         IconButtonDefaults.filledIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            containerColor = MaterialTheme.colorScheme.primary,
                         ),
                 ) {
                     Icon(Icons.Default.Share, contentDescription = stringResource(R.string.gallery_cd_share))
@@ -479,15 +488,6 @@ private fun MemeInfoSheet(
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 val haptic = LocalHapticFeedback.current
-                val favoriteScale by animateFloatAsState(
-                    targetValue = if (meme.isFavorite) 1f else 1f,
-                    animationSpec =
-                        spring(
-                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                            stiffness = Spring.StiffnessMedium,
-                        ),
-                    label = "favorite_scale",
-                )
                 var animateTrigger by remember { mutableStateOf(0) }
                 val animatedScale by animateFloatAsState(
                     targetValue = if (animateTrigger > 0) 1.3f else 1f,
@@ -622,7 +622,14 @@ private fun MemeInfoSheet(
                     onClick = { onIntent(MemeDetailIntent.SaveChanges) },
                     enabled = uiState.hasUnsavedChanges && !uiState.isSaving,
                 ) {
-                    Icon(Icons.Default.Check, contentDescription = stringResource(R.string.gallery_cd_confirm))
+                    if (uiState.isSaving) {
+                        androidx.compose.material3.CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            strokeWidth = 2.dp,
+                        )
+                    } else {
+                        Icon(Icons.Default.Check, contentDescription = stringResource(R.string.gallery_cd_confirm))
+                    }
                     Spacer(Modifier.width(4.dp))
                     Text(stringResource(R.string.gallery_button_save))
                 }

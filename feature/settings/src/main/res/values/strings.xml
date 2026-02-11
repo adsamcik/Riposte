@@ -88,6 +88,7 @@
     <string name="settings_export_option_images">Meme Images</string>
     <string name="settings_export_option_tags">Tags &amp; Metadata</string>
     <string name="settings_export_button">Export</string>
+    <string name="settings_dialog_cancel">Cancel</string>
     
     <!-- Import Confirmation Dialog -->
     <string name="settings_import_confirm_title">Import Backup</string>

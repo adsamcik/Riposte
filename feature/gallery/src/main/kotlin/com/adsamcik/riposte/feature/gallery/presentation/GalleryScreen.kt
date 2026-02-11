@@ -35,7 +35,6 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
@@ -66,7 +65,6 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -558,6 +556,7 @@ private fun GalleryScreenContent(
                                     isSelectionMode = uiState.isSelectionMode,
                                     memeDescription = memeDescription,
                                     onIntent = onIntent,
+                                    showEmojis = true,
                                 )
                             }
                         }
@@ -614,19 +613,6 @@ private fun GalleryScreenContent(
                             )
                         }
                         else -> {
-                            // Compute paging-specific derived state in Compose
-                            // (paged items are not available in ViewModel)
-                            val uniqueEmojis =
-                                remember(pagedMemes.itemCount) {
-                                    (0 until pagedMemes.itemCount)
-                                        .mapNotNull { pagedMemes.peek(it) }
-                                        .flatMap { meme -> meme.emojiTags.map { it.emoji } }
-                                        .groupingBy { it }
-                                        .eachCount()
-                                        .toList()
-                                        .sortedByDescending { it.second }
-                                }
-
                             val suggestionIds =
                                 remember(uiState.suggestions) {
                                     uiState.suggestions.map { it.id }.toSet()
@@ -651,54 +637,12 @@ private fun GalleryScreenContent(
                                     }
                                 }
 
-                            // Detect emoji group boundaries for section headers
-                            val emojiSectionHeaders =
-                                remember(filteredMemeIndices) {
-                                    val headers = mutableMapOf<Int, Pair<String, Int>>()
-                                    var currentEmoji: String? = null
-                                    var currentStartIdx = 0
-                                    var currentCount = 0
-                                    filteredMemeIndices.forEachIndexed { filteredIdx, originalIdx ->
-                                        val meme = pagedMemes.peek(originalIdx)
-                                        val emoji = meme?.emojiTags?.firstOrNull()?.emoji ?: "❓"
-                                        if (emoji != currentEmoji) {
-                                            if (currentEmoji != null) {
-                                                headers[currentStartIdx] = currentEmoji!! to currentCount
-                                            }
-                                            currentEmoji = emoji
-                                            currentStartIdx = filteredIdx
-                                            currentCount = 1
-                                        } else {
-                                            currentCount++
-                                        }
-                                    }
-                                    if (currentEmoji != null) {
-                                        headers[currentStartIdx] = currentEmoji!! to currentCount
-                                    }
-                                    headers
-                                }
-
                             GalleryContent(
                                 uiState = uiState,
-                                uniqueEmojis = uniqueEmojis,
+                                uniqueEmojis = uiState.uniqueEmojis,
                                 onIntent = onIntent,
                                 columns = columns,
                             ) {
-                                // Suggested section header
-                                if (uiState.suggestions.isNotEmpty()) {
-                                    item(
-                                        span = { GridItemSpan(maxLineSpan) },
-                                        key = "suggested_header",
-                                    ) {
-                                        Text(
-                                            text = stringResource(R.string.gallery_section_suggested),
-                                            style = MaterialTheme.typography.titleSmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                        )
-                                    }
-                                }
-
                                 // Suggestions first
                                 items(
                                     items = uiState.suggestions,
@@ -716,16 +660,8 @@ private fun GalleryScreenContent(
                                     )
                                 }
 
-                                // Remaining paged items with emoji group headers
+                                // Remaining paged items
                                 filteredMemeIndices.forEachIndexed { filteredIndex, originalIndex ->
-                                    emojiSectionHeaders[filteredIndex]?.let { (emoji, count) ->
-                                        item(
-                                            span = { GridItemSpan(maxLineSpan) },
-                                            key = "emoji_header_$emoji",
-                                        ) {
-                                            EmojiSectionHeader(emoji = emoji, count = count)
-                                        }
-                                    }
                                     item(
                                         key = pagedMemes.peek(originalIndex)?.id ?: originalIndex,
                                     ) {
@@ -793,34 +729,12 @@ private fun GalleryScreenContent(
                             uiState.filteredMemes.filter { it.id !in suggestionIds }
                         }
 
-                    val emojiGroups =
-                        remember(nonSuggestionMemes) {
-                            nonSuggestionMemes.groupBy { meme ->
-                                meme.emojiTags.firstOrNull()?.emoji ?: "❓"
-                            }
-                        }
-
                     GalleryContent(
                         uiState = uiState,
                         uniqueEmojis = uiState.uniqueEmojis,
                         onIntent = onIntent,
                         columns = columns,
                     ) {
-                        // Suggested section header
-                        if (uiState.suggestions.isNotEmpty()) {
-                            item(
-                                span = { GridItemSpan(maxLineSpan) },
-                                key = "suggested_header",
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.gallery_section_suggested),
-                                    style = MaterialTheme.typography.titleSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                )
-                            }
-                        }
-
                         // Suggestions first
                         items(
                             items = uiState.suggestions,
@@ -838,28 +752,20 @@ private fun GalleryScreenContent(
                             )
                         }
 
-                        // Remaining items grouped by emoji
-                        emojiGroups.forEach { (emoji, groupMemes) ->
-                            item(
-                                span = { GridItemSpan(maxLineSpan) },
-                                key = "emoji_header_$emoji",
-                            ) {
-                                EmojiSectionHeader(emoji = emoji, count = groupMemes.size)
-                            }
-                            items(
-                                items = groupMemes,
-                                key = { it.id },
-                            ) { meme ->
-                                val isSelected = meme.id in uiState.selectedMemeIds
-                                val memeDescription = meme.title ?: meme.fileName
-                                MemeGridItem(
-                                    meme = meme,
-                                    isSelected = isSelected,
-                                    isSelectionMode = uiState.isSelectionMode,
-                                    memeDescription = memeDescription,
-                                    onIntent = onIntent,
-                                )
-                            }
+                        // Remaining items
+                        items(
+                            items = nonSuggestionMemes,
+                            key = { it.id },
+                        ) { meme ->
+                            val isSelected = meme.id in uiState.selectedMemeIds
+                            val memeDescription = meme.title ?: meme.fileName
+                            MemeGridItem(
+                                meme = meme,
+                                isSelected = isSelected,
+                                isSelectionMode = uiState.isSelectionMode,
+                                memeDescription = memeDescription,
+                                onIntent = onIntent,
+                            )
                         }
                     }
                 }
@@ -870,8 +776,8 @@ private fun GalleryScreenContent(
 
 /**
  * Shared gallery content layout used by both paged and non-paged paths.
- * Contains emoji filter rail, a LazyVerticalGrid whose items are provided by [gridContent],
- * and a floating emoji section indicator during scroll.
+ * Contains emoji filter rail (search mode only), a LazyVerticalGrid whose items are
+ * provided by [gridContent].
  * Suggestions are prepended as grid items by the caller.
  */
 @Composable
@@ -885,8 +791,10 @@ private fun GalleryContent(
     val gridState = rememberLazyGridState()
 
     Column {
-        // Emoji Filter Rail
-        if (uniqueEmojis.isNotEmpty() && !uiState.isSelectionMode) {
+        // Emoji Filter Rail — only shown during search
+        if (uiState.screenMode == ScreenMode.Searching &&
+            uniqueEmojis.isNotEmpty() && !uiState.isSelectionMode
+        ) {
             EmojiFilterRail(
                 emojis = uniqueEmojis,
                 activeFilters = uiState.activeEmojiFilters,
@@ -905,112 +813,12 @@ private fun GalleryContent(
             LazyVerticalGrid(
                 state = gridState,
                 columns = GridCells.Fixed(columns),
-                contentPadding = PaddingValues(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 80.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(start = 4.dp, end = 4.dp, top = 4.dp, bottom = 80.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
                 content = gridContent,
             )
-
-            EmojiSectionScrollIndicator(
-                gridState = gridState,
-                modifier = Modifier.align(Alignment.TopCenter),
-            )
         }
-    }
-}
-
-/**
- * Floating overlay that shows the current emoji section while scrolling.
- * Derives the current section from visible grid item keys (headers use "emoji_header_X" keys).
- * Fades in during scroll and fades out after scrolling stops.
- */
-@Composable
-private fun EmojiSectionScrollIndicator(
-    gridState: LazyGridState,
-    modifier: Modifier = Modifier,
-) {
-    var lastKnownEmoji by remember { mutableStateOf<String?>(null) }
-    var showIndicator by remember { mutableStateOf(false) }
-
-    val currentEmoji by remember {
-        derivedStateOf {
-            val visibleItems = gridState.layoutInfo.visibleItemsInfo
-            visibleItems
-                .filter { item ->
-                    val key = item.key as? String ?: return@filter false
-                    key.startsWith("emoji_header_")
-                }
-                .lastOrNull { it.offset.y <= 0 }
-                ?.let { (it.key as String).removePrefix("emoji_header_") }
-                ?: visibleItems.firstOrNull { item ->
-                    val key = item.key as? String ?: return@firstOrNull false
-                    key.startsWith("emoji_header_")
-                }?.let { (it.key as String).removePrefix("emoji_header_") }
-        }
-    }
-
-    val isScrolling by remember {
-        derivedStateOf { gridState.isScrollInProgress }
-    }
-
-    LaunchedEffect(isScrolling, currentEmoji) {
-        if (isScrolling && currentEmoji != null) {
-            lastKnownEmoji = currentEmoji
-            showIndicator = true
-        } else if (!isScrolling) {
-            kotlinx.coroutines.delay(800L)
-            showIndicator = false
-        }
-    }
-
-    AnimatedVisibility(
-        visible = showIndicator && lastKnownEmoji != null,
-        enter = fadeIn(),
-        exit = fadeOut(),
-        modifier = modifier.padding(top = 8.dp),
-    ) {
-        lastKnownEmoji?.let { emoji ->
-            Text(
-                text = emoji,
-                style = MaterialTheme.typography.displaySmall,
-                modifier =
-                    Modifier
-                        .background(
-                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                            shape = RoundedCornerShape(50),
-                        )
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-            )
-        }
-    }
-}
-
-/**
- * Full-width section header showing emoji and meme count for emoji grouping.
- */
-@Composable
-private fun EmojiSectionHeader(
-    emoji: String,
-    count: Int,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Text(
-            text = emoji,
-            style = MaterialTheme.typography.headlineSmall,
-        )
-        Text(
-            text = "$count",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
     }
 }
 
@@ -1029,6 +837,7 @@ internal fun MemeGridItem(
     isSelectionMode: Boolean,
     memeDescription: String,
     onIntent: (GalleryIntent) -> Unit,
+    showEmojis: Boolean = false,
 ) {
     val selectedText = stringResource(com.adsamcik.riposte.core.ui.R.string.ui_state_selected)
     val notSelectedText = stringResource(com.adsamcik.riposte.core.ui.R.string.ui_state_not_selected)
@@ -1085,6 +894,7 @@ internal fun MemeGridItem(
         ) {
             MemeCardCompact(
                 meme = meme,
+                showEmojis = showEmojis,
             )
 
             // Animated scrim overlay (respects card shape)
@@ -1141,7 +951,7 @@ internal fun MemeGridItem(
                 if (isSelected) {
                     Icon(
                         imageVector = Icons.Default.Check,
-                        contentDescription = null,
+                        contentDescription = stringResource(R.string.gallery_cd_selected),
                         tint = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.size(16.dp),
                     )
@@ -1168,6 +978,7 @@ internal fun MemeGridItem(
         ) {
             MemeCardCompact(
                 meme = meme,
+                showEmojis = showEmojis,
             )
         }
     }
@@ -1224,7 +1035,7 @@ private fun RecentSearchItem(
         ) {
             Icon(
                 imageVector = Icons.Default.Search,
-                contentDescription = null,
+                contentDescription = stringResource(R.string.gallery_cd_search),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(20.dp),
             )

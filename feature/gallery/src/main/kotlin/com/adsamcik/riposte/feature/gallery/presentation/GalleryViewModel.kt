@@ -12,6 +12,7 @@ import com.adsamcik.riposte.core.datastore.PreferencesDataStore
 import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.feature.gallery.R
 import com.adsamcik.riposte.feature.gallery.domain.usecase.DeleteMemesUseCase
+import com.adsamcik.riposte.feature.gallery.domain.usecase.GetAllEmojisWithCountsUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GetAllMemeIdsUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GetFavoritesUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GetMemeByIdUseCase
@@ -51,6 +52,7 @@ class GalleryViewModel
         private val deleteMemeUseCase: DeleteMemesUseCase,
         private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
         private val getAllMemeIdsUseCase: GetAllMemeIdsUseCase,
+        private val getAllEmojisWithCountsUseCase: GetAllEmojisWithCountsUseCase,
         private val getSuggestionsUseCase: GetSuggestionsUseCase,
         private val shareTargetRepository: com.adsamcik.riposte.core.database.repository.ShareTargetRepository,
         @DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
@@ -86,6 +88,7 @@ class GalleryViewModel
             searchDelegate.init(viewModelScope)
             observeSearchState()
             observeImportWork()
+            observeUniqueEmojis()
         }
 
         fun onIntent(intent: GalleryIntent) {
@@ -136,6 +139,15 @@ class GalleryViewModel
                             }
                         state.copy(searchState = searchState, screenMode = mode)
                     }
+                }
+            }
+        }
+
+        /** Observe unique emojis from the database for the emoji filter rail. */
+        private fun observeUniqueEmojis() {
+            viewModelScope.launch {
+                getAllEmojisWithCountsUseCase().collectLatest { emojiCounts ->
+                    _uiState.update { it.copy(uniqueEmojis = emojiCounts) }
                 }
             }
         }
@@ -546,20 +558,12 @@ class GalleryViewModel
         }
 
         /**
-         * Recomputes derived state (uniqueEmojis, filteredMemes) from the current memes list.
+         * Recomputes derived state (filteredMemes) from the current memes list.
          * Called whenever memes or emoji filters change.
          */
         private fun recomputeDerivedState() {
             val state = _uiState.value
             val memes = state.memes
-
-            val uniqueEmojis =
-                memes
-                    .flatMap { meme -> meme.emojiTags.map { it.emoji } }
-                    .groupingBy { it }
-                    .eachCount()
-                    .toList()
-                    .sortedByDescending { it.second }
 
             val filtered =
                 if (state.activeEmojiFilters.isEmpty()) {
@@ -572,7 +576,6 @@ class GalleryViewModel
 
             _uiState.update {
                 it.copy(
-                    uniqueEmojis = uniqueEmojis,
                     filteredMemes = sortByEmojiGroup(filtered),
                 )
             }

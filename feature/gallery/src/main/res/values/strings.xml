@@ -40,6 +40,7 @@
     <!-- Delete Dialog -->
     <string name="gallery_delete_single_title">Delete Meme?</string>
     <string name="gallery_delete_single_message">This action cannot be undone.</string>
+    <string name="gallery_delete_single_message_named">Delete \"%1$s\"? This action cannot be undone.</string>
 
     <!-- Button Labels -->
     <string name="gallery_button_delete">Delete</string>

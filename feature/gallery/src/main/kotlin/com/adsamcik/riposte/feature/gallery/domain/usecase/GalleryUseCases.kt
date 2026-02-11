@@ -151,3 +151,14 @@ class GetLibraryStatsUseCase
     ) {
         operator fun invoke(): Flow<LibraryStatistics> = statsProvider.observeStatistics()
     }
+
+/**
+ * Use case for getting all unique emojis with their usage counts.
+ */
+class GetAllEmojisWithCountsUseCase
+    @Inject
+    constructor(
+        private val repository: GalleryRepository,
+    ) {
+        operator fun invoke(): Flow<List<Pair<String, Int>>> = repository.getAllEmojisWithCounts()
+    }
