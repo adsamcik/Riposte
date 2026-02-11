@@ -251,7 +251,7 @@ fun MemeCardCompact(
         if (meme.isFavorite) {
             Icon(
                 imageVector = Icons.Filled.Favorite,
-                contentDescription = null,
+                contentDescription = stringResource(R.string.ui_state_favorited),
                 tint = MaterialTheme.colorScheme.error,
                 modifier = Modifier
                     .align(Alignment.TopEnd)

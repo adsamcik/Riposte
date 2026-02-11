@@ -559,7 +559,7 @@ private fun MemeInfoSheet(
                     onClick = { onIntent(MemeDetailIntent.SaveChanges) },
                     enabled = uiState.hasUnsavedChanges && !uiState.isSaving,
                 ) {
-                    Icon(Icons.Default.Check, contentDescription = null)
+                    Icon(Icons.Default.Check, contentDescription = stringResource(R.string.gallery_cd_confirm))
                     Spacer(Modifier.width(4.dp))
                     Text(stringResource(R.string.gallery_button_save))
                 }

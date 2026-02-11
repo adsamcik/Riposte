@@ -34,6 +34,7 @@
     <string name="gallery_cd_clear">Clear</string>
     <string name="gallery_cd_remove">Remove</string>
     <string name="gallery_cd_selected">Selected</string>
+    <string name="gallery_cd_confirm">Confirm</string>
     <string name="gallery_cd_meme_image">Meme image: %s</string>
 
     <!-- Delete Dialog -->
