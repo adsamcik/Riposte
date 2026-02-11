@@ -7,10 +7,9 @@ import android.net.Uri
  * Interface for generating embeddings for semantic search.
  */
 interface EmbeddingGenerator {
-
     /**
      * Generates an embedding vector from text.
-     * 
+     *
      * @param text The text to generate an embedding for.
      * @return A float array representing the embedding vector.
      */
@@ -19,7 +18,7 @@ interface EmbeddingGenerator {
     /**
      * Generates an embedding vector from an image.
      * This uses image labeling to extract features, then generates text embeddings.
-     * 
+     *
      * @param bitmap The image bitmap to generate an embedding for.
      * @return A float array representing the embedding vector.
      */
@@ -27,7 +26,7 @@ interface EmbeddingGenerator {
 
     /**
      * Generates an embedding vector from an image URI.
-     * 
+     *
      * @param uri The URI of the image.
      * @return A float array representing the embedding vector.
      */

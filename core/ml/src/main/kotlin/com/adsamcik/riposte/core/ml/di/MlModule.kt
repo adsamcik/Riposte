@@ -2,8 +2,8 @@ package com.adsamcik.riposte.core.ml.di
 
 import android.content.Context
 import com.adsamcik.riposte.core.ml.DefaultSemanticSearchEngine
-import com.adsamcik.riposte.core.ml.EmbeddingGenerator
 import com.adsamcik.riposte.core.ml.EmbeddingGemmaGenerator
+import com.adsamcik.riposte.core.ml.EmbeddingGenerator
 import com.adsamcik.riposte.core.ml.MediaPipeEmbeddingGenerator
 import com.adsamcik.riposte.core.ml.MlKitTextRecognizer
 import com.adsamcik.riposte.core.ml.SemanticSearchEngine
@@ -21,12 +21,9 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class MlModule {
-
     @Binds
     @Singleton
-    abstract fun bindTextRecognizer(
-        impl: MlKitTextRecognizer
-    ): TextRecognizer
+    abstract fun bindTextRecognizer(impl: MlKitTextRecognizer): TextRecognizer
 
     /**
      * Bind the primary embedding generator.
@@ -35,15 +32,11 @@ abstract class MlModule {
      */
     @Binds
     @Singleton
-    abstract fun bindEmbeddingGenerator(
-        impl: EmbeddingGemmaGenerator
-    ): EmbeddingGenerator
+    abstract fun bindEmbeddingGenerator(impl: EmbeddingGemmaGenerator): EmbeddingGenerator
 
     @Binds
     @Singleton
-    abstract fun bindSemanticSearchEngine(
-        impl: DefaultSemanticSearchEngine
-    ): SemanticSearchEngine
+    abstract fun bindSemanticSearchEngine(impl: DefaultSemanticSearchEngine): SemanticSearchEngine
 
     companion object {
         /**
@@ -53,7 +46,7 @@ abstract class MlModule {
         @Singleton
         @Named("fallback")
         fun provideFallbackEmbeddingGenerator(
-            @ApplicationContext context: Context
+            @ApplicationContext context: Context,
         ): EmbeddingGenerator {
             return SimpleEmbeddingGenerator(context)
         }
@@ -65,9 +58,7 @@ abstract class MlModule {
         @Provides
         @Singleton
         @Named("mediapipe")
-        fun provideMediaPipeEmbeddingGenerator(
-            impl: MediaPipeEmbeddingGenerator
-        ): EmbeddingGenerator {
+        fun provideMediaPipeEmbeddingGenerator(impl: MediaPipeEmbeddingGenerator): EmbeddingGenerator {
             return impl
         }
     }

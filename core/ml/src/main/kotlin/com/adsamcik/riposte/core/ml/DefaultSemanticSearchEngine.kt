@@ -1,10 +1,10 @@
 package com.adsamcik.riposte.core.ml
 
+import android.util.Log
 import com.adsamcik.riposte.core.model.MatchType
 import com.adsamcik.riposte.core.model.SearchResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import android.util.Log
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.sqrt
@@ -13,133 +13,143 @@ import kotlin.math.sqrt
  * Default implementation of semantic search using cosine similarity.
  */
 @Singleton
-class DefaultSemanticSearchEngine @Inject constructor(
-    private val embeddingGenerator: EmbeddingGenerator
-) : SemanticSearchEngine {
+class DefaultSemanticSearchEngine
+    @Inject
+    constructor(
+        private val embeddingGenerator: EmbeddingGenerator,
+    ) : SemanticSearchEngine {
+        private val queryEmbeddingCache: MutableMap<String, FloatArray> =
+            java.util.Collections.synchronizedMap(
+                object : LinkedHashMap<String, FloatArray>(MAX_CACHE_ENTRIES, 0.75f, true) {
+                    override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, FloatArray>): Boolean {
+                        return size > MAX_CACHE_ENTRIES
+                    }
+                },
+            )
 
-    private val queryEmbeddingCache: MutableMap<String, FloatArray> = java.util.Collections.synchronizedMap(
-        object : LinkedHashMap<String, FloatArray>(MAX_CACHE_ENTRIES, 0.75f, true) {
-            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, FloatArray>): Boolean {
-                return size > MAX_CACHE_ENTRIES
+        override suspend fun findSimilar(
+            query: String,
+            candidates: List<MemeWithEmbedding>,
+            limit: Int,
+            threshold: Float,
+        ): List<SearchResult> =
+            withContext(Dispatchers.Default) {
+                if (candidates.isEmpty()) return@withContext emptyList()
+
+                // Generate query embedding (cache to avoid regenerating for repeated queries)
+                val queryEmbedding =
+                    try {
+                        queryEmbeddingCache[query]
+                            ?: embeddingGenerator.generateFromText(query).also {
+                                queryEmbeddingCache[query] = it
+                            }
+                    } catch (e: UnsatisfiedLinkError) {
+                        Log.w(TAG, "Native library not available for semantic search", e)
+                        return@withContext emptyList()
+                    } catch (e: ExceptionInInitializerError) {
+                        Log.w(TAG, "Embedding model failed to initialize", e)
+                        return@withContext emptyList()
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Failed to generate query embedding", e)
+                        return@withContext emptyList()
+                    }
+
+                // Calculate similarities and filter
+                candidates
+                    .map { candidate ->
+                        val similarity = cosineSimilarity(queryEmbedding, candidate.embedding)
+                        SearchResult(
+                            meme = candidate.meme,
+                            relevanceScore = similarity,
+                            matchType = MatchType.SEMANTIC,
+                        )
+                    }
+                    .filter { it.relevanceScore >= threshold }
+                    .sortedByDescending { it.relevanceScore }
+                    .take(limit)
             }
-        }
-    )
 
-    override suspend fun findSimilar(
-        query: String,
-        candidates: List<MemeWithEmbedding>,
-        limit: Int,
-        threshold: Float
-    ): List<SearchResult> = withContext(Dispatchers.Default) {
-        if (candidates.isEmpty()) return@withContext emptyList()
+        override suspend fun findSimilarMultiVector(
+            query: String,
+            candidates: List<MemeWithEmbeddings>,
+            limit: Int,
+            threshold: Float,
+        ): List<SearchResult> =
+            withContext(Dispatchers.Default) {
+                if (candidates.isEmpty()) return@withContext emptyList()
 
-        // Generate query embedding (cache to avoid regenerating for repeated queries)
-        val queryEmbedding = try {
-            queryEmbeddingCache[query]
-                ?: embeddingGenerator.generateFromText(query).also {
-                    queryEmbeddingCache[query] = it
-                }
-        } catch (e: UnsatisfiedLinkError) {
-            Log.w(TAG, "Native library not available for semantic search", e)
-            return@withContext emptyList()
-        } catch (e: ExceptionInInitializerError) {
-            Log.w(TAG, "Embedding model failed to initialize", e)
-            return@withContext emptyList()
-        } catch (e: Exception) {
-            Log.w(TAG, "Failed to generate query embedding", e)
-            return@withContext emptyList()
-        }
+                val queryEmbedding =
+                    try {
+                        queryEmbeddingCache[query]
+                            ?: embeddingGenerator.generateFromText(query).also {
+                                queryEmbeddingCache[query] = it
+                            }
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Failed to generate query embedding for multi-vector search", e)
+                        return@withContext emptyList()
+                    }
 
-        // Calculate similarities and filter
-        candidates
-            .map { candidate ->
-                val similarity = cosineSimilarity(queryEmbedding, candidate.embedding)
-                SearchResult(
-                    meme = candidate.meme,
-                    relevanceScore = similarity,
-                    matchType = MatchType.SEMANTIC
-                )
+                candidates
+                    .map { candidate ->
+                        // Max-pool: take the highest similarity across all embedding slots
+                        val maxSimilarity =
+                            candidate.embeddings.values
+                                .filter { it.size == queryEmbedding.size }
+                                .maxOfOrNull { cosineSimilarity(queryEmbedding, it) }
+                                ?: 0f
+                        SearchResult(
+                            meme = candidate.meme,
+                            relevanceScore = maxSimilarity,
+                            matchType = MatchType.SEMANTIC,
+                        )
+                    }
+                    .filter { it.relevanceScore >= threshold }
+                    .sortedByDescending { it.relevanceScore }
+                    .take(limit)
             }
-            .filter { it.relevanceScore >= threshold }
-            .sortedByDescending { it.relevanceScore }
-            .take(limit)
-    }
 
-    override suspend fun findSimilarMultiVector(
-        query: String,
-        candidates: List<MemeWithEmbeddings>,
-        limit: Int,
-        threshold: Float,
-    ): List<SearchResult> = withContext(Dispatchers.Default) {
-        if (candidates.isEmpty()) return@withContext emptyList()
-
-        val queryEmbedding = try {
-            queryEmbeddingCache[query]
-                ?: embeddingGenerator.generateFromText(query).also {
-                    queryEmbeddingCache[query] = it
-                }
-        } catch (e: Exception) {
-            Log.w(TAG, "Failed to generate query embedding for multi-vector search", e)
-            return@withContext emptyList()
-        }
-
-        candidates
-            .map { candidate ->
-                // Max-pool: take the highest similarity across all embedding slots
-                val maxSimilarity = candidate.embeddings.values
-                    .filter { it.size == queryEmbedding.size }
-                    .maxOfOrNull { cosineSimilarity(queryEmbedding, it) }
-                    ?: 0f
-                SearchResult(
-                    meme = candidate.meme,
-                    relevanceScore = maxSimilarity,
-                    matchType = MatchType.SEMANTIC,
-                )
+        override fun cosineSimilarity(
+            embedding1: FloatArray,
+            embedding2: FloatArray,
+        ): Float {
+            require(embedding1.size == embedding2.size) {
+                "Embedding dimensions must match: ${embedding1.size} vs ${embedding2.size}"
             }
-            .filter { it.relevanceScore >= threshold }
-            .sortedByDescending { it.relevanceScore }
-            .take(limit)
-    }
 
-    override fun cosineSimilarity(embedding1: FloatArray, embedding2: FloatArray): Float {
-        require(embedding1.size == embedding2.size) {
-            "Embedding dimensions must match: ${embedding1.size} vs ${embedding2.size}"
+            var dotProduct = 0f
+            var norm1 = 0f
+            var norm2 = 0f
+
+            for (i in embedding1.indices) {
+                dotProduct += embedding1[i] * embedding2[i]
+                norm1 += embedding1[i] * embedding1[i]
+                norm2 += embedding2[i] * embedding2[i]
+            }
+
+            val denominator = sqrt(norm1) * sqrt(norm2)
+            return if (denominator > 0) dotProduct / denominator else 0f
         }
 
-        var dotProduct = 0f
-        var norm1 = 0f
-        var norm2 = 0f
+        override suspend fun isReady(): Boolean = embeddingGenerator.isReady()
 
-        for (i in embedding1.indices) {
-            dotProduct += embedding1[i] * embedding2[i]
-            norm1 += embedding1[i] * embedding1[i]
-            norm2 += embedding2[i] * embedding2[i]
+        override suspend fun initialize() {
+            embeddingGenerator.initialize()
         }
 
-        val denominator = sqrt(norm1) * sqrt(norm2)
-        return if (denominator > 0) dotProduct / denominator else 0f
-    }
+        /**
+         * Clears the query embedding cache.
+         * Call when the embedding model changes.
+         */
+        fun clearCache() {
+            queryEmbeddingCache.clear()
+        }
 
-    override suspend fun isReady(): Boolean = embeddingGenerator.isReady()
+        override fun close() {
+            embeddingGenerator.close()
+        }
 
-    override suspend fun initialize() {
-        embeddingGenerator.initialize()
+        private companion object {
+            const val TAG = "SemanticSearchEngine"
+            const val MAX_CACHE_ENTRIES = 50
+        }
     }
-
-    /**
-     * Clears the query embedding cache.
-     * Call when the embedding model changes.
-     */
-    fun clearCache() {
-        queryEmbeddingCache.clear()
-    }
-
-    override fun close() {
-        embeddingGenerator.close()
-    }
-
-    private companion object {
-        const val TAG = "SemanticSearchEngine"
-        const val MAX_CACHE_ENTRIES = 50
-    }
-}

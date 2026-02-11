@@ -7,10 +7,9 @@ import android.net.Uri
  * Interface for extracting text from images using OCR.
  */
 interface TextRecognizer {
-
     /**
      * Extracts text from an image bitmap.
-     * 
+     *
      * @param bitmap The image to extract text from.
      * @return Extracted text, or null if no text was found.
      */
@@ -18,7 +17,7 @@ interface TextRecognizer {
 
     /**
      * Extracts text from an image URI.
-     * 
+     *
      * @param uri The URI of the image.
      * @return Extracted text, or null if no text was found.
      */

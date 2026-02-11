@@ -456,10 +456,14 @@ class MediaPipeEmbeddingGeneratorTest {
         runTest {
             val complexEmojis =
                 listOf(
-                    "👨‍💻", // Man technologist (ZWJ)
-                    "🏳️‍🌈", // Rainbow flag (ZWJ)
-                    "👨‍👩‍👧‍👦", // Family (ZWJ)
-                    "🇺🇸", // Flag (regional indicator)
+                    // Man technologist (ZWJ)
+                    "👨‍💻",
+                    // Rainbow flag (ZWJ)
+                    "🏳️‍🌈",
+                    // Family (ZWJ)
+                    "👨‍👩‍👧‍👦",
+                    // Flag (regional indicator)
+                    "🇺🇸",
                 )
 
             complexEmojis.forEach { emoji ->
@@ -713,7 +717,8 @@ class MediaPipeEmbeddingGeneratorTest {
     private fun createUninitializedGenerator(): MediaPipeEmbeddingGenerator {
         return MediaPipeEmbeddingGenerator(
             context = mockContext,
-            testTextEmbedder = null, // Not yet initialized
+            // Not yet initialized
+            testTextEmbedder = null,
             testEmbeddingDimension = testEmbeddingDimension,
         )
     }
@@ -855,6 +860,7 @@ class MediaPipeEmbeddingGeneratorTest {
 }
 
 // ==================== Integration Test Suggestions ====================
+
 /**
  * INTEGRATION TESTS (to be run on device with real model)
  *

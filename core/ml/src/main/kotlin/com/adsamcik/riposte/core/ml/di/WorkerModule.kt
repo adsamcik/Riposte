@@ -14,10 +14,7 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class WorkerModule {
-
     @Binds
     @Singleton
-    abstract fun bindEmbeddingWorkRepository(
-        impl: DefaultEmbeddingWorkRepository
-    ): EmbeddingWorkRepository
+    abstract fun bindEmbeddingWorkRepository(impl: DefaultEmbeddingWorkRepository): EmbeddingWorkRepository
 }

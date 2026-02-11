@@ -5,15 +5,21 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
-import com.google.android.gms.tasks.OnFailureListener
 import com.google.android.gms.tasks.OnSuccessListener
 import com.google.android.gms.tasks.Task
+import com.google.common.truth.Truth.assertThat
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.label.ImageLabel
 import com.google.mlkit.vision.label.ImageLabeler
 import com.google.mlkit.vision.label.ImageLabeling
-import io.mockk.*
+import io.mockk.MockKAnnotations
+import io.mockk.Runs
+import io.mockk.every
 import io.mockk.impl.annotations.MockK
+import io.mockk.just
+import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.unmockkAll
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
@@ -21,7 +27,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import com.google.common.truth.Truth.assertThat
 import java.io.InputStream
 import kotlin.math.sqrt
 
@@ -35,7 +40,6 @@ import kotlin.math.sqrt
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE, sdk = [30])
 class EmbeddingGemmaGeneratorTest {
-
     @MockK
     private lateinit var mockContext: Context
 
@@ -60,7 +64,9 @@ class EmbeddingGemmaGeneratorTest {
 
         // Mock the ImageLabeling.getClient() static call
         mockkStatic(ImageLabeling::class)
-        every { ImageLabeling.getClient(any<com.google.mlkit.vision.label.defaults.ImageLabelerOptions>()) } returns mockImageLabeler
+        every {
+            ImageLabeling.getClient(any<com.google.mlkit.vision.label.defaults.ImageLabelerOptions>())
+        } returns mockImageLabeler
     }
 
     @After
@@ -91,202 +97,218 @@ class EmbeddingGemmaGeneratorTest {
     // ==================== Text Embedding Tests ====================
 
     @Test
-    fun `generateFromText produces embedding with correct dimension`() = runTest {
-        val generator = createTestGenerator()
-        val text = "Hello world"
+    fun `generateFromText produces embedding with correct dimension`() =
+        runTest {
+            val generator = createTestGenerator()
+            val text = "Hello world"
 
-        val embedding = generator.generateFromText(text)
+            val embedding = generator.generateFromText(text)
 
-        assertThat(embedding.size).isEqualTo(768)
-    }
-
-    @Test
-    fun `generateFromText produces normalized embedding`() = runTest {
-        val generator = createTestGenerator()
-        val text = "This is a test sentence"
-
-        val embedding = generator.generateFromText(text)
-
-        // Check that the embedding is normalized (magnitude ≈ 1.0)
-        val magnitude = sqrt(embedding.map { it * it }.sum())
-        assertThat(magnitude).isWithin(0.001f).of(1.0f)
-    }
+            assertThat(embedding.size).isEqualTo(768)
+        }
 
     @Test
-    fun `generateFromText handles empty string gracefully`() = runTest {
-        val generator = createTestGenerator()
-        val text = ""
+    fun `generateFromText produces normalized embedding`() =
+        runTest {
+            val generator = createTestGenerator()
+            val text = "This is a test sentence"
 
-        val embedding = generator.generateFromText(text)
+            val embedding = generator.generateFromText(text)
 
-        assertThat(embedding.size).isEqualTo(768)
-        // Empty text should return zero embedding
-        assertThat(embedding.all { it == 0f }).isTrue()
-    }
-
-    @Test
-    fun `generateFromText handles blank string with only whitespace`() = runTest {
-        val generator = createTestGenerator()
-        val text = "   "
-
-        val embedding = generator.generateFromText(text)
-
-        assertThat(embedding.size).isEqualTo(768)
-        // Blank string should return zero embedding
-        assertThat(embedding.all { it == 0f }).isTrue()
-    }
+            // Check that the embedding is normalized (magnitude ≈ 1.0)
+            val magnitude = sqrt(embedding.map { it * it }.sum())
+            assertThat(magnitude).isWithin(0.001f).of(1.0f)
+        }
 
     @Test
-    fun `generateFromText applies semantic similarity prompt for queries`() = runTest {
-        val generator = createTestGenerator()
-        val query = "What is the meaning of life?"
+    fun `generateFromText handles empty string gracefully`() =
+        runTest {
+            val generator = createTestGenerator()
+            val text = ""
 
-        // Generate embedding for a query
-        val embedding = generator.generateFromText(query)
+            val embedding = generator.generateFromText(text)
 
-        // Should produce valid embedding
-        assertThat(embedding.size).isEqualTo(768)
-        assertThat(embedding.all { it == 0f }).isFalse()
-    }
-
-    @Test
-    fun `generateFromText handles multilingual text`() = runTest {
-        val generator = createTestGenerator()
-        val text = "Hello 世界 🌍 Привет مرحبا"
-
-        val embedding = generator.generateFromText(text)
-
-        assertThat(embedding.size).isEqualTo(768)
-        // EmbeddingGemma supports 100+ languages
-        assertThat(embedding.all { it == 0f }).isFalse()
-    }
+            assertThat(embedding.size).isEqualTo(768)
+            // Empty text should return zero embedding
+            assertThat(embedding.all { it == 0f }).isTrue()
+        }
 
     @Test
-    fun `generateFromText handles emojis`() = runTest {
-        val generator = createTestGenerator()
-        val text = "😂🔥💯 funny meme"
+    fun `generateFromText handles blank string with only whitespace`() =
+        runTest {
+            val generator = createTestGenerator()
+            val text = "   "
 
-        val embedding = generator.generateFromText(text)
+            val embedding = generator.generateFromText(text)
 
-        assertThat(embedding.size).isEqualTo(768)
-        assertThat(embedding.all { it == 0f }).isFalse()
-    }
+            assertThat(embedding.size).isEqualTo(768)
+            // Blank string should return zero embedding
+            assertThat(embedding.all { it == 0f }).isTrue()
+        }
+
+    @Test
+    fun `generateFromText applies semantic similarity prompt for queries`() =
+        runTest {
+            val generator = createTestGenerator()
+            val query = "What is the meaning of life?"
+
+            // Generate embedding for a query
+            val embedding = generator.generateFromText(query)
+
+            // Should produce valid embedding
+            assertThat(embedding.size).isEqualTo(768)
+            assertThat(embedding.all { it == 0f }).isFalse()
+        }
+
+    @Test
+    fun `generateFromText handles multilingual text`() =
+        runTest {
+            val generator = createTestGenerator()
+            val text = "Hello 世界 🌍 Привет مرحبا"
+
+            val embedding = generator.generateFromText(text)
+
+            assertThat(embedding.size).isEqualTo(768)
+            // EmbeddingGemma supports 100+ languages
+            assertThat(embedding.all { it == 0f }).isFalse()
+        }
+
+    @Test
+    fun `generateFromText handles emojis`() =
+        runTest {
+            val generator = createTestGenerator()
+            val text = "😂🔥💯 funny meme"
+
+            val embedding = generator.generateFromText(text)
+
+            assertThat(embedding.size).isEqualTo(768)
+            assertThat(embedding.all { it == 0f }).isFalse()
+        }
 
     // ==================== Similarity Tests ====================
 
     @Test
-    fun `similar texts produce embeddings with high cosine similarity`() = runTest {
-        val generator = createTestGenerator()
+    fun `similar texts produce embeddings with high cosine similarity`() =
+        runTest {
+            val generator = createTestGenerator()
 
-        val embedding1 = generator.generateFromText("The cat sat on the mat")
-        val embedding2 = generator.generateFromText("A feline rested on the rug")
+            val embedding1 = generator.generateFromText("The cat sat on the mat")
+            val embedding2 = generator.generateFromText("A feline rested on the rug")
 
-        val similarity = cosineSimilarity(embedding1, embedding2)
+            val similarity = cosineSimilarity(embedding1, embedding2)
 
-        // Similar meanings should have similarity > 0.5
-        assertThat(similarity).isGreaterThan(0.5f)
-    }
-
-    @Test
-    fun `dissimilar texts produce embeddings with low cosine similarity`() = runTest {
-        val generator = createTestGenerator()
-
-        val embedding1 = generator.generateFromText("The cat sat on the mat")
-        val embedding2 = generator.generateFromText("Quantum physics and relativity")
-
-        val similarity = cosineSimilarity(embedding1, embedding2)
-
-        // Dissimilar meanings should have similarity < 0.5
-        assertThat(similarity).isLessThan(0.5f)
-    }
+            // Similar meanings should have similarity > 0.5
+            assertThat(similarity).isGreaterThan(0.5f)
+        }
 
     @Test
-    fun `identical texts produce embeddings with cosine similarity near 1`() = runTest {
-        val generator = createTestGenerator()
-        val text = "The quick brown fox jumps over the lazy dog"
+    fun `dissimilar texts produce embeddings with low cosine similarity`() =
+        runTest {
+            val generator = createTestGenerator()
 
-        val embedding1 = generator.generateFromText(text)
-        val embedding2 = generator.generateFromText(text)
+            val embedding1 = generator.generateFromText("The cat sat on the mat")
+            val embedding2 = generator.generateFromText("Quantum physics and relativity")
 
-        val similarity = cosineSimilarity(embedding1, embedding2)
+            val similarity = cosineSimilarity(embedding1, embedding2)
 
-        // Identical texts should have similarity very close to 1.0
-        assertThat(similarity).isWithin(0.001f).of(1.0f)
-    }
+            // Dissimilar meanings should have similarity < 0.5
+            assertThat(similarity).isLessThan(0.5f)
+        }
+
+    @Test
+    fun `identical texts produce embeddings with cosine similarity near 1`() =
+        runTest {
+            val generator = createTestGenerator()
+            val text = "The quick brown fox jumps over the lazy dog"
+
+            val embedding1 = generator.generateFromText(text)
+            val embedding2 = generator.generateFromText(text)
+
+            val similarity = cosineSimilarity(embedding1, embedding2)
+
+            // Identical texts should have similarity very close to 1.0
+            assertThat(similarity).isWithin(0.001f).of(1.0f)
+        }
 
     // ==================== Image Embedding Tests ====================
 
     @Test
-    fun `generateFromImage produces embedding with correct dimension`() = runTest {
-        val generator = createTestGenerator()
-        val bitmap = mockk<Bitmap>()
-        setupImageLabelerMock(listOf("cat", "animal", "pet"))
+    fun `generateFromImage produces embedding with correct dimension`() =
+        runTest {
+            val generator = createTestGenerator()
+            val bitmap = mockk<Bitmap>()
+            setupImageLabelerMock(listOf("cat", "animal", "pet"))
 
-        val embedding = generator.generateFromImage(bitmap)
+            val embedding = generator.generateFromImage(bitmap)
 
-        assertThat(embedding.size).isEqualTo(768)
-    }
+            assertThat(embedding.size).isEqualTo(768)
+        }
 
     @Test
-    fun `generateFromImage returns zero embedding when no labels detected`() = runTest {
-        val generator = createTestGenerator()
-        val bitmap = mockk<Bitmap>()
-        setupImageLabelerMock(emptyList())
+    fun `generateFromImage returns zero embedding when no labels detected`() =
+        runTest {
+            val generator = createTestGenerator()
+            val bitmap = mockk<Bitmap>()
+            setupImageLabelerMock(emptyList())
 
-        val embedding = generator.generateFromImage(bitmap)
+            val embedding = generator.generateFromImage(bitmap)
 
-        assertThat(embedding.size).isEqualTo(768)
-        assertThat(embedding.all { it == 0f }).isTrue()
-    }
+            assertThat(embedding.size).isEqualTo(768)
+            assertThat(embedding.all { it == 0f }).isTrue()
+        }
 
     // ==================== URI Embedding Tests ====================
 
     @Test
-    fun `generateFromUri produces embedding with correct dimension`() = runTest {
-        val generator = createTestGenerator()
-        val uri = mockk<Uri>()
-        val bitmap = mockk<Bitmap>()
-        val inputStream = mockk<InputStream>()
+    fun `generateFromUri produces embedding with correct dimension`() =
+        runTest {
+            val generator = createTestGenerator()
+            val uri = mockk<Uri>()
+            val bitmap = mockk<Bitmap>()
+            val inputStream = mockk<InputStream>()
 
-        every { mockContentResolver.openInputStream(uri) } returns inputStream
-        mockkStatic(BitmapFactory::class)
-        every { BitmapFactory.decodeStream(inputStream) } returns bitmap
-        every { inputStream.close() } just Runs
-        setupImageLabelerMock(listOf("meme", "funny"))
+            every { mockContentResolver.openInputStream(uri) } returns inputStream
+            mockkStatic(BitmapFactory::class)
+            every { BitmapFactory.decodeStream(inputStream) } returns bitmap
+            every { inputStream.close() } just Runs
+            setupImageLabelerMock(listOf("meme", "funny"))
 
-        val embedding = generator.generateFromUri(uri)
+            val embedding = generator.generateFromUri(uri)
 
-        assertThat(embedding.size).isEqualTo(768)
-    }
+            assertThat(embedding.size).isEqualTo(768)
+        }
 
     @Test
-    fun `generateFromUri returns zero embedding when bitmap cannot be decoded`() = runTest {
-        val generator = createTestGenerator()
-        val uri = mockk<Uri>()
+    fun `generateFromUri returns zero embedding when bitmap cannot be decoded`() =
+        runTest {
+            val generator = createTestGenerator()
+            val uri = mockk<Uri>()
 
-        every { mockContentResolver.openInputStream(uri) } returns null
+            every { mockContentResolver.openInputStream(uri) } returns null
 
-        val embedding = generator.generateFromUri(uri)
+            val embedding = generator.generateFromUri(uri)
 
-        assertThat(embedding.size).isEqualTo(768)
-        assertThat(embedding.all { it == 0f }).isTrue()
-    }
+            assertThat(embedding.size).isEqualTo(768)
+            assertThat(embedding.all { it == 0f }).isTrue()
+        }
 
     // ==================== Lifecycle Tests ====================
 
     @Test
-    fun `isReady returns false before initialization`() = runTest {
-        val generator = createTestGenerator(initialized = false)
+    fun `isReady returns false before initialization`() =
+        runTest {
+            val generator = createTestGenerator(initialized = false)
 
-        assertThat(generator.isReady()).isFalse()
-    }
+            assertThat(generator.isReady()).isFalse()
+        }
 
     @Test
-    fun `isReady returns true after initialization`() = runTest {
-        val generator = createTestGenerator(initialized = true)
+    fun `isReady returns true after initialization`() =
+        runTest {
+            val generator = createTestGenerator(initialized = true)
 
-        assertThat(generator.isReady()).isTrue()
-    }
+            assertThat(generator.isReady()).isTrue()
+        }
 
     @Test
     fun `close releases resources without throwing`() {
@@ -319,12 +341,13 @@ class EmbeddingGemmaGeneratorTest {
 
     private fun setupImageLabelerMock(labels: List<String>) {
         val mockTask = mockk<Task<List<ImageLabel>>>()
-        val mockLabels = labels.map { labelText ->
-            mockk<ImageLabel>().also {
-                every { it.text } returns labelText
-                every { it.confidence } returns 0.9f
+        val mockLabels =
+            labels.map { labelText ->
+                mockk<ImageLabel>().also {
+                    every { it.text } returns labelText
+                    every { it.confidence } returns 0.9f
+                }
             }
-        }
 
         every { mockImageLabeler.process(any<InputImage>()) } returns mockTask
         every { mockTask.addOnSuccessListener(any()) } answers {
@@ -338,7 +361,10 @@ class EmbeddingGemmaGeneratorTest {
     /**
      * Computes cosine similarity between two embeddings.
      */
-    private fun cosineSimilarity(embedding1: FloatArray, embedding2: FloatArray): Float {
+    private fun cosineSimilarity(
+        embedding1: FloatArray,
+        embedding2: FloatArray,
+    ): Float {
         require(embedding1.size == embedding2.size)
 
         var dotProduct = 0f
@@ -364,16 +390,16 @@ class EmbeddingGemmaGeneratorTest {
         override val embeddingDimension: Int = 768,
         private var initialized: Boolean = true,
     ) : EmbeddingGenerator {
-
         // Semantic word groups - words in same group produce similar embeddings
-        private val semanticGroups = listOf(
-            setOf("cat", "feline", "kitten", "kitty"),
-            setOf("dog", "canine", "puppy", "hound"),
-            setOf("sat", "rested", "sitting", "lying"),
-            setOf("mat", "rug", "carpet", "floor"),
-            setOf("animal", "pet", "creature"),
-            setOf("quantum", "physics", "science", "relativity"),
-        )
+        private val semanticGroups =
+            listOf(
+                setOf("cat", "feline", "kitten", "kitty"),
+                setOf("dog", "canine", "puppy", "hound"),
+                setOf("sat", "rested", "sitting", "lying"),
+                setOf("mat", "rug", "carpet", "floor"),
+                setOf("animal", "pet", "creature"),
+                setOf("quantum", "physics", "science", "relativity"),
+            )
 
         override suspend fun generateFromText(text: String): FloatArray {
             if (text.isBlank()) return FloatArray(embeddingDimension)

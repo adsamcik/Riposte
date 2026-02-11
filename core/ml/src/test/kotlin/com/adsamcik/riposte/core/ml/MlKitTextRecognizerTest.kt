@@ -7,12 +7,19 @@ import android.net.Uri
 import com.google.android.gms.tasks.OnFailureListener
 import com.google.android.gms.tasks.OnSuccessListener
 import com.google.android.gms.tasks.Task
+import com.google.common.truth.Truth.assertThat
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.Text
 import com.google.mlkit.vision.text.TextRecognition
-import com.google.mlkit.vision.text.TextRecognizer as MlKitTextRecognizer
-import io.mockk.*
+import io.mockk.MockKAnnotations
+import io.mockk.every
 import io.mockk.impl.annotations.MockK
+import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.unmockkAll
+import io.mockk.unmockkStatic
+import io.mockk.verify
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
@@ -20,14 +27,12 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.ExperimentalCoroutinesApi
+import com.google.mlkit.vision.text.TextRecognizer as MlKitTextRecognizer
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE, sdk = [28])
 class MlKitTextRecognizerTest {
-
     @MockK
     private lateinit var mockContext: Context
 
@@ -53,7 +58,9 @@ class MlKitTextRecognizerTest {
 
         // Mock the TextRecognition.getClient() static call BEFORE creating the instance
         mockkStatic(TextRecognition::class)
-        every { TextRecognition.getClient(any<com.google.mlkit.vision.text.latin.TextRecognizerOptions>()) } returns mockMlKitRecognizer
+        every {
+            TextRecognition.getClient(any<com.google.mlkit.vision.text.latin.TextRecognizerOptions>())
+        } returns mockMlKitRecognizer
 
         // Mock InputImage static factory methods
         mockkStatic(InputImage::class)
@@ -71,213 +78,234 @@ class MlKitTextRecognizerTest {
     // ==================== recognizeText(Bitmap) Tests ====================
 
     @Test
-    fun `recognizeText from bitmap returns extracted text`() = runTest {
-        val expectedText = "Hello World"
-        setupSuccessfulTextRecognition(expectedText)
+    fun `recognizeText from bitmap returns extracted text`() =
+        runTest {
+            val expectedText = "Hello World"
+            setupSuccessfulTextRecognition(expectedText)
 
-        val result = textRecognizer.recognizeText(mockBitmap)
+            val result = textRecognizer.recognizeText(mockBitmap)
 
-        assertThat(result).isEqualTo(expectedText)
-    }
-
-    @Test
-    fun `recognizeText from bitmap returns null for empty text`() = runTest {
-        setupSuccessfulTextRecognition("")
-
-        val result = textRecognizer.recognizeText(mockBitmap)
-
-        assertThat(result).isNull()
-    }
+            assertThat(result).isEqualTo(expectedText)
+        }
 
     @Test
-    fun `recognizeText from bitmap returns null for blank text`() = runTest {
-        setupSuccessfulTextRecognition("   ")
+    fun `recognizeText from bitmap returns null for empty text`() =
+        runTest {
+            setupSuccessfulTextRecognition("")
 
-        val result = textRecognizer.recognizeText(mockBitmap)
+            val result = textRecognizer.recognizeText(mockBitmap)
 
-        assertThat(result).isNull()
-    }
-
-    @Test
-    fun `recognizeText from bitmap returns text for whitespace-padded content`() = runTest {
-        setupSuccessfulTextRecognition("  Hello  ")
-
-        val result = textRecognizer.recognizeText(mockBitmap)
-
-        assertThat(result).isEqualTo("  Hello  ")
-    }
+            assertThat(result).isNull()
+        }
 
     @Test
-    fun `recognizeText from bitmap handles multiline text`() = runTest {
-        val multilineText = "Line 1\nLine 2\nLine 3"
-        setupSuccessfulTextRecognition(multilineText)
+    fun `recognizeText from bitmap returns null for blank text`() =
+        runTest {
+            setupSuccessfulTextRecognition("   ")
 
-        val result = textRecognizer.recognizeText(mockBitmap)
+            val result = textRecognizer.recognizeText(mockBitmap)
 
-        assertThat(result).isEqualTo(multilineText)
-    }
-
-    @Test
-    fun `recognizeText from bitmap handles special characters`() = runTest {
-        val specialText = "Hello! @#$%^&*() 123"
-        setupSuccessfulTextRecognition(specialText)
-
-        val result = textRecognizer.recognizeText(mockBitmap)
-
-        assertThat(result).isEqualTo(specialText)
-    }
+            assertThat(result).isNull()
+        }
 
     @Test
-    fun `recognizeText from bitmap handles unicode characters`() = runTest {
-        val unicodeText = "Hello 世界 🌍 Привет"
-        setupSuccessfulTextRecognition(unicodeText)
+    fun `recognizeText from bitmap returns text for whitespace-padded content`() =
+        runTest {
+            setupSuccessfulTextRecognition("  Hello  ")
 
-        val result = textRecognizer.recognizeText(mockBitmap)
+            val result = textRecognizer.recognizeText(mockBitmap)
 
-        assertThat(result).isEqualTo(unicodeText)
-    }
+            assertThat(result).isEqualTo("  Hello  ")
+        }
+
+    @Test
+    fun `recognizeText from bitmap handles multiline text`() =
+        runTest {
+            val multilineText = "Line 1\nLine 2\nLine 3"
+            setupSuccessfulTextRecognition(multilineText)
+
+            val result = textRecognizer.recognizeText(mockBitmap)
+
+            assertThat(result).isEqualTo(multilineText)
+        }
+
+    @Test
+    fun `recognizeText from bitmap handles special characters`() =
+        runTest {
+            val specialText = "Hello! @#$%^&*() 123"
+            setupSuccessfulTextRecognition(specialText)
+
+            val result = textRecognizer.recognizeText(mockBitmap)
+
+            assertThat(result).isEqualTo(specialText)
+        }
+
+    @Test
+    fun `recognizeText from bitmap handles unicode characters`() =
+        runTest {
+            val unicodeText = "Hello 世界 🌍 Привет"
+            setupSuccessfulTextRecognition(unicodeText)
+
+            val result = textRecognizer.recognizeText(mockBitmap)
+
+            assertThat(result).isEqualTo(unicodeText)
+        }
 
     @Test(expected = Exception::class)
-    fun `recognizeText from bitmap throws on failure`() = runTest {
-        setupFailedTextRecognition(Exception("Recognition failed"))
+    fun `recognizeText from bitmap throws on failure`() =
+        runTest {
+            setupFailedTextRecognition(Exception("Recognition failed"))
 
-        textRecognizer.recognizeText(mockBitmap)
-    }
+            textRecognizer.recognizeText(mockBitmap)
+        }
 
     @Test(expected = IllegalStateException::class)
-    fun `recognizeText from bitmap throws IllegalStateException on illegal state`() = runTest {
-        setupFailedTextRecognition(IllegalStateException("Model not downloaded"))
+    fun `recognizeText from bitmap throws IllegalStateException on illegal state`() =
+        runTest {
+            setupFailedTextRecognition(IllegalStateException("Model not downloaded"))
 
-        textRecognizer.recognizeText(mockBitmap)
-    }
+            textRecognizer.recognizeText(mockBitmap)
+        }
 
     @Test(expected = RuntimeException::class)
-    fun `recognizeText from bitmap throws RuntimeException on runtime error`() = runTest {
-        setupFailedTextRecognition(RuntimeException("Internal error"))
+    fun `recognizeText from bitmap throws RuntimeException on runtime error`() =
+        runTest {
+            setupFailedTextRecognition(RuntimeException("Internal error"))
 
-        textRecognizer.recognizeText(mockBitmap)
-    }
+            textRecognizer.recognizeText(mockBitmap)
+        }
 
     // ==================== recognizeText(Uri) Tests ====================
 
     @Test
-    fun `recognizeText from URI returns extracted text`() = runTest {
-        val mockUri = mockk<Uri>()
-        val expectedText = "Text from image"
+    fun `recognizeText from URI returns extracted text`() =
+        runTest {
+            val mockUri = mockk<Uri>()
+            val expectedText = "Text from image"
 
-        mockkStatic(InputImage::class)
-        every { InputImage.fromFilePath(mockContext, mockUri) } returns mockk()
+            mockkStatic(InputImage::class)
+            every { InputImage.fromFilePath(mockContext, mockUri) } returns mockk()
 
-        setupSuccessfulTextRecognition(expectedText)
+            setupSuccessfulTextRecognition(expectedText)
 
-        val result = textRecognizer.recognizeText(mockUri)
+            val result = textRecognizer.recognizeText(mockUri)
 
-        assertThat(result).isEqualTo(expectedText)
+            assertThat(result).isEqualTo(expectedText)
 
-        unmockkStatic(InputImage::class)
-    }
+            unmockkStatic(InputImage::class)
+        }
 
     @Test
-    fun `recognizeText from URI returns null for image without text`() = runTest {
-        val mockUri = mockk<Uri>()
+    fun `recognizeText from URI returns null for image without text`() =
+        runTest {
+            val mockUri = mockk<Uri>()
 
-        mockkStatic(InputImage::class)
-        every { InputImage.fromFilePath(mockContext, mockUri) } returns mockk()
+            mockkStatic(InputImage::class)
+            every { InputImage.fromFilePath(mockContext, mockUri) } returns mockk()
 
-        setupSuccessfulTextRecognition("")
+            setupSuccessfulTextRecognition("")
 
-        val result = textRecognizer.recognizeText(mockUri)
+            val result = textRecognizer.recognizeText(mockUri)
 
-        assertThat(result).isNull()
+            assertThat(result).isNull()
 
-        unmockkStatic(InputImage::class)
-    }
+            unmockkStatic(InputImage::class)
+        }
 
     @Test(expected = Exception::class)
-    fun `recognizeText from URI throws on invalid URI`() = runTest {
-        val mockUri = mockk<Uri>()
+    fun `recognizeText from URI throws on invalid URI`() =
+        runTest {
+            val mockUri = mockk<Uri>()
 
-        mockkStatic(InputImage::class)
-        every { InputImage.fromFilePath(mockContext, mockUri) } throws Exception("Invalid URI")
+            mockkStatic(InputImage::class)
+            every { InputImage.fromFilePath(mockContext, mockUri) } throws Exception("Invalid URI")
 
-        textRecognizer.recognizeText(mockUri)
+            textRecognizer.recognizeText(mockUri)
 
-        unmockkStatic(InputImage::class)
-    }
+            unmockkStatic(InputImage::class)
+        }
 
     @Test(expected = SecurityException::class)
-    fun `recognizeText from URI throws SecurityException on permission denied`() = runTest {
-        val mockUri = mockk<Uri>()
+    fun `recognizeText from URI throws SecurityException on permission denied`() =
+        runTest {
+            val mockUri = mockk<Uri>()
 
-        mockkStatic(InputImage::class)
-        every { InputImage.fromFilePath(mockContext, mockUri) } throws SecurityException("Permission denied")
+            mockkStatic(InputImage::class)
+            every { InputImage.fromFilePath(mockContext, mockUri) } throws SecurityException("Permission denied")
 
-        textRecognizer.recognizeText(mockUri)
+            textRecognizer.recognizeText(mockUri)
 
-        unmockkStatic(InputImage::class)
-    }
+            unmockkStatic(InputImage::class)
+        }
 
     // ==================== Images with Various Text Scenarios ====================
 
     @Test
-    fun `recognizeText handles image with single word`() = runTest {
-        setupSuccessfulTextRecognition("Hello")
+    fun `recognizeText handles image with single word`() =
+        runTest {
+            setupSuccessfulTextRecognition("Hello")
 
-        val result = textRecognizer.recognizeText(mockBitmap)
+            val result = textRecognizer.recognizeText(mockBitmap)
 
-        assertThat(result).isEqualTo("Hello")
-    }
-
-    @Test
-    fun `recognizeText handles image with long paragraph`() = runTest {
-        val longText = "This is a very long paragraph that contains multiple sentences. " +
-                "It should be recognized correctly by the OCR engine. " +
-                "This tests the ability to handle larger amounts of text."
-        setupSuccessfulTextRecognition(longText)
-
-        val result = textRecognizer.recognizeText(mockBitmap)
-
-        assertThat(result).isEqualTo(longText)
-    }
+            assertThat(result).isEqualTo("Hello")
+        }
 
     @Test
-    fun `recognizeText handles image with numbers only`() = runTest {
-        setupSuccessfulTextRecognition("1234567890")
+    fun `recognizeText handles image with long paragraph`() =
+        runTest {
+            val longText =
+                "This is a very long paragraph that contains multiple sentences. " +
+                    "It should be recognized correctly by the OCR engine. " +
+                    "This tests the ability to handle larger amounts of text."
+            setupSuccessfulTextRecognition(longText)
 
-        val result = textRecognizer.recognizeText(mockBitmap)
+            val result = textRecognizer.recognizeText(mockBitmap)
 
-        assertThat(result).isEqualTo("1234567890")
-    }
-
-    @Test
-    fun `recognizeText handles image with mixed content`() = runTest {
-        val mixedText = "Price: $99.99\nDate: 01/15/2024\nCode: ABC-123"
-        setupSuccessfulTextRecognition(mixedText)
-
-        val result = textRecognizer.recognizeText(mockBitmap)
-
-        assertThat(result).isEqualTo(mixedText)
-    }
+            assertThat(result).isEqualTo(longText)
+        }
 
     @Test
-    fun `recognizeText handles typical meme text format`() = runTest {
-        val memeText = "TOP TEXT\n\nBOTTOM TEXT"
-        setupSuccessfulTextRecognition(memeText)
+    fun `recognizeText handles image with numbers only`() =
+        runTest {
+            setupSuccessfulTextRecognition("1234567890")
 
-        val result = textRecognizer.recognizeText(mockBitmap)
+            val result = textRecognizer.recognizeText(mockBitmap)
 
-        assertThat(result).isEqualTo(memeText)
-    }
+            assertThat(result).isEqualTo("1234567890")
+        }
 
     @Test
-    fun `recognizeText handles all caps text`() = runTest {
-        val capsText = "WHEN YOU REALIZE IT'S MONDAY"
-        setupSuccessfulTextRecognition(capsText)
+    fun `recognizeText handles image with mixed content`() =
+        runTest {
+            val mixedText = "Price: $99.99\nDate: 01/15/2024\nCode: ABC-123"
+            setupSuccessfulTextRecognition(mixedText)
 
-        val result = textRecognizer.recognizeText(mockBitmap)
+            val result = textRecognizer.recognizeText(mockBitmap)
 
-        assertThat(result).isEqualTo(capsText)
-    }
+            assertThat(result).isEqualTo(mixedText)
+        }
+
+    @Test
+    fun `recognizeText handles typical meme text format`() =
+        runTest {
+            val memeText = "TOP TEXT\n\nBOTTOM TEXT"
+            setupSuccessfulTextRecognition(memeText)
+
+            val result = textRecognizer.recognizeText(mockBitmap)
+
+            assertThat(result).isEqualTo(memeText)
+        }
+
+    @Test
+    fun `recognizeText handles all caps text`() =
+        runTest {
+            val capsText = "WHEN YOU REALIZE IT'S MONDAY"
+            setupSuccessfulTextRecognition(capsText)
+
+            val result = textRecognizer.recognizeText(mockBitmap)
+
+            assertThat(result).isEqualTo(capsText)
+        }
 
     // ==================== State Tests ====================
 
@@ -296,83 +324,91 @@ class MlKitTextRecognizerTest {
     }
 
     @Test
-    fun `multiple recognizeText calls use same recognizer instance`() = runTest {
-        setupSuccessfulTextRecognition("Text 1")
-        textRecognizer.recognizeText(mockBitmap)
+    fun `multiple recognizeText calls use same recognizer instance`() =
+        runTest {
+            setupSuccessfulTextRecognition("Text 1")
+            textRecognizer.recognizeText(mockBitmap)
 
-        setupSuccessfulTextRecognition("Text 2")
-        textRecognizer.recognizeText(mockBitmap)
+            setupSuccessfulTextRecognition("Text 2")
+            textRecognizer.recognizeText(mockBitmap)
 
-        // Verify that process was called twice on the same recognizer
-        verify(exactly = 2) { mockMlKitRecognizer.process(any<InputImage>()) }
-    }
+            // Verify that process was called twice on the same recognizer
+            verify(exactly = 2) { mockMlKitRecognizer.process(any<InputImage>()) }
+        }
 
     // ==================== Edge Case Tests ====================
 
     @Test
-    fun `recognizeText handles text with emojis`() = runTest {
-        val emojiText = "I love 😂 memes 🔥"
-        setupSuccessfulTextRecognition(emojiText)
+    fun `recognizeText handles text with emojis`() =
+        runTest {
+            val emojiText = "I love 😂 memes 🔥"
+            setupSuccessfulTextRecognition(emojiText)
 
-        val result = textRecognizer.recognizeText(mockBitmap)
+            val result = textRecognizer.recognizeText(mockBitmap)
 
-        assertThat(result).isEqualTo(emojiText)
-    }
-
-    @Test
-    fun `recognizeText handles text with only newlines`() = runTest {
-        setupSuccessfulTextRecognition("\n\n\n")
-
-        val result = textRecognizer.recognizeText(mockBitmap)
-
-        // Newlines only should be considered blank
-        assertThat(result).isNull()
-    }
+            assertThat(result).isEqualTo(emojiText)
+        }
 
     @Test
-    fun `recognizeText handles text with tabs`() = runTest {
-        val tabbedText = "Column1\tColumn2\tColumn3"
-        setupSuccessfulTextRecognition(tabbedText)
+    fun `recognizeText handles text with only newlines`() =
+        runTest {
+            setupSuccessfulTextRecognition("\n\n\n")
 
-        val result = textRecognizer.recognizeText(mockBitmap)
+            val result = textRecognizer.recognizeText(mockBitmap)
 
-        assertThat(result).isEqualTo(tabbedText)
-    }
+            // Newlines only should be considered blank
+            assertThat(result).isNull()
+        }
 
     @Test
-    fun `recognizeText handles very long text`() = runTest {
-        val longText = "word ".repeat(1000)
-        setupSuccessfulTextRecognition(longText)
+    fun `recognizeText handles text with tabs`() =
+        runTest {
+            val tabbedText = "Column1\tColumn2\tColumn3"
+            setupSuccessfulTextRecognition(tabbedText)
 
-        val result = textRecognizer.recognizeText(mockBitmap)
+            val result = textRecognizer.recognizeText(mockBitmap)
 
-        assertThat(result).isEqualTo(longText)
-    }
+            assertThat(result).isEqualTo(tabbedText)
+        }
+
+    @Test
+    fun `recognizeText handles very long text`() =
+        runTest {
+            val longText = "word ".repeat(1000)
+            setupSuccessfulTextRecognition(longText)
+
+            val result = textRecognizer.recognizeText(mockBitmap)
+
+            assertThat(result).isEqualTo(longText)
+        }
 
     // ==================== Concurrent Call Tests ====================
 
     @Test
-    fun `recognizeText handles rapid successive calls`() = runTest {
-        setupSuccessfulTextRecognition("Text")
+    fun `recognizeText handles rapid successive calls`() =
+        runTest {
+            setupSuccessfulTextRecognition("Text")
 
-        // Make multiple rapid calls
-        val results = (1..5).map {
-            textRecognizer.recognizeText(mockBitmap)
-        }
+            // Make multiple rapid calls
+            val results =
+                (1..5).map {
+                    textRecognizer.recognizeText(mockBitmap)
+                }
 
-        results.forEach { result ->
-            assertThat(result).isEqualTo("Text")
+            results.forEach { result ->
+                assertThat(result).isEqualTo("Text")
+            }
         }
-    }
 
     // ==================== Error Handling Tests ====================
 
     @Test(expected = RuntimeException::class)
-    fun `recognizeText propagates RuntimeException from ML Kit`() = runTest {
-        setupFailedTextRecognition(RuntimeException("Internal ML Kit error"))
+    fun `recognizeText propagates RuntimeException from ML Kit`() =
+        runTest {
+            setupFailedTextRecognition(RuntimeException("Internal ML Kit error"))
 
-        textRecognizer.recognizeText(mockBitmap)
-    }
+            textRecognizer.recognizeText(mockBitmap)
+        }
 
     // ==================== Helper Functions ====================
 

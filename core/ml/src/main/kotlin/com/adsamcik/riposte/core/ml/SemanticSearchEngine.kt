@@ -7,10 +7,9 @@ import com.adsamcik.riposte.core.model.SearchResult
  * Interface for semantic search using embeddings.
  */
 interface SemanticSearchEngine {
-
     /**
      * Finds memes similar to the given query text.
-     * 
+     *
      * @param query The search query text.
      * @param candidates List of memes with their embeddings to search through.
      * @param limit Maximum number of results to return.
@@ -21,7 +20,7 @@ interface SemanticSearchEngine {
         query: String,
         candidates: List<MemeWithEmbedding>,
         limit: Int = 20,
-        threshold: Float = 0.3f
+        threshold: Float = 0.3f,
     ): List<SearchResult>
 
     /**
@@ -43,12 +42,15 @@ interface SemanticSearchEngine {
 
     /**
      * Calculates the cosine similarity between two embedding vectors.
-     * 
+     *
      * @param embedding1 First embedding vector.
      * @param embedding2 Second embedding vector.
      * @return Similarity score from -1.0 to 1.0.
      */
-    fun cosineSimilarity(embedding1: FloatArray, embedding2: FloatArray): Float
+    fun cosineSimilarity(
+        embedding1: FloatArray,
+        embedding2: FloatArray,
+    ): Float
 
     /**
      * Checks if the search engine is ready.
