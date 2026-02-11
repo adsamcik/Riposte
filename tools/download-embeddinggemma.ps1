@@ -1,5 +1,5 @@
 #!/usr/bin/env pwsh
-# Download EmbeddingGemma model files from HuggingFace
+# Download EmbeddingGemma model files from HuggingFace into aipacks/ for Play Asset Delivery
 # Requires: huggingface-cli installed and authenticated with access to the gated model
 #
 # Prerequisites:
@@ -8,7 +8,6 @@
 # 3. Go to https://huggingface.co/litert-community/embeddinggemma-300m and accept the license
 
 param(
-    [string]$OutputDir = "$PSScriptRoot\..\app\src\main\assets\embedding_models",
     [string]$SeqLength = "512",
     [switch]$AllVariants,
     [switch]$Force
@@ -18,24 +17,30 @@ $ErrorActionPreference = "Stop"
 
 $REPO_ID = "litert-community/embeddinggemma-300m"
 $TOKENIZER_FILE = "sentencepiece.model"
+$ROOT_DIR = "$PSScriptRoot\.."
 
-# Model variants - generic + platform-specific
+# Model variants mapped to their aipack output directories
 $GENERIC_MODEL = "embeddinggemma-300M_seq${SeqLength}_mixed-precision.tflite"
-$PLATFORM_MODELS = @(
-    "embeddinggemma-300M_seq${SeqLength}_mixed-precision.qualcomm.sm8550.tflite",  # Snapdragon 8 Gen 2
-    "embeddinggemma-300M_seq${SeqLength}_mixed-precision.qualcomm.sm8650.tflite",  # Snapdragon 8 Gen 3
-    "embeddinggemma-300M_seq${SeqLength}_mixed-precision.qualcomm.sm8750.tflite",  # Snapdragon 8 Gen 4 (Elite)
-    "embeddinggemma-300M_seq${SeqLength}_mixed-precision.qualcomm.sm8850.tflite",  # Snapdragon 8 Gen 5
-    "embeddinggemma-300M_seq${SeqLength}_mixed-precision.mediatek.mt6991.tflite",  # Dimensity 9300
-    "embeddinggemma-300M_seq${SeqLength}_mixed-precision.mediatek.mt6993.tflite"   # Dimensity 9400
-)
+$GENERIC_DIR = "$ROOT_DIR\aipacks\generic_embedding\src\main\assets\embedding_models"
+
+# SoC-optimized variants: model filename -> asset pack directory name
+$SOC_MODELS = [ordered]@{
+    "embeddinggemma-300M_seq${SeqLength}_mixed-precision.qualcomm.sm8550.tflite" = "embedding_models#group_qualcomm_sm8550"  # Snapdragon 8 Gen 2
+    "embeddinggemma-300M_seq${SeqLength}_mixed-precision.qualcomm.sm8650.tflite" = "embedding_models#group_qualcomm_sm8650"  # Snapdragon 8 Gen 3
+    "embeddinggemma-300M_seq${SeqLength}_mixed-precision.qualcomm.sm8750.tflite" = "embedding_models#group_qualcomm_sm8750"  # Snapdragon 8 Gen 4 (Elite)
+    "embeddinggemma-300M_seq${SeqLength}_mixed-precision.qualcomm.sm8850.tflite" = "embedding_models#group_qualcomm_sm8850"  # Snapdragon 8 Gen 5
+    "embeddinggemma-300M_seq${SeqLength}_mixed-precision.mediatek.mt6991.tflite" = "embedding_models#group_mediatek_mt6991"  # Dimensity 9300
+    "embeddinggemma-300M_seq${SeqLength}_mixed-precision.mediatek.mt6993.tflite" = "embedding_models#group_mediatek_mt6993"  # Dimensity 9400
+}
+$SOC_BASE_DIR = "$ROOT_DIR\aipacks\soc_optimized\src\main\assets"
 
 Write-Host "🦎 EmbeddingGemma Model Downloader" -ForegroundColor Cyan
 Write-Host "=================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Repository: $REPO_ID"
 Write-Host "Sequence length: $SeqLength tokens"
-Write-Host "Output directory: $OutputDir"
+Write-Host "Generic output: $GENERIC_DIR"
+Write-Host "SoC output:     $SOC_BASE_DIR"
 Write-Host "All variants: $AllVariants"
 Write-Host ""
 
@@ -51,13 +56,16 @@ try {
 }
 
 # Create output directory
-if (-not (Test-Path $OutputDir)) {
-    Write-Host "📁 Creating output directory..."
-    New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
+if (-not (Test-Path $GENERIC_DIR)) {
+    Write-Host "📁 Creating generic model directory..."
+    New-Item -ItemType Directory -Path $GENERIC_DIR -Force | Out-Null
 }
 
 function Download-File {
-    param([string]$FileName)
+    param(
+        [string]$FileName,
+        [string]$OutputDir
+    )
     
     $filePath = Join-Path $OutputDir $FileName
     
@@ -65,8 +73,12 @@ function Download-File {
         Write-Host "✅ Already exists: $FileName" -ForegroundColor Green
         return $true
     }
+
+    if (-not (Test-Path $OutputDir)) {
+        New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
+    }
     
-    Write-Host "⬇️  Downloading: $FileName..." -ForegroundColor Yellow
+    Write-Host "⬇️  Downloading: $FileName -> $OutputDir" -ForegroundColor Yellow
     huggingface-cli download $REPO_ID $FileName --local-dir $OutputDir --local-dir-use-symlinks False
     
     if ($LASTEXITCODE -ne 0) {
@@ -78,9 +90,9 @@ function Download-File {
     return $true
 }
 
-# Download tokenizer (always required)
+# Download tokenizer + generic model (always required)
 Write-Host "📦 Downloading tokenizer..." -ForegroundColor Cyan
-if (-not (Download-File $TOKENIZER_FILE)) {
+if (-not (Download-File $TOKENIZER_FILE $GENERIC_DIR)) {
     Write-Host ""
     Write-Host "Make sure you have:" -ForegroundColor Yellow
     Write-Host "1. Logged in: huggingface-cli login" -ForegroundColor Yellow
@@ -88,39 +100,40 @@ if (-not (Download-File $TOKENIZER_FILE)) {
     exit 1
 }
 
-# Download generic model (always required as fallback)
 Write-Host ""
 Write-Host "📦 Downloading generic model (fallback)..." -ForegroundColor Cyan
-if (-not (Download-File $GENERIC_MODEL)) {
+if (-not (Download-File $GENERIC_MODEL $GENERIC_DIR)) {
     exit 1
 }
 
-# Download platform-specific models if requested
+# Download SoC-optimized models if requested
 if ($AllVariants) {
     Write-Host ""
-    Write-Host "📦 Downloading platform-specific models..." -ForegroundColor Cyan
+    Write-Host "📦 Downloading SoC-optimized models..." -ForegroundColor Cyan
     
-    foreach ($model in $PLATFORM_MODELS) {
-        Download-File $model | Out-Null
+    foreach ($entry in $SOC_MODELS.GetEnumerator()) {
+        $modelFile = $entry.Key
+        $assetDir = Join-Path $SOC_BASE_DIR $entry.Value
+
+        # Each SoC group needs its own tokenizer copy
+        Download-File $TOKENIZER_FILE $assetDir | Out-Null
+        Download-File $modelFile $assetDir | Out-Null
     }
 }
 
 Write-Host ""
 Write-Host "🎉 Download complete!" -ForegroundColor Green
 Write-Host ""
-Write-Host "Files in $OutputDir :" -ForegroundColor Cyan
+Write-Host "Downloaded models:" -ForegroundColor Cyan
 
-# Show file sizes
+# Show file sizes across all aipack directories
 $totalSize = 0
-Get-ChildItem $OutputDir -Filter "*.tflite" | ForEach-Object {
+$aipacksDir = "$ROOT_DIR\aipacks"
+Get-ChildItem $aipacksDir -Recurse -Include "*.tflite","*.model" | ForEach-Object {
     $sizeMB = [math]::Round($_.Length / 1MB, 2)
     $totalSize += $_.Length
-    Write-Host "  $($_.Name): $sizeMB MB"
-}
-Get-ChildItem $OutputDir -Filter "*.model" | ForEach-Object {
-    $sizeMB = [math]::Round($_.Length / 1MB, 2)
-    $totalSize += $_.Length
-    Write-Host "  $($_.Name): $sizeMB MB"
+    $relativePath = $_.FullName.Replace("$aipacksDir\", "")
+    Write-Host "  $relativePath : $sizeMB MB"
 }
 
 $totalMB = [math]::Round($totalSize / 1MB, 2)

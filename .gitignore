@@ -52,7 +52,8 @@ app/src/main/assets_standard/embedding_models/*.tflite
 app/src/main/assets_mediatek/embedding_models/
 app/src/main/assets_qualcomm/embedding_models/
 
-# AI Packs (Play Asset Delivery on-demand models)
-aipacks/*/src/main/assets/.kotlin/
+# AI Packs (Play Asset Delivery) - track structure, ignore binary models
+# Download models with: tools/download-embeddinggemma.ps1
+aipacks/*/src/main/assets/**/*.tflite
+aipacks/*/src/main/assets/**/sentencepiece.model
 app/full/release/
-/aipacks
