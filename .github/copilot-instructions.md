@@ -109,6 +109,7 @@ The app implements `Configuration.Provider` for `HiltWorkerFactory`. Workers use
 
 - **Commit after each completed feature or task.** Do not batch unrelated changes into a single commit.
 - **Use separate git worktrees for larger efforts.** Create a worktree with a feature branch, do the work there, then merge locally into the main branch. No pull requests needed at this time.
+- **Never revert work done by other agents or in prior turns.** If a file was already modified, preserve those changes. Do not reset, checkout, or overwrite files to their original state. Only make additive or surgical edits on top of existing work.
 
 ### Gotchas
 

@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import app.cash.turbine.test
-import com.google.common.truth.Truth.assertThat
 import com.adsamcik.riposte.core.common.crash.CrashLogManager
 import com.adsamcik.riposte.core.model.AppPreferences
 import com.adsamcik.riposte.core.model.DarkMode
@@ -19,7 +18,6 @@ import com.adsamcik.riposte.feature.settings.domain.usecase.ImportPreferencesUse
 import com.adsamcik.riposte.feature.settings.domain.usecase.ObserveEmbeddingStatisticsUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetDarkModeUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetDefaultFormatUseCase
-import com.adsamcik.riposte.feature.settings.domain.usecase.SetUseNativeShareDialogUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetDefaultMaxDimensionUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetDefaultQualityUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetDynamicColorsUseCase
@@ -27,6 +25,8 @@ import com.adsamcik.riposte.feature.settings.domain.usecase.SetEnableSemanticSea
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetGridDensityUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetSaveSearchHistoryUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetStripMetadataUseCase
+import com.adsamcik.riposte.feature.settings.domain.usecase.SetUseNativeShareDialogUseCase
+import com.google.common.truth.Truth.assertThat
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -52,7 +52,6 @@ import java.io.File
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33], manifest = Config.NONE)
 class SettingsViewModelTest {
-
     private val testDispatcher = StandardTestDispatcher()
 
     private lateinit var context: Context
@@ -86,10 +85,11 @@ class SettingsViewModelTest {
         context = mockk(relaxed = true)
 
         // Mock package info for app version
-        val packageInfo = PackageInfo().apply {
-            versionName = "1.2.3"
-            longVersionCode = 456
-        }
+        val packageInfo =
+            PackageInfo().apply {
+                versionName = "1.2.3"
+                longVersionCode = 456
+            }
         val packageManager: PackageManager = mockk()
         every { context.packageManager } returns packageManager
         every { context.packageName } returns "com.adsamcik.riposte"
@@ -179,167 +179,183 @@ class SettingsViewModelTest {
     // region Initialization Tests
 
     @Test
-    fun `initial state has loading true`() = runTest {
-        viewModel = createViewModel()
+    fun `initial state has loading true`() =
+        runTest {
+            viewModel = createViewModel()
 
-        val state = viewModel.uiState.value
-        assertThat(state.isLoading).isTrue()
-    }
-
-    @Test
-    fun `loads settings from use cases on initialization`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
-
-        val state = viewModel.uiState.value
-        assertThat(state.isLoading).isFalse()
-        assertThat(state.darkMode).isEqualTo(DarkMode.SYSTEM)
-        assertThat(state.dynamicColorsEnabled).isTrue()
-    }
+            val state = viewModel.uiState.value
+            assertThat(state.isLoading).isTrue()
+        }
 
     @Test
-    fun `loads app version on initialization`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
+    fun `loads settings from use cases on initialization`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
 
-        val state = viewModel.uiState.value
-        assertThat(state.appVersion).isEqualTo("1.2.3 (456)")
-    }
-
-    @Test
-    fun `app version fallback when package info fails`() = runTest {
-        every { context.packageManager.getPackageInfo(any<String>(), any<Int>()) } throws Exception("Not found")
-
-        viewModel = createViewModel()
-        advanceUntilIdle()
-
-        val state = viewModel.uiState.value
-        assertThat(state.appVersion).isEqualTo("1.0.0")
-    }
+            val state = viewModel.uiState.value
+            assertThat(state.isLoading).isFalse()
+            assertThat(state.darkMode).isEqualTo(DarkMode.SYSTEM)
+            assertThat(state.dynamicColorsEnabled).isTrue()
+        }
 
     @Test
-    fun `loads all sharing preferences`() = runTest {
-        sharingPreferencesFlow.value = createDefaultSharingPreferences(
-            defaultFormat = ImageFormat.PNG,
-            defaultQuality = 90,
-            maxWidth = 2048,
-        )
+    fun `loads app version on initialization`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
 
-        viewModel = createViewModel()
-        advanceUntilIdle()
-
-        val state = viewModel.uiState.value
-        assertThat(state.defaultFormat).isEqualTo(ImageFormat.PNG)
-        assertThat(state.defaultQuality).isEqualTo(90)
-        assertThat(state.defaultMaxDimension).isEqualTo(2048)
-    }
+            val state = viewModel.uiState.value
+            assertThat(state.appVersion).isEqualTo("1.2.3 (456)")
+        }
 
     @Test
-    fun `loads search preferences`() = runTest {
-        appPreferencesFlow.value = createDefaultAppPreferences(
-            enableSemanticSearch = false,
-            saveSearchHistory = false,
-        )
+    fun `app version fallback when package info fails`() =
+        runTest {
+            every { context.packageManager.getPackageInfo(any<String>(), any<Int>()) } throws Exception("Not found")
 
-        viewModel = createViewModel()
-        advanceUntilIdle()
+            viewModel = createViewModel()
+            advanceUntilIdle()
 
-        val state = viewModel.uiState.value
-        assertThat(state.enableSemanticSearch).isFalse()
-        assertThat(state.saveSearchHistory).isFalse()
-    }
+            val state = viewModel.uiState.value
+            assertThat(state.appVersion).isEqualTo("1.0.0")
+        }
+
+    @Test
+    fun `loads all sharing preferences`() =
+        runTest {
+            sharingPreferencesFlow.value =
+                createDefaultSharingPreferences(
+                    defaultFormat = ImageFormat.PNG,
+                    defaultQuality = 90,
+                    maxWidth = 2048,
+                )
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertThat(state.defaultFormat).isEqualTo(ImageFormat.PNG)
+            assertThat(state.defaultQuality).isEqualTo(90)
+            assertThat(state.defaultMaxDimension).isEqualTo(2048)
+        }
+
+    @Test
+    fun `loads search preferences`() =
+        runTest {
+            appPreferencesFlow.value =
+                createDefaultAppPreferences(
+                    enableSemanticSearch = false,
+                    saveSearchHistory = false,
+                )
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertThat(state.enableSemanticSearch).isFalse()
+            assertThat(state.saveSearchHistory).isFalse()
+        }
 
     // endregion
 
     // region Regression: ViewModel uses Use Cases (p2-6)
 
     @Test
-    fun `SetDarkMode delegates to use case`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
+    fun `SetDarkMode delegates to use case`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
 
-        viewModel.onIntent(SettingsIntent.SetDarkMode(DarkMode.LIGHT))
-        advanceUntilIdle()
+            viewModel.onIntent(SettingsIntent.SetDarkMode(DarkMode.LIGHT))
+            advanceUntilIdle()
 
-        coVerify { setDarkModeUseCase(DarkMode.LIGHT) }
-    }
-
-    @Test
-    fun `SetDynamicColors delegates to use case`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
-
-        viewModel.onIntent(SettingsIntent.SetDynamicColors(false))
-        advanceUntilIdle()
-
-        coVerify { setDynamicColorsUseCase(false) }
-    }
+            coVerify { setDarkModeUseCase(DarkMode.LIGHT) }
+        }
 
     @Test
-    fun `SetDefaultFormat delegates to use case`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
+    fun `SetDynamicColors delegates to use case`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
 
-        viewModel.onIntent(SettingsIntent.SetDefaultFormat(ImageFormat.PNG))
-        advanceUntilIdle()
+            viewModel.onIntent(SettingsIntent.SetDynamicColors(false))
+            advanceUntilIdle()
 
-        coVerify { setDefaultFormatUseCase(ImageFormat.PNG) }
-    }
-
-    @Test
-    fun `SetDefaultQuality delegates to use case`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
-
-        viewModel.onIntent(SettingsIntent.SetDefaultQuality(95))
-        advanceUntilIdle()
-
-        coVerify { setDefaultQualityUseCase(95) }
-    }
+            coVerify { setDynamicColorsUseCase(false) }
+        }
 
     @Test
-    fun `SetDefaultMaxDimension delegates to use case`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
+    fun `SetDefaultFormat delegates to use case`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
 
-        viewModel.onIntent(SettingsIntent.SetDefaultMaxDimension(2048))
-        advanceUntilIdle()
+            viewModel.onIntent(SettingsIntent.SetDefaultFormat(ImageFormat.PNG))
+            advanceUntilIdle()
 
-        coVerify { setDefaultMaxDimensionUseCase(2048) }
-    }
-
-    @Test
-    fun `SetGridDensity delegates to use case`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
-
-        viewModel.onIntent(SettingsIntent.SetGridDensity(UserDensityPreference.COMPACT))
-        advanceUntilIdle()
-
-        coVerify { setGridDensityUseCase(UserDensityPreference.COMPACT) }
-    }
+            coVerify { setDefaultFormatUseCase(ImageFormat.PNG) }
+        }
 
     @Test
-    fun `SetEnableSemanticSearch delegates to use case`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
+    fun `SetDefaultQuality delegates to use case`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
 
-        viewModel.onIntent(SettingsIntent.SetEnableSemanticSearch(false))
-        advanceUntilIdle()
+            viewModel.onIntent(SettingsIntent.SetDefaultQuality(95))
+            advanceUntilIdle()
 
-        coVerify { setEnableSemanticSearchUseCase(false) }
-    }
+            coVerify { setDefaultQualityUseCase(95) }
+        }
 
     @Test
-    fun `SetSaveSearchHistory delegates to use case`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
+    fun `SetDefaultMaxDimension delegates to use case`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
 
-        viewModel.onIntent(SettingsIntent.SetSaveSearchHistory(false))
-        advanceUntilIdle()
+            viewModel.onIntent(SettingsIntent.SetDefaultMaxDimension(2048))
+            advanceUntilIdle()
 
-        coVerify { setSaveSearchHistoryUseCase(false) }
-    }
+            coVerify { setDefaultMaxDimensionUseCase(2048) }
+        }
+
+    @Test
+    fun `SetGridDensity delegates to use case`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onIntent(SettingsIntent.SetGridDensity(UserDensityPreference.COMPACT))
+            advanceUntilIdle()
+
+            coVerify { setGridDensityUseCase(UserDensityPreference.COMPACT) }
+        }
+
+    @Test
+    fun `SetEnableSemanticSearch delegates to use case`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onIntent(SettingsIntent.SetEnableSemanticSearch(false))
+            advanceUntilIdle()
+
+            coVerify { setEnableSemanticSearchUseCase(false) }
+        }
+
+    @Test
+    fun `SetSaveSearchHistory delegates to use case`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onIntent(SettingsIntent.SetSaveSearchHistory(false))
+            advanceUntilIdle()
+
+            coVerify { setSaveSearchHistoryUseCase(false) }
+        }
 
     // endregion
 
@@ -350,11 +366,16 @@ class SettingsViewModelTest {
         // Compile-time verification: SettingsUiState has no keepMetadata property.
         // If keepMetadata were added back, this test would fail to compile.
         val state = SettingsUiState()
-        val fields = listOf(
-            state.darkMode, state.dynamicColorsEnabled, state.defaultFormat,
-            state.defaultQuality, state.defaultMaxDimension,
-            state.enableSemanticSearch, state.saveSearchHistory,
-        )
+        val fields =
+            listOf(
+                state.darkMode,
+                state.dynamicColorsEnabled,
+                state.defaultFormat,
+                state.defaultQuality,
+                state.defaultMaxDimension,
+                state.enableSemanticSearch,
+                state.saveSearchHistory,
+            )
         assertThat(fields).isNotEmpty()
     }
 
@@ -363,36 +384,40 @@ class SettingsViewModelTest {
         // Compile-time verification: if SetKeepMetadata were reintroduced,
         // this when-expression would fail to compile (non-exhaustive).
         val intent: SettingsIntent = SettingsIntent.SetDefaultFormat(ImageFormat.WEBP)
-        val isKeepMetadata = when (intent) {
-            is SettingsIntent.SetDarkMode,
-            is SettingsIntent.SetLanguage,
-            is SettingsIntent.SetDynamicColors,
-            is SettingsIntent.SetGridDensity,
-            is SettingsIntent.SetDefaultFormat,
-            is SettingsIntent.SetDefaultQuality,
-            is SettingsIntent.SetDefaultMaxDimension,
-            is SettingsIntent.SetEnableSemanticSearch,
-            is SettingsIntent.SetSaveSearchHistory,
-            is SettingsIntent.CalculateCacheSize,
-            is SettingsIntent.ShowClearCacheDialog,
-            is SettingsIntent.DismissDialog,
-            is SettingsIntent.ConfirmClearCache,
-            is SettingsIntent.ShowExportOptionsDialog,
-            is SettingsIntent.DismissExportOptionsDialog,
-            is SettingsIntent.SetExportSettings,
-            is SettingsIntent.SetExportImages,
-            is SettingsIntent.SetExportTags,
-            is SettingsIntent.ConfirmExport,
-            is SettingsIntent.ExportToUri,
-            is SettingsIntent.ImportData,
-            is SettingsIntent.ImportFromUri,
-            is SettingsIntent.ConfirmImport,
-            is SettingsIntent.DismissImportConfirmDialog,
-            is SettingsIntent.OpenLicenses,
-            is SettingsIntent.OpenPrivacyPolicy,
-            is SettingsIntent.SetUseNativeShareDialog,
-            is SettingsIntent.SetStripMetadata -> false
-        }
+        val isKeepMetadata =
+            when (intent) {
+                is SettingsIntent.SetDarkMode,
+                is SettingsIntent.SetLanguage,
+                is SettingsIntent.SetDynamicColors,
+                is SettingsIntent.SetGridDensity,
+                is SettingsIntent.SetDefaultFormat,
+                is SettingsIntent.SetDefaultQuality,
+                is SettingsIntent.SetDefaultMaxDimension,
+                is SettingsIntent.SetEnableSemanticSearch,
+                is SettingsIntent.SetSaveSearchHistory,
+                is SettingsIntent.CalculateCacheSize,
+                is SettingsIntent.ShowClearCacheDialog,
+                is SettingsIntent.DismissDialog,
+                is SettingsIntent.ConfirmClearCache,
+                is SettingsIntent.ShowExportOptionsDialog,
+                is SettingsIntent.DismissExportOptionsDialog,
+                is SettingsIntent.SetExportSettings,
+                is SettingsIntent.SetExportImages,
+                is SettingsIntent.SetExportTags,
+                is SettingsIntent.ConfirmExport,
+                is SettingsIntent.ExportToUri,
+                is SettingsIntent.ImportData,
+                is SettingsIntent.ImportFromUri,
+                is SettingsIntent.ConfirmImport,
+                is SettingsIntent.DismissImportConfirmDialog,
+                is SettingsIntent.OpenLicenses,
+                is SettingsIntent.OpenPrivacyPolicy,
+                is SettingsIntent.SetUseNativeShareDialog,
+                is SettingsIntent.SetStripMetadata,
+                is SettingsIntent.ShareCrashLogs,
+                is SettingsIntent.ClearCrashLogs,
+                -> false
+            }
         assertThat(isKeepMetadata).isFalse()
     }
 
@@ -411,459 +436,486 @@ class SettingsViewModelTest {
     // region Dark Mode Tests
 
     @Test
-    fun `SetDarkMode DARK updates preference`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
+    fun `SetDarkMode DARK updates preference`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
 
-        viewModel.onIntent(SettingsIntent.SetDarkMode(DarkMode.DARK))
-        advanceUntilIdle()
+            viewModel.onIntent(SettingsIntent.SetDarkMode(DarkMode.DARK))
+            advanceUntilIdle()
 
-        coVerify { setDarkModeUseCase(DarkMode.DARK) }
-    }
-
-    @Test
-    fun `SetDarkMode SYSTEM updates preference`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
-
-        viewModel.onIntent(SettingsIntent.SetDarkMode(DarkMode.SYSTEM))
-        advanceUntilIdle()
-
-        coVerify { setDarkModeUseCase(DarkMode.SYSTEM) }
-    }
+            coVerify { setDarkModeUseCase(DarkMode.DARK) }
+        }
 
     @Test
-    fun `dark mode state reflects use case updates`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
+    fun `SetDarkMode SYSTEM updates preference`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
 
-        appPreferencesFlow.value = createDefaultAppPreferences(darkMode = DarkMode.DARK)
-        advanceUntilIdle()
+            viewModel.onIntent(SettingsIntent.SetDarkMode(DarkMode.SYSTEM))
+            advanceUntilIdle()
 
-        assertThat(viewModel.uiState.value.darkMode).isEqualTo(DarkMode.DARK)
-    }
+            coVerify { setDarkModeUseCase(DarkMode.SYSTEM) }
+        }
+
+    @Test
+    fun `dark mode state reflects use case updates`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            appPreferencesFlow.value = createDefaultAppPreferences(darkMode = DarkMode.DARK)
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.darkMode).isEqualTo(DarkMode.DARK)
+        }
 
     // endregion
 
     // region Cache Management Tests
 
     @Test
-    fun `CalculateCacheSize updates cache size in state`() = runTest {
-        val cacheDir: File = mockk(relaxed = true)
-        val testFile: File = mockk()
-        every { context.cacheDir } returns cacheDir
-        every { cacheDir.listFiles() } returns arrayOf(testFile)
-        every { testFile.isDirectory } returns false
-        every { testFile.length() } returns 2_097_152L // 2 MB
+    fun `CalculateCacheSize updates cache size in state`() =
+        runTest {
+            val cacheDir: File = mockk(relaxed = true)
+            val testFile: File = mockk()
+            every { context.cacheDir } returns cacheDir
+            every { cacheDir.listFiles() } returns arrayOf(testFile)
+            every { testFile.isDirectory } returns false
+            every { testFile.length() } returns 2_097_152L // 2 MB
 
-        viewModel = createViewModel()
-        advanceUntilIdle()
+            viewModel = createViewModel()
+            advanceUntilIdle()
 
-        val state = viewModel.uiState.value
-        assertThat(state.cacheSize).isEqualTo("2.00 MB")
-    }
-
-    @Test
-    fun `cache size formats correctly for KB`() = runTest {
-        val cacheDir: File = mockk(relaxed = true)
-        val testFile: File = mockk()
-        every { context.cacheDir } returns cacheDir
-        every { cacheDir.listFiles() } returns arrayOf(testFile)
-        every { testFile.isDirectory } returns false
-        every { testFile.length() } returns 1024L // 1 KB
-
-        viewModel = createViewModel()
-        advanceUntilIdle()
-
-        val state = viewModel.uiState.value
-        assertThat(state.cacheSize).isEqualTo("1.00 KB")
-    }
+            val state = viewModel.uiState.value
+            assertThat(state.cacheSize).isEqualTo("2.00 MB")
+        }
 
     @Test
-    fun `cache size formats correctly for bytes`() = runTest {
-        val cacheDir: File = mockk(relaxed = true)
-        val testFile: File = mockk()
-        every { context.cacheDir } returns cacheDir
-        every { cacheDir.listFiles() } returns arrayOf(testFile)
-        every { testFile.isDirectory } returns false
-        every { testFile.length() } returns 500L
+    fun `cache size formats correctly for KB`() =
+        runTest {
+            val cacheDir: File = mockk(relaxed = true)
+            val testFile: File = mockk()
+            every { context.cacheDir } returns cacheDir
+            every { cacheDir.listFiles() } returns arrayOf(testFile)
+            every { testFile.isDirectory } returns false
+            every { testFile.length() } returns 1024L // 1 KB
 
-        viewModel = createViewModel()
-        advanceUntilIdle()
+            viewModel = createViewModel()
+            advanceUntilIdle()
 
-        val state = viewModel.uiState.value
-        assertThat(state.cacheSize).isEqualTo("500 B")
-    }
-
-    @Test
-    fun `cache size formats correctly for GB`() = runTest {
-        val cacheDir: File = mockk(relaxed = true)
-        val testFile: File = mockk()
-        every { context.cacheDir } returns cacheDir
-        every { cacheDir.listFiles() } returns arrayOf(testFile)
-        every { testFile.isDirectory } returns false
-        every { testFile.length() } returns 2_147_483_648L // 2 GB
-
-        viewModel = createViewModel()
-        advanceUntilIdle()
-
-        val state = viewModel.uiState.value
-        assertThat(state.cacheSize).isEqualTo("2.00 GB")
-    }
+            val state = viewModel.uiState.value
+            assertThat(state.cacheSize).isEqualTo("1.00 KB")
+        }
 
     @Test
-    fun `calculates nested directory sizes`() = runTest {
-        val cacheDir: File = mockk(relaxed = true)
-        val subDir: File = mockk(relaxed = true)
-        val file1: File = mockk()
-        val file2: File = mockk()
+    fun `cache size formats correctly for bytes`() =
+        runTest {
+            val cacheDir: File = mockk(relaxed = true)
+            val testFile: File = mockk()
+            every { context.cacheDir } returns cacheDir
+            every { cacheDir.listFiles() } returns arrayOf(testFile)
+            every { testFile.isDirectory } returns false
+            every { testFile.length() } returns 500L
 
-        every { context.cacheDir } returns cacheDir
-        every { cacheDir.listFiles() } returns arrayOf(subDir, file1)
-        every { subDir.isDirectory } returns true
-        every { subDir.listFiles() } returns arrayOf(file2)
-        every { file1.isDirectory } returns false
-        every { file1.length() } returns 1_048_576L // 1 MB
-        every { file2.isDirectory } returns false
-        every { file2.length() } returns 1_048_576L // 1 MB
+            viewModel = createViewModel()
+            advanceUntilIdle()
 
-        viewModel = createViewModel()
-        advanceUntilIdle()
-
-        val state = viewModel.uiState.value
-        assertThat(state.cacheSize).isEqualTo("2.00 MB")
-    }
+            val state = viewModel.uiState.value
+            assertThat(state.cacheSize).isEqualTo("500 B")
+        }
 
     @Test
-    fun `ShowClearCacheDialog shows dialog`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
+    fun `cache size formats correctly for GB`() =
+        runTest {
+            val cacheDir: File = mockk(relaxed = true)
+            val testFile: File = mockk()
+            every { context.cacheDir } returns cacheDir
+            every { cacheDir.listFiles() } returns arrayOf(testFile)
+            every { testFile.isDirectory } returns false
+            every { testFile.length() } returns 2_147_483_648L // 2 GB
 
-        viewModel.onIntent(SettingsIntent.ShowClearCacheDialog)
-        advanceUntilIdle()
+            viewModel = createViewModel()
+            advanceUntilIdle()
 
-        assertThat(viewModel.uiState.value.showClearCacheDialog).isTrue()
-    }
-
-    @Test
-    fun `DismissDialog hides dialog`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
-
-        viewModel.onIntent(SettingsIntent.ShowClearCacheDialog)
-        advanceUntilIdle()
-        viewModel.onIntent(SettingsIntent.DismissDialog)
-        advanceUntilIdle()
-
-        assertThat(viewModel.uiState.value.showClearCacheDialog).isFalse()
-    }
+            val state = viewModel.uiState.value
+            assertThat(state.cacheSize).isEqualTo("2.00 GB")
+        }
 
     @Test
-    fun `ConfirmClearCache clears cache and emits success effect`() = runTest {
-        val cacheDir: File = mockk(relaxed = true)
-        val testFile: File = mockk(relaxed = true)
-        every { context.cacheDir } returns cacheDir
-        every { cacheDir.listFiles() } returns arrayOf(testFile)
-        every { testFile.isDirectory } returns false
-        every { testFile.length() } returns 1024L
-        every { testFile.delete() } returns true
-        every { context.getString(R.string.settings_snackbar_cache_cleared) } returns "Cache cleared successfully"
+    fun `calculates nested directory sizes`() =
+        runTest {
+            val cacheDir: File = mockk(relaxed = true)
+            val subDir: File = mockk(relaxed = true)
+            val file1: File = mockk()
+            val file2: File = mockk()
 
-        viewModel = createViewModel()
-        advanceUntilIdle()
+            every { context.cacheDir } returns cacheDir
+            every { cacheDir.listFiles() } returns arrayOf(subDir, file1)
+            every { subDir.isDirectory } returns true
+            every { subDir.listFiles() } returns arrayOf(file2)
+            every { file1.isDirectory } returns false
+            every { file1.length() } returns 1_048_576L // 1 MB
+            every { file2.isDirectory } returns false
+            every { file2.length() } returns 1_048_576L // 1 MB
 
-        viewModel.effects.test {
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertThat(state.cacheSize).isEqualTo("2.00 MB")
+        }
+
+    @Test
+    fun `ShowClearCacheDialog shows dialog`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
             viewModel.onIntent(SettingsIntent.ShowClearCacheDialog)
             advanceUntilIdle()
-            viewModel.onIntent(SettingsIntent.ConfirmClearCache)
-            advanceUntilIdle()
 
-            val effect = awaitItem()
-            assertThat(effect).isInstanceOf(SettingsEffect.ShowSnackbar::class.java)
-            assertThat((effect as SettingsEffect.ShowSnackbar).message).isEqualTo("Cache cleared successfully")
-
-            cancelAndIgnoreRemainingEvents()
+            assertThat(viewModel.uiState.value.showClearCacheDialog).isTrue()
         }
-
-        assertThat(viewModel.uiState.value.showClearCacheDialog).isFalse()
-    }
 
     @Test
-    fun `ConfirmClearCache emits error effect on failure`() = runTest {
-        val cacheDir: File = mockk(relaxed = true)
-        val testFile: File = mockk(relaxed = true)
-        every { context.cacheDir } returns cacheDir
-        every { cacheDir.listFiles() } returns arrayOf(testFile)
-        every { testFile.isDirectory } returns false
-        every { testFile.length() } returns 1024L
-        every { context.getString(R.string.settings_snackbar_cache_clear_failed) } returns "Failed to clear cache"
-
-        viewModel = createViewModel()
-        advanceUntilIdle()
-
-        // Now set up the exception for when confirmClearCache tries to clear
-        every { cacheDir.listFiles() } throws RuntimeException("Permission denied")
-
-        viewModel.effects.test {
-            viewModel.onIntent(SettingsIntent.ConfirmClearCache)
+    fun `DismissDialog hides dialog`() =
+        runTest {
+            viewModel = createViewModel()
             advanceUntilIdle()
 
-            val effect = awaitItem()
-            assertThat(effect).isInstanceOf(SettingsEffect.ShowSnackbar::class.java)
-            assertThat((effect as SettingsEffect.ShowSnackbar).message).isEqualTo("Failed to clear cache")
+            viewModel.onIntent(SettingsIntent.ShowClearCacheDialog)
+            advanceUntilIdle()
+            viewModel.onIntent(SettingsIntent.DismissDialog)
+            advanceUntilIdle()
 
-            cancelAndIgnoreRemainingEvents()
+            assertThat(viewModel.uiState.value.showClearCacheDialog).isFalse()
         }
-    }
+
+    @Test
+    fun `ConfirmClearCache clears cache and emits success effect`() =
+        runTest {
+            val cacheDir: File = mockk(relaxed = true)
+            val testFile: File = mockk(relaxed = true)
+            every { context.cacheDir } returns cacheDir
+            every { cacheDir.listFiles() } returns arrayOf(testFile)
+            every { testFile.isDirectory } returns false
+            every { testFile.length() } returns 1024L
+            every { testFile.delete() } returns true
+            every { context.getString(R.string.settings_snackbar_cache_cleared) } returns "Cache cleared successfully"
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.effects.test {
+                viewModel.onIntent(SettingsIntent.ShowClearCacheDialog)
+                advanceUntilIdle()
+                viewModel.onIntent(SettingsIntent.ConfirmClearCache)
+                advanceUntilIdle()
+
+                val effect = awaitItem()
+                assertThat(effect).isInstanceOf(SettingsEffect.ShowSnackbar::class.java)
+                assertThat((effect as SettingsEffect.ShowSnackbar).message).isEqualTo("Cache cleared successfully")
+
+                cancelAndIgnoreRemainingEvents()
+            }
+
+            assertThat(viewModel.uiState.value.showClearCacheDialog).isFalse()
+        }
+
+    @Test
+    fun `ConfirmClearCache emits error effect on failure`() =
+        runTest {
+            val cacheDir: File = mockk(relaxed = true)
+            val testFile: File = mockk(relaxed = true)
+            every { context.cacheDir } returns cacheDir
+            every { cacheDir.listFiles() } returns arrayOf(testFile)
+            every { testFile.isDirectory } returns false
+            every { testFile.length() } returns 1024L
+            every { context.getString(R.string.settings_snackbar_cache_clear_failed) } returns "Failed to clear cache"
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            // Now set up the exception for when confirmClearCache tries to clear
+            every { cacheDir.listFiles() } throws RuntimeException("Permission denied")
+
+            viewModel.effects.test {
+                viewModel.onIntent(SettingsIntent.ConfirmClearCache)
+                advanceUntilIdle()
+
+                val effect = awaitItem()
+                assertThat(effect).isInstanceOf(SettingsEffect.ShowSnackbar::class.java)
+                assertThat((effect as SettingsEffect.ShowSnackbar).message).isEqualTo("Failed to clear cache")
+
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
 
     // endregion
 
     // region Export Tests
 
     @Test
-    fun `ShowExportOptionsDialog shows dialog with defaults`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
-
-        viewModel.onIntent(SettingsIntent.ShowExportOptionsDialog)
-        advanceUntilIdle()
-
-        val state = viewModel.uiState.value
-        assertThat(state.showExportOptionsDialog).isTrue()
-        assertThat(state.exportSettings).isTrue()
-        assertThat(state.exportImages).isTrue()
-        assertThat(state.exportTags).isTrue()
-    }
-
-    @Test
-    fun `DismissExportOptionsDialog hides dialog`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
-
-        viewModel.onIntent(SettingsIntent.ShowExportOptionsDialog)
-        advanceUntilIdle()
-        viewModel.onIntent(SettingsIntent.DismissExportOptionsDialog)
-        advanceUntilIdle()
-
-        assertThat(viewModel.uiState.value.showExportOptionsDialog).isFalse()
-    }
-
-    @Test
-    fun `ConfirmExport emits LaunchExportPicker effect`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
-
-        viewModel.effects.test {
-            viewModel.onIntent(SettingsIntent.ConfirmExport)
-            advanceUntilIdle()
-
-            val effect = awaitItem()
-            assertThat(effect).isInstanceOf(SettingsEffect.LaunchExportPicker::class.java)
-
-            cancelAndIgnoreRemainingEvents()
-        }
-    }
-
-    @Test
-    fun `ExportToUri uses ExportPreferencesUseCase`() = runTest {
-        coEvery { exportPreferencesUseCase() } returns """{"version":1}"""
-        every { context.getString(eq(R.string.settings_snackbar_export_success), any()) } returns "Export success"
-
-        val testFile = File.createTempFile("test_export", ".zip")
-        try {
-            val uri: android.net.Uri = mockk()
-            every { context.contentResolver.openOutputStream(uri) } returns testFile.outputStream()
-
+    fun `ShowExportOptionsDialog shows dialog with defaults`() =
+        runTest {
             viewModel = createViewModel()
             advanceUntilIdle()
 
-            viewModel.onIntent(SettingsIntent.ExportToUri(uri))
+            viewModel.onIntent(SettingsIntent.ShowExportOptionsDialog)
             advanceUntilIdle()
 
-            coVerify { exportPreferencesUseCase() }
-        } finally {
-            testFile.delete()
+            val state = viewModel.uiState.value
+            assertThat(state.showExportOptionsDialog).isTrue()
+            assertThat(state.exportSettings).isTrue()
+            assertThat(state.exportImages).isTrue()
+            assertThat(state.exportTags).isTrue()
         }
-    }
+
+    @Test
+    fun `DismissExportOptionsDialog hides dialog`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onIntent(SettingsIntent.ShowExportOptionsDialog)
+            advanceUntilIdle()
+            viewModel.onIntent(SettingsIntent.DismissExportOptionsDialog)
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.showExportOptionsDialog).isFalse()
+        }
+
+    @Test
+    fun `ConfirmExport emits LaunchExportPicker effect`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.effects.test {
+                viewModel.onIntent(SettingsIntent.ConfirmExport)
+                advanceUntilIdle()
+
+                val effect = awaitItem()
+                assertThat(effect).isInstanceOf(SettingsEffect.LaunchExportPicker::class.java)
+
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `ExportToUri uses ExportPreferencesUseCase`() =
+        runTest {
+            coEvery { exportPreferencesUseCase() } returns """{"version":1}"""
+            every { context.getString(eq(R.string.settings_snackbar_export_success), any()) } returns "Export success"
+
+            val testFile = File.createTempFile("test_export", ".zip")
+            try {
+                val uri: android.net.Uri = mockk()
+                every { context.contentResolver.openOutputStream(uri) } returns testFile.outputStream()
+
+                viewModel = createViewModel()
+                advanceUntilIdle()
+
+                viewModel.onIntent(SettingsIntent.ExportToUri(uri))
+                advanceUntilIdle()
+
+                coVerify { exportPreferencesUseCase() }
+            } finally {
+                testFile.delete()
+            }
+        }
 
     // endregion
 
     // region Import Tests
 
     @Test
-    fun `ImportData emits LaunchImportPicker effect`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
-
-        viewModel.effects.test {
-            viewModel.onIntent(SettingsIntent.ImportData)
+    fun `ImportData emits LaunchImportPicker effect`() =
+        runTest {
+            viewModel = createViewModel()
             advanceUntilIdle()
 
-            val effect = awaitItem()
-            assertThat(effect).isInstanceOf(SettingsEffect.LaunchImportPicker::class.java)
+            viewModel.effects.test {
+                viewModel.onIntent(SettingsIntent.ImportData)
+                advanceUntilIdle()
 
-            cancelAndIgnoreRemainingEvents()
+                val effect = awaitItem()
+                assertThat(effect).isInstanceOf(SettingsEffect.LaunchImportPicker::class.java)
+
+                cancelAndIgnoreRemainingEvents()
+            }
         }
-    }
 
     @Test
-    fun `ImportFromUri shows confirmation dialog`() = runTest {
-        val jsonData = """{"version":1,"timestamp":1706198400000}"""
-        val uri: android.net.Uri = mockk()
-        every { context.contentResolver.openInputStream(uri) } returns jsonData.byteInputStream()
+    fun `ImportFromUri shows confirmation dialog`() =
+        runTest {
+            val jsonData = """{"version":1,"timestamp":1706198400000}"""
+            val uri: android.net.Uri = mockk()
+            every { context.contentResolver.openInputStream(uri) } returns jsonData.byteInputStream()
 
-        viewModel = createViewModel()
-        advanceUntilIdle()
+            viewModel = createViewModel()
+            advanceUntilIdle()
 
-        viewModel.onIntent(SettingsIntent.ImportFromUri(uri))
-        advanceUntilIdle()
+            viewModel.onIntent(SettingsIntent.ImportFromUri(uri))
+            advanceUntilIdle()
 
-        val state = viewModel.uiState.value
-        assertThat(state.showImportConfirmDialog).isTrue()
-        assertThat(state.pendingImportJson).isEqualTo(jsonData)
-        assertThat(state.importBackupTimestamp).isEqualTo(1706198400000)
-    }
-
-    @Test
-    fun `ConfirmImport delegates to ImportPreferencesUseCase`() = runTest {
-        val jsonData = """{"version":1,"timestamp":1706198400000}"""
-        coEvery { importPreferencesUseCase(jsonData) } returns Result.success(Unit)
-        every { context.getString(R.string.settings_snackbar_import_success) } returns "Import success"
-
-        val uri: android.net.Uri = mockk()
-        every { context.contentResolver.openInputStream(uri) } returns jsonData.byteInputStream()
-
-        viewModel = createViewModel()
-        advanceUntilIdle()
-
-        // First trigger import to set pending JSON
-        viewModel.onIntent(SettingsIntent.ImportFromUri(uri))
-        advanceUntilIdle()
-
-        // Then confirm
-        viewModel.onIntent(SettingsIntent.ConfirmImport)
-        advanceUntilIdle()
-
-        coVerify { importPreferencesUseCase(jsonData) }
-        assertThat(viewModel.uiState.value.showImportConfirmDialog).isFalse()
-    }
+            val state = viewModel.uiState.value
+            assertThat(state.showImportConfirmDialog).isTrue()
+            assertThat(state.pendingImportJson).isEqualTo(jsonData)
+            assertThat(state.importBackupTimestamp).isEqualTo(1706198400000)
+        }
 
     @Test
-    fun `DismissImportConfirmDialog clears pending state`() = runTest {
-        val jsonData = """{"version":1,"timestamp":1706198400000}"""
-        val uri: android.net.Uri = mockk()
-        every { context.contentResolver.openInputStream(uri) } returns jsonData.byteInputStream()
+    fun `ConfirmImport delegates to ImportPreferencesUseCase`() =
+        runTest {
+            val jsonData = """{"version":1,"timestamp":1706198400000}"""
+            coEvery { importPreferencesUseCase(jsonData) } returns Result.success(Unit)
+            every { context.getString(R.string.settings_snackbar_import_success) } returns "Import success"
 
-        viewModel = createViewModel()
-        advanceUntilIdle()
+            val uri: android.net.Uri = mockk()
+            every { context.contentResolver.openInputStream(uri) } returns jsonData.byteInputStream()
 
-        viewModel.onIntent(SettingsIntent.ImportFromUri(uri))
-        advanceUntilIdle()
-        viewModel.onIntent(SettingsIntent.DismissImportConfirmDialog)
-        advanceUntilIdle()
+            viewModel = createViewModel()
+            advanceUntilIdle()
 
-        val state = viewModel.uiState.value
-        assertThat(state.showImportConfirmDialog).isFalse()
-        assertThat(state.pendingImportJson).isNull()
-        assertThat(state.importBackupTimestamp).isNull()
-    }
+            // First trigger import to set pending JSON
+            viewModel.onIntent(SettingsIntent.ImportFromUri(uri))
+            advanceUntilIdle()
+
+            // Then confirm
+            viewModel.onIntent(SettingsIntent.ConfirmImport)
+            advanceUntilIdle()
+
+            coVerify { importPreferencesUseCase(jsonData) }
+            assertThat(viewModel.uiState.value.showImportConfirmDialog).isFalse()
+        }
+
+    @Test
+    fun `DismissImportConfirmDialog clears pending state`() =
+        runTest {
+            val jsonData = """{"version":1,"timestamp":1706198400000}"""
+            val uri: android.net.Uri = mockk()
+            every { context.contentResolver.openInputStream(uri) } returns jsonData.byteInputStream()
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onIntent(SettingsIntent.ImportFromUri(uri))
+            advanceUntilIdle()
+            viewModel.onIntent(SettingsIntent.DismissImportConfirmDialog)
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertThat(state.showImportConfirmDialog).isFalse()
+            assertThat(state.pendingImportJson).isNull()
+            assertThat(state.importBackupTimestamp).isNull()
+        }
 
     // endregion
 
     // region About Section Tests
 
     @Test
-    fun `OpenLicenses emits NavigateToLicenses effect`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
-
-        viewModel.effects.test {
-            viewModel.onIntent(SettingsIntent.OpenLicenses)
+    fun `OpenLicenses emits NavigateToLicenses effect`() =
+        runTest {
+            viewModel = createViewModel()
             advanceUntilIdle()
 
-            val effect = awaitItem()
-            assertThat(effect).isEqualTo(SettingsEffect.NavigateToLicenses)
+            viewModel.effects.test {
+                viewModel.onIntent(SettingsIntent.OpenLicenses)
+                advanceUntilIdle()
 
-            cancelAndIgnoreRemainingEvents()
+                val effect = awaitItem()
+                assertThat(effect).isEqualTo(SettingsEffect.NavigateToLicenses)
+
+                cancelAndIgnoreRemainingEvents()
+            }
         }
-    }
 
     @Test
-    fun `OpenPrivacyPolicy emits OpenUrl effect with correct URL`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
-
-        viewModel.effects.test {
-            viewModel.onIntent(SettingsIntent.OpenPrivacyPolicy)
+    fun `OpenPrivacyPolicy emits OpenUrl effect with correct URL`() =
+        runTest {
+            viewModel = createViewModel()
             advanceUntilIdle()
 
-            val effect = awaitItem()
-            assertThat(effect).isInstanceOf(SettingsEffect.OpenUrl::class.java)
-            assertThat((effect as SettingsEffect.OpenUrl).url).isEqualTo("https://riposte.app/privacy")
+            viewModel.effects.test {
+                viewModel.onIntent(SettingsIntent.OpenPrivacyPolicy)
+                advanceUntilIdle()
 
-            cancelAndIgnoreRemainingEvents()
+                val effect = awaitItem()
+                assertThat(effect).isInstanceOf(SettingsEffect.OpenUrl::class.java)
+                assertThat((effect as SettingsEffect.OpenUrl).url).isEqualTo("https://riposte.app/privacy")
+
+                cancelAndIgnoreRemainingEvents()
+            }
         }
-    }
 
     // endregion
 
     // region State Flow Reactivity Tests
 
     @Test
-    fun `state updates when app preferences change`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
+    fun `state updates when app preferences change`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
 
-        // Verify initial state
-        assertThat(viewModel.uiState.value.darkMode).isEqualTo(DarkMode.SYSTEM)
+            // Verify initial state
+            assertThat(viewModel.uiState.value.darkMode).isEqualTo(DarkMode.SYSTEM)
 
-        // Update use case flow
-        appPreferencesFlow.value = createDefaultAppPreferences(
-            darkMode = DarkMode.LIGHT,
-            dynamicColors = false,
-        )
-        advanceUntilIdle()
+            // Update use case flow
+            appPreferencesFlow.value =
+                createDefaultAppPreferences(
+                    darkMode = DarkMode.LIGHT,
+                    dynamicColors = false,
+                )
+            advanceUntilIdle()
 
-        // Verify state updated
-        val state = viewModel.uiState.value
-        assertThat(state.darkMode).isEqualTo(DarkMode.LIGHT)
-        assertThat(state.dynamicColorsEnabled).isFalse()
-    }
+            // Verify state updated
+            val state = viewModel.uiState.value
+            assertThat(state.darkMode).isEqualTo(DarkMode.LIGHT)
+            assertThat(state.dynamicColorsEnabled).isFalse()
+        }
 
     @Test
-    fun `state updates when sharing preferences change`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
+    fun `state updates when sharing preferences change`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
 
-        // Verify initial state
-        assertThat(viewModel.uiState.value.defaultFormat).isEqualTo(ImageFormat.WEBP)
+            // Verify initial state
+            assertThat(viewModel.uiState.value.defaultFormat).isEqualTo(ImageFormat.WEBP)
 
-        // Update use case flow
-        sharingPreferencesFlow.value = createDefaultSharingPreferences(
-            defaultFormat = ImageFormat.JPEG,
-            defaultQuality = 75,
-        )
-        advanceUntilIdle()
+            // Update use case flow
+            sharingPreferencesFlow.value =
+                createDefaultSharingPreferences(
+                    defaultFormat = ImageFormat.JPEG,
+                    defaultQuality = 75,
+                )
+            advanceUntilIdle()
 
-        // Verify state updated
-        val state = viewModel.uiState.value
-        assertThat(state.defaultFormat).isEqualTo(ImageFormat.JPEG)
-        assertThat(state.defaultQuality).isEqualTo(75)
-    }
+            // Verify state updated
+            val state = viewModel.uiState.value
+            assertThat(state.defaultFormat).isEqualTo(ImageFormat.JPEG)
+            assertThat(state.defaultQuality).isEqualTo(75)
+        }
 
     // endregion
 
     // region Regression: Cache Empty State and No Sharing Section (p2-ux)
 
     @Test
-    fun `when cache is zero bytes then empty cache state is indicated`() = runTest {
-        // Default setup has empty cacheDir (listFiles returns emptyArray)
-        viewModel = createViewModel()
-        advanceUntilIdle()
+    fun `when cache is zero bytes then empty cache state is indicated`() =
+        runTest {
+            // Default setup has empty cacheDir (listFiles returns emptyArray)
+            viewModel = createViewModel()
+            advanceUntilIdle()
 
-        val state = viewModel.uiState.value
-        assertThat(state.cacheSize).isEqualTo("0 B")
-    }
+            val state = viewModel.uiState.value
+            assertThat(state.cacheSize).isEqualTo("0 B")
+        }
 
     @Test
     fun `when settings loaded then sharing section is not present`() {

@@ -181,6 +181,7 @@ When working in this codebase:
 8. **Keep features isolated** - no feature-to-feature dependencies
 9. **Run tests** before completing work: `./gradlew test`
 10. **Lint** before PRs: `./gradlew lint`
+11. **Never revert work done by other agents or in prior turns.** If a file was already modified, preserve those changes. Do not reset, checkout, or overwrite files to their original state. Only make additive or surgical edits on top of existing work.
 
 ## CLI Tool Notes
 

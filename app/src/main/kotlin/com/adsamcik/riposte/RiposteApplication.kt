@@ -3,7 +3,6 @@ package com.adsamcik.riposte
 import android.app.Application
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
-import com.adsamcik.riposte.core.common.AppConstants
 import com.adsamcik.riposte.core.common.crash.CrashReportWriter
 import com.adsamcik.riposte.core.common.lifecycle.AppLifecycleTracker
 import com.adsamcik.riposte.sharing.SharingShortcutUpdater
@@ -42,7 +41,8 @@ class RiposteApplication : Application(), Configuration.Provider {
 
     private fun installCrashHandler() {
         val crashDir = File(filesDir, CrashReportWriter.CRASH_DIR_NAME)
-        CrashReportWriter(crashDir, AppConstants.APP_VERSION).install()
+        val versionName = packageManager.getPackageInfo(packageName, 0).versionName ?: "unknown"
+        CrashReportWriter(crashDir, versionName).install()
     }
 
     override val workManagerConfiguration: Configuration

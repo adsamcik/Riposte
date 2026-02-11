@@ -7,7 +7,6 @@ import org.junit.Test
 import java.io.File
 
 class DefaultCrashLogManagerTest {
-
     private lateinit var crashDir: File
     private lateinit var manager: DefaultCrashLogManager
 
@@ -45,7 +44,9 @@ class DefaultCrashLogManagerTest {
 
     @Test
     fun `getShareableReport returns empty string when no logs`() {
-        assertThat(manager.getShareableReport()).isEmpty()
+        val report = manager.getShareableReport()
+        assertThat(report.text).isEmpty()
+        assertThat(report.count).isEqualTo(0)
     }
 
     @Test
@@ -55,10 +56,10 @@ class DefaultCrashLogManagerTest {
 
         val report = manager.getShareableReport()
 
-        assertThat(report).contains("newer report")
-        assertThat(report).contains("older report")
+        assertThat(report.text).contains("newer report")
+        assertThat(report.text).contains("older report")
         // Newest should appear first
-        assertThat(report.indexOf("newer report")).isLessThan(report.indexOf("older report"))
+        assertThat(report.text.indexOf("newer report")).isLessThan(report.text.indexOf("older report"))
     }
 
     @Test
@@ -68,7 +69,7 @@ class DefaultCrashLogManagerTest {
 
         val report = manager.getShareableReport()
 
-        assertThat(report).contains("\n\n")
+        assertThat(report.text).contains("\n\n")
     }
 
     @Test
@@ -88,5 +89,53 @@ class DefaultCrashLogManagerTest {
         manager.clearAll()
 
         assertThat(manager.getCrashLogCount()).isEqualTo(0)
+    }
+
+    @Test
+    fun `getShareableReport prunes logs exceeding MAX_CRASH_LOGS`() {
+        repeat(25) { i ->
+            File(crashDir, "crash_${1000 + i}.txt").writeText("report $i")
+        }
+
+        val report = manager.getShareableReport()
+
+        assertThat(report.count).isEqualTo(DefaultCrashLogManager.MAX_CRASH_LOGS)
+        assertThat(crashDir.listFiles()!!.size).isEqualTo(DefaultCrashLogManager.MAX_CRASH_LOGS)
+    }
+
+    @Test
+    fun `getShareableReport keeps all logs when under cap`() {
+        repeat(5) { i ->
+            File(crashDir, "crash_${1000 + i}.txt").writeText("report $i")
+        }
+
+        val report = manager.getShareableReport()
+
+        assertThat(report.count).isEqualTo(5)
+        assertThat(crashDir.listFiles()!!.size).isEqualTo(5)
+    }
+
+    @Test
+    fun `getShareableReport returns count matching included reports`() {
+        File(crashDir, "crash_1.txt").writeText("report A")
+        File(crashDir, "crash_2.txt").writeText("report B")
+        File(crashDir, "crash_3.txt").writeText("report C")
+
+        val report = manager.getShareableReport()
+
+        assertThat(report.count).isEqualTo(3)
+        val reports = report.text.split("\n\n")
+        assertThat(reports).hasSize(3)
+    }
+
+    @Test
+    fun `getShareableReport returns post-prune count`() {
+        repeat(22) { i ->
+            File(crashDir, "crash_${1000 + i}.txt").writeText("report $i")
+        }
+
+        val report = manager.getShareableReport()
+
+        assertThat(report.count).isEqualTo(DefaultCrashLogManager.MAX_CRASH_LOGS)
     }
 }

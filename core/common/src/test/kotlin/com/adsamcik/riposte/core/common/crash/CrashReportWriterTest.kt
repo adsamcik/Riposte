@@ -7,7 +7,6 @@ import org.junit.Test
 import java.io.File
 
 class CrashReportWriterTest {
-
     private lateinit var crashDir: File
 
     @Before
@@ -32,21 +31,22 @@ class CrashReportWriterTest {
         // Instead, test the output by simulating the write via reflection or by checking the dir.
         // Since uncaughtException chains to the previous handler which would terminate,
         // we test by creating a writer with no previous handler.
-        val testWriter = object : CrashReportWriter(crashDir, "1.0.0-test") {}
 
         // The writer installs itself; we can verify the file is created by triggering
         // the handler on a throwaway thread that we catch.
         val latch = java.util.concurrent.CountDownLatch(1)
-        val testThread = Thread {
-            throw exception
-        }
+        val testThread =
+            Thread {
+                throw exception
+            }
 
         // Install our writer
         writer.install()
-        testThread.uncaughtExceptionHandler = Thread.UncaughtExceptionHandler { t, e ->
-            writer.uncaughtException(t, e)
-            latch.countDown()
-        }
+        testThread.uncaughtExceptionHandler =
+            Thread.UncaughtExceptionHandler { t, e ->
+                writer.uncaughtException(t, e)
+                latch.countDown()
+            }
         testThread.start()
         latch.await(5, java.util.concurrent.TimeUnit.SECONDS)
 
@@ -72,10 +72,11 @@ class CrashReportWriterTest {
         val latch = java.util.concurrent.CountDownLatch(1)
         val exception = IllegalStateException("dir test")
         val testThread = Thread { throw exception }
-        testThread.uncaughtExceptionHandler = Thread.UncaughtExceptionHandler { t, e ->
-            writer.uncaughtException(t, e)
-            latch.countDown()
-        }
+        testThread.uncaughtExceptionHandler =
+            Thread.UncaughtExceptionHandler { t, e ->
+                writer.uncaughtException(t, e)
+                latch.countDown()
+            }
         testThread.start()
         latch.await(5, java.util.concurrent.TimeUnit.SECONDS)
 
@@ -89,10 +90,11 @@ class CrashReportWriterTest {
 
         val latch = java.util.concurrent.CountDownLatch(1)
         val testThread = Thread { throw RuntimeException("prefix test") }
-        testThread.uncaughtExceptionHandler = Thread.UncaughtExceptionHandler { t, e ->
-            writer.uncaughtException(t, e)
-            latch.countDown()
-        }
+        testThread.uncaughtExceptionHandler =
+            Thread.UncaughtExceptionHandler { t, e ->
+                writer.uncaughtException(t, e)
+                latch.countDown()
+            }
         testThread.start()
         latch.await(5, java.util.concurrent.TimeUnit.SECONDS)
 

@@ -7,4 +7,12 @@
         <item quantity="many">Importováno %1$d memů</item>
         <item quantity="other">Importováno %1$d memů</item>
     </plurals>
+
+    <!-- Crash report count -->
+    <plurals name="settings_crash_report_count">
+        <item quantity="one">%1$d záznam o pádu k dispozici</item>
+        <item quantity="few">%1$d záznamy o pádu k dispozici</item>
+        <item quantity="many">%1$d záznamů o pádu k dispozici</item>
+        <item quantity="other">%1$d záznamů o pádu k dispozici</item>
+    </plurals>
 </resources>

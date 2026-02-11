@@ -107,7 +107,6 @@
     <!-- Diagnostics Section -->
     <string name="settings_section_diagnostics">Diagnose</string>
     <string name="settings_crash_share_title">Absturzberichte teilen</string>
-    <string name="settings_crash_share_subtitle">%1$d Absturzbericht(e) verfügbar</string>
     <string name="settings_crash_share_subtitle_empty">Keine Absturzberichte</string>
     <string name="settings_crash_clear_title">Absturzberichte löschen</string>
     <string name="settings_crash_cleared">Absturzberichte gelöscht</string>

@@ -5,4 +5,10 @@
         <item quantity="one">Imported %1$d meme</item>
         <item quantity="other">Imported %1$d memes</item>
     </plurals>
+
+    <!-- Crash report count -->
+    <plurals name="settings_crash_report_count">
+        <item quantity="one">%1$d crash report available</item>
+        <item quantity="other">%1$d crash reports available</item>
+    </plurals>
 </resources>
