@@ -76,7 +76,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
@@ -999,7 +998,7 @@ internal fun MemeGridItem(
             label = "checkScale",
         )
         val checkBgColor by animateColorAsState(
-            targetValue = if (isSelected) primaryColor else Color.Black.copy(alpha = 0.35f),
+            targetValue = if (isSelected) primaryColor else MaterialTheme.colorScheme.scrim.copy(alpha = 0.35f),
             animationSpec = tween(durationMillis = 150),
             label = "checkBgColor",
         )
@@ -1062,7 +1061,7 @@ internal fun MemeGridItem(
                         if (!isSelected) {
                             Modifier.border(
                                 width = 1.5.dp,
-                                color = Color.White.copy(alpha = 0.8f),
+                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
                                 shape = CircleShape,
                             )
                         } else {

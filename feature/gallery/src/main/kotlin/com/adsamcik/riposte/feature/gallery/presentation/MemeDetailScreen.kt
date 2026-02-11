@@ -385,7 +385,7 @@ private fun MemeDetailScreenContent(
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.gallery_cd_navigate_back),
-                            tint = Color.White,
+                            tint = MaterialTheme.colorScheme.surface,
                         )
                     }
                 }
