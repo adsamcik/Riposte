@@ -9,7 +9,6 @@ import org.junit.Before
 import org.junit.Test
 
 class AppLifecycleTrackerTest {
-
     private lateinit var tracker: AppLifecycleTracker
     private val owner: LifecycleOwner = mockk()
 
@@ -51,15 +50,16 @@ class AppLifecycleTrackerTest {
     }
 
     @Test
-    fun `isInBackground flow emits updates`() = runTest {
-        tracker.isInBackground.test {
-            assertThat(awaitItem()).isFalse()
+    fun `isInBackground flow emits updates`() =
+        runTest {
+            tracker.isInBackground.test {
+                assertThat(awaitItem()).isFalse()
 
-            tracker.onStop(owner)
-            assertThat(awaitItem()).isTrue()
+                tracker.onStop(owner)
+                assertThat(awaitItem()).isTrue()
 
-            tracker.onStart(owner)
-            assertThat(awaitItem()).isFalse()
+                tracker.onStart(owner)
+                assertThat(awaitItem()).isFalse()
+            }
         }
-    }
 }

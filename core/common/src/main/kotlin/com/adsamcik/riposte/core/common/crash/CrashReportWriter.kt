@@ -19,7 +19,6 @@ class CrashReportWriter(
     private val crashDir: File,
     private val appVersion: String,
 ) : Thread.UncaughtExceptionHandler {
-
     private val previousHandler: Thread.UncaughtExceptionHandler? =
         Thread.getDefaultUncaughtExceptionHandler()
 
@@ -28,7 +27,10 @@ class CrashReportWriter(
         Thread.setDefaultUncaughtExceptionHandler(this)
     }
 
-    override fun uncaughtException(thread: Thread, throwable: Throwable) {
+    override fun uncaughtException(
+        thread: Thread,
+        throwable: Throwable,
+    ) {
         try {
             writeCrashReport(thread, throwable)
         } catch (_: Exception) {
@@ -37,7 +39,10 @@ class CrashReportWriter(
         previousHandler?.uncaughtException(thread, throwable)
     }
 
-    private fun writeCrashReport(thread: Thread, throwable: Throwable) {
+    private fun writeCrashReport(
+        thread: Thread,
+        throwable: Throwable,
+    ) {
         crashDir.mkdirs()
         val timestamp = System.currentTimeMillis()
         val file = File(crashDir, "crash_$timestamp.txt")

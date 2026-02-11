@@ -14,23 +14,24 @@ import javax.inject.Singleton
  * Call [init] from [android.app.Application.onCreate] to start observing.
  */
 @Singleton
-class AppLifecycleTracker @Inject constructor() : DefaultLifecycleObserver {
+class AppLifecycleTracker
+    @Inject
+    constructor() : DefaultLifecycleObserver {
+        private val _isInBackground = MutableStateFlow(false)
 
-    private val _isInBackground = MutableStateFlow(false)
+        /** Emits `true` when the app moves to the background, `false` when it returns. */
+        val isInBackground: StateFlow<Boolean> = _isInBackground.asStateFlow()
 
-    /** Emits `true` when the app moves to the background, `false` when it returns. */
-    val isInBackground: StateFlow<Boolean> = _isInBackground.asStateFlow()
+        /** Must be called once from Application.onCreate(). */
+        fun init() {
+            ProcessLifecycleOwner.get().lifecycle.addObserver(this)
+        }
 
-    /** Must be called once from Application.onCreate(). */
-    fun init() {
-        ProcessLifecycleOwner.get().lifecycle.addObserver(this)
+        override fun onStart(owner: LifecycleOwner) {
+            _isInBackground.value = false
+        }
+
+        override fun onStop(owner: LifecycleOwner) {
+            _isInBackground.value = true
+        }
     }
-
-    override fun onStart(owner: LifecycleOwner) {
-        _isInBackground.value = false
-    }
-
-    override fun onStop(owner: LifecycleOwner) {
-        _isInBackground.value = true
-    }
-}

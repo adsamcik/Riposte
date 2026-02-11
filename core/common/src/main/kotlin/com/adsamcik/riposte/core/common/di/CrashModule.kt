@@ -17,12 +17,10 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class CrashModule {
-
     @Binds
     abstract fun bindCrashLogManager(impl: DefaultCrashLogManager): CrashLogManager
 
     companion object {
-
         @Provides
         @Singleton
         @CrashLogDir
