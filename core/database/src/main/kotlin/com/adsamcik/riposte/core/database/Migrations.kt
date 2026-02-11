@@ -225,7 +225,20 @@ val MIGRATION_3_4 =
     }
 
 /**
+ * Migration from version 4 to 5:
+ * - Adds metadataJson column to import_request_items for preserving full metadata through staging
+ */
+val MIGRATION_4_5 =
+    object : Migration(4, 5) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "ALTER TABLE import_request_items ADD COLUMN metadataJson TEXT DEFAULT NULL",
+            )
+        }
+    }
+
+/**
  * All migrations in order. Used by [DatabaseModule] and migration tests
  * to ensure the full chain is registered and validated.
  */
-val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)

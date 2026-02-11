@@ -268,6 +268,10 @@ class ImportViewModel
                             title = extracted.metadata?.title,
                             description = extracted.metadata?.description,
                             extractedText = extracted.metadata?.textContent,
+                            searchPhrases = extracted.metadata?.searchPhrases ?: emptyList(),
+                            basedOn = extracted.metadata?.basedOn,
+                            primaryLanguage = extracted.metadata?.primaryLanguage,
+                            localizations = extracted.metadata?.localizations ?: emptyMap(),
                         )
                     }
 
@@ -512,6 +516,10 @@ class ImportViewModel
                                 title = image.title,
                                 description = image.description,
                                 textContent = image.extractedText,
+                                searchPhrases = image.searchPhrases,
+                                basedOn = image.basedOn,
+                                primaryLanguage = image.primaryLanguage,
+                                localizations = image.localizations,
                             )
 
                         val result = updateMemeMetadataUseCase(memeId, metadata)
@@ -573,9 +581,31 @@ class ImportViewModel
                     }
                 val stagingDir = importStagingManager.stageImages(stagingInputs)
 
-                // Create import request items
+                // Create import request items with full metadata
                 val items =
                     images.mapIndexed { index, image ->
+                        val emojiStrings = image.emojis.map { it.emoji }
+                        val metadataJson =
+                            if (emojiStrings.isNotEmpty()) {
+                                try {
+                                    kotlinx.serialization.json.Json.encodeToString(
+                                        MemeMetadata(
+                                            emojis = emojiStrings,
+                                            title = image.title,
+                                            description = image.description,
+                                            textContent = image.extractedText,
+                                            searchPhrases = image.searchPhrases,
+                                            basedOn = image.basedOn,
+                                            primaryLanguage = image.primaryLanguage,
+                                            localizations = image.localizations,
+                                        ),
+                                    )
+                                } catch (_: Exception) {
+                                    null
+                                }
+                            } else {
+                                null
+                            }
                         ImportRequestItemEntity(
                             id = "${requestId}_$index",
                             requestId = requestId,
@@ -585,6 +615,7 @@ class ImportViewModel
                             title = image.title,
                             description = image.description,
                             extractedText = image.extractedText,
+                            metadataJson = metadataJson,
                         )
                     }
 

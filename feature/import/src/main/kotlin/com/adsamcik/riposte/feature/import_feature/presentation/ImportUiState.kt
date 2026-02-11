@@ -2,6 +2,7 @@ package com.adsamcik.riposte.feature.import_feature.presentation
 
 import android.net.Uri
 import com.adsamcik.riposte.core.model.EmojiTag
+import com.adsamcik.riposte.core.model.LocalizedContent
 
 /**
  * UI state for the Import screen.
@@ -81,6 +82,10 @@ data class ImportImage(
     val suggestedEmojis: List<EmojiTag> = emptyList(),
     val isProcessing: Boolean = false,
     val error: String? = null,
+    val searchPhrases: List<String> = emptyList(),
+    val basedOn: String? = null,
+    val primaryLanguage: String? = null,
+    val localizations: Map<String, LocalizedContent> = emptyMap(),
 )
 
 /**

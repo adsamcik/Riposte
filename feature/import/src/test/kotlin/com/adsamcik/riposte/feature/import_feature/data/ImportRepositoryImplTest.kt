@@ -162,10 +162,49 @@ class ImportRepositoryImplTest {
             assertThat(capturedEntity.title).isEqualTo("Test Meme")
             assertThat(capturedEntity.description).isEqualTo("A test description")
             assertThat(capturedEntity.textContent).isEqualTo("Pre-extracted text")
-            assertThat(capturedEntity.emojiTagsJson).contains("😂")
-            assertThat(capturedEntity.emojiTagsJson).contains("🔥")
+            // emojiTagsJson should be a proper JSON array
+            assertThat(capturedEntity.emojiTagsJson).isEqualTo("""["😂","🔥"]""")
 
             coVerify { emojiTagDao.insertEmojiTags(any()) }
+        }
+
+    @Test
+    fun `importImage preserves all metadata fields including language and localizations`() =
+        runTest {
+            // Arrange
+            val uri = createTestImageUri()
+            val metadata =
+                MemeMetadata(
+                    emojis = listOf("😂"),
+                    title = "Test",
+                    description = "Desc",
+                    textContent = "OCR text",
+                    searchPhrases = listOf("funny meme", "lol"),
+                    basedOn = "Drake Hotline Bling",
+                    primaryLanguage = "en",
+                    localizations =
+                        mapOf(
+                            "cs" to com.adsamcik.riposte.core.model.LocalizedContent(
+                                title = "Test CZ",
+                                tags = listOf("vtipné"),
+                            ),
+                        ),
+                )
+            val memeEntitySlot = slot<MemeEntity>()
+            coEvery { memeDao.insertMeme(capture(memeEntitySlot)) } returns 10L
+
+            // Act
+            val result = repository.importImage(uri, metadata)
+
+            // Assert
+            assertThat(result.isSuccess).isTrue()
+            val entity = memeEntitySlot.captured
+            assertThat(entity.emojiTagsJson).isEqualTo("""["😂"]""")
+            assertThat(entity.searchPhrasesJson).isEqualTo("""["funny meme","lol"]""")
+            assertThat(entity.basedOn).isEqualTo("Drake Hotline Bling")
+            assertThat(entity.primaryLanguage).isEqualTo("en")
+            assertThat(entity.localizationsJson).contains("cs")
+            assertThat(entity.localizationsJson).contains("Test CZ")
         }
 
     @Test

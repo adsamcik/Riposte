@@ -69,12 +69,29 @@ class ImportWorker
                 val stagedFile = File(item.stagedFilePath)
                 val uri = Uri.fromFile(stagedFile)
 
+                val metadataJsonValue = item.metadataJson
                 val metadata =
-                    MemeMetadata(
-                        emojis = item.emojis.split(",").filter { it.isNotBlank() },
-                        title = item.title,
-                        description = item.description,
-                    )
+                    if (metadataJsonValue != null) {
+                        try {
+                            kotlinx.serialization.json.Json.decodeFromString<MemeMetadata>(
+                                metadataJsonValue,
+                            )
+                        } catch (_: Exception) {
+                            null
+                        }
+                    } else {
+                        val emojis = item.emojis.split(",").filter { it.isNotBlank() }
+                        if (emojis.isNotEmpty()) {
+                            MemeMetadata(
+                                emojis = emojis,
+                                title = item.title,
+                                description = item.description,
+                                textContent = item.extractedText,
+                            )
+                        } else {
+                            null
+                        }
+                    }
 
                 val result = importRepository.importImage(uri, metadata)
                 if (result.isSuccess) {

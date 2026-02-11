@@ -98,14 +98,20 @@ object MemeMapper {
     }
 
     /**
-     * Parses emoji tags from JSON string.
+     * Parses emoji tags from stored string.
+     * Handles both JSON array format (["😂","🔥"]) and legacy comma-separated format (😂,🔥).
      */
-    private fun parseEmojiTagsJson(jsonString: String): List<EmojiTag> {
+    fun parseEmojiTagsJson(jsonString: String): List<EmojiTag> {
+        if (jsonString.isBlank()) return emptyList()
         return try {
             val emojis: List<String> = json.decodeFromString(jsonString)
             emojis.map { EmojiTag.fromEmoji(it) }
         } catch (e: Exception) {
-            emptyList()
+            // Fallback: legacy comma-separated format
+            jsonString.split(",")
+                .map { it.trim() }
+                .filter { it.isNotBlank() }
+                .map { EmojiTag.fromEmoji(it) }
         }
     }
 

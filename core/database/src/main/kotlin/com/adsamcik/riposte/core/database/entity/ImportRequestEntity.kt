@@ -46,4 +46,9 @@ data class ImportRequestItemEntity(
     val extractedText: String?,
     val status: String = ImportRequestEntity.STATUS_PENDING,
     val errorMessage: String? = null,
+    /**
+     * Full serialized [MemeMetadata] JSON for preserving all metadata through the staging pipeline.
+     * When present, the worker uses this instead of reconstructing metadata from individual fields.
+     */
+    val metadataJson: String? = null,
 )

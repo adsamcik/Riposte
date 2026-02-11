@@ -29,7 +29,7 @@ import com.adsamcik.riposte.core.database.entity.ShareTargetEntity
         ImportRequestEntity::class,
         ImportRequestItemEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = true,
 )
 abstract class MemeDatabase : RoomDatabase() {
@@ -38,7 +38,7 @@ abstract class MemeDatabase : RoomDatabase() {
          * Current database version. Must match the version in the @Database annotation.
          * Referenced by migration tests to verify the migration chain is complete.
          */
-        const val LATEST_VERSION = 4
+        const val LATEST_VERSION = 5
     }
 
     /**

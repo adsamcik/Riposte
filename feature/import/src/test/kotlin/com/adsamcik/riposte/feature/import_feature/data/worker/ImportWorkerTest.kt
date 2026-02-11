@@ -453,6 +453,131 @@ class ImportWorkerTest {
         }
 
     @Test
+    fun `doWork uses metadataJson for full metadata preservation`() =
+        runTest {
+            val request = createRequest(imageCount = 1)
+            val fullMetadata =
+                com.adsamcik.riposte.core.model.MemeMetadata(
+                    emojis = listOf("🎉", "🚀"),
+                    title = "Launch Day",
+                    description = "Rocket launch meme",
+                    textContent = "To the moon!",
+                    searchPhrases = listOf("rocket launch", "celebration"),
+                    basedOn = "SpaceX",
+                    primaryLanguage = "en",
+                )
+            val metadataJson = kotlinx.serialization.json.Json.encodeToString(fullMetadata)
+            val stagedFile = tempFolder.newFile("rocket.png")
+            stagedFile.writeText("fake-image-data")
+            val item =
+                ImportRequestItemEntity(
+                    id = "item-meta",
+                    requestId = "req-1",
+                    stagedFilePath = stagedFile.absolutePath,
+                    originalFileName = "rocket.png",
+                    emojis = "🎉,🚀",
+                    title = "Launch Day",
+                    description = "Rocket launch meme",
+                    extractedText = "To the moon!",
+                    metadataJson = metadataJson,
+                )
+
+            coEvery { importRequestDao.getRequest("req-1") } returns request
+            coEvery { importRequestDao.getPendingItems("req-1") } returns listOf(item)
+            coEvery { importRepository.importImage(any(), any()) } returns Result.success(createMeme())
+
+            val worker =
+                createWorker(
+                    workDataOf(ImportWorker.KEY_REQUEST_ID to "req-1"),
+                )
+
+            worker.doWork()
+
+            coVerify {
+                importRepository.importImage(
+                    any(),
+                    match { metadata ->
+                        metadata != null &&
+                            metadata.emojis == listOf("🎉", "🚀") &&
+                            metadata.searchPhrases == listOf("rocket launch", "celebration") &&
+                            metadata.basedOn == "SpaceX" &&
+                            metadata.primaryLanguage == "en" &&
+                            metadata.textContent == "To the moon!"
+                    },
+                )
+            }
+        }
+
+    @Test
+    fun `doWork falls back to individual fields when metadataJson is null`() =
+        runTest {
+            val request = createRequest(imageCount = 1)
+            val item =
+                createItem(
+                    id = "item-legacy",
+                    emojis = "😂",
+                    title = "Legacy",
+                    description = "Old import",
+                )
+
+            coEvery { importRequestDao.getRequest("req-1") } returns request
+            coEvery { importRequestDao.getPendingItems("req-1") } returns listOf(item)
+            coEvery { importRepository.importImage(any(), any()) } returns Result.success(createMeme())
+
+            val worker =
+                createWorker(
+                    workDataOf(ImportWorker.KEY_REQUEST_ID to "req-1"),
+                )
+
+            worker.doWork()
+
+            coVerify {
+                importRepository.importImage(
+                    any(),
+                    match { metadata ->
+                        metadata != null &&
+                            metadata.emojis == listOf("😂") &&
+                            metadata.title == "Legacy"
+                    },
+                )
+            }
+        }
+
+    @Test
+    fun `doWork passes null metadata when emojis empty and no metadataJson`() =
+        runTest {
+            val request = createRequest(imageCount = 1)
+            val stagedFile = tempFolder.newFile("noemoji.png")
+            stagedFile.writeText("fake-image-data")
+            val item =
+                ImportRequestItemEntity(
+                    id = "item-empty",
+                    requestId = "req-1",
+                    stagedFilePath = stagedFile.absolutePath,
+                    originalFileName = "noemoji.png",
+                    emojis = "",
+                    title = "No emojis",
+                    description = null,
+                    extractedText = null,
+                )
+
+            coEvery { importRequestDao.getRequest("req-1") } returns request
+            coEvery { importRequestDao.getPendingItems("req-1") } returns listOf(item)
+            coEvery { importRepository.importImage(any(), any()) } returns Result.success(createMeme())
+
+            val worker =
+                createWorker(
+                    workDataOf(ImportWorker.KEY_REQUEST_ID to "req-1"),
+                )
+
+            worker.doWork()
+
+            coVerify {
+                importRepository.importImage(any(), isNull())
+            }
+        }
+
+    @Test
     fun `doWork updates progress for each item`() =
         runTest {
             val request = createRequest(imageCount = 2)

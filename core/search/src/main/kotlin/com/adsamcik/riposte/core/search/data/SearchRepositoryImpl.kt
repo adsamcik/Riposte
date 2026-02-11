@@ -4,6 +4,7 @@ import com.adsamcik.riposte.core.database.dao.EmojiTagDao
 import com.adsamcik.riposte.core.database.dao.MemeDao
 import com.adsamcik.riposte.core.database.dao.MemeEmbeddingDao
 import com.adsamcik.riposte.core.database.dao.MemeSearchDao
+import com.adsamcik.riposte.core.database.mapper.MemeMapper
 import com.adsamcik.riposte.core.datastore.PreferencesDataStore
 import com.adsamcik.riposte.core.ml.MemeWithEmbeddings
 import com.adsamcik.riposte.core.ml.SemanticSearchEngine
@@ -82,10 +83,7 @@ class SearchRepositoryImpl
                             fileSizeBytes = 0,
                             importedAt = 0,
                             emojiTags =
-                                first.emojiTagsJson
-                                    .split(",")
-                                    .filter { it.isNotBlank() }
-                                    .map { EmojiTag.fromEmoji(it.trim()) },
+                                MemeMapper.parseEmojiTagsJson(first.emojiTagsJson),
                             title = first.title,
                             description = first.description,
                             textContent = first.textContent,
@@ -247,9 +245,7 @@ class SearchRepositoryImpl
                 title = title,
                 description = description,
                 emojiTags =
-                    emojiTagsJson.split(",")
-                        .filter { it.isNotEmpty() }
-                        .map { EmojiTag.fromEmoji(it.trim()) },
+                    MemeMapper.parseEmojiTagsJson(emojiTagsJson),
                 textContent = textContent,
                 isFavorite = isFavorite,
                 createdAt = createdAt,

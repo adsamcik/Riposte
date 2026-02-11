@@ -121,7 +121,7 @@ class ImportRepositoryImpl
                             height = bitmap.height,
                             fileSizeBytes = imageFile.length(),
                             importedAt = now,
-                            emojiTagsJson = emojis.joinToString(","),
+                            emojiTagsJson = kotlinx.serialization.json.Json.encodeToString(emojis),
                             title = title ?: originalFileName,
                             description = description,
                             textContent = extractedText,
@@ -135,6 +135,11 @@ class ImportRepositoryImpl
                             embedding = null,
                             fileHash = fileHash,
                             basedOn = metadata?.basedOn,
+                            primaryLanguage = metadata?.primaryLanguage,
+                            localizationsJson =
+                                metadata?.localizations?.takeIf { it.isNotEmpty() }?.let {
+                                    kotlinx.serialization.json.Json.encodeToString(it)
+                                },
                         )
 
                     // Insert meme
@@ -373,13 +378,17 @@ class ImportRepositoryImpl
                         }
                     val updated =
                         existing.copy(
-                            emojiTagsJson = metadata.emojis.joinToString(","),
+                            emojiTagsJson = kotlinx.serialization.json.Json.encodeToString(metadata.emojis),
                             title = metadata.title ?: existing.title,
                             description = metadata.description ?: existing.description,
                             textContent = metadata.textContent ?: existing.textContent,
                             searchPhrasesJson = searchPhrasesJson,
                             basedOn = metadata.basedOn ?: existing.basedOn,
                             primaryLanguage = metadata.primaryLanguage ?: existing.primaryLanguage,
+                            localizationsJson =
+                                metadata.localizations.takeIf { it.isNotEmpty() }?.let {
+                                    kotlinx.serialization.json.Json.encodeToString(it)
+                                } ?: existing.localizationsJson,
                         )
                     memeDao.updateMeme(updated)
 
