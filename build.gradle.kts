@@ -10,10 +10,36 @@ plugins {
     alias(libs.plugins.hilt) apply false
     alias(libs.plugins.room) apply false
     alias(libs.plugins.baselineprofile) apply false
+    alias(libs.plugins.detekt)
+    alias(libs.plugins.ktlint) apply false
+}
+
+// Detekt configuration for static analysis
+detekt {
+    config.setFrom(rootProject.file("detekt.yml"))
+    baseline = file("detekt-baseline.xml")
+    buildUponDefaultConfig = true
+    parallel = true
+    source.setFrom(
+        fileTree(rootDir) {
+            include("**/src/main/kotlin/**", "**/src/main/java/**")
+            exclude("**/build/**")
+        }
+    )
+}
+
+dependencies {
+    detektPlugins(libs.detekt.formatting)
 }
 
 // Common configuration for all subprojects
 subprojects {
+    apply(plugin = "org.jlleitschuh.gradle.ktlint")
+
+    configure<org.jlleitschuh.gradle.ktlint.KtlintExtension> {
+        android.set(true)
+        verbose.set(true)
+    }
     tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
         compilerOptions {
             // Set JVM target to match Java 17 (Kotlin 2.3.0 defaults to 21)

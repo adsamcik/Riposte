@@ -22,7 +22,7 @@ android {
         versionName = "0.1.0"
 
         testInstrumentationRunner = "com.adsamcik.riposte.core.testing.HiltTestRunner"
-        
+
         vectorDrawables {
             useSupportLibrary = true
         }
@@ -39,7 +39,7 @@ android {
     // Single dimension: controls which EmbeddingGemma models are included
     // Always builds universal (all architectures) for maximum compatibility
     flavorDimensions += "embedding"
-    
+
     productFlavors {
         create("lite") {
             dimension = "embedding"
@@ -47,7 +47,7 @@ android {
             // No EmbeddingGemma models - uses MediaPipe USE or simple embeddings only
             // APK size: ~177 MB (smallest)
         }
-        
+
         create("standard") {
             dimension = "embedding"
             buildConfigField("boolean", "INCLUDE_EMBEDDINGGEMMA", "true")
@@ -56,7 +56,7 @@ android {
             // Generic model only (~171 MB) - works on all devices
             // APK size: ~350 MB (RECOMMENDED)
         }
-        
+
         create("qualcomm") {
             dimension = "embedding"
             buildConfigField("boolean", "INCLUDE_EMBEDDINGGEMMA", "true")
@@ -64,7 +64,7 @@ android {
             // Generic + all Qualcomm models (~850 MB)
             // APK size: ~880 MB
         }
-        
+
         create("mediatek") {
             dimension = "embedding"
             buildConfigField("boolean", "INCLUDE_EMBEDDINGGEMMA", "true")
@@ -72,7 +72,7 @@ android {
             // Generic + all MediaTek models (~525 MB)
             // APK size: ~555 MB
         }
-        
+
         create("full") {
             dimension = "embedding"
             buildConfigField("boolean", "INCLUDE_EMBEDDINGGEMMA", "true")
@@ -81,46 +81,54 @@ android {
             // APK size: ~1.3 GB
         }
     }
-    
+
     // Configure source sets to include/exclude embedding models per flavor
     sourceSets {
         // Lite: no EmbeddingGemma models
         getByName("lite") {
             assets.setSrcDirs(listOf("src/main/assets"))
         }
-        
+
         // Standard: generic model + tokenizer only (default)
         getByName("standard") {
-            assets.setSrcDirs(listOf(
-                "src/main/assets",
-                "src/main/assets_standard"
-            ))
+            assets.setSrcDirs(
+                listOf(
+                    "src/main/assets",
+                    "src/main/assets_standard",
+                ),
+            )
         }
-        
+
         // Qualcomm: generic + Qualcomm models
         getByName("qualcomm") {
-            assets.setSrcDirs(listOf(
-                "src/main/assets",
-                "src/main/assets_standard",
-                "src/main/assets_qualcomm"
-            ))
+            assets.setSrcDirs(
+                listOf(
+                    "src/main/assets",
+                    "src/main/assets_standard",
+                    "src/main/assets_qualcomm",
+                ),
+            )
         }
-        
+
         // MediaTek: generic + MediaTek models
         getByName("mediatek") {
-            assets.setSrcDirs(listOf(
-                "src/main/assets",
-                "src/main/assets_standard",
-                "src/main/assets_mediatek"
-            ))
+            assets.setSrcDirs(
+                listOf(
+                    "src/main/assets",
+                    "src/main/assets_standard",
+                    "src/main/assets_mediatek",
+                ),
+            )
         }
-        
+
         // Full: all models
         getByName("full") {
-            assets.setSrcDirs(listOf(
-                "src/main/assets",
-                "src/main/assets_full"
-            ))
+            assets.setSrcDirs(
+                listOf(
+                    "src/main/assets",
+                    "src/main/assets_full",
+                ),
+            )
         }
     }
 
@@ -148,15 +156,16 @@ android {
             isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
             // Use release signing if configured, otherwise fall back to debug
             val releaseConfig = signingConfigs.getByName("release")
-            signingConfig = if (releaseConfig.storeFile != null) {
-                releaseConfig
-            } else {
-                signingConfigs.getByName("debug")
-            }
+            signingConfig =
+                if (releaseConfig.storeFile != null) {
+                    releaseConfig
+                } else {
+                    signingConfigs.getByName("debug")
+                }
         }
         debug {
             isDebuggable = true
@@ -256,7 +265,7 @@ dependencies {
 baselineProfile {
     // Automatically generate baseline profile during release builds
     automaticGenerationDuringBuild = false
-    
+
     // Don't include in debug builds
     dexLayoutOptimization = true
 }
