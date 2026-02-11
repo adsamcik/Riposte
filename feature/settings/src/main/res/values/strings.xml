@@ -25,15 +25,15 @@
     <string name="settings_grid_density_title">Grid Density</string>
     <string name="settings_grid_density_subtitle">Thumbnail size in gallery</string>
     <string name="settings_grid_density_auto">Auto (adapts to screen)</string>
-    <string name="settings_grid_density_compact">Large (3 columns)</string>
-    <string name="settings_grid_density_standard">Medium (4 columns)</string>
-    <string name="settings_grid_density_dense">Small (5 columns)</string>
+    <string name="settings_grid_density_compact">Large thumbnails (3 columns)</string>
+    <string name="settings_grid_density_standard">Medium thumbnails (4 columns)</string>
+    <string name="settings_grid_density_dense">Small thumbnails (5 columns)</string>
     
     <!-- Search Section -->
-    <string name="settings_semantic_search_title">Semantic Search</string>
-    <string name="settings_semantic_search_subtitle">AI-powered search for similar memes. Uses additional storage for AI model</string>
-    <string name="settings_embedding_model_title">Embedding Model</string>
-    <string name="settings_embedding_model_subtitle">%1$d-dimensional embeddings</string>
+    <string name="settings_semantic_search_title">Smart Search</string>
+    <string name="settings_semantic_search_subtitle">Find similar memes using AI. Uses additional storage</string>
+    <string name="settings_embedding_model_title">AI Model</string>
+    <string name="settings_embedding_model_subtitle">AI search model (%1$d dimensions)</string>
     <string name="settings_embedding_model_version">%1$s v%2$s</string>
     <string name="settings_search_index_title">Search Index</string>
     <string name="settings_search_index_complete">All %1$d memes indexed</string>
@@ -60,7 +60,7 @@
     <string name="settings_share_size_large">Large (1080px)</string>
     <string name="settings_share_size_original">Original (2048px)</string>
     <string name="settings_share_strip_metadata_title">Include emoji tags</string>
-    <string name="settings_share_strip_metadata_subtitle">Attach emoji tags and meme info to shared files</string>
+    <string name="settings_share_strip_metadata_subtitle">Include emoji tags and descriptions when sharing memes</string>
 
     <!-- Storage Section -->
     <string name="settings_clear_cache_title">Clear Cache</string>

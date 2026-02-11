@@ -70,6 +70,6 @@
     <string name="import_result_retry">Retry %d Failed</string>
 
     <!-- Onboarding Tips -->
-    <string name="import_tip_emoji_tagging">Your memes will be auto-tagged with AI after import ✨</string>
+    <string name="import_tip_emoji_tagging">AI adds emoji tags and descriptions so you can find memes faster ✨</string>
     <string name="import_hint_max_images">Up to 20 images at a time</string>
 </resources>
