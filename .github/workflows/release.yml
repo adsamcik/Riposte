@@ -105,10 +105,10 @@ jobs:
           mkdir -p release-artifacts
 
           cp app/build/outputs/bundle/${FLAVOR_LOWER}Release/*.aab \
-            "release-artifacts/meme-my-mood-${FLAVOR_LOWER}-${TAG}.aab"
+            "release-artifacts/riposte-${FLAVOR_LOWER}-${TAG}.aab"
 
           cp app/build/outputs/apk/${FLAVOR_LOWER}/release/*.apk \
-            "release-artifacts/meme-my-mood-${FLAVOR_LOWER}-${TAG}.apk"
+            "release-artifacts/riposte-${FLAVOR_LOWER}-${TAG}.apk"
 
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4

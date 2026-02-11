@@ -1,4 +1,4 @@
-Meme My Mood helps you organize, search, and share memes from your personal collection — fast.
+Riposte helps you organize, search, and share memes from your personal collection — fast.
 
 Tag your memes with emojis, search by mood or description, and share directly to any app in seconds. Built for the moment you're mid-conversation and need the perfect reaction image.
 
@@ -12,4 +12,4 @@ Features:
 • Fully offline — all AI processing happens on-device, no data leaves your phone
 • Material You — dynamic colors that match your system theme
 
-Meme My Mood is free and open source software.
+Riposte is free and open source software.

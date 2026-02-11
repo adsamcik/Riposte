@@ -105,6 +105,11 @@ The app implements `Configuration.Provider` for `HiltWorkerFactory`. Workers use
 - **ZIP Slip prevention**: Validate ZIP entry paths with canonical path checking before extraction.
 - **No cleartext HTTP**: Enforced via `network_security_config.xml`.
 
+### Workflow
+
+- **Commit after each completed feature or task.** Do not batch unrelated changes into a single commit.
+- **Use separate git worktrees for larger efforts.** Create a worktree with a feature branch, do the work there, then merge locally into the main branch. No pull requests needed at this time.
+
 ### Gotchas
 
 - Kotlin source dirs use `src/main/kotlin/`, not `src/main/java/`
