@@ -554,7 +554,6 @@ private fun ImportImageCard(
                     },
                 ),
         shape = MaterialTheme.shapes.medium,
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         onClick = onClick,
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
@@ -572,7 +571,7 @@ private fun ImportImageCard(
                     Modifier
                         .align(Alignment.TopEnd)
                         .background(
-                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
+                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
                             shape = CircleShape,
                         ),
             ) {
@@ -589,7 +588,7 @@ private fun ImportImageCard(
                     modifier =
                         Modifier
                             .fillMaxSize()
-                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.6f)),
+                            .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.32f)),
                     contentAlignment = Alignment.Center,
                 ) {
                     CircularProgressIndicator(
@@ -620,7 +619,7 @@ private fun ImportImageCard(
                             .align(Alignment.BottomStart)
                             .padding(4.dp)
                             .background(
-                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
+                                color = MaterialTheme.colorScheme.surfaceContainerHighest,
                                 shape = MaterialTheme.shapes.small,
                             )
                             .padding(horizontal = 6.dp, vertical = 2.dp),
