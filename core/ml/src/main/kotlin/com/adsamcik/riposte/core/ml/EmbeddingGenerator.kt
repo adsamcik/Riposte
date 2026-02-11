@@ -38,6 +38,12 @@ interface EmbeddingGenerator {
     val embeddingDimension: Int
 
     /**
+     * Returns a user-facing error message if model initialization failed, null otherwise.
+     */
+    val initializationError: String?
+        get() = null
+
+    /**
      * Checks if the embedding model is ready.
      */
     suspend fun isReady(): Boolean

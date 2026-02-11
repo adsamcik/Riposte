@@ -77,6 +77,9 @@ class EmbeddingGemmaGenerator
         /** Flag indicating whether initialization has been attempted. */
         private var initializationAttempted = false
 
+        private var _initializationError: String? = null
+        override val initializationError: String? get() = _initializationError
+
         /** Whether GPU acceleration is enabled. */
         private var useGpu = true
 
@@ -273,11 +276,13 @@ class EmbeddingGemmaGenerator
                     Log.e(TAG, "EmbeddingGemma model not found at: $modelPath")
                     Log.i(TAG, "Please download the model from HuggingFace: litert-community/embeddinggemma-300m")
                     Log.i(TAG, "Or run: tools/download-embeddinggemma.ps1 -AllVariants")
+                    _initializationError = "Model files not found"
                     return
                 }
 
                 if (!File(tokenizerPath).exists()) {
                     Log.e(TAG, "SentencePiece tokenizer not found at: $tokenizerPath")
+                    _initializationError = "Model files not found"
                     return
                 }
 
@@ -293,12 +298,15 @@ class EmbeddingGemmaGenerator
                     )
 
                 Log.i(TAG, "EmbeddingGemma initialized successfully (dimension: $embeddingDimension)")
+                _initializationError = null
             } catch (e: UnsatisfiedLinkError) {
                 Log.e(TAG, "Native library not available for EmbeddingGemma (unsupported ABI?)", e)
                 embeddingModel = null
+                _initializationError = "Model not compatible with this device"
             } catch (e: ExceptionInInitializerError) {
                 Log.e(TAG, "EmbeddingGemma static initialization failed", e)
                 embeddingModel = null
+                _initializationError = "Model failed to load"
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to initialize EmbeddingGemma", e)
 
@@ -317,18 +325,23 @@ class EmbeddingGemmaGenerator
                                 false,
                             )
                         Log.i(TAG, "EmbeddingGemma initialized with CPU fallback")
+                        _initializationError = null
                     } catch (cpuError: UnsatisfiedLinkError) {
                         Log.e(TAG, "CPU fallback failed: native library not available", cpuError)
                         embeddingModel = null
+                        _initializationError = "Model not compatible with this device"
                     } catch (cpuError: ExceptionInInitializerError) {
                         Log.e(TAG, "CPU fallback failed: static initialization error", cpuError)
                         embeddingModel = null
+                        _initializationError = "Model failed to load"
                     } catch (cpuError: Exception) {
                         Log.e(TAG, "CPU fallback also failed", cpuError)
                         embeddingModel = null
+                        _initializationError = "Model initialization failed"
                     }
                 } else {
                     embeddingModel = null
+                    _initializationError = "Model initialization failed"
                 }
             }
         }

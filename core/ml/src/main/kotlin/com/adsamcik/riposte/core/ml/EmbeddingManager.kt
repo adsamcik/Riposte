@@ -133,6 +133,7 @@ class EmbeddingManager
                 regenerationNeededCount = regenerationCount,
                 currentModelVersion = versionManager.currentModelVersion,
                 embeddingsByVersion = versionCounts.associate { it.modelVersion to it.count },
+                modelError = embeddingGenerator.initializationError,
             )
         }
 
@@ -218,6 +219,7 @@ data class EmbeddingStatistics(
     val regenerationNeededCount: Int,
     val currentModelVersion: String,
     val embeddingsByVersion: Map<String, Int>,
+    val modelError: String? = null,
 ) {
     val totalPendingWork: Int
         get() = pendingEmbeddingCount + regenerationNeededCount

@@ -42,6 +42,7 @@ class EmbeddingManagerTest {
         versionManager = mockk()
 
         every { versionManager.currentModelVersion } returns "mediapipe_use:1.0.0"
+        every { embeddingGenerator.initializationError } returns null
 
         embeddingManager =
             EmbeddingManager(
@@ -205,6 +206,25 @@ class EmbeddingManagerTest {
             // Then
             coVerify(exactly = 0) { memeEmbeddingDao.markOutdatedForRegeneration(any()) }
             coVerify(exactly = 0) { versionManager.updateToCurrentVersion() }
+        }
+
+    @Test
+    fun `getStatistics includes model error when initialization failed`() =
+        runTest {
+            // Given
+            every { embeddingGenerator.initializationError } returns "Model not compatible with this device"
+            coEvery { memeEmbeddingDao.countValidEmbeddings() } returns 0
+            coEvery { memeEmbeddingDao.countMemesWithoutEmbeddings() } returns 33
+            coEvery { memeEmbeddingDao.countEmbeddingsNeedingRegeneration() } returns 0
+            coEvery { memeEmbeddingDao.getEmbeddingCountByModelVersion() } returns emptyList()
+
+            // When
+            val stats = embeddingManager.getStatistics()
+
+            // Then
+            assertThat(stats.modelError).isEqualTo("Model not compatible with this device")
+            assertThat(stats.validEmbeddingCount).isEqualTo(0)
+            assertThat(stats.pendingEmbeddingCount).isEqualTo(33)
         }
 
     private fun encodeEmbedding(embedding: FloatArray): ByteArray {
