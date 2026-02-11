@@ -2,173 +2,205 @@
 <SmellBaseline>
   <ManuallySuppressedIssues></ManuallySuppressedIssues>
   <CurrentIssues>
-    <ID>ArgumentListWrapping:GalleryScreen.kt$("😮")</ID>
-    <ID>ArgumentListWrapping:GalleryScreen.kt$(Icons.Default.Close, contentDescription = stringResource(R.string.gallery_cd_cancel_selection))</ID>
-    <ID>ArgumentListWrapping:GalleryScreen.kt$(Icons.Default.Close, contentDescription = stringResource(R.string.gallery_cd_clear_filter))</ID>
-    <ID>ArgumentListWrapping:GalleryScreen.kt$(Icons.Default.MoreVert, contentDescription = stringResource(R.string.gallery_cd_more_options))</ID>
-    <ID>ArgumentListWrapping:GalleryScreen.kt$(Icons.Default.SelectAll, contentDescription = stringResource(R.string.gallery_cd_select_all))</ID>
-    <ID>ArgumentListWrapping:GalleryScreen.kt$(R.plurals.gallery_selected_count, uiState.selectionCount, uiState.selectionCount)</ID>
-    <ID>ArgumentListWrapping:GalleryScreen.kt$(R.string.gallery_cd_cancel_selection)</ID>
-    <ID>ArgumentListWrapping:GalleryScreen.kt$(R.string.gallery_cd_clear_filter)</ID>
-    <ID>ArgumentListWrapping:GalleryScreen.kt$(R.string.gallery_cd_more_options)</ID>
-    <ID>ArgumentListWrapping:GalleryScreen.kt$(R.string.gallery_cd_select_all)</ID>
-    <ID>ArgumentListWrapping:GalleryScreen.kt$(R.string.gallery_share_chooser_title)</ID>
-    <ID>ArgumentListWrapping:GalleryScreen.kt$(android.content.Intent.createChooser(effect.intent, context.getString(R.string.gallery_share_chooser_title)))</ID>
-    <ID>ArgumentListWrapping:GalleryScreen.kt$(com.adsamcik.riposte.core.model.EmojiTag.fromEmoji("😮"))</ID>
-    <ID>ArgumentListWrapping:GalleryScreen.kt$(com.adsamcik.riposte.core.search.R.string.search_no_results_description, uiState.searchState.query)</ID>
-    <ID>ArgumentListWrapping:GalleryScreen.kt$(com.adsamcik.riposte.core.search.R.string.search_no_results_title)</ID>
-    <ID>ArgumentListWrapping:GalleryScreen.kt$(effect.intent, context.getString(R.string.gallery_share_chooser_title))</ID>
-    <ID>ArgumentListWrapping:GalleryScreen.kt$(id = 2L, title = "Surprised Pikachu", emojiTags = listOf(com.adsamcik.riposte.core.model.EmojiTag.fromEmoji("😮")))</ID>
-    <ID>ArgumentListWrapping:GalleryScreen.kt$(pagedMemes.itemCount, uiState.activeEmojiFilters, suggestionIds)</ID>
-    <ID>ArgumentListWrapping:GalleryScreen.kt$(pluralStringResource(R.plurals.gallery_selected_count, uiState.selectionCount, uiState.selectionCount))</ID>
-    <ID>ArgumentListWrapping:GalleryViewModel.kt$GalleryViewModel$(GalleryEffect.ShowError(error.message ?: context.getString(R.string.gallery_snackbar_delete_failed)))</ID>
-    <ID>ArgumentListWrapping:GalleryViewModel.kt$GalleryViewModel$(GalleryEffect.ShowError(error.message ?: context.getString(R.string.gallery_snackbar_favorite_failed)))</ID>
-    <ID>ArgumentListWrapping:GalleryViewModel.kt$GalleryViewModel$(GalleryEffect.ShowSnackbar(context.getString(R.string.gallery_snackbar_deleted, pendingDeleteIds.size)))</ID>
-    <ID>ArgumentListWrapping:GalleryViewModel.kt$GalleryViewModel$(R.string.gallery_snackbar_deleted, pendingDeleteIds.size)</ID>
-    <ID>ArgumentListWrapping:GalleryViewModel.kt$GalleryViewModel$(context.getString(R.string.gallery_snackbar_deleted, pendingDeleteIds.size))</ID>
-    <ID>ArgumentListWrapping:GalleryViewModel.kt$GalleryViewModel$(error.message ?: context.getString(R.string.gallery_snackbar_delete_failed))</ID>
-    <ID>ArgumentListWrapping:GalleryViewModel.kt$GalleryViewModel$(error.message ?: context.getString(R.string.gallery_snackbar_favorite_failed))</ID>
-    <ID>ArgumentListWrapping:ImportScreen.kt$(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.import_content_description_back))</ID>
-    <ID>ArgumentListWrapping:ImportScreen.kt$(Icons.Default.Check, contentDescription = stringResource(R.string.import_content_description_confirm_import))</ID>
-    <ID>ArgumentListWrapping:ImportScreen.kt$(R.plurals.import_button_import_memes, uiState.selectedImages.size, uiState.selectedImages.size)</ID>
-    <ID>ArgumentListWrapping:ImportScreen.kt$(R.plurals.import_selected_count_plural, uiState.selectedImages.size, uiState.selectedImages.size)</ID>
-    <ID>ArgumentListWrapping:ImportScreen.kt$(R.string.import_content_description_back)</ID>
-    <ID>ArgumentListWrapping:ImportScreen.kt$(R.string.import_content_description_confirm_import)</ID>
-    <ID>ArgumentListWrapping:ImportScreen.kt$(emojiTag)</ID>
-    <ID>ArgumentListWrapping:ImportScreen.kt$(pluralStringResource(R.plurals.import_button_import_memes, uiState.selectedImages.size, uiState.selectedImages.size))</ID>
-    <ID>ArgumentListWrapping:MemeDetailScreen.kt$(Intent.createChooser(effect.intent, context.getString(R.string.gallery_share_chooser_title)))</ID>
-    <ID>ArgumentListWrapping:MemeDetailScreen.kt$(R.string.gallery_cd_cancel_edit)</ID>
-    <ID>ArgumentListWrapping:MemeDetailScreen.kt$(R.string.gallery_cd_edit)</ID>
-    <ID>ArgumentListWrapping:MemeDetailScreen.kt$(R.string.gallery_detail_action_cancel)</ID>
-    <ID>ArgumentListWrapping:MemeDetailScreen.kt$(R.string.gallery_detail_action_edit)</ID>
-    <ID>ArgumentListWrapping:MemeDetailScreen.kt$(R.string.gallery_detail_label_imported, java.time.Instant.ofEpochMilli(meme.importedAt).atZone(java.time.ZoneId.systemDefault()).format(dateFormatter))</ID>
-    <ID>ArgumentListWrapping:MemeDetailScreen.kt$(R.string.gallery_share_chooser_title)</ID>
-    <ID>ArgumentListWrapping:MemeDetailScreen.kt$(dateFormatter)</ID>
-    <ID>ArgumentListWrapping:MemeDetailScreen.kt$(effect.intent, context.getString(R.string.gallery_share_chooser_title))</ID>
-    <ID>ArgumentListWrapping:MemeDetailScreen.kt$(java.time.ZoneId.systemDefault())</ID>
-    <ID>ArgumentListWrapping:MemeDetailScreen.kt$(meme.importedAt)</ID>
-    <ID>ArgumentListWrapping:MemeDetailViewModel.kt$MemeDetailViewModel$(MemeDetailEffect.ShowSnackbar(context.getString(R.string.gallery_snackbar_changes_saved)))</ID>
-    <ID>ArgumentListWrapping:MemeDetailViewModel.kt$MemeDetailViewModel$(MemeDetailEffect.ShowSnackbar(context.getString(R.string.gallery_snackbar_delete_failed)))</ID>
-    <ID>ArgumentListWrapping:MemeDetailViewModel.kt$MemeDetailViewModel$(MemeDetailEffect.ShowSnackbar(context.getString(R.string.gallery_snackbar_favorite_failed)))</ID>
-    <ID>ArgumentListWrapping:MemeDetailViewModel.kt$MemeDetailViewModel$(MemeDetailEffect.ShowSnackbar(context.getString(R.string.gallery_snackbar_meme_deleted)))</ID>
-    <ID>ArgumentListWrapping:MemeDetailViewModel.kt$MemeDetailViewModel$(MemeDetailEffect.ShowSnackbar(context.getString(R.string.gallery_snackbar_save_failed)))</ID>
-    <ID>ArgumentListWrapping:MemeDetailViewModel.kt$MemeDetailViewModel$(MemeDetailEffect.ShowSnackbar(context.getString(R.string.gallery_snackbar_save_or_discard)))</ID>
-    <ID>ArgumentListWrapping:MemeDetailViewModel.kt$MemeDetailViewModel$(MemeDetailEffect.ShowSnackbar(context.getString(R.string.gallery_snackbar_unsaved_changes)))</ID>
-    <ID>ArgumentListWrapping:MemeDetailViewModel.kt$MemeDetailViewModel$(R.string.gallery_error_invalid_meme_id)</ID>
-    <ID>ArgumentListWrapping:MemeDetailViewModel.kt$MemeDetailViewModel$(R.string.gallery_error_meme_not_found)</ID>
-    <ID>ArgumentListWrapping:MemeDetailViewModel.kt$MemeDetailViewModel$(R.string.gallery_snackbar_changes_saved)</ID>
-    <ID>ArgumentListWrapping:MemeDetailViewModel.kt$MemeDetailViewModel$(R.string.gallery_snackbar_delete_failed)</ID>
-    <ID>ArgumentListWrapping:MemeDetailViewModel.kt$MemeDetailViewModel$(R.string.gallery_snackbar_favorite_failed)</ID>
-    <ID>ArgumentListWrapping:MemeDetailViewModel.kt$MemeDetailViewModel$(R.string.gallery_snackbar_meme_deleted)</ID>
-    <ID>ArgumentListWrapping:MemeDetailViewModel.kt$MemeDetailViewModel$(R.string.gallery_snackbar_save_failed)</ID>
-    <ID>ArgumentListWrapping:MemeDetailViewModel.kt$MemeDetailViewModel$(R.string.gallery_snackbar_save_or_discard)</ID>
-    <ID>ArgumentListWrapping:MemeDetailViewModel.kt$MemeDetailViewModel$(R.string.gallery_snackbar_unsaved_changes)</ID>
-    <ID>ArgumentListWrapping:MemeDetailViewModel.kt$MemeDetailViewModel$(context.getString(R.string.gallery_snackbar_changes_saved))</ID>
-    <ID>ArgumentListWrapping:MemeDetailViewModel.kt$MemeDetailViewModel$(context.getString(R.string.gallery_snackbar_delete_failed))</ID>
-    <ID>ArgumentListWrapping:MemeDetailViewModel.kt$MemeDetailViewModel$(context.getString(R.string.gallery_snackbar_favorite_failed))</ID>
-    <ID>ArgumentListWrapping:MemeDetailViewModel.kt$MemeDetailViewModel$(context.getString(R.string.gallery_snackbar_meme_deleted))</ID>
-    <ID>ArgumentListWrapping:MemeDetailViewModel.kt$MemeDetailViewModel$(context.getString(R.string.gallery_snackbar_save_failed))</ID>
-    <ID>ArgumentListWrapping:MemeDetailViewModel.kt$MemeDetailViewModel$(context.getString(R.string.gallery_snackbar_save_or_discard))</ID>
-    <ID>ArgumentListWrapping:MemeDetailViewModel.kt$MemeDetailViewModel$(context.getString(R.string.gallery_snackbar_unsaved_changes))</ID>
-    <ID>ArgumentListWrapping:MemeDetailViewModel.kt$MemeDetailViewModel$(isLoading = false, errorMessage = context.getString(R.string.gallery_error_invalid_meme_id))</ID>
-    <ID>ArgumentListWrapping:MemeDetailViewModel.kt$MemeDetailViewModel$(isLoading = false, errorMessage = context.getString(R.string.gallery_error_meme_not_found))</ID>
-    <ID>ArgumentListWrapping:SettingsScreen.kt$(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.settings_navigate_back))</ID>
-    <ID>ArgumentListWrapping:SettingsScreen.kt$(R.string.settings_grid_density_standard)</ID>
-    <ID>ArgumentListWrapping:SettingsScreen.kt$(R.string.settings_navigate_back)</ID>
-    <ID>ArgumentListWrapping:SettingsViewModel.kt$SettingsViewModel$(R.string.settings_snackbar_cache_clear_failed)</ID>
-    <ID>ArgumentListWrapping:SettingsViewModel.kt$SettingsViewModel$(R.string.settings_snackbar_export_failed, e.message ?: "")</ID>
-    <ID>ArgumentListWrapping:SettingsViewModel.kt$SettingsViewModel$(R.string.settings_snackbar_export_success, "")</ID>
-    <ID>ArgumentListWrapping:SettingsViewModel.kt$SettingsViewModel$(R.string.settings_snackbar_import_failed, e.message ?: "")</ID>
-    <ID>ArgumentListWrapping:SettingsViewModel.kt$SettingsViewModel$(R.string.settings_snackbar_import_failed, result.exceptionOrNull()?.message ?: "")</ID>
-    <ID>ArgumentListWrapping:SettingsViewModel.kt$SettingsViewModel$(SettingsEffect.ShowSnackbar(context.getString(R.string.settings_snackbar_cache_clear_failed)))</ID>
-    <ID>ArgumentListWrapping:SettingsViewModel.kt$SettingsViewModel$(SettingsEffect.ShowSnackbar(context.getString(R.string.settings_snackbar_export_failed, e.message ?: "")))</ID>
-    <ID>ArgumentListWrapping:SettingsViewModel.kt$SettingsViewModel$(SettingsEffect.ShowSnackbar(context.getString(R.string.settings_snackbar_export_success, "")))</ID>
-    <ID>ArgumentListWrapping:SettingsViewModel.kt$SettingsViewModel$(SettingsEffect.ShowSnackbar(context.getString(R.string.settings_snackbar_import_failed, e.message ?: "")))</ID>
-    <ID>ArgumentListWrapping:SettingsViewModel.kt$SettingsViewModel$(context.getString(R.string.settings_snackbar_cache_clear_failed))</ID>
-    <ID>ArgumentListWrapping:SettingsViewModel.kt$SettingsViewModel$(context.getString(R.string.settings_snackbar_export_failed, e.message ?: ""))</ID>
-    <ID>ArgumentListWrapping:SettingsViewModel.kt$SettingsViewModel$(context.getString(R.string.settings_snackbar_export_success, ""))</ID>
-    <ID>ArgumentListWrapping:SettingsViewModel.kt$SettingsViewModel$(context.getString(R.string.settings_snackbar_import_failed, e.message ?: ""))</ID>
-    <ID>ArgumentListWrapping:ShareScreen.kt$(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.share_navigation_back))</ID>
-    <ID>ArgumentListWrapping:ShareScreen.kt$(R.string.share_navigation_back)</ID>
-    <ID>ArgumentListWrapping:ShareViewModel.kt$ShareViewModel$(R.string.share_error_meme_not_found)</ID>
-    <ID>ArgumentListWrapping:ShareViewModel.kt$ShareViewModel$(R.string.share_snackbar_saved_to_gallery)</ID>
-    <ID>ArgumentListWrapping:ShareViewModel.kt$ShareViewModel$(ShareEffect.ShowError(error.message ?: context.getString(R.string.share_error_share_failed)))</ID>
-    <ID>ArgumentListWrapping:ShareViewModel.kt$ShareViewModel$(ShareEffect.ShowError(error.message ?: context.getString(R.string.share_snackbar_save_failed)))</ID>
-    <ID>ArgumentListWrapping:ShareViewModel.kt$ShareViewModel$(ShareEffect.ShowSnackbar(context.getString(R.string.share_snackbar_saved_to_gallery)))</ID>
-    <ID>ArgumentListWrapping:ShareViewModel.kt$ShareViewModel$(context.getString(R.string.share_snackbar_saved_to_gallery))</ID>
-    <ID>ArgumentListWrapping:ShareViewModel.kt$ShareViewModel$(error.message ?: context.getString(R.string.share_error_share_failed))</ID>
-    <ID>ArgumentListWrapping:ShareViewModel.kt$ShareViewModel$(error.message ?: context.getString(R.string.share_snackbar_save_failed))</ID>
-    <ID>ArgumentListWrapping:ShareViewModel.kt$ShareViewModel$(isLoading = false, errorMessage = context.getString(R.string.share_error_meme_not_found))</ID>
-    <ID>ArgumentListWrapping:XmpMetadataHandler.kt$XmpMetadataHandler$(""" &lt;$XMP_PREFIX:schemaVersion&gt;${escapeXml(metadata.schemaVersion)}&lt;/$XMP_PREFIX:schemaVersion&gt;""")</ID>
-    <ID>ArgumentListWrapping:XmpMetadataHandler.kt$XmpMetadataHandler$("""&lt;$XMP_PREFIX:emojis&gt;\s*&lt;rdf:Bag&gt;(.*?)&lt;/rdf:Bag&gt;\s*&lt;/$XMP_PREFIX:emojis&gt;""", RegexOption.DOT_MATCHES_ALL)</ID>
-    <ID>ArgumentListWrapping:XmpMetadataHandler.kt$XmpMetadataHandler$("""&lt;$XMP_PREFIX:tags&gt;\s*&lt;rdf:Bag&gt;(.*?)&lt;/rdf:Bag&gt;\s*&lt;/$XMP_PREFIX:tags&gt;""", RegexOption.DOT_MATCHES_ALL)</ID>
-    <ID>ArgumentListWrapping:XmpMetadataHandler.kt$XmpMetadataHandler$(metadata.schemaVersion)</ID>
     <ID>CyclomaticComplexMethod:GalleryScreen.kt$@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class) @Composable private fun GalleryScreenContent( uiState: GalleryUiState, pagedMemes: LazyPagingItems&lt;Meme&gt;? = null, onIntent: (GalleryIntent) -&gt; Unit, onNavigateToMeme: (Long) -&gt; Unit, onNavigateToImport: () -&gt; Unit, onNavigateToSettings: () -&gt; Unit, snackbarHostState: SnackbarHostState, showDeleteDialog: Boolean, deleteCount: Int, showMenu: Boolean, onShowDeleteDialogChange: (Boolean) -&gt; Unit, onDeleteCountChange: (Int) -&gt; Unit, onShowMenuChange: (Boolean) -&gt; Unit, )</ID>
-    <ID>CyclomaticComplexMethod:ImportScreen.kt$@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class) @Composable fun ImportScreen( onNavigateBack: () -&gt; Unit, onImportComplete: () -&gt; Unit, viewModel: ImportViewModel = hiltViewModel(), )</ID>
+    <ID>CyclomaticComplexMethod:ImportRepositoryImpl.kt$ImportRepositoryImpl$override suspend fun importImage( uri: Uri, metadata: MemeMetadata?, ): Result&lt;Meme&gt;</ID>
+    <ID>CyclomaticComplexMethod:ImportScreen.kt$@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class) @Composable fun ImportScreen( onNavigateBack: () -&gt; Unit, viewModel: ImportViewModel = hiltViewModel(), )</ID>
     <ID>CyclomaticComplexMethod:MemeDetailScreen.kt$@OptIn(ExperimentalLayoutApi::class) @Composable private fun MemeInfoSheet( uiState: MemeDetailUiState, onIntent: (MemeDetailIntent) -&gt; Unit, modifier: Modifier = Modifier, )</ID>
     <ID>CyclomaticComplexMethod:MemeEntity.kt$MemeEntity$override fun equals(other: Any?): Boolean</ID>
+    <ID>CyclomaticComplexMethod:QuickShareBottomSheet.kt$private fun resolveShareTargets( context: Context, frequentTargets: List&lt;ShareTarget&gt;, maxItems: Int = 8, ): List&lt;ResolvedTarget&gt;</ID>
+    <ID>CyclomaticComplexMethod:SettingsScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun SettingsScreen( uiState: SettingsUiState, onIntent: (SettingsIntent) -&gt; Unit, onNavigateBack: () -&gt; Unit, snackbarHostState: SnackbarHostState = remember { SnackbarHostState() }, )</ID>
     <ID>CyclomaticComplexMethod:ZipImporter.kt$DefaultZipImporter$override fun extractBundleStream(zipUri: Uri): Flow&lt;ZipExtractionEvent&gt;</ID>
     <ID>CyclomaticComplexMethod:ZipImporter.kt$DefaultZipImporter$override suspend fun extractBundle(zipUri: Uri): ZipExtractionResult</ID>
     <ID>ImplicitDefaultLocale:MemeDetailScreen.kt$String.format("%.1f KB", bytes / 1024.0)</ID>
     <ID>ImplicitDefaultLocale:MemeDetailScreen.kt$String.format("%.1f MB", bytes / (1024.0 * 1024.0))</ID>
     <ID>ImplicitDefaultLocale:ShareUiState.kt$ShareUiState$String.format("%.1f KB", bytes / 1024.0)</ID>
     <ID>ImplicitDefaultLocale:ShareUiState.kt$ShareUiState$String.format("%.1f MB", bytes / (1024.0 * 1024.0))</ID>
-    <ID>ImportOrdering:EmojiChip.kt$import androidx.compose.animation.core.animateFloatAsState import androidx.compose.animation.core.tween import androidx.compose.foundation.LocalIndication import androidx.compose.foundation.background import androidx.compose.foundation.border import androidx.compose.foundation.clickable import androidx.compose.foundation.interaction.MutableInteractionSource import androidx.compose.foundation.interaction.collectIsPressedAsState import androidx.compose.foundation.layout.Box import androidx.compose.foundation.layout.height import androidx.compose.foundation.layout.padding import androidx.compose.foundation.layout.size import androidx.compose.foundation.layout.sizeIn import androidx.compose.foundation.shape.RoundedCornerShape import androidx.compose.material3.MaterialTheme import androidx.compose.material3.Surface import androidx.compose.material3.Text import androidx.compose.runtime.Composable import androidx.compose.runtime.getValue import androidx.compose.runtime.remember import androidx.compose.ui.Alignment import androidx.compose.ui.Modifier import androidx.compose.ui.draw.scale import androidx.compose.ui.graphics.Color import androidx.compose.ui.res.stringResource import androidx.compose.ui.semantics.contentDescription import androidx.compose.ui.semantics.semantics import androidx.compose.ui.tooling.preview.Preview import androidx.compose.ui.unit.dp import androidx.compose.ui.unit.sp import com.adsamcik.riposte.core.model.EmojiTag import com.adsamcik.riposte.core.ui.R import com.adsamcik.riposte.core.ui.theme.EmojiCardBackgrounds import com.adsamcik.riposte.core.ui.theme.RiposteTheme import com.adsamcik.riposte.core.ui.theme.MoodShapes</ID>
-    <ID>ImportOrdering:FlowUtils.kt$import kotlinx.coroutines.flow.Flow import kotlinx.coroutines.flow.catch import kotlinx.coroutines.flow.map import kotlinx.coroutines.flow.onStart import com.adsamcik.riposte.core.common.result.Resource</ID>
-    <ID>ImportOrdering:GalleryScreen.kt$import androidx.compose.animation.AnimatedVisibility import androidx.compose.animation.fadeIn import androidx.compose.animation.fadeOut import androidx.compose.animation.slideInVertically import androidx.compose.animation.slideOutVertically import androidx.compose.foundation.ExperimentalFoundationApi import androidx.compose.foundation.combinedClickable import androidx.compose.foundation.interaction.MutableInteractionSource import androidx.compose.foundation.layout.Arrangement import androidx.compose.foundation.layout.Box import androidx.compose.foundation.layout.Column import androidx.compose.foundation.layout.PaddingValues import androidx.compose.foundation.layout.Row import androidx.compose.foundation.layout.fillMaxSize import androidx.compose.foundation.layout.fillMaxWidth import androidx.compose.foundation.layout.padding import androidx.compose.foundation.layout.size import androidx.compose.foundation.lazy.grid.GridCells import androidx.compose.foundation.lazy.grid.GridItemSpan import androidx.compose.foundation.lazy.grid.LazyGridScope import androidx.compose.foundation.lazy.grid.LazyGridState import androidx.compose.foundation.lazy.grid.LazyVerticalGrid import androidx.compose.foundation.lazy.grid.items import androidx.compose.foundation.lazy.grid.rememberLazyGridState import androidx.compose.foundation.background import androidx.compose.foundation.shape.RoundedCornerShape import androidx.paging.LoadState import androidx.paging.compose.LazyPagingItems import androidx.paging.compose.collectAsLazyPagingItems import com.adsamcik.riposte.core.model.Meme import androidx.compose.material.icons.Icons import androidx.compose.material.icons.automirrored.filled.Sort import androidx.compose.material.icons.filled.Add import androidx.compose.material.icons.filled.Close import androidx.compose.material.icons.filled.Delete import androidx.compose.material.icons.filled.MoreVert import androidx.compose.material.icons.filled.Search import androidx.compose.material.icons.filled.SelectAll import androidx.compose.material.icons.filled.Share import androidx.compose.material.icons.outlined.FavoriteBorder import androidx.compose.material3.AlertDialog import androidx.compose.material3.CircularProgressIndicator import androidx.compose.material3.BottomAppBar import androidx.compose.material3.DropdownMenu import androidx.compose.material3.DropdownMenuItem import androidx.compose.material3.ExperimentalMaterial3Api import androidx.compose.material3.FilterChip import androidx.compose.material3.ripple import androidx.compose.material3.FloatingActionButton import androidx.compose.material3.Icon import androidx.compose.material3.IconButton import androidx.compose.material3.MaterialTheme import androidx.compose.material3.Scaffold import androidx.compose.material3.SnackbarHost import androidx.compose.material3.SnackbarHostState import androidx.compose.material3.Text import androidx.compose.material3.TextButton import androidx.compose.material3.TopAppBar import androidx.compose.material3.TopAppBarDefaults import androidx.compose.runtime.Composable import androidx.compose.runtime.LaunchedEffect import androidx.compose.runtime.derivedStateOf import androidx.compose.runtime.getValue import androidx.compose.runtime.mutableStateOf import androidx.compose.runtime.remember import androidx.compose.runtime.setValue import androidx.compose.ui.Alignment import androidx.compose.ui.Modifier import androidx.compose.ui.input.nestedscroll.nestedScroll import androidx.compose.ui.platform.LocalContext import androidx.compose.ui.res.pluralStringResource import androidx.compose.ui.res.stringResource import androidx.compose.ui.semantics.LiveRegionMode import androidx.compose.ui.semantics.Role import androidx.compose.ui.semantics.clearAndSetSemantics import androidx.compose.ui.semantics.contentDescription import androidx.compose.ui.semantics.liveRegion import androidx.compose.ui.semantics.role import androidx.compose.ui.semantics.semantics import androidx.compose.ui.semantics.stateDescription import androidx.compose.ui.unit.dp import android.content.res.Configuration import androidx.compose.ui.tooling.preview.Preview import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel import androidx.lifecycle.compose.collectAsStateWithLifecycle import com.adsamcik.riposte.core.model.MatchType import com.adsamcik.riposte.core.model.SearchResult import com.adsamcik.riposte.core.ui.component.EmptyState import com.adsamcik.riposte.core.ui.component.EmojiFilterRail import com.adsamcik.riposte.core.ui.component.ErrorState import com.adsamcik.riposte.core.ui.component.LoadingScreen import com.adsamcik.riposte.core.ui.component.MemeCardCompact import com.adsamcik.riposte.core.ui.modifier.animatedPressScale import com.adsamcik.riposte.core.ui.theme.rememberGridColumns import com.adsamcik.riposte.feature.gallery.R import androidx.compose.ui.text.style.TextOverflow</ID>
-    <ID>ImportOrdering:GalleryUseCases.kt$import androidx.paging.PagingData import androidx.paging.cachedIn import com.adsamcik.riposte.core.database.LibraryStatsProvider import com.adsamcik.riposte.core.database.LibraryStatistics import com.adsamcik.riposte.core.model.Meme import com.adsamcik.riposte.feature.gallery.domain.repository.GalleryRepository import kotlinx.coroutines.CoroutineScope import kotlinx.coroutines.flow.Flow import javax.inject.Inject</ID>
-    <ID>ImportOrdering:GalleryViewModel.kt$import android.content.Context import androidx.lifecycle.ViewModel import androidx.lifecycle.viewModelScope import androidx.paging.PagingData import com.adsamcik.riposte.core.common.di.DefaultDispatcher import com.adsamcik.riposte.core.common.suggestion.GetSuggestionsUseCase import com.adsamcik.riposte.core.common.suggestion.Surface import com.adsamcik.riposte.core.common.suggestion.SuggestionContext import com.adsamcik.riposte.core.datastore.PreferencesDataStore import com.adsamcik.riposte.core.model.Meme import com.adsamcik.riposte.feature.gallery.R import com.adsamcik.riposte.feature.gallery.domain.usecase.DeleteMemesUseCase import com.adsamcik.riposte.feature.gallery.domain.usecase.GetAllMemeIdsUseCase import com.adsamcik.riposte.feature.gallery.domain.usecase.GetFavoritesUseCase import com.adsamcik.riposte.feature.gallery.domain.usecase.GetMemeByIdUseCase import com.adsamcik.riposte.feature.gallery.domain.usecase.GetMemesByEmojiUseCase import com.adsamcik.riposte.feature.gallery.domain.usecase.GetMemesUseCase import com.adsamcik.riposte.feature.gallery.domain.usecase.GetPagedMemesUseCase import com.adsamcik.riposte.feature.gallery.domain.usecase.ToggleFavoriteUseCase import dagger.hilt.android.lifecycle.HiltViewModel import dagger.hilt.android.qualifiers.ApplicationContext import kotlinx.coroutines.CoroutineDispatcher import kotlinx.coroutines.Job import kotlinx.coroutines.channels.Channel import kotlinx.coroutines.flow.Flow import kotlinx.coroutines.flow.MutableStateFlow import kotlinx.coroutines.flow.StateFlow import kotlinx.coroutines.flow.asStateFlow import kotlinx.coroutines.flow.collectLatest import kotlinx.coroutines.flow.distinctUntilChanged import kotlinx.coroutines.flow.first import kotlinx.coroutines.flow.flatMapLatest import kotlinx.coroutines.flow.map import kotlinx.coroutines.flow.merge import kotlinx.coroutines.flow.receiveAsFlow import kotlinx.coroutines.flow.update import kotlinx.coroutines.launch import kotlinx.coroutines.withContext import javax.inject.Inject</ID>
-    <ID>ImportOrdering:ImportScreen.kt$import android.content.res.Configuration import android.net.Uri import androidx.compose.ui.res.pluralStringResource import androidx.compose.ui.res.stringResource import com.adsamcik.riposte.feature.import_feature.R import androidx.activity.compose.rememberLauncherForActivityResult import androidx.activity.result.PickVisualMediaRequest import androidx.activity.result.contract.ActivityResultContracts import androidx.compose.animation.AnimatedVisibility import androidx.compose.foundation.background import androidx.compose.foundation.border import androidx.compose.foundation.layout.Arrangement import androidx.compose.foundation.layout.Box import androidx.compose.foundation.layout.Column import androidx.compose.foundation.layout.ExperimentalLayoutApi import androidx.compose.foundation.layout.FlowRow import androidx.compose.foundation.layout.PaddingValues import androidx.compose.foundation.layout.Row import androidx.compose.foundation.layout.Spacer import androidx.compose.foundation.layout.WindowInsets import androidx.compose.foundation.layout.aspectRatio import androidx.compose.foundation.layout.fillMaxHeight import androidx.compose.foundation.layout.fillMaxSize import androidx.compose.foundation.layout.fillMaxWidth import androidx.compose.foundation.layout.height import androidx.compose.foundation.layout.navigationBars import androidx.compose.foundation.layout.padding import androidx.compose.foundation.layout.safeDrawing import androidx.compose.foundation.layout.size import androidx.compose.foundation.layout.width import androidx.compose.foundation.layout.windowInsetsPadding import androidx.compose.foundation.lazy.LazyRow import androidx.compose.foundation.lazy.grid.GridCells import androidx.compose.foundation.lazy.grid.LazyVerticalGrid import androidx.compose.foundation.lazy.grid.items import androidx.compose.foundation.lazy.items import androidx.compose.foundation.rememberScrollState import androidx.compose.foundation.shape.CircleShape import androidx.compose.foundation.shape.RoundedCornerShape import androidx.compose.foundation.verticalScroll import androidx.compose.material.icons.Icons import androidx.compose.material.icons.automirrored.filled.ArrowBack import androidx.compose.material.icons.filled.Add import androidx.compose.material.icons.filled.Check import androidx.compose.material.icons.filled.Close import androidx.compose.material.icons.filled.Warning import androidx.compose.material.icons.outlined.AddPhotoAlternate import androidx.compose.material3.AlertDialog import androidx.compose.material3.BottomSheetScaffold import androidx.compose.material3.Button import androidx.compose.material3.Card import androidx.compose.material3.CardDefaults import androidx.compose.material3.CircularProgressIndicator import androidx.compose.material3.ExperimentalMaterial3Api import androidx.compose.material3.FilledTonalButton import androidx.compose.material3.FilterChip import androidx.compose.material3.Icon import androidx.compose.material3.IconButton import androidx.compose.material3.LinearProgressIndicator import androidx.compose.material3.MaterialTheme import androidx.compose.material3.OutlinedButton import androidx.compose.material3.OutlinedTextField import androidx.compose.material3.Scaffold import androidx.compose.material3.SheetValue import androidx.compose.material3.SnackbarHost import androidx.compose.material3.SnackbarHostState import androidx.compose.material3.Text import androidx.compose.material3.TextButton import androidx.compose.material3.TopAppBar import androidx.compose.material3.rememberBottomSheetScaffoldState import androidx.compose.material3.rememberStandardBottomSheetState import androidx.compose.runtime.Composable import androidx.compose.runtime.LaunchedEffect import androidx.compose.runtime.getValue import androidx.compose.runtime.mutableStateOf import androidx.compose.runtime.remember import androidx.compose.runtime.setValue import androidx.compose.ui.Alignment import androidx.compose.ui.Modifier import androidx.compose.ui.draw.clip import androidx.compose.ui.graphics.Color import androidx.compose.ui.layout.ContentScale import androidx.compose.ui.platform.LocalContext import androidx.compose.ui.semantics.LiveRegionMode import androidx.compose.ui.semantics.Role import androidx.compose.ui.semantics.clearAndSetSemantics import androidx.compose.ui.semantics.contentDescription import androidx.compose.ui.semantics.heading import androidx.compose.ui.semantics.liveRegion import androidx.compose.ui.semantics.role import androidx.compose.ui.semantics.semantics import androidx.compose.ui.semantics.stateDescription import androidx.compose.ui.tooling.preview.Preview import androidx.compose.ui.text.style.TextAlign import androidx.compose.ui.text.style.TextOverflow import androidx.compose.ui.unit.dp import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel import androidx.lifecycle.compose.collectAsStateWithLifecycle import coil3.compose.AsyncImage import com.adsamcik.riposte.core.model.EmojiTag import com.adsamcik.riposte.core.ui.component.EmojiChip import com.adsamcik.riposte.core.ui.component.EmptyState import com.adsamcik.riposte.core.ui.component.LoadingScreen import kotlinx.coroutines.flow.collectLatest</ID>
-    <ID>ImportOrdering:ImportViewModel.kt$import android.content.Context import androidx.lifecycle.ViewModel import androidx.lifecycle.viewModelScope import com.adsamcik.riposte.core.common.review.UserActionTracker import com.adsamcik.riposte.core.datastore.PreferencesDataStore import com.adsamcik.riposte.core.model.MemeMetadata import com.adsamcik.riposte.feature.import_feature.R import com.adsamcik.riposte.feature.import_feature.domain.usecase.CheckDuplicateUseCase import com.adsamcik.riposte.feature.import_feature.domain.usecase.CleanupExtractedFilesUseCase import com.adsamcik.riposte.feature.import_feature.domain.usecase.ExtractTextUseCase import com.adsamcik.riposte.feature.import_feature.domain.usecase.ExtractZipForPreviewUseCase import com.adsamcik.riposte.feature.import_feature.domain.usecase.ImportImageUseCase import com.adsamcik.riposte.feature.import_feature.domain.usecase.SuggestEmojisUseCase import dagger.hilt.android.lifecycle.HiltViewModel import dagger.hilt.android.qualifiers.ApplicationContext import kotlinx.coroutines.channels.Channel import kotlinx.coroutines.Job import kotlinx.coroutines.flow.MutableStateFlow import kotlinx.coroutines.flow.StateFlow import kotlinx.coroutines.flow.asStateFlow import kotlinx.coroutines.flow.first import kotlinx.coroutines.flow.receiveAsFlow import kotlinx.coroutines.flow.update import kotlinx.coroutines.launch import javax.inject.Inject</ID>
-    <ID>ImportOrdering:InAppReviewManager.kt$import android.app.Activity import android.content.Context import android.content.SharedPreferences import com.google.android.play.core.review.ReviewManagerFactory import com.adsamcik.riposte.core.common.review.UserActionTracker import dagger.hilt.android.qualifiers.ApplicationContext import javax.inject.Inject import javax.inject.Singleton</ID>
-    <ID>ImportOrdering:MemeCard.kt$import androidx.compose.foundation.background import androidx.compose.foundation.clickable import androidx.compose.foundation.interaction.MutableInteractionSource import androidx.compose.foundation.layout.Box import androidx.compose.foundation.layout.Column import androidx.compose.foundation.layout.Row import androidx.compose.foundation.layout.Spacer import androidx.compose.foundation.layout.aspectRatio import androidx.compose.foundation.layout.fillMaxSize import androidx.compose.foundation.layout.fillMaxWidth import androidx.compose.foundation.layout.height import androidx.compose.foundation.layout.padding import androidx.compose.foundation.layout.size import androidx.compose.foundation.layout.width import androidx.compose.foundation.lazy.LazyRow import androidx.compose.foundation.lazy.items import androidx.compose.material.icons.Icons import androidx.compose.material.icons.filled.Favorite import androidx.compose.material.icons.outlined.FavoriteBorder import androidx.compose.material3.Card import androidx.compose.material3.CardDefaults import androidx.compose.material3.Icon import androidx.compose.material3.IconButton import androidx.compose.material3.MaterialTheme import androidx.compose.material3.Text import androidx.compose.material3.ripple import androidx.compose.runtime.Composable import androidx.compose.ui.Alignment import androidx.compose.ui.Modifier import androidx.compose.ui.draw.clip import androidx.compose.ui.graphics.Color import androidx.compose.ui.layout.ContentScale import androidx.compose.ui.res.stringResource import androidx.compose.ui.semantics.Role import androidx.compose.ui.semantics.clearAndSetSemantics import androidx.compose.ui.semantics.contentDescription import androidx.compose.ui.semantics.role import androidx.compose.ui.semantics.semantics import androidx.compose.ui.semantics.stateDescription import androidx.compose.ui.text.style.TextOverflow import androidx.compose.ui.unit.dp import androidx.compose.ui.graphics.ColorFilter import coil3.compose.AsyncImage import coil3.compose.AsyncImagePainter import coil3.compose.rememberAsyncImagePainter import com.adsamcik.riposte.core.ui.R import com.adsamcik.riposte.core.model.EmojiTag import com.adsamcik.riposte.core.model.Meme import com.adsamcik.riposte.core.ui.theme.MoodShapes import java.io.File</ID>
-    <ID>ImportOrdering:MemeDetailScreen.kt$import android.content.Intent import androidx.compose.foundation.background import android.content.res.Configuration import androidx.compose.ui.tooling.preview.Preview import androidx.compose.foundation.clickable import androidx.compose.foundation.gestures.detectTapGestures import androidx.compose.foundation.gestures.detectTransformGestures import androidx.compose.foundation.layout.Arrangement import androidx.compose.foundation.layout.Box import androidx.compose.foundation.layout.Column import androidx.compose.foundation.layout.ExperimentalLayoutApi import androidx.compose.foundation.layout.FlowRow import androidx.compose.foundation.layout.Row import androidx.compose.foundation.layout.Spacer import androidx.compose.foundation.layout.WindowInsets import androidx.compose.foundation.layout.fillMaxSize import androidx.compose.foundation.layout.fillMaxWidth import androidx.compose.foundation.layout.height import androidx.compose.foundation.layout.navigationBars import androidx.compose.foundation.layout.padding import androidx.compose.foundation.layout.size import androidx.compose.foundation.layout.statusBars import androidx.compose.foundation.layout.width import androidx.compose.foundation.layout.windowInsetsPadding import androidx.compose.foundation.lazy.LazyRow import androidx.compose.foundation.lazy.items import androidx.compose.foundation.rememberScrollState import androidx.compose.foundation.shape.CircleShape import androidx.compose.foundation.verticalScroll import androidx.compose.material.icons.Icons import androidx.compose.material.icons.automirrored.filled.ArrowBack import androidx.compose.material.icons.filled.Add import androidx.compose.material.icons.filled.Check import androidx.compose.material.icons.filled.Close import androidx.compose.material.icons.filled.Delete import androidx.compose.material.icons.filled.Edit import androidx.compose.material.icons.filled.Favorite import androidx.compose.material.icons.filled.FavoriteBorder import androidx.compose.material.icons.filled.Share import androidx.compose.material3.AlertDialog import androidx.compose.material3.BottomSheetScaffold import androidx.compose.material3.ExperimentalMaterial3Api import androidx.compose.material3.HorizontalDivider import androidx.compose.material3.FilledIconButton import androidx.compose.material3.FilledTonalIconButton import androidx.compose.material3.Icon import androidx.compose.material3.IconButton import androidx.compose.material3.IconButtonDefaults import androidx.compose.material3.OutlinedIconButton import androidx.compose.material3.MaterialTheme import androidx.compose.material3.OutlinedTextField import androidx.compose.material3.SheetValue import androidx.compose.material3.SnackbarHost import androidx.compose.material3.SnackbarHostState import androidx.compose.material3.Text import androidx.compose.material3.TextButton import androidx.compose.material3.rememberBottomSheetScaffoldState import androidx.compose.material3.rememberStandardBottomSheetState import androidx.compose.runtime.Composable import androidx.compose.runtime.LaunchedEffect import androidx.compose.runtime.getValue import androidx.compose.runtime.mutableStateOf import androidx.compose.runtime.remember import androidx.compose.runtime.setValue import androidx.compose.ui.Alignment import androidx.compose.ui.Modifier import androidx.compose.ui.draw.clip import androidx.compose.ui.graphics.Color import androidx.compose.ui.graphics.graphicsLayer import androidx.compose.ui.input.pointer.pointerInput import androidx.compose.ui.layout.ContentScale import androidx.compose.ui.layout.onSizeChanged import androidx.compose.ui.platform.LocalConfiguration import androidx.compose.ui.platform.LocalContext import androidx.compose.ui.res.stringResource import androidx.compose.ui.semantics.LiveRegionMode import androidx.compose.ui.semantics.Role import androidx.compose.ui.semantics.clearAndSetSemantics import androidx.compose.ui.semantics.contentDescription import androidx.compose.ui.semantics.heading import androidx.compose.ui.semantics.liveRegion import androidx.compose.ui.semantics.role import androidx.compose.ui.semantics.semantics import androidx.compose.ui.semantics.stateDescription import androidx.compose.ui.text.style.TextAlign import androidx.compose.ui.unit.IntSize import androidx.compose.ui.unit.dp import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel import androidx.lifecycle.compose.collectAsStateWithLifecycle import coil3.compose.AsyncImage import coil3.compose.AsyncImagePainter import com.adsamcik.riposte.core.model.EmojiTag import com.adsamcik.riposte.core.ui.component.EmojiChip import com.adsamcik.riposte.core.ui.component.ErrorState import com.adsamcik.riposte.core.ui.component.LoadingScreen import com.adsamcik.riposte.feature.gallery.R import com.adsamcik.riposte.feature.gallery.presentation.component.EditEmojiDialog import androidx.activity.compose.BackHandler import kotlinx.coroutines.flow.collectLatest import java.time.format.DateTimeFormatter import java.time.format.FormatStyle</ID>
-    <ID>ImportOrdering:MlModule.kt$import android.content.Context import com.adsamcik.riposte.core.ml.DefaultSemanticSearchEngine import com.adsamcik.riposte.core.ml.EmbeddingGenerator import com.adsamcik.riposte.core.ml.EmbeddingGemmaGenerator import com.adsamcik.riposte.core.ml.MediaPipeEmbeddingGenerator import com.adsamcik.riposte.core.ml.MlKitTextRecognizer import com.adsamcik.riposte.core.ml.SemanticSearchEngine import com.adsamcik.riposte.core.ml.SimpleEmbeddingGenerator import com.adsamcik.riposte.core.ml.TextRecognizer import dagger.Binds import dagger.Module import dagger.Provides import dagger.hilt.InstallIn import dagger.hilt.android.qualifiers.ApplicationContext import dagger.hilt.components.SingletonComponent import javax.inject.Named import javax.inject.Singleton</ID>
-    <ID>ImportOrdering:QuickShareBottomSheet.kt$import android.content.ComponentName import android.content.Context import android.content.Intent import android.content.pm.PackageManager import android.content.pm.ResolveInfo import android.graphics.drawable.Drawable import android.net.Uri import androidx.annotation.VisibleForTesting import androidx.compose.foundation.Image import androidx.compose.foundation.clickable import androidx.compose.foundation.layout.Arrangement import androidx.compose.foundation.layout.Box import androidx.compose.foundation.layout.Column import androidx.compose.foundation.layout.PaddingValues import androidx.compose.foundation.layout.Spacer import androidx.compose.foundation.layout.aspectRatio import androidx.compose.foundation.layout.fillMaxWidth import androidx.compose.foundation.layout.height import androidx.compose.foundation.layout.padding import androidx.compose.foundation.layout.size import androidx.compose.foundation.layout.width import androidx.compose.foundation.lazy.LazyRow import androidx.compose.foundation.lazy.items import androidx.compose.foundation.shape.CircleShape import androidx.compose.foundation.shape.RoundedCornerShape import androidx.compose.material.icons.Icons import androidx.compose.material.icons.filled.MoreHoriz import androidx.compose.material3.ExperimentalMaterial3Api import androidx.compose.material3.Icon import androidx.compose.material3.MaterialTheme import androidx.compose.material3.ModalBottomSheet import androidx.compose.material3.Surface import androidx.compose.material3.Text import androidx.compose.material3.rememberModalBottomSheetState import androidx.compose.runtime.Composable import androidx.compose.runtime.remember import androidx.compose.ui.Alignment import androidx.compose.ui.Modifier import androidx.compose.ui.draw.clip import androidx.compose.ui.graphics.asImageBitmap import androidx.compose.ui.layout.ContentScale import androidx.compose.ui.platform.LocalContext import androidx.compose.ui.res.stringResource import androidx.compose.ui.text.style.TextAlign import androidx.compose.ui.text.style.TextOverflow import androidx.compose.ui.platform.LocalDensity import androidx.compose.ui.unit.dp import androidx.core.graphics.drawable.toBitmap import coil3.compose.AsyncImage import com.adsamcik.riposte.core.model.Meme import com.adsamcik.riposte.core.model.ShareTarget import com.adsamcik.riposte.core.ui.R import java.io.File</ID>
-    <ID>ImportOrdering:SectionHeader.kt$import androidx.compose.foundation.layout.Row import androidx.compose.foundation.layout.Spacer import androidx.compose.foundation.layout.fillMaxWidth import androidx.compose.foundation.layout.padding import androidx.compose.material.icons.Icons import androidx.compose.material.icons.outlined.ChevronRight import androidx.compose.material3.Icon import androidx.compose.material3.IconButton import androidx.compose.material3.MaterialTheme import androidx.compose.material3.Text import androidx.compose.runtime.Composable import androidx.compose.ui.Alignment import androidx.compose.ui.Modifier import androidx.compose.ui.graphics.Color import androidx.compose.ui.semantics.heading import androidx.compose.ui.res.stringResource import androidx.compose.ui.semantics.semantics import androidx.compose.ui.text.font.FontWeight import androidx.compose.ui.tooling.preview.Preview import androidx.compose.ui.unit.dp import com.adsamcik.riposte.core.ui.R import com.adsamcik.riposte.core.ui.theme.RiposteTheme</ID>
-    <ID>ImportOrdering:SettingsScreen.kt$import android.content.res.Configuration import android.net.Uri import androidx.activity.compose.rememberLauncherForActivityResult import androidx.activity.result.contract.ActivityResultContracts import androidx.compose.foundation.selection.toggleable import androidx.compose.foundation.layout.Column import androidx.compose.foundation.layout.Row import androidx.compose.foundation.layout.Spacer import androidx.compose.foundation.layout.WindowInsets import androidx.compose.foundation.layout.fillMaxSize import androidx.compose.foundation.layout.fillMaxWidth import androidx.compose.foundation.layout.height import androidx.compose.foundation.layout.padding import androidx.compose.foundation.layout.safeDrawing import androidx.compose.foundation.lazy.LazyColumn import androidx.compose.material.icons.Icons import androidx.compose.material.icons.automirrored.filled.ArrowBack import androidx.compose.material.icons.filled.Brightness4 import androidx.compose.material.icons.filled.CleaningServices import androidx.compose.material.icons.filled.ColorLens import androidx.compose.material.icons.filled.Description import androidx.compose.material.icons.filled.GridView import androidx.compose.material.icons.filled.Language import androidx.compose.material.icons.filled.Download import androidx.compose.material.icons.filled.History import androidx.compose.material.icons.filled.Info import androidx.compose.material.icons.filled.Policy import androidx.compose.material.icons.filled.Psychology import androidx.compose.material.icons.filled.Upload import androidx.compose.material3.AlertDialog import androidx.compose.material3.Checkbox import androidx.compose.material3.ExperimentalMaterial3Api import androidx.compose.material3.Icon import androidx.compose.material3.IconButton import androidx.compose.material3.MaterialTheme import androidx.compose.material3.Scaffold import androidx.compose.material3.SnackbarHost import androidx.compose.material3.SnackbarHostState import androidx.compose.material3.Text import androidx.compose.material3.TextButton import androidx.compose.material3.TopAppBar import androidx.compose.runtime.Composable import androidx.compose.runtime.LaunchedEffect import androidx.compose.runtime.getValue import androidx.compose.runtime.remember import androidx.compose.ui.Alignment import androidx.compose.ui.Modifier import androidx.compose.ui.platform.LocalContext import androidx.compose.ui.platform.LocalUriHandler import androidx.compose.ui.res.stringResource import androidx.compose.ui.semantics.Role import androidx.compose.ui.semantics.heading import androidx.compose.ui.semantics.semantics import androidx.compose.ui.tooling.preview.Preview import androidx.compose.ui.unit.dp import com.adsamcik.riposte.feature.settings.R import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel import androidx.lifecycle.compose.collectAsStateWithLifecycle import com.adsamcik.riposte.core.model.DarkMode import com.adsamcik.riposte.core.model.UserDensityPreference import com.adsamcik.riposte.feature.settings.presentation.component.ClickableSettingItem import com.adsamcik.riposte.feature.settings.presentation.component.DialogSettingItem import com.adsamcik.riposte.feature.settings.presentation.component.SettingsSection import com.adsamcik.riposte.feature.settings.presentation.component.SwitchSettingItem import kotlinx.coroutines.flow.collectLatest import java.text.DateFormat import java.util.Date</ID>
-    <ID>ImportOrdering:SettingsViewModel.kt$import android.content.Context import android.net.Uri import androidx.appcompat.app.AppCompatDelegate import androidx.core.content.pm.PackageInfoCompat import androidx.core.os.LocaleListCompat import androidx.lifecycle.ViewModel import androidx.lifecycle.viewModelScope import com.adsamcik.riposte.core.model.DarkMode import com.adsamcik.riposte.core.model.ImageFormat import com.adsamcik.riposte.core.model.UserDensityPreference import com.adsamcik.riposte.feature.settings.R import com.adsamcik.riposte.feature.settings.domain.usecase.ExportPreferencesUseCase import com.adsamcik.riposte.feature.settings.domain.usecase.GetAppPreferencesUseCase import com.adsamcik.riposte.feature.settings.domain.usecase.GetSharingPreferencesUseCase import com.adsamcik.riposte.feature.settings.domain.usecase.ImportPreferencesUseCase import com.adsamcik.riposte.feature.settings.domain.usecase.SetDarkModeUseCase import com.adsamcik.riposte.feature.settings.domain.usecase.SetDefaultFormatUseCase import com.adsamcik.riposte.feature.settings.domain.usecase.SetUseNativeShareDialogUseCase import com.adsamcik.riposte.feature.settings.domain.usecase.SetDefaultMaxDimensionUseCase import com.adsamcik.riposte.feature.settings.domain.usecase.SetDefaultQualityUseCase import com.adsamcik.riposte.feature.settings.domain.usecase.SetDynamicColorsUseCase import com.adsamcik.riposte.feature.settings.domain.usecase.SetEnableSemanticSearchUseCase import com.adsamcik.riposte.feature.settings.domain.usecase.SetGridDensityUseCase import com.adsamcik.riposte.feature.settings.domain.usecase.SetSaveSearchHistoryUseCase import com.adsamcik.riposte.core.common.di.IoDispatcher import dagger.hilt.android.lifecycle.HiltViewModel import dagger.hilt.android.qualifiers.ApplicationContext import kotlinx.coroutines.CoroutineDispatcher import kotlinx.coroutines.channels.Channel import kotlinx.coroutines.flow.MutableStateFlow import kotlinx.coroutines.flow.StateFlow import kotlinx.coroutines.flow.asStateFlow import kotlinx.coroutines.flow.combine import kotlinx.coroutines.flow.receiveAsFlow import kotlinx.coroutines.flow.update import kotlinx.coroutines.launch import kotlinx.serialization.json.Json import kotlinx.serialization.json.JsonObject import kotlinx.serialization.json.JsonPrimitive import kotlinx.serialization.json.longOrNull import kotlinx.coroutines.withContext import java.io.File import java.util.zip.ZipEntry import java.util.zip.ZipInputStream import java.util.zip.ZipOutputStream import javax.inject.Inject</ID>
-    <ID>ImportOrdering:ShareScreen.kt$import android.content.res.Configuration import android.graphics.Bitmap import androidx.compose.animation.AnimatedVisibility import androidx.compose.animation.expandVertically import androidx.compose.animation.shrinkVertically import androidx.compose.foundation.Image import androidx.compose.foundation.background import androidx.compose.foundation.clickable import androidx.compose.foundation.layout.Arrangement import androidx.compose.foundation.layout.Box import androidx.compose.foundation.layout.Column import androidx.compose.foundation.layout.Row import androidx.compose.foundation.layout.Spacer import androidx.compose.foundation.layout.WindowInsets import androidx.compose.foundation.layout.fillMaxSize import androidx.compose.foundation.layout.fillMaxWidth import androidx.compose.foundation.layout.height import androidx.compose.foundation.layout.heightIn import androidx.compose.foundation.layout.padding import androidx.compose.foundation.layout.safeDrawing import androidx.compose.foundation.layout.size import androidx.compose.foundation.layout.width import androidx.compose.foundation.interaction.MutableInteractionSource import androidx.compose.foundation.rememberScrollState import androidx.compose.foundation.shape.RoundedCornerShape import androidx.compose.foundation.verticalScroll import androidx.compose.material.icons.Icons import androidx.compose.material.icons.automirrored.filled.ArrowBack import androidx.compose.material.icons.filled.KeyboardArrowDown import androidx.compose.material.icons.filled.KeyboardArrowUp import androidx.compose.material.icons.filled.Share import androidx.compose.material3.Button import androidx.compose.material3.ButtonDefaults import androidx.compose.material3.Card import androidx.compose.material3.CardDefaults import androidx.compose.material3.CircularProgressIndicator import androidx.compose.material3.ExperimentalMaterial3Api import androidx.compose.material3.FilterChip import androidx.compose.material3.Icon import androidx.compose.material3.IconButton import androidx.compose.material3.MaterialTheme import androidx.compose.material3.Scaffold import androidx.compose.material3.SegmentedButton import androidx.compose.material3.SegmentedButtonDefaults import androidx.compose.material3.SingleChoiceSegmentedButtonRow import androidx.compose.material3.Slider import androidx.compose.material3.SnackbarHost import androidx.compose.material3.SnackbarHostState import androidx.compose.material3.Switch import androidx.compose.material3.Text import androidx.compose.material3.TextButton import androidx.compose.material3.TopAppBar import androidx.compose.runtime.Composable import androidx.compose.runtime.LaunchedEffect import androidx.compose.runtime.getValue import androidx.compose.runtime.mutableStateOf import androidx.compose.runtime.remember import androidx.compose.runtime.setValue import androidx.compose.ui.Alignment import androidx.compose.ui.Modifier import androidx.compose.ui.draw.clip import androidx.compose.ui.graphics.asImageBitmap import androidx.compose.ui.layout.ContentScale import androidx.compose.ui.platform.LocalConfiguration import androidx.compose.ui.platform.LocalContext import androidx.compose.ui.semantics.LiveRegionMode import androidx.compose.ui.semantics.Role import androidx.compose.ui.semantics.contentDescription import androidx.compose.ui.semantics.heading import androidx.compose.ui.semantics.liveRegion import androidx.compose.ui.semantics.role import androidx.compose.ui.semantics.semantics import androidx.compose.ui.semantics.stateDescription import androidx.compose.ui.platform.testTag import androidx.compose.ui.text.style.TextAlign import androidx.compose.ui.tooling.preview.Preview import androidx.compose.ui.unit.dp import androidx.compose.ui.res.stringResource import com.adsamcik.riposte.feature.share.R import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel import androidx.lifecycle.compose.collectAsStateWithLifecycle import com.adsamcik.riposte.core.model.ImageFormat import com.adsamcik.riposte.core.ui.component.EmptyState import com.adsamcik.riposte.core.ui.component.LoadingScreen import com.adsamcik.riposte.core.ui.modifier.animatedPressScale import kotlinx.coroutines.flow.collectLatest</ID>
-    <ID>ImportOrdering:ShareViewModel.kt$import android.content.Context import androidx.lifecycle.SavedStateHandle import androidx.lifecycle.ViewModel import androidx.lifecycle.viewModelScope import com.adsamcik.riposte.core.common.review.UserActionTracker import com.adsamcik.riposte.core.model.ImageFormat import com.adsamcik.riposte.core.model.ShareConfig import com.adsamcik.riposte.feature.share.R import com.adsamcik.riposte.feature.share.data.ImageProcessor import com.adsamcik.riposte.feature.share.domain.BitmapLoader import com.adsamcik.riposte.feature.share.domain.usecase.ShareUseCases import dagger.hilt.android.lifecycle.HiltViewModel import dagger.hilt.android.qualifiers.ApplicationContext import kotlinx.coroutines.channels.Channel import kotlinx.coroutines.Job import kotlinx.coroutines.delay import kotlinx.coroutines.flow.MutableStateFlow import kotlinx.coroutines.flow.StateFlow import kotlinx.coroutines.flow.asStateFlow import kotlinx.coroutines.flow.receiveAsFlow import kotlinx.coroutines.flow.update import kotlinx.coroutines.launch import javax.inject.Inject</ID>
-    <ID>ImportOrdering:SwitchSettingItem.kt$import androidx.compose.foundation.clickable import androidx.compose.foundation.selection.toggleable import androidx.compose.material3.Icon import androidx.compose.material3.ListItem import androidx.compose.material3.Switch import androidx.compose.material3.Text import androidx.compose.runtime.Composable import androidx.compose.ui.Modifier import androidx.compose.ui.graphics.vector.ImageVector import androidx.compose.ui.semantics.Role import androidx.compose.ui.semantics.clearAndSetSemantics import androidx.compose.ui.semantics.contentDescription import androidx.compose.ui.semantics.role import androidx.compose.ui.semantics.semantics import androidx.compose.ui.semantics.stateDescription import androidx.compose.ui.res.stringResource import com.adsamcik.riposte.core.ui.R as UiR</ID>
-    <ID>ImportOrdering:ZipImporter.kt$import android.content.Context import android.net.Uri import com.adsamcik.riposte.core.model.MemeMetadata import dagger.hilt.android.qualifiers.ApplicationContext import kotlinx.coroutines.Dispatchers import kotlinx.coroutines.flow.Flow import kotlinx.coroutines.flow.flow import kotlinx.coroutines.flow.flowOn import kotlinx.coroutines.withContext import kotlinx.serialization.json.Json import java.io.File import java.io.FileOutputStream import java.util.zip.ZipInputStream import com.adsamcik.riposte.feature.import_feature.domain.ZipImporter import javax.inject.Inject</ID>
+    <ID>Indentation:AppLifecycleTracker.kt$AppLifecycleTracker$ </ID>
+    <ID>Indentation:ClickableSettingItem.kt$ </ID>
+    <ID>Indentation:DatabaseMaintenanceHelper.kt$DatabaseMaintenanceHelper$ </ID>
+    <ID>Indentation:DefaultBitmapLoader.kt$DefaultBitmapLoader$ </ID>
+    <ID>Indentation:DefaultCrashLogManager.kt$DefaultCrashLogManager$ </ID>
+    <ID>Indentation:DefaultCrashLogManager.kt$DefaultCrashLogManager.Companion$ </ID>
     <ID>Indentation:DefaultEmbeddingWorkRepository.kt$DefaultEmbeddingWorkRepository$ </ID>
+    <ID>Indentation:DefaultSemanticSearchEngine.kt$DefaultSemanticSearchEngine$ </ID>
+    <ID>Indentation:DefaultSemanticSearchEngine.kt$DefaultSemanticSearchEngine.&lt;no name provided&gt;$ </ID>
+    <ID>Indentation:DefaultSemanticSearchEngine.kt$DefaultSemanticSearchEngine.Companion$ </ID>
+    <ID>Indentation:DefaultSettingsRepository.kt$DefaultSettingsRepository$ </ID>
+    <ID>Indentation:DialogSettingItem.kt$ </ID>
+    <ID>Indentation:DropdownSettingItem.kt$ </ID>
     <ID>Indentation:EditEmojiDialog.kt$ </ID>
-    <ID>Indentation:FakeMemeRepository.kt$FakeMemeRepository$ </ID>
-    <ID>Indentation:ImportEffect.kt$ImportEffect.OpenFilePicker$ </ID>
-    <ID>Indentation:Meme.kt$Meme$ </ID>
+    <ID>Indentation:EmbeddingGemmaGenerator.kt$EmbeddingGemmaGenerator$ </ID>
+    <ID>Indentation:EmbeddingGemmaGenerator.kt$EmbeddingGemmaGenerator.&lt;no name provided&gt;$ </ID>
+    <ID>Indentation:EmbeddingGemmaGenerator.kt$EmbeddingGemmaGenerator.Companion$ </ID>
+    <ID>Indentation:EmbeddingGenerationWorker.kt$EmbeddingGenerationWorker$ </ID>
+    <ID>Indentation:EmbeddingGenerationWorker.kt$EmbeddingGenerationWorker.Companion$ </ID>
+    <ID>Indentation:EmbeddingManager.kt$EmbeddingManager$ </ID>
+    <ID>Indentation:EmbeddingManager.kt$EmbeddingManager.Companion$ </ID>
+    <ID>Indentation:EmbeddingModelVersionManager.kt$EmbeddingModelVersionManager$ </ID>
+    <ID>Indentation:EmbeddingModelVersionManager.kt$EmbeddingModelVersionManager.Companion$ </ID>
+    <ID>Indentation:EmojiChip.kt$ </ID>
+    <ID>Indentation:EmojiFilterRail.kt$ </ID>
+    <ID>Indentation:EmojiGridOverlay.kt$ </ID>
+    <ID>Indentation:EmptyState.kt$ </ID>
+    <ID>Indentation:GalleryRepositoryImpl.kt$GalleryRepositoryImpl$ </ID>
+    <ID>Indentation:GalleryRepositoryImpl.kt$GalleryRepositoryImpl.Companion$ </ID>
+    <ID>Indentation:GalleryScreen.kt$ </ID>
+    <ID>Indentation:GalleryUseCases.kt$DeleteMemesUseCase$ </ID>
+    <ID>Indentation:GalleryUseCases.kt$GetAllMemeIdsUseCase$ </ID>
+    <ID>Indentation:GalleryUseCases.kt$GetFavoritesUseCase$ </ID>
+    <ID>Indentation:GalleryUseCases.kt$GetLibraryStatsUseCase$ </ID>
+    <ID>Indentation:GalleryUseCases.kt$GetMemeByIdUseCase$ </ID>
+    <ID>Indentation:GalleryUseCases.kt$GetMemesByEmojiUseCase$ </ID>
+    <ID>Indentation:GalleryUseCases.kt$GetMemesUseCase$ </ID>
+    <ID>Indentation:GalleryUseCases.kt$GetPagedMemesUseCase$ </ID>
+    <ID>Indentation:GalleryUseCases.kt$GetRecentlyViewedMemesUseCase$ </ID>
+    <ID>Indentation:GalleryUseCases.kt$RecordMemeViewUseCase$ </ID>
+    <ID>Indentation:GalleryUseCases.kt$ToggleFavoriteUseCase$ </ID>
+    <ID>Indentation:GalleryUseCases.kt$UpdateMemeUseCase$ </ID>
+    <ID>Indentation:GalleryViewModel.kt$GalleryViewModel$ </ID>
+    <ID>Indentation:GalleryViewModel.kt$GalleryViewModel.Companion$ </ID>
+    <ID>Indentation:GetSimilarMemesUseCase.kt$GetSimilarMemesUseCase$ </ID>
+    <ID>Indentation:GetSimilarMemesUseCase.kt$GetSimilarMemesUseCase.Companion$ </ID>
+    <ID>Indentation:GetSuggestionsUseCase.kt$GetSuggestionsUseCase$ </ID>
+    <ID>Indentation:GetSuggestionsUseCase.kt$GetSuggestionsUseCase.CacheKey$ </ID>
+    <ID>Indentation:GetSuggestionsUseCase.kt$GetSuggestionsUseCase.Companion$ </ID>
+    <ID>Indentation:HoldToShareContainer.kt$ </ID>
+    <ID>Indentation:HoldToShareProgress.kt$ </ID>
+    <ID>Indentation:ImageProcessor.kt$ImageProcessor$ </ID>
+    <ID>Indentation:ImageProcessor.kt$ImageProcessor.ProcessResult$ </ID>
+    <ID>Indentation:ImageProcessor.kt$ImageProcessor.ProcessResult.Success$ </ID>
+    <ID>Indentation:ImportNotificationManager.kt$ImportNotificationManager$ </ID>
+    <ID>Indentation:ImportNotificationManager.kt$ImportNotificationManager.Companion$ </ID>
+    <ID>Indentation:ImportRepositoryImpl.kt$ImportRepositoryImpl$ </ID>
+    <ID>Indentation:ImportRepositoryImpl.kt$ImportRepositoryImpl.Companion$ </ID>
+    <ID>Indentation:ImportRepositoryImpl.kt$ImportRepositoryImpl.ImportProgress$ </ID>
+    <ID>Indentation:ImportScreen.kt$ </ID>
+    <ID>Indentation:ImportStagingManager.kt$ImportStagingManager$ </ID>
+    <ID>Indentation:ImportStagingManager.kt$ImportStagingManager.Companion$ </ID>
+    <ID>Indentation:ImportStagingManager.kt$ImportStagingManager.StagingInput$ </ID>
+    <ID>Indentation:ImportUseCases.kt$CheckDuplicateUseCase$ </ID>
+    <ID>Indentation:ImportUseCases.kt$CleanupExtractedFilesUseCase$ </ID>
+    <ID>Indentation:ImportUseCases.kt$ExtractMetadataUseCase$ </ID>
+    <ID>Indentation:ImportUseCases.kt$ExtractTextUseCase$ </ID>
+    <ID>Indentation:ImportUseCases.kt$ExtractZipForPreviewUseCase$ </ID>
+    <ID>Indentation:ImportUseCases.kt$FindDuplicateMemeIdUseCase$ </ID>
+    <ID>Indentation:ImportUseCases.kt$ImportImageUseCase$ </ID>
+    <ID>Indentation:ImportUseCases.kt$ImportImagesUseCase$ </ID>
+    <ID>Indentation:ImportUseCases.kt$ImportZipBundleStreamingUseCase$ </ID>
+    <ID>Indentation:ImportUseCases.kt$ImportZipBundleUseCase$ </ID>
+    <ID>Indentation:ImportUseCases.kt$SuggestEmojisUseCase$ </ID>
+    <ID>Indentation:ImportUseCases.kt$UpdateMemeMetadataUseCase$ </ID>
+    <ID>Indentation:ImportViewModel.kt$ImportViewModel$ </ID>
+    <ID>Indentation:ImportWorker.kt$ImportWorker$ </ID>
+    <ID>Indentation:ImportWorker.kt$ImportWorker.Companion$ </ID>
+    <ID>Indentation:InAppReviewManager.kt$InAppReviewManager$ </ID>
+    <ID>Indentation:InAppReviewManager.kt$InAppReviewManager.Companion$ </ID>
+    <ID>Indentation:LibraryStatsProvider.kt$LibraryStatsProvider$ </ID>
+    <ID>Indentation:MediaPipeEmbeddingGenerator.kt$MediaPipeEmbeddingGenerator$ </ID>
+    <ID>Indentation:MediaPipeEmbeddingGenerator.kt$MediaPipeEmbeddingGenerator.Companion$ </ID>
     <ID>Indentation:MemeCard.kt$ </ID>
+    <ID>Indentation:MemeDetailScreen.kt$ </ID>
+    <ID>Indentation:MemeDetailViewModel.kt$MemeDetailViewModel$ </ID>
+    <ID>Indentation:MlKitTextRecognizer.kt$MlKitTextRecognizer$ </ID>
+    <ID>Indentation:MoreChip.kt$ </ID>
+    <ID>Indentation:ObserveEmbeddingStatisticsUseCase.kt$ObserveEmbeddingStatisticsUseCase$ </ID>
+    <ID>Indentation:PreferencesDataStore.kt$PreferencesDataStore$ </ID>
+    <ID>Indentation:PreferencesDataStore.kt$PreferencesDataStore.Companion$ </ID>
+    <ID>Indentation:PreferencesDataStore.kt$PreferencesDataStore.PreferencesKeys$ </ID>
+    <ID>Indentation:QuickAccessSection.kt$ </ID>
+    <ID>Indentation:QuickShareBottomSheet.kt$ </ID>
+    <ID>Indentation:SearchBar.kt$ </ID>
+    <ID>Indentation:SearchDelegate.kt$SearchDelegate$ </ID>
+    <ID>Indentation:SearchDelegate.kt$SearchDelegate.Companion$ </ID>
+    <ID>Indentation:SearchRepositoryImpl.kt$SearchRepositoryImpl$ </ID>
+    <ID>Indentation:SearchRepositoryImpl.kt$SearchRepositoryImpl.Companion$ </ID>
+    <ID>Indentation:SearchResultsHeader.kt$ </ID>
+    <ID>Indentation:SearchUseCases.kt$EmojiSearchUseCase$ </ID>
+    <ID>Indentation:SearchUseCases.kt$GetSearchSuggestionsUseCase$ </ID>
+    <ID>Indentation:SearchUseCases.kt$HybridSearchUseCase$ </ID>
+    <ID>Indentation:SearchUseCases.kt$RecentSearchesUseCase$ </ID>
+    <ID>Indentation:SearchUseCases.kt$SearchUseCases$ </ID>
+    <ID>Indentation:SearchUseCases.kt$SemanticSearchUseCase$ </ID>
+    <ID>Indentation:SearchUseCases.kt$TextSearchUseCase$ </ID>
+    <ID>Indentation:SectionHeader.kt$ </ID>
+    <ID>Indentation:SettingsScreen.kt$ </ID>
+    <ID>Indentation:SettingsSection.kt$ </ID>
+    <ID>Indentation:SettingsUseCases.kt$ExportPreferencesUseCase$ </ID>
+    <ID>Indentation:SettingsUseCases.kt$GetAppPreferencesUseCase$ </ID>
+    <ID>Indentation:SettingsUseCases.kt$GetSharingPreferencesUseCase$ </ID>
+    <ID>Indentation:SettingsUseCases.kt$ImportPreferencesUseCase$ </ID>
+    <ID>Indentation:SettingsUseCases.kt$SetDarkModeUseCase$ </ID>
+    <ID>Indentation:SettingsUseCases.kt$SetDefaultFormatUseCase$ </ID>
+    <ID>Indentation:SettingsUseCases.kt$SetDefaultMaxDimensionUseCase$ </ID>
+    <ID>Indentation:SettingsUseCases.kt$SetDefaultQualityUseCase$ </ID>
+    <ID>Indentation:SettingsUseCases.kt$SetDynamicColorsUseCase$ </ID>
+    <ID>Indentation:SettingsUseCases.kt$SetEnableSemanticSearchUseCase$ </ID>
+    <ID>Indentation:SettingsUseCases.kt$SetGridDensityUseCase$ </ID>
+    <ID>Indentation:SettingsUseCases.kt$SetHoldToShareDelayUseCase$ </ID>
+    <ID>Indentation:SettingsUseCases.kt$SetSaveSearchHistoryUseCase$ </ID>
+    <ID>Indentation:SettingsUseCases.kt$SetStripMetadataUseCase$ </ID>
+    <ID>Indentation:SettingsUseCases.kt$SetUseNativeShareDialogUseCase$ </ID>
+    <ID>Indentation:SettingsViewModel.kt$SettingsViewModel$ </ID>
+    <ID>Indentation:ShareRepositoryImpl.kt$ShareRepositoryImpl$ </ID>
+    <ID>Indentation:ShareRepositoryImpl.kt$ShareRepositoryImpl.Companion$ </ID>
     <ID>Indentation:ShareScreen.kt$ </ID>
+    <ID>Indentation:ShareTargetRepositoryImpl.kt$ShareTargetRepositoryImpl$ </ID>
+    <ID>Indentation:ShareUseCases.kt$ShareUseCases$ </ID>
+    <ID>Indentation:ShareViewModel.kt$ShareViewModel$ </ID>
+    <ID>Indentation:SharingShortcutManager.kt$SharingShortcutManager$ </ID>
+    <ID>Indentation:SharingShortcutManager.kt$SharingShortcutManager.Companion$ </ID>
+    <ID>Indentation:SharingShortcutUpdater.kt$SharingShortcutUpdater$ </ID>
+    <ID>Indentation:SimpleEmbeddingGenerator.kt$SimpleEmbeddingGenerator$ </ID>
+    <ID>Indentation:SliderSettingItem.kt$ </ID>
+    <ID>Indentation:SwitchSettingItem.kt$ </ID>
+    <ID>Indentation:TestDataFactory.kt$TestDataFactory$ </ID>
+    <ID>Indentation:Typography.kt$ </ID>
+    <ID>Indentation:XmpMetadataHandler.kt$XmpMetadataHandler$ </ID>
+    <ID>Indentation:XmpMetadataHandler.kt$XmpMetadataHandler.Companion$ </ID>
+    <ID>Indentation:ZipImporter.kt$DefaultZipImporter$ </ID>
+    <ID>Indentation:ZipImporter.kt$DefaultZipImporter.Companion$ </ID>
     <ID>LongMethod:EditEmojiDialog.kt$@OptIn(ExperimentalLayoutApi::class) @Composable fun EditEmojiDialog( selectedEmojis: List&lt;String&gt;, onAddEmoji: (String) -&gt; Unit, onRemoveEmoji: (String) -&gt; Unit, onDismiss: () -&gt; Unit, modifier: Modifier = Modifier, )</ID>
     <ID>LongMethod:EmbeddingGemmaGenerator.kt$EmbeddingGemmaGenerator$private fun initializeEmbeddingModel()</ID>
+    <ID>LongMethod:EmbeddingGenerationWorker.kt$EmbeddingGenerationWorker$override suspend fun doWork(): Result</ID>
     <ID>LongMethod:EmojiChip.kt$@Composable fun EmojiChip( emojiTag: EmojiTag, modifier: Modifier = Modifier, onClick: (() -&gt; Unit)? = null, isSelected: Boolean = false, showName: Boolean = false, backgroundColor: Color? = null, )</ID>
+    <ID>LongMethod:GalleryScreen.kt$@Composable private fun ImportStatusBanner( status: ImportWorkStatus, onDismiss: () -&gt; Unit, modifier: Modifier = Modifier, )</ID>
     <ID>LongMethod:GalleryScreen.kt$@OptIn(ExperimentalFoundationApi::class) @Composable internal fun MemeGridItem( meme: Meme, isSelected: Boolean, isSelectionMode: Boolean, memeDescription: String, onIntent: (GalleryIntent) -&gt; Unit, )</ID>
-    <ID>LongMethod:GalleryScreen.kt$@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class) @Composable fun GalleryScreen( onNavigateToMeme: (Long) -&gt; Unit, onNavigateToImport: () -&gt; Unit, onNavigateToSettings: () -&gt; Unit, onNavigateToShare: (Long) -&gt; Unit = {}, viewModel: GalleryViewModel = hiltViewModel() )</ID>
+    <ID>LongMethod:GalleryScreen.kt$@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class) @Composable fun GalleryScreen( onNavigateToMeme: (Long) -&gt; Unit, onNavigateToImport: () -&gt; Unit, onNavigateToSettings: () -&gt; Unit, onNavigateToShare: (Long) -&gt; Unit = {}, viewModel: GalleryViewModel = hiltViewModel(), )</ID>
     <ID>LongMethod:GalleryScreen.kt$@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class) @Composable private fun GalleryScreenContent( uiState: GalleryUiState, pagedMemes: LazyPagingItems&lt;Meme&gt;? = null, onIntent: (GalleryIntent) -&gt; Unit, onNavigateToMeme: (Long) -&gt; Unit, onNavigateToImport: () -&gt; Unit, onNavigateToSettings: () -&gt; Unit, snackbarHostState: SnackbarHostState, showDeleteDialog: Boolean, deleteCount: Int, showMenu: Boolean, onShowDeleteDialogChange: (Boolean) -&gt; Unit, onDeleteCountChange: (Int) -&gt; Unit, onShowMenuChange: (Boolean) -&gt; Unit, )</ID>
     <ID>LongMethod:HoldToShareContainer.kt$@Composable fun HoldToShareContainer( onTap: () -&gt; Unit, onHoldComplete: () -&gt; Unit, modifier: Modifier = Modifier, onLongPress: (() -&gt; Unit)? = null, content: @Composable BoxScope.() -&gt; Unit, )</ID>
     <ID>LongMethod:ImportRepositoryImpl.kt$ImportRepositoryImpl$override suspend fun importImage( uri: Uri, metadata: MemeMetadata?, ): Result&lt;Meme&gt;</ID>
     <ID>LongMethod:ImportScreen.kt$@Composable internal fun EmptyImportContent( onSelectImages: () -&gt; Unit, onImportBundle: () -&gt; Unit, modifier: Modifier = Modifier, )</ID>
     <ID>LongMethod:ImportScreen.kt$@Composable internal fun ImportProgressContent( progress: Float, total: Int, currentFileName: String?, isIndeterminate: Boolean, onCancel: () -&gt; Unit, modifier: Modifier = Modifier, )</ID>
-    <ID>LongMethod:ImportScreen.kt$@Composable private fun ImportImageCard( uri: Uri, emojis: List&lt;String&gt;, isSelected: Boolean, hasError: Boolean, onClick: () -&gt; Unit, onRemove: () -&gt; Unit, modifier: Modifier = Modifier, )</ID>
+    <ID>LongMethod:ImportScreen.kt$@Composable private fun ImportImageCard( uri: Uri, emojis: List&lt;String&gt;, isSelected: Boolean, hasError: Boolean, isProcessing: Boolean, onClick: () -&gt; Unit, onRemove: () -&gt; Unit, modifier: Modifier = Modifier, )</ID>
     <ID>LongMethod:ImportScreen.kt$@OptIn(ExperimentalLayoutApi::class) @Composable private fun EditImageSheet( imageUri: Uri, currentEmojis: List&lt;EmojiTag&gt;, suggestedEmojis: List&lt;EmojiTag&gt;, title: String, description: String, onEmojiToggle: (EmojiTag) -&gt; Unit, onTitleChange: (String) -&gt; Unit, onDescriptionChange: (String) -&gt; Unit, onApplySuggestions: () -&gt; Unit, onDone: () -&gt; Unit, modifier: Modifier = Modifier, )</ID>
-    <ID>LongMethod:ImportScreen.kt$@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class) @Composable fun ImportScreen( onNavigateBack: () -&gt; Unit, onImportComplete: () -&gt; Unit, viewModel: ImportViewModel = hiltViewModel(), )</ID>
+    <ID>LongMethod:ImportScreen.kt$@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class) @Composable fun ImportScreen( onNavigateBack: () -&gt; Unit, viewModel: ImportViewModel = hiltViewModel(), )</ID>
     <ID>LongMethod:ImportUseCases.kt$ImportZipBundleStreamingUseCase$operator fun invoke(zipUri: Uri): Flow&lt;ZipImportEvent&gt;</ID>
-    <ID>LongMethod:MemeCard.kt$@Composable fun MemeCard( meme: Meme, onClick: () -&gt; Unit, onFavoriteClick: () -&gt; Unit, modifier: Modifier = Modifier, showTitle: Boolean = true, showEmojis: Boolean = true )</ID>
+    <ID>LongMethod:ImportViewModel.kt$ImportViewModel$private suspend fun performImport(images: List&lt;ImportImage&gt;)</ID>
+    <ID>LongMethod:ImportWorker.kt$ImportWorker$override suspend fun doWork(): Result</ID>
+    <ID>LongMethod:MemeCard.kt$@Composable fun MemeCard( meme: Meme, onClick: () -&gt; Unit, onFavoriteClick: () -&gt; Unit, modifier: Modifier = Modifier, showTitle: Boolean = true, showEmojis: Boolean = true, )</ID>
     <ID>LongMethod:MemeCard.kt$@Composable fun MemeCardCompact( meme: Meme, modifier: Modifier = Modifier, onClick: (() -&gt; Unit)? = null, interactionSource: MutableInteractionSource? = null, )</ID>
     <ID>LongMethod:MemeDetailScreen.kt$@OptIn(ExperimentalLayoutApi::class) @Composable private fun MemeInfoSheet( uiState: MemeDetailUiState, onIntent: (MemeDetailIntent) -&gt; Unit, modifier: Modifier = Modifier, )</ID>
+    <ID>LongMethod:MemeDetailScreen.kt$@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class) @Composable fun MemeDetailScreen( onNavigateBack: () -&gt; Unit, onNavigateToShare: (Long) -&gt; Unit = {}, onNavigateToMeme: (Long) -&gt; Unit = {}, viewModel: MemeDetailViewModel = hiltViewModel(), )</ID>
     <ID>LongMethod:MemeDetailScreen.kt$@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class) @Composable private fun MemeDetailScreenContent( uiState: MemeDetailUiState, onIntent: (MemeDetailIntent) -&gt; Unit, onNavigateBack: () -&gt; Unit, snackbarHostState: SnackbarHostState, zoomState: ZoomState, )</ID>
+    <ID>LongMethod:Migrations.kt$&lt;no name provided&gt;$override fun migrate(db: SupportSQLiteDatabase)</ID>
+    <ID>LongMethod:QuickShareBottomSheet.kt$@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class) @Composable fun QuickShareBottomSheet( meme: Meme, frequentTargets: List&lt;ShareTarget&gt;, onTargetSelected: (ShareTarget) -&gt; Unit, onMoreClick: () -&gt; Unit, onCopyToClipboard: () -&gt; Unit, onDismiss: () -&gt; Unit, modifier: Modifier = Modifier, )</ID>
+    <ID>LongMethod:SearchBar.kt$@Composable fun SearchBar( query: String, onQueryChange: (String) -&gt; Unit, onSearch: () -&gt; Unit, modifier: Modifier = Modifier, placeholder: String? = null, autoFocus: Boolean = false, )</ID>
+    <ID>LongMethod:SettingsScreen.kt$@Composable fun SettingsScreen( onNavigateBack: () -&gt; Unit, viewModel: SettingsViewModel = hiltViewModel(), )</ID>
     <ID>LongMethod:SettingsScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun SettingsScreen( uiState: SettingsUiState, onIntent: (SettingsIntent) -&gt; Unit, onNavigateBack: () -&gt; Unit, snackbarHostState: SnackbarHostState = remember { SnackbarHostState() }, )</ID>
     <ID>LongMethod:ShareScreen.kt$@Composable private fun ShareContent( uiState: ShareUiState, onIntent: (ShareIntent) -&gt; Unit, modifier: Modifier = Modifier, )</ID>
     <ID>LongMethod:ShareScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun ShareScreen( onNavigateBack: () -&gt; Unit, viewModel: ShareViewModel = hiltViewModel(), )</ID>
+    <ID>LongMethod:XmpMetadataHandler.kt$XmpMetadataHandler$private fun generateXmpPacket(metadata: MemeMetadata): String</ID>
     <ID>LongMethod:ZipImporter.kt$DefaultZipImporter$override fun extractBundleStream(zipUri: Uri): Flow&lt;ZipExtractionEvent&gt;</ID>
     <ID>LongMethod:ZipImporter.kt$DefaultZipImporter$override suspend fun extractBundle(zipUri: Uri): ZipExtractionResult</ID>
     <ID>LongParameterList:GalleryScreen.kt$( uiState: GalleryUiState, pagedMemes: LazyPagingItems&lt;Meme&gt;? = null, onIntent: (GalleryIntent) -&gt; Unit, onNavigateToMeme: (Long) -&gt; Unit, onNavigateToImport: () -&gt; Unit, onNavigateToSettings: () -&gt; Unit, snackbarHostState: SnackbarHostState, showDeleteDialog: Boolean, deleteCount: Int, showMenu: Boolean, onShowDeleteDialogChange: (Boolean) -&gt; Unit, onDeleteCountChange: (Int) -&gt; Unit, onShowMenuChange: (Boolean) -&gt; Unit, )</ID>
     <ID>LongParameterList:GalleryViewModel.kt$GalleryViewModel$( @ApplicationContext private val context: Context, private val getMemesUseCase: GetMemesUseCase, private val getPagedMemesUseCase: GetPagedMemesUseCase, private val getFavoritesUseCase: GetFavoritesUseCase, private val getMemesByEmojiUseCase: GetMemesByEmojiUseCase, private val getMemeByIdUseCase: GetMemeByIdUseCase, private val deleteMemeUseCase: DeleteMemesUseCase, private val toggleFavoriteUseCase: ToggleFavoriteUseCase, private val getAllMemeIdsUseCase: GetAllMemeIdsUseCase, private val getSuggestionsUseCase: GetSuggestionsUseCase, private val shareTargetRepository: com.adsamcik.riposte.core.database.repository.ShareTargetRepository, @DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher, private val preferencesDataStore: PreferencesDataStore, val searchDelegate: SearchDelegate, )</ID>
     <ID>LongParameterList:ImportScreen.kt$( imageUri: Uri, currentEmojis: List&lt;EmojiTag&gt;, suggestedEmojis: List&lt;EmojiTag&gt;, title: String, description: String, onEmojiToggle: (EmojiTag) -&gt; Unit, onTitleChange: (String) -&gt; Unit, onDescriptionChange: (String) -&gt; Unit, onApplySuggestions: () -&gt; Unit, onDone: () -&gt; Unit, modifier: Modifier = Modifier, )</ID>
-    <ID>LongParameterList:ImportScreen.kt$( uri: Uri, emojis: List&lt;String&gt;, isSelected: Boolean, hasError: Boolean, onClick: () -&gt; Unit, onRemove: () -&gt; Unit, modifier: Modifier = Modifier, )</ID>
-    <ID>LongParameterList:ImportViewModel.kt$ImportViewModel$( @param:ApplicationContext private val context: Context, private val importImageUseCase: ImportImageUseCase, private val suggestEmojisUseCase: SuggestEmojisUseCase, private val extractTextUseCase: ExtractTextUseCase, private val extractZipForPreviewUseCase: ExtractZipForPreviewUseCase, private val checkDuplicateUseCase: CheckDuplicateUseCase, private val cleanupExtractedFilesUseCase: CleanupExtractedFilesUseCase, private val userActionTracker: UserActionTracker, private val preferencesDataStore: PreferencesDataStore, )</ID>
-    <ID>LongParameterList:MemeDetailViewModel.kt$MemeDetailViewModel$( @ApplicationContext private val context: Context, savedStateHandle: SavedStateHandle, private val getMemeByIdUseCase: GetMemeByIdUseCase, private val updateMemeUseCase: UpdateMemeUseCase, private val deleteMemeUseCase: DeleteMemesUseCase, private val toggleFavoriteUseCase: ToggleFavoriteUseCase, private val recordMemeViewUseCase: RecordMemeViewUseCase, private val getSimilarMemesUseCase: GetSimilarMemesUseCase, private val userActionTracker: UserActionTracker, )</ID>
-    <ID>LongParameterList:SettingsViewModel.kt$SettingsViewModel$( @param:ApplicationContext private val context: Context, private val getAppPreferencesUseCase: GetAppPreferencesUseCase, private val getSharingPreferencesUseCase: GetSharingPreferencesUseCase, private val setDarkModeUseCase: SetDarkModeUseCase, private val setDynamicColorsUseCase: SetDynamicColorsUseCase, private val setEnableSemanticSearchUseCase: SetEnableSemanticSearchUseCase, private val setSaveSearchHistoryUseCase: SetSaveSearchHistoryUseCase, private val setUseNativeShareDialogUseCase: SetUseNativeShareDialogUseCase, private val setDefaultFormatUseCase: SetDefaultFormatUseCase, private val setDefaultQualityUseCase: SetDefaultQualityUseCase, private val setDefaultMaxDimensionUseCase: SetDefaultMaxDimensionUseCase, private val setGridDensityUseCase: SetGridDensityUseCase, private val exportPreferencesUseCase: ExportPreferencesUseCase, private val importPreferencesUseCase: ImportPreferencesUseCase, @IoDispatcher private val ioDispatcher: CoroutineDispatcher, )</ID>
+    <ID>LongParameterList:ImportScreen.kt$( uri: Uri, emojis: List&lt;String&gt;, isSelected: Boolean, hasError: Boolean, isProcessing: Boolean, onClick: () -&gt; Unit, onRemove: () -&gt; Unit, modifier: Modifier = Modifier, )</ID>
+    <ID>LongParameterList:ImportViewModel.kt$ImportViewModel$( @param:ApplicationContext private val context: Context, private val importImageUseCase: ImportImageUseCase, private val suggestEmojisUseCase: SuggestEmojisUseCase, private val extractTextUseCase: ExtractTextUseCase, private val extractZipForPreviewUseCase: ExtractZipForPreviewUseCase, private val checkDuplicateUseCase: CheckDuplicateUseCase, private val findDuplicateMemeIdUseCase: FindDuplicateMemeIdUseCase, private val updateMemeMetadataUseCase: UpdateMemeMetadataUseCase, private val cleanupExtractedFilesUseCase: CleanupExtractedFilesUseCase, private val userActionTracker: UserActionTracker, private val preferencesDataStore: PreferencesDataStore, private val importStagingManager: ImportStagingManager, private val importRequestDao: ImportRequestDao, )</ID>
+    <ID>LongParameterList:MemeDetailViewModel.kt$MemeDetailViewModel$( @ApplicationContext private val context: Context, savedStateHandle: SavedStateHandle, private val getMemeByIdUseCase: GetMemeByIdUseCase, private val updateMemeUseCase: UpdateMemeUseCase, private val deleteMemeUseCase: DeleteMemesUseCase, private val toggleFavoriteUseCase: ToggleFavoriteUseCase, private val recordMemeViewUseCase: RecordMemeViewUseCase, private val getSimilarMemesUseCase: GetSimilarMemesUseCase, private val userActionTracker: UserActionTracker, private val preferencesDataStore: PreferencesDataStore, private val shareTargetRepository: ShareTargetRepository, )</ID>
+    <ID>LongParameterList:QuickShareBottomSheet.kt$( meme: Meme, frequentTargets: List&lt;ShareTarget&gt;, onTargetSelected: (ShareTarget) -&gt; Unit, onMoreClick: () -&gt; Unit, onCopyToClipboard: () -&gt; Unit, onDismiss: () -&gt; Unit, modifier: Modifier = Modifier, )</ID>
+    <ID>LongParameterList:SettingsViewModel.kt$SettingsViewModel$( @param:ApplicationContext private val context: Context, private val getAppPreferencesUseCase: GetAppPreferencesUseCase, private val getSharingPreferencesUseCase: GetSharingPreferencesUseCase, private val setDarkModeUseCase: SetDarkModeUseCase, private val setDynamicColorsUseCase: SetDynamicColorsUseCase, private val setEnableSemanticSearchUseCase: SetEnableSemanticSearchUseCase, private val setSaveSearchHistoryUseCase: SetSaveSearchHistoryUseCase, private val setUseNativeShareDialogUseCase: SetUseNativeShareDialogUseCase, private val setDefaultFormatUseCase: SetDefaultFormatUseCase, private val setDefaultQualityUseCase: SetDefaultQualityUseCase, private val setDefaultMaxDimensionUseCase: SetDefaultMaxDimensionUseCase, private val setStripMetadataUseCase: SetStripMetadataUseCase, private val setGridDensityUseCase: SetGridDensityUseCase, private val exportPreferencesUseCase: ExportPreferencesUseCase, private val importPreferencesUseCase: ImportPreferencesUseCase, private val observeEmbeddingStatisticsUseCase: ObserveEmbeddingStatisticsUseCase, private val crashLogManager: CrashLogManager, @IoDispatcher private val ioDispatcher: CoroutineDispatcher, )</ID>
+    <ID>LoopWithTooManyJumpStatements:ImportViewModel.kt$ImportViewModel$for</ID>
     <ID>LoopWithTooManyJumpStatements:QuickShareBottomSheet.kt$for</ID>
     <ID>LoopWithTooManyJumpStatements:ZipImporter.kt$DefaultZipImporter$while</ID>
     <ID>MagicNumber:BaselineProfileGenerator.kt$BaselineProfileGenerator$0.5f</ID>
@@ -219,7 +251,6 @@
     <ID>MagicNumber:EmbeddingModelVersionManager.kt$EmbeddingModelVersionManager$128</ID>
     <ID>MagicNumber:EmbeddingModelVersionManager.kt$EmbeddingModelVersionManager$512</ID>
     <ID>MagicNumber:EmbeddingModelVersionManager.kt$EmbeddingModelVersionManager$768</ID>
-    <ID>MagicNumber:EmbeddingUtils.kt$EmbeddingUtils$16</ID>
     <ID>MagicNumber:EmojiFilterRail.kt$10</ID>
     <ID>MagicNumber:EmojiFilterRail.kt$12</ID>
     <ID>MagicNumber:EmojiFilterRail.kt$15</ID>
@@ -251,6 +282,7 @@
     <ID>MagicNumber:GalleryScreen.kt$3</ID>
     <ID>MagicNumber:GalleryScreen.kt$50</ID>
     <ID>MagicNumber:GalleryScreen.kt$800L</ID>
+    <ID>MagicNumber:GalleryViewModel.kt$GalleryViewModel$5000L</ID>
     <ID>MagicNumber:GalleryViewModel.kt$GalleryViewModel.Companion$0.5</ID>
     <ID>MagicNumber:GalleryViewModel.kt$GalleryViewModel.Companion$3.0</ID>
     <ID>MagicNumber:GalleryViewModel.kt$GalleryViewModel.Companion$5.0</ID>
@@ -265,7 +297,6 @@
     <ID>MagicNumber:ImportRepositoryImpl.kt$ImportRepositoryImpl$80</ID>
     <ID>MagicNumber:ImportRepositoryImpl.kt$ImportRepositoryImpl$8192</ID>
     <ID>MagicNumber:ImportRepositoryImpl.kt$ImportRepositoryImpl$90</ID>
-    <ID>MagicNumber:ImportScreen.kt$0.25f</ID>
     <ID>MagicNumber:ImportScreen.kt$100</ID>
     <ID>MagicNumber:ImportScreen.kt$3</ID>
     <ID>MagicNumber:ImportViewModel.kt$ImportViewModel$5</ID>
@@ -279,6 +310,8 @@
     <ID>MagicNumber:MemeDetailScreen.kt$1024.0</ID>
     <ID>MagicNumber:MemeDetailScreen.kt$120f</ID>
     <ID>MagicNumber:MemeDetailScreen.kt$280f</ID>
+    <ID>MagicNumber:Migrations.kt$&lt;no name provided&gt;$3</ID>
+    <ID>MagicNumber:Migrations.kt$&lt;no name provided&gt;$4</ID>
     <ID>MagicNumber:PreferencesDataStore.kt$PreferencesDataStore$10</ID>
     <ID>MagicNumber:PreferencesDataStore.kt$PreferencesDataStore$4</ID>
     <ID>MagicNumber:QuickShareBottomSheet.kt$10f</ID>
@@ -290,6 +323,10 @@
     <ID>MagicNumber:SearchRepositoryImpl.kt$SearchRepositoryImpl$0.5f</ID>
     <ID>MagicNumber:SearchRepositoryImpl.kt$SearchRepositoryImpl$10</ID>
     <ID>MagicNumber:SearchRepositoryImpl.kt$SearchRepositoryImpl$4</ID>
+    <ID>MagicNumber:SettingsScreen.kt$1080</ID>
+    <ID>MagicNumber:SettingsScreen.kt$2048</ID>
+    <ID>MagicNumber:SettingsScreen.kt$480</ID>
+    <ID>MagicNumber:SettingsScreen.kt$720</ID>
     <ID>MagicNumber:SettingsViewModel.kt$SettingsViewModel$1024</ID>
     <ID>MagicNumber:SettingsViewModel.kt$SettingsViewModel$1024.0</ID>
     <ID>MagicNumber:SettingsViewModel.kt$SettingsViewModel$1_048_576</ID>
@@ -299,14 +336,9 @@
     <ID>MagicNumber:ShareScreen.kt$0.4f</ID>
     <ID>MagicNumber:ShareScreen.kt$100</ID>
     <ID>MagicNumber:ShareScreen.kt$1024f</ID>
-    <ID>MagicNumber:ShareScreen.kt$1080</ID>
-    <ID>MagicNumber:ShareScreen.kt$2048</ID>
-    <ID>MagicNumber:ShareScreen.kt$480</ID>
     <ID>MagicNumber:ShareScreen.kt$500</ID>
-    <ID>MagicNumber:ShareScreen.kt$720</ID>
     <ID>MagicNumber:ShareUiState.kt$ShareUiState$1024</ID>
     <ID>MagicNumber:ShareUiState.kt$ShareUiState$1024.0</ID>
-    <ID>MagicNumber:ShareViewModel.kt$ShareViewModel$300</ID>
     <ID>MagicNumber:SimpleEmbeddingGenerator.kt$SimpleEmbeddingGenerator$0.5f</ID>
     <ID>MagicNumber:SimpleEmbeddingGenerator.kt$SimpleEmbeddingGenerator$0xFF</ID>
     <ID>MagicNumber:SimpleEmbeddingGenerator.kt$SimpleEmbeddingGenerator$127.5f</ID>
@@ -330,215 +362,57 @@
     <ID>MagicNumber:ZipImporter.kt$DefaultZipImporter$1024</ID>
     <ID>MagicNumber:ZipImporter.kt$DefaultZipImporter$8192</ID>
     <ID>MaxLineLength:BaselineProfileGenerator.kt$BaselineProfileGenerator$*</ID>
-    <ID>MaxLineLength:EmbeddingGemmaGenerator.kt$EmbeddingGemmaGenerator.Companion$"mt6989" to "embeddinggemma-300M_seq512_mixed-precision.mediatek.mt6991.tflite"</ID>
-    <ID>MaxLineLength:GalleryScreen.kt$Icon(Icons.Default.Close, contentDescription = stringResource(R.string.gallery_cd_cancel_selection))</ID>
-    <ID>MaxLineLength:GalleryScreen.kt$Icon(Icons.Default.Close, contentDescription = stringResource(R.string.gallery_cd_clear_filter))</ID>
-    <ID>MaxLineLength:GalleryScreen.kt$Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.gallery_cd_more_options))</ID>
-    <ID>MaxLineLength:GalleryScreen.kt$Icon(Icons.Default.SelectAll, contentDescription = stringResource(R.string.gallery_cd_select_all))</ID>
-    <ID>MaxLineLength:GalleryScreen.kt$Text(pluralStringResource(R.plurals.gallery_selected_count, uiState.selectionCount, uiState.selectionCount))</ID>
-    <ID>MaxLineLength:GalleryScreen.kt$context.startActivity(android.content.Intent.createChooser(effect.intent, context.getString(R.string.gallery_share_chooser_title)))</ID>
-    <ID>MaxLineLength:GalleryScreen.kt$message = stringResource(com.adsamcik.riposte.core.search.R.string.search_no_results_description, uiState.searchState.query)</ID>
-    <ID>MaxLineLength:GalleryScreen.kt$previewMeme.copy(id = 2L, title = "Surprised Pikachu", emojiTags = listOf(com.adsamcik.riposte.core.model.EmojiTag.fromEmoji("😮")))</ID>
-    <ID>MaxLineLength:GalleryScreen.kt$title = stringResource(com.adsamcik.riposte.core.search.R.string.search_no_results_title)</ID>
-    <ID>MaxLineLength:GalleryScreen.kt$val</ID>
-    <ID>MaxLineLength:GalleryViewModel.kt$GalleryViewModel$_effects.send(GalleryEffect.ShowError(error.message ?: context.getString(R.string.gallery_snackbar_delete_failed)))</ID>
-    <ID>MaxLineLength:GalleryViewModel.kt$GalleryViewModel$_effects.send(GalleryEffect.ShowError(error.message ?: context.getString(R.string.gallery_snackbar_favorite_failed)))</ID>
-    <ID>MaxLineLength:GalleryViewModel.kt$GalleryViewModel$_effects.send(GalleryEffect.ShowSnackbar(context.getString(R.string.gallery_snackbar_deleted, pendingDeleteIds.size)))</ID>
-    <ID>MaxLineLength:ImportScreen.kt$Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.import_content_description_back))</ID>
-    <ID>MaxLineLength:ImportScreen.kt$Icon(Icons.Default.Check, contentDescription = stringResource(R.string.import_content_description_confirm_import))</ID>
-    <ID>MaxLineLength:ImportScreen.kt$Text(pluralStringResource(R.plurals.import_button_import_memes, uiState.selectedImages.size, uiState.selectedImages.size))</ID>
-    <ID>MaxLineLength:ImportScreen.kt$backgroundColor = if (currentEmojis.contains(emojiTag)) MaterialTheme.colorScheme.primaryContainer else null</ID>
-    <ID>MaxLineLength:ImportScreen.kt$text = pluralStringResource(R.plurals.import_selected_count_plural, uiState.selectedImages.size, uiState.selectedImages.size)</ID>
-    <ID>MaxLineLength:MemeDetailScreen.kt$contentDescription = if (uiState.isEditMode) stringResource(R.string.gallery_cd_cancel_edit) else stringResource(R.string.gallery_cd_edit)</ID>
-    <ID>MaxLineLength:MemeDetailScreen.kt$context.startActivity(Intent.createChooser(effect.intent, context.getString(R.string.gallery_share_chooser_title)))</ID>
-    <ID>MaxLineLength:MemeDetailScreen.kt$text = if (uiState.isEditMode) stringResource(R.string.gallery_detail_action_cancel) else stringResource(R.string.gallery_detail_action_edit)</ID>
-    <ID>MaxLineLength:MemeDetailScreen.kt$text = stringResource(R.string.gallery_detail_label_imported, java.time.Instant.ofEpochMilli(meme.importedAt).atZone(java.time.ZoneId.systemDefault()).format(dateFormatter))</ID>
-    <ID>MaxLineLength:MemeDetailViewModel.kt$MemeDetailViewModel$_effects.send(MemeDetailEffect.ShowSnackbar(context.getString(R.string.gallery_snackbar_changes_saved)))</ID>
-    <ID>MaxLineLength:MemeDetailViewModel.kt$MemeDetailViewModel$_effects.send(MemeDetailEffect.ShowSnackbar(context.getString(R.string.gallery_snackbar_delete_failed)))</ID>
-    <ID>MaxLineLength:MemeDetailViewModel.kt$MemeDetailViewModel$_effects.send(MemeDetailEffect.ShowSnackbar(context.getString(R.string.gallery_snackbar_favorite_failed)))</ID>
-    <ID>MaxLineLength:MemeDetailViewModel.kt$MemeDetailViewModel$_effects.send(MemeDetailEffect.ShowSnackbar(context.getString(R.string.gallery_snackbar_meme_deleted)))</ID>
-    <ID>MaxLineLength:MemeDetailViewModel.kt$MemeDetailViewModel$_effects.send(MemeDetailEffect.ShowSnackbar(context.getString(R.string.gallery_snackbar_save_failed)))</ID>
-    <ID>MaxLineLength:MemeDetailViewModel.kt$MemeDetailViewModel$_effects.send(MemeDetailEffect.ShowSnackbar(context.getString(R.string.gallery_snackbar_save_or_discard)))</ID>
-    <ID>MaxLineLength:MemeDetailViewModel.kt$MemeDetailViewModel$_effects.send(MemeDetailEffect.ShowSnackbar(context.getString(R.string.gallery_snackbar_unsaved_changes)))</ID>
-    <ID>MaxLineLength:MemeDetailViewModel.kt$MemeDetailViewModel$_uiState.update { it.copy(isLoading = false, errorMessage = context.getString(R.string.gallery_error_invalid_meme_id)) }</ID>
-    <ID>MaxLineLength:MemeDetailViewModel.kt$MemeDetailViewModel$_uiState.update { it.copy(isLoading = false, errorMessage = context.getString(R.string.gallery_error_meme_not_found)) }</ID>
-    <ID>MaxLineLength:SearchRepositoryImpl.kt$SearchRepositoryImpl$private</ID>
-    <ID>MaxLineLength:SettingsScreen.kt$Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.settings_navigate_back))</ID>
-    <ID>MaxLineLength:SettingsScreen.kt$UserDensityPreference.STANDARD -&gt; stringResource(R.string.settings_grid_density_standard)</ID>
-    <ID>MaxLineLength:SettingsViewModel.kt$SettingsViewModel$_effects.send(SettingsEffect.ShowSnackbar(context.getString(R.string.settings_snackbar_cache_clear_failed)))</ID>
-    <ID>MaxLineLength:SettingsViewModel.kt$SettingsViewModel$_effects.send(SettingsEffect.ShowSnackbar(context.getString(R.string.settings_snackbar_export_failed, e.message ?: "")))</ID>
-    <ID>MaxLineLength:SettingsViewModel.kt$SettingsViewModel$_effects.send(SettingsEffect.ShowSnackbar(context.getString(R.string.settings_snackbar_export_success, "")))</ID>
-    <ID>MaxLineLength:SettingsViewModel.kt$SettingsViewModel$_effects.send(SettingsEffect.ShowSnackbar(context.getString(R.string.settings_snackbar_import_failed, e.message ?: "")))</ID>
-    <ID>MaxLineLength:SettingsViewModel.kt$SettingsViewModel$context.getString(R.string.settings_snackbar_import_failed, result.exceptionOrNull()?.message ?: "")</ID>
-    <ID>MaxLineLength:ShareScreen.kt$Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.share_navigation_back))</ID>
-    <ID>MaxLineLength:ShareViewModel.kt$ShareViewModel$_effects.send(ShareEffect.ShowError(error.message ?: context.getString(R.string.share_error_share_failed)))</ID>
-    <ID>MaxLineLength:ShareViewModel.kt$ShareViewModel$_effects.send(ShareEffect.ShowError(error.message ?: context.getString(R.string.share_snackbar_save_failed)))</ID>
-    <ID>MaxLineLength:ShareViewModel.kt$ShareViewModel$_effects.send(ShareEffect.ShowSnackbar(context.getString(R.string.share_snackbar_saved_to_gallery)))</ID>
-    <ID>MaxLineLength:ShareViewModel.kt$ShareViewModel$_uiState.update { it.copy(isLoading = false, errorMessage = context.getString(R.string.share_error_meme_not_found)) }</ID>
-    <ID>MaxLineLength:XmpMetadataHandler.kt$XmpMetadataHandler$appendLine(""" &lt;$XMP_PREFIX:schemaVersion&gt;${escapeXml(metadata.schemaVersion)}&lt;/$XMP_PREFIX:schemaVersion&gt;""")</ID>
-    <ID>MaxLineLength:XmpMetadataHandler.kt$XmpMetadataHandler$val blockRegex = Regex("""&lt;$XMP_PREFIX:emojis&gt;\s*&lt;rdf:Bag&gt;(.*?)&lt;/rdf:Bag&gt;\s*&lt;/$XMP_PREFIX:emojis&gt;""", RegexOption.DOT_MATCHES_ALL)</ID>
-    <ID>MaxLineLength:XmpMetadataHandler.kt$XmpMetadataHandler$val blockRegex = Regex("""&lt;$XMP_PREFIX:tags&gt;\s*&lt;rdf:Bag&gt;(.*?)&lt;/rdf:Bag&gt;\s*&lt;/$XMP_PREFIX:tags&gt;""", RegexOption.DOT_MATCHES_ALL)</ID>
-    <ID>MaxLineLength:ZipImporter.kt$DefaultZipImporter$emit(ZipExtractionEvent.Error("bundle", "Too many entries in ZIP (limit: $MAX_ENTRY_COUNT)"))</ID>
-    <ID>MaxLineLength:ZipImporter.kt$DefaultZipImporter$emit(ZipExtractionEvent.Error(entryName, "File size limit exceeded"))</ID>
-    <ID>MaxLineLength:ZipImporter.kt$DefaultZipImporter$emit(ZipExtractionEvent.Error(entryName, "Path traversal attempt blocked"))</ID>
-    <ID>MaxLineLength:ZipImporter.kt$DefaultZipImporter$errors[entryName] = "File size limit exceeded (max: ${MAX_SINGLE_FILE_SIZE / 1024 / 1024}MB)"</ID>
-    <ID>MaximumLineLength:EmbeddingGemmaGenerator.kt$EmbeddingGemmaGenerator.Companion$ </ID>
-    <ID>MaximumLineLength:GalleryScreen.kt$ </ID>
-    <ID>MaximumLineLength:GalleryViewModel.kt$GalleryViewModel$ </ID>
-    <ID>MaximumLineLength:ImportScreen.kt$ </ID>
-    <ID>MaximumLineLength:MemeDetailScreen.kt$ </ID>
-    <ID>MaximumLineLength:MemeDetailViewModel.kt$MemeDetailViewModel$ </ID>
-    <ID>MaximumLineLength:SearchRepositoryImpl.kt$SearchRepositoryImpl$ </ID>
-    <ID>MaximumLineLength:SettingsScreen.kt$ </ID>
-    <ID>MaximumLineLength:SettingsViewModel.kt$SettingsViewModel$ </ID>
-    <ID>MaximumLineLength:ShareScreen.kt$ </ID>
-    <ID>MaximumLineLength:ShareViewModel.kt$ShareViewModel$ </ID>
-    <ID>MaximumLineLength:XmpMetadataHandler.kt$XmpMetadataHandler$ </ID>
-    <ID>MaximumLineLength:ZipImporter.kt$DefaultZipImporter$ </ID>
-    <ID>MultiLineIfElse:GalleryScreen.kt$emptyMap()</ID>
-    <ID>MultiLineIfElse:ImportRepositoryImpl.kt$ImportRepositoryImpl$null</ID>
-    <ID>MultiLineIfElse:MemeDetailViewModel.kt$MemeDetailViewModel$context.getString(R.string.gallery_snackbar_added_to_favorites)</ID>
-    <ID>MultiLineIfElse:MemeDetailViewModel.kt$MemeDetailViewModel$context.getString(R.string.gallery_snackbar_removed_from_favorites)</ID>
-    <ID>MultiLineIfElse:ShareUiState.kt$ShareUiState$0f</ID>
     <ID>NestedBlockDepth:SettingsViewModel.kt$SettingsViewModel$private fun tryReadZipSettings(bytes: ByteArray): String?</ID>
     <ID>NestedBlockDepth:UriExtensions.kt$fun Uri.getFileName(context: Context): String?</ID>
     <ID>NestedBlockDepth:UriExtensions.kt$fun Uri.getFileSize(context: Context): Long</ID>
-    <ID>NoMultipleSpaces:Color.kt$ </ID>
-    <ID>NoMultipleSpaces:EmbeddingGemmaGenerator.kt$EmbeddingGemmaGenerator.Companion$ </ID>
-    <ID>NoMultipleSpaces:EmojiUtils.kt$ </ID>
-    <ID>NoMultipleSpaces:QuickShareBottomSheet.kt$ </ID>
-    <ID>NoTrailingSpaces:AppConstants.kt$AppConstants$ </ID>
-    <ID>NoTrailingSpaces:BaselineProfileGenerator.kt$BaselineProfileGenerator$ </ID>
-    <ID>NoTrailingSpaces:DefaultEmbeddingWorkRepository.kt$DefaultEmbeddingWorkRepository$ </ID>
-    <ID>NoTrailingSpaces:EmbeddingGemmaGenerator.kt$EmbeddingGemmaGenerator$ </ID>
-    <ID>NoTrailingSpaces:EmbeddingGenerationWorker.kt$EmbeddingGenerationWorker$ </ID>
-    <ID>NoTrailingSpaces:EmbeddingGenerationWorker.kt$EmbeddingGenerationWorker.Companion$ </ID>
-    <ID>NoTrailingSpaces:EmbeddingGenerationWorker.kt$EmbeddingWorkRepository$ </ID>
-    <ID>NoTrailingSpaces:EmbeddingGenerator.kt$EmbeddingGenerator$ </ID>
-    <ID>NoTrailingSpaces:EmbeddingManager.kt$EmbeddingManager$ </ID>
-    <ID>NoTrailingSpaces:EmbeddingManager.kt$EmbeddingStatistics$ </ID>
-    <ID>NoTrailingSpaces:EmbeddingModelVersionManager.kt$EmbeddingModelVersionManager$ </ID>
-    <ID>NoTrailingSpaces:EmbeddingModelVersionManager.kt$EmbeddingModelVersionManager.Companion$ </ID>
-    <ID>NoTrailingSpaces:EmojiTagEntity.kt$EmojiTagEntity$ </ID>
-    <ID>NoTrailingSpaces:FakeMemeRepository.kt$FakeMemeRepository$ </ID>
-    <ID>NoTrailingSpaces:FakeMlComponents.kt$FakeEmbeddingGenerator$ </ID>
-    <ID>NoTrailingSpaces:FakeMlComponents.kt$FakeSemanticSearchEngine$ </ID>
-    <ID>NoTrailingSpaces:FakeMlComponents.kt$FakeTextRecognizer$ </ID>
-    <ID>NoTrailingSpaces:FakePreferencesDataStore.kt$FakePreferencesDataStore$ </ID>
-    <ID>NoTrailingSpaces:GalleryRepository.kt$GalleryRepository$ </ID>
-    <ID>NoTrailingSpaces:GalleryRepositoryImpl.kt$GalleryRepositoryImpl$ </ID>
-    <ID>NoTrailingSpaces:GalleryScreen.kt$ </ID>
-    <ID>NoTrailingSpaces:GalleryUseCases.kt$DeleteMemesUseCase$ </ID>
-    <ID>NoTrailingSpaces:GalleryViewModel.kt$GalleryViewModel$ </ID>
-    <ID>NoTrailingSpaces:ImageProcessor.kt$ImageProcessor$ </ID>
-    <ID>NoTrailingSpaces:ImportRepository.kt$ImportRepository$ </ID>
-    <ID>NoTrailingSpaces:MainActivity.kt$MainActivity$ </ID>
-    <ID>NoTrailingSpaces:Meme.kt$Meme$ </ID>
-    <ID>NoTrailingSpaces:MemeCard.kt$ </ID>
-    <ID>NoTrailingSpaces:MemeDatabase.kt$MemeDatabase$ </ID>
-    <ID>NoTrailingSpaces:MemeDetailViewModel.kt$MemeDetailViewModel$ </ID>
-    <ID>NoTrailingSpaces:MemeEmbeddingDao.kt$MemeEmbeddingDao$ </ID>
-    <ID>NoTrailingSpaces:MemeEmbeddingEntity.kt$MemeEmbeddingEntity$ </ID>
-    <ID>NoTrailingSpaces:MemeEmbeddingEntity.kt$MemeEmbeddingEntity.Companion$ </ID>
-    <ID>NoTrailingSpaces:MemeEntity.kt$MemeEntity$ </ID>
-    <ID>NoTrailingSpaces:MemeFtsEntity.kt$MemeFtsEntity$ </ID>
-    <ID>NoTrailingSpaces:MemeMapper.kt$MemeMapper$ </ID>
-    <ID>NoTrailingSpaces:MemeMetadata.kt$LocalizedContent$ </ID>
-    <ID>NoTrailingSpaces:MemeMetadata.kt$MemeMetadata$ </ID>
-    <ID>NoTrailingSpaces:MemeMetadata.kt$MemeMetadata.Companion$ </ID>
-    <ID>NoTrailingSpaces:MemeSearchDao.kt$MemeSearchDao$ </ID>
-    <ID>NoTrailingSpaces:MlKitTextRecognizer.kt$MlKitTextRecognizer$ </ID>
-    <ID>NoTrailingSpaces:MoreChip.kt$ </ID>
-    <ID>NoTrailingSpaces:PreferencesDataStore.kt$PreferencesDataStore$ </ID>
-    <ID>NoTrailingSpaces:SearchDebugLogger.kt$SearchDebugLogger$ </ID>
-    <ID>NoTrailingSpaces:SearchRepository.kt$SearchRepository$ </ID>
-    <ID>NoTrailingSpaces:SearchRepositoryImpl.kt$SearchRepositoryImpl$ </ID>
-    <ID>NoTrailingSpaces:SearchResult.kt$MatchType$ </ID>
-    <ID>NoTrailingSpaces:SearchResult.kt$SearchResult$ </ID>
-    <ID>NoTrailingSpaces:SearchUseCases.kt$RecentSearchesUseCase$ </ID>
-    <ID>NoTrailingSpaces:SemanticSearchEngine.kt$SemanticSearchEngine$ </ID>
-    <ID>NoTrailingSpaces:ShareConfig.kt$ImageFormat.Companion$ </ID>
-    <ID>NoTrailingSpaces:ShareConfig.kt$ShareConfig$ </ID>
-    <ID>NoTrailingSpaces:ShareConfig.kt$ShareConfig.Companion$ </ID>
-    <ID>NoTrailingSpaces:ShareRepository.kt$ShareRepository$ </ID>
-    <ID>NoTrailingSpaces:ShareRepositoryImpl.kt$ShareRepositoryImpl$ </ID>
-    <ID>NoTrailingSpaces:ShareScreen.kt$ </ID>
-    <ID>NoTrailingSpaces:ShareViewModel.kt$ShareViewModel$ </ID>
-    <ID>NoTrailingSpaces:SharingPreferences.kt$SharingPreferences$ </ID>
-    <ID>NoTrailingSpaces:SimpleEmbeddingGenerator.kt$SimpleEmbeddingGenerator$ </ID>
-    <ID>NoTrailingSpaces:SliderSettingItem.kt$ </ID>
-    <ID>NoTrailingSpaces:SwitchSettingItem.kt$ </ID>
-    <ID>NoTrailingSpaces:TextRecognizer.kt$TextRecognizer$ </ID>
-    <ID>NoTrailingSpaces:XmpMetadataHandler.kt$XmpMetadataHandler$ </ID>
-    <ID>NoUnusedImports:EditEmojiDialog.kt$com.adsamcik.riposte.feature.gallery.presentation.component.EditEmojiDialog.kt</ID>
-    <ID>NoUnusedImports:EmbeddingGenerationWorker.kt$com.adsamcik.riposte.core.ml.worker.EmbeddingGenerationWorker.kt</ID>
-    <ID>NoUnusedImports:EmojiChip.kt$com.adsamcik.riposte.core.ui.component.EmojiChip.kt</ID>
-    <ID>NoUnusedImports:GalleryScreen.kt$com.adsamcik.riposte.feature.gallery.presentation.GalleryScreen.kt</ID>
-    <ID>NoUnusedImports:ImportScreen.kt$com.adsamcik.riposte.feature.import_feature.presentation.ImportScreen.kt</ID>
-    <ID>NoUnusedImports:MediaPipeEmbeddingGenerator.kt$com.adsamcik.riposte.core.ml.MediaPipeEmbeddingGenerator.kt</ID>
-    <ID>NoUnusedImports:MemeCard.kt$com.adsamcik.riposte.core.ui.component.MemeCard.kt</ID>
-    <ID>NoUnusedImports:MemeDao.kt$com.adsamcik.riposte.core.database.dao.MemeDao.kt</ID>
-    <ID>NoUnusedImports:MemeDetailScreen.kt$com.adsamcik.riposte.feature.gallery.presentation.MemeDetailScreen.kt</ID>
-    <ID>NoUnusedImports:MoreChip.kt$com.adsamcik.riposte.core.ui.component.MoreChip.kt</ID>
-    <ID>NoUnusedImports:QuickAccessSection.kt$com.adsamcik.riposte.core.ui.component.QuickAccessSection.kt</ID>
-    <ID>NoUnusedImports:QuickShareBottomSheet.kt$com.adsamcik.riposte.core.ui.component.QuickShareBottomSheet.kt</ID>
-    <ID>NoUnusedImports:SearchDebugLogger.kt$com.adsamcik.riposte.core.common.util.SearchDebugLogger.kt</ID>
-    <ID>NoUnusedImports:SearchDelegate.kt$com.adsamcik.riposte.feature.gallery.presentation.SearchDelegate.kt</ID>
-    <ID>NoUnusedImports:SettingsScreen.kt$com.adsamcik.riposte.feature.settings.presentation.SettingsScreen.kt</ID>
-    <ID>NoUnusedImports:ShareScreen.kt$com.adsamcik.riposte.feature.share.presentation.ShareScreen.kt</ID>
-    <ID>NoUnusedImports:ShareUiState.kt$com.adsamcik.riposte.feature.share.presentation.ShareUiState.kt</ID>
-    <ID>NoUnusedImports:SwitchSettingItem.kt$com.adsamcik.riposte.feature.settings.presentation.component.SwitchSettingItem.kt</ID>
-    <ID>NoUnusedImports:XmpMetadataHandler.kt$com.adsamcik.riposte.core.ml.XmpMetadataHandler.kt</ID>
-    <ID>NoUnusedImports:ZipImporter.kt$com.adsamcik.riposte.feature.import_feature.domain.ZipImporter.kt</ID>
     <ID>PackageName:ImportEffect.kt$package com.adsamcik.riposte.feature.import_feature.presentation</ID>
     <ID>PackageName:ImportIntent.kt$package com.adsamcik.riposte.feature.import_feature.presentation</ID>
     <ID>PackageName:ImportModule.kt$package com.adsamcik.riposte.feature.import_feature.di</ID>
     <ID>PackageName:ImportNavigation.kt$package com.adsamcik.riposte.feature.import_feature.navigation</ID>
+    <ID>PackageName:ImportNotificationManager.kt$package com.adsamcik.riposte.feature.import_feature.data.worker</ID>
     <ID>PackageName:ImportRepository.kt$package com.adsamcik.riposte.feature.import_feature.domain.repository</ID>
     <ID>PackageName:ImportRepositoryImpl.kt$package com.adsamcik.riposte.feature.import_feature.data</ID>
     <ID>PackageName:ImportScreen.kt$package com.adsamcik.riposte.feature.import_feature.presentation</ID>
+    <ID>PackageName:ImportStagingManager.kt$package com.adsamcik.riposte.feature.import_feature.data.worker</ID>
     <ID>PackageName:ImportUiState.kt$package com.adsamcik.riposte.feature.import_feature.presentation</ID>
     <ID>PackageName:ImportUseCases.kt$package com.adsamcik.riposte.feature.import_feature.domain.usecase</ID>
     <ID>PackageName:ImportViewModel.kt$package com.adsamcik.riposte.feature.import_feature.presentation</ID>
+    <ID>PackageName:ImportWorker.kt$package com.adsamcik.riposte.feature.import_feature.data.worker</ID>
     <ID>PackageName:ZipImporter.kt$package com.adsamcik.riposte.feature.import_feature.data</ID>
     <ID>PackageName:ZipImporter.kt$package com.adsamcik.riposte.feature.import_feature.domain</ID>
     <ID>PackageNaming:ImportEffect.kt$package com.adsamcik.riposte.feature.import_feature.presentation</ID>
     <ID>PackageNaming:ImportIntent.kt$package com.adsamcik.riposte.feature.import_feature.presentation</ID>
     <ID>PackageNaming:ImportModule.kt$package com.adsamcik.riposte.feature.import_feature.di</ID>
     <ID>PackageNaming:ImportNavigation.kt$package com.adsamcik.riposte.feature.import_feature.navigation</ID>
+    <ID>PackageNaming:ImportNotificationManager.kt$package com.adsamcik.riposte.feature.import_feature.data.worker</ID>
     <ID>PackageNaming:ImportRepository.kt$package com.adsamcik.riposte.feature.import_feature.domain.repository</ID>
     <ID>PackageNaming:ImportRepositoryImpl.kt$package com.adsamcik.riposte.feature.import_feature.data</ID>
     <ID>PackageNaming:ImportScreen.kt$package com.adsamcik.riposte.feature.import_feature.presentation</ID>
+    <ID>PackageNaming:ImportStagingManager.kt$package com.adsamcik.riposte.feature.import_feature.data.worker</ID>
     <ID>PackageNaming:ImportUiState.kt$package com.adsamcik.riposte.feature.import_feature.presentation</ID>
     <ID>PackageNaming:ImportUseCases.kt$package com.adsamcik.riposte.feature.import_feature.domain.usecase</ID>
     <ID>PackageNaming:ImportViewModel.kt$package com.adsamcik.riposte.feature.import_feature.presentation</ID>
+    <ID>PackageNaming:ImportWorker.kt$package com.adsamcik.riposte.feature.import_feature.data.worker</ID>
     <ID>PackageNaming:ZipImporter.kt$package com.adsamcik.riposte.feature.import_feature.data</ID>
     <ID>PackageNaming:ZipImporter.kt$package com.adsamcik.riposte.feature.import_feature.domain</ID>
-    <ID>PropertyWrapping:GalleryScreen.kt$val filteredMemeIndices = remember(pagedMemes.itemCount, uiState.activeEmojiFilters, suggestionIds) { val indices = if (uiState.activeEmojiFilters.isEmpty()) { (0 until pagedMemes.itemCount).toList() } else { (0 until pagedMemes.itemCount).filter { index -&gt; val meme = pagedMemes.peek(index) meme != null &amp;&amp; meme.emojiTags.any { it.emoji in uiState.activeEmojiFilters } } } // Exclude suggestions — they are shown first indices.filter { index -&gt; val meme = pagedMemes.peek(index) meme == null || meme.id !in suggestionIds } }</ID>
-    <ID>PropertyWrapping:XmpMetadataHandler.kt$XmpMetadataHandler$val blockRegex = Regex("""&lt;$XMP_PREFIX:emojis&gt;\s*&lt;rdf:Bag&gt;(.*?)&lt;/rdf:Bag&gt;\s*&lt;/$XMP_PREFIX:emojis&gt;""", RegexOption.DOT_MATCHES_ALL)</ID>
-    <ID>PropertyWrapping:XmpMetadataHandler.kt$XmpMetadataHandler$val blockRegex = Regex("""&lt;$XMP_PREFIX:tags&gt;\s*&lt;rdf:Bag&gt;(.*?)&lt;/rdf:Bag&gt;\s*&lt;/$XMP_PREFIX:tags&gt;""", RegexOption.DOT_MATCHES_ALL)</ID>
     <ID>ReturnCount:EmbeddingGemmaGenerator.kt$EmbeddingGemmaGenerator$private fun getModelPath(): String</ID>
     <ID>ReturnCount:EmbeddingGemmaGenerator.kt$EmbeddingGemmaGenerator.Companion$fun getBestModelFilename(): String</ID>
-    <ID>ReturnCount:FakeMlComponents.kt$FakeSemanticSearchEngine$suspend fun &lt;T&gt; findSimilar( queryEmbedding: FloatArray, candidates: List&lt;Pair&lt;T, FloatArray&gt;&gt;, topK: Int = 10, threshold: Float = 0.5f ): Result&lt;List&lt;Pair&lt;T, Float&gt;&gt;&gt;</ID>
+    <ID>ReturnCount:FakeMlComponents.kt$FakeSemanticSearchEngine$suspend fun &lt;T&gt; findSimilar( queryEmbedding: FloatArray, candidates: List&lt;Pair&lt;T, FloatArray&gt;&gt;, topK: Int = 10, threshold: Float = 0.5f, ): Result&lt;List&lt;Pair&lt;T, Float&gt;&gt;&gt;</ID>
     <ID>ReturnCount:FakeMlComponents.kt$FakeTextRecognizer$private suspend fun executeRecognition(textProvider: () -&gt; String): Result&lt;String&gt;</ID>
-    <ID>ReturnCount:FtsQuerySanitizer.kt$FtsQuerySanitizer$fun isValidSearchTerm(term: String, minLength: Int = DEFAULT_MIN_TERM_LENGTH): Boolean</ID>
+    <ID>ReturnCount:FtsQuerySanitizer.kt$FtsQuerySanitizer$fun isValidSearchTerm( term: String, minLength: Int = DEFAULT_MIN_TERM_LENGTH, ): Boolean</ID>
     <ID>ReturnCount:FtsQuerySanitizer.kt$FtsQuerySanitizer$fun prepareEmojiQuery( emoji: String, column: String = "emojiTagsJson", ): String</ID>
     <ID>ReturnCount:FtsQuerySanitizer.kt$FtsQuerySanitizer$fun prepareForColumns( query: String, columns: List&lt;String&gt;, minTermLength: Int = DEFAULT_MIN_TERM_LENGTH, maxTerms: Int = DEFAULT_MAX_TERMS, ): String</ID>
     <ID>ReturnCount:FtsQuerySanitizer.kt$FtsQuerySanitizer$fun prepareForMatch( query: String, minTermLength: Int = DEFAULT_MIN_TERM_LENGTH, maxTerms: Int = DEFAULT_MAX_TERMS, ): String</ID>
     <ID>ReturnCount:ImageProcessor.kt$ImageProcessor$fun processImage( sourcePath: String, config: ShareConfig, outputFile: File, ): ProcessResult</ID>
+    <ID>ReturnCount:ImportViewModel.kt$ImportViewModel$private suspend fun handleWorkInfoUpdate(workInfo: WorkInfo)</ID>
+    <ID>ReturnCount:ImportWorker.kt$ImportWorker$override suspend fun doWork(): Result</ID>
     <ID>ReturnCount:MediaPipeEmbeddingGenerator.kt$MediaPipeEmbeddingGenerator$private fun extractEmbedding(result: TextEmbedderResult): FloatArray</ID>
-    <ID>ReturnCount:SearchRepositoryImpl.kt$SearchRepositoryImpl$override suspend fun searchSemantic(query: String, limit: Int): List&lt;SearchResult&gt;</ID>
+    <ID>ReturnCount:SearchRepositoryImpl.kt$SearchRepositoryImpl$override suspend fun searchSemantic( query: String, limit: Int, ): List&lt;SearchResult&gt;</ID>
     <ID>ReturnCount:SharingShortcutManager.kt$SharingShortcutManager$private fun buildShortcut(meme: Meme): ShortcutInfoCompat?</ID>
     <ID>ReturnCount:SuggestionEngine.kt$SuggestionEngine$fun suggest( allMemes: List&lt;Meme&gt;, context: SuggestionContext, now: Long, ): List&lt;Meme&gt;</ID>
-    <ID>ReturnCount:TriSignalScorer.kt$TriSignalScorer$internal fun scopeScore(meme: Meme, context: SuggestionContext): Double</ID>
+    <ID>ReturnCount:TriSignalScorer.kt$TriSignalScorer$internal fun scopeScore( meme: Meme, context: SuggestionContext, ): Double</ID>
     <ID>ReturnCount:XmpMetadataHandler.kt$XmpMetadataHandler$private fun parseXmpPacket(xmpData: String): MemeMetadata?</ID>
-    <ID>SpacingBetweenDeclarationsWithAnnotations:QuickShareBottomSheet.kt$@Suppress("DEPRECATION") val resolvedInfos: List&lt;ResolveInfo&gt; = pm.queryIntentActivities(shareIntent, PackageManager.MATCH_DEFAULT_ONLY)</ID>
-    <ID>SpacingBetweenDeclarationsWithComments:GalleryUiState.kt$SortOption.EmojiGroup$/** Grouped by primary emoji tag. */</ID>
-    <ID>SpacingBetweenDeclarationsWithComments:GalleryUiState.kt$SortOption.MostUsed$/** Most frequently used first. */</ID>
     <ID>SwallowedException:BitmapExtensions.kt$e: Exception</ID>
-    <ID>SwallowedException:DefaultSemanticSearchEngine.kt$DefaultSemanticSearchEngine$e: Exception</ID>
-    <ID>SwallowedException:DefaultSemanticSearchEngine.kt$DefaultSemanticSearchEngine$e: ExceptionInInitializerError</ID>
-    <ID>SwallowedException:DefaultSemanticSearchEngine.kt$DefaultSemanticSearchEngine$e: UnsatisfiedLinkError</ID>
     <ID>SwallowedException:EmbeddingGemmaGenerator.kt$EmbeddingGemmaGenerator$e: Exception</ID>
     <ID>SwallowedException:EmbeddingModelVersionManager.kt$EmbeddingModelVersionManager$e: Exception</ID>
     <ID>SwallowedException:ImageProcessor.kt$ImageProcessor$e: Exception</ID>
@@ -547,6 +421,7 @@
     <ID>SwallowedException:PreferencesDataStore.kt$PreferencesDataStore$e: Exception</ID>
     <ID>SwallowedException:SettingsViewModel.kt$SettingsViewModel$e: Exception</ID>
     <ID>SwallowedException:ShareRepositoryImpl.kt$ShareRepositoryImpl$e: Exception</ID>
+    <ID>SwallowedException:ShareScreen.kt$e: android.content.ActivityNotFoundException</ID>
     <ID>SwallowedException:ShareViewModel.kt$ShareViewModel$e: Exception</ID>
     <ID>SwallowedException:UriExtensions.kt$e: Exception</ID>
     <ID>SwallowedException:XmpMetadataHandler.kt$XmpMetadataHandler$e: Exception</ID>
@@ -561,6 +436,7 @@
     <ID>TooGenericExceptionCaught:FakeMemeRepository.kt$FakeMemeRepository$e: Exception</ID>
     <ID>TooGenericExceptionCaught:FlowUtils.kt$e: Exception</ID>
     <ID>TooGenericExceptionCaught:GalleryRepositoryImpl.kt$GalleryRepositoryImpl$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:GetSimilarMemesUseCase.kt$GetSimilarMemesUseCase$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ImageProcessor.kt$ImageProcessor$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ImportRepositoryImpl.kt$ImportRepositoryImpl$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ImportViewModel.kt$ImportViewModel$e: Exception</ID>
@@ -598,26 +474,21 @@
     <ID>TooManyFunctions:MemeDetailViewModel.kt$MemeDetailViewModel : ViewModel</ID>
     <ID>TooManyFunctions:MemeEmbeddingDao.kt$MemeEmbeddingDao</ID>
     <ID>TooManyFunctions:PreferencesDataStore.kt$PreferencesDataStore</ID>
-    <ID>TooManyFunctions:SearchDebugLogger.kt$SearchDebugLogger</ID>
     <ID>TooManyFunctions:SearchDelegate.kt$SearchDelegate</ID>
     <ID>TooManyFunctions:SearchRepository.kt$SearchRepository</ID>
     <ID>TooManyFunctions:SearchRepositoryImpl.kt$SearchRepositoryImpl : SearchRepository</ID>
     <ID>TooManyFunctions:SearchUseCases.kt$SearchUseCases</ID>
     <ID>TooManyFunctions:SettingsRepository.kt$SettingsRepository</ID>
     <ID>TooManyFunctions:SettingsViewModel.kt$SettingsViewModel : ViewModel</ID>
-    <ID>TooManyFunctions:ShareScreen.kt$com.adsamcik.riposte.feature.share.presentation.ShareScreen.kt</ID>
     <ID>TooManyFunctions:TestDataFactory.kt$TestDataFactory</ID>
     <ID>TooManyFunctions:XmpMetadataHandler.kt$XmpMetadataHandler</ID>
     <ID>TooManyFunctions:ZipImporter.kt$DefaultZipImporter : ZipImporter</ID>
-    <ID>UnusedParameter:EditEmojiDialog.kt$name: String</ID>
     <ID>UnusedParameter:EmbeddingGenerationWorker.kt$EmbeddingGenerationWorker.Companion$currentVersion: String</ID>
     <ID>UnusedParameter:FakeMlComponents.kt$FakeTextRecognizer$bitmap: Bitmap</ID>
     <ID>UnusedParameter:GalleryScreen.kt$onDeleteCountChange: (Int) -&gt; Unit</ID>
     <ID>UnusedParameter:GalleryScreen.kt$onNavigateToImport: () -&gt; Unit</ID>
     <ID>UnusedParameter:GalleryScreen.kt$onNavigateToMeme: (Long) -&gt; Unit</ID>
     <ID>UnusedParameter:SearchBar.kt$onEmojiClick: (String) -&gt; Unit</ID>
-    <ID>UnusedParameter:SearchDebugLogger.kt$SearchDebugLogger$phase: String</ID>
-    <ID>UnusedParameter:SearchDelegate.kt$SearchDelegate$query: String</ID>
     <ID>UnusedParameter:SearchDelegate.kt$SearchDelegate$scope: CoroutineScope</ID>
     <ID>UnusedParameter:SlotFiller.kt$SlotFiller$now: Long</ID>
     <ID>UnusedPrivateMember:EmojiChip.kt$@Preview(name = "EmojiChip - Selected", showBackground = true) @Composable private fun EmojiChipSelectedPreview()</ID>
@@ -662,31 +533,16 @@
     <ID>UnusedPrivateMember:ShareScreen.kt$@Preview(name = "Loading", showBackground = true) @Composable private fun ShareScreenLoadingPreview()</ID>
     <ID>UnusedPrivateProperty:GalleryNavigation.kt$val route = backStackEntry.toRoute&lt;MemeDetailRoute&gt;()</ID>
     <ID>UnusedPrivateProperty:ImageProcessor.kt$ImageProcessor$@param:ApplicationContext private val context: Context</ID>
+    <ID>UnusedPrivateProperty:ImportViewModel.kt$ImportViewModel$private val checkDuplicateUseCase: CheckDuplicateUseCase</ID>
+    <ID>UnusedPrivateProperty:ImportViewModel.kt$ImportViewModel$private val importImageUseCase: ImportImageUseCase</ID>
+    <ID>UnusedPrivateProperty:MemeDetailScreen.kt$val favoriteScale by animateFloatAsState( targetValue = if (meme.isFavorite) 1f else 1f, animationSpec = spring( dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium, ), label = "favorite_scale", )</ID>
     <ID>UnusedPrivateProperty:MlKitTextRecognizer.kt$MlKitTextRecognizer$val task = recognizer.process(image) .addOnSuccessListener { result -&gt; val text = result.text.takeIf { it.isNotBlank() } continuation.resume(text) } .addOnFailureListener { exception -&gt; continuation.resumeWithException(exception) }</ID>
-    <ID>UnusedPrivateProperty:QuickShareBottomSheet.kt$private val MESSAGING_PACKAGES_SET = MESSAGING_PACKAGES.toSet()</ID>
     <ID>UnusedPrivateProperty:ShareNavigation.kt$val route = backStackEntry.toRoute&lt;ShareRoute&gt;()</ID>
     <ID>UnusedPrivateProperty:SimpleEmbeddingGenerator.kt$SimpleEmbeddingGenerator$val task = imageLabeler.process(image) .addOnSuccessListener { labels -&gt; val labelTexts = labels.map { it.text.lowercase() } continuation.resume(labelTexts) } .addOnFailureListener { exception -&gt; continuation.resumeWithException(exception) }</ID>
-    <ID>UseCheckOrError:EmbeddingGemmaGenerator.kt$EmbeddingGemmaGenerator$throw IllegalStateException("EmbeddingGemma model not initialized. Model files may be missing.")</ID>
     <ID>UseRequire:DefaultSettingsRepository.kt$DefaultSettingsRepository$throw IllegalArgumentException("Invalid backup format: expected JSON object")</ID>
     <ID>Wrapping:ClickableSettingItem.kt${ Icon(imageVector = it, contentDescription = null) }</ID>
     <ID>Wrapping:DialogSettingItem.kt${ Icon(imageVector = it, contentDescription = null) }</ID>
     <ID>Wrapping:DropdownSettingItem.kt${ Icon(imageVector = it, contentDescription = null) }</ID>
-    <ID>Wrapping:EmojiTagDao.kt$EmojiTagDao$(</ID>
-    <ID>Wrapping:ImportRepositoryImpl.kt$ImportRepositoryImpl$(</ID>
-    <ID>Wrapping:MemeDao.kt$MemeDao$(</ID>
-    <ID>Wrapping:MemeEmbeddingDao.kt$MemeEmbeddingDao$(</ID>
-    <ID>Wrapping:MemeSearchDao.kt$MemeSearchDao$(</ID>
-    <ID>Wrapping:SearchDebugLogger.kt$SearchDebugLogger$(</ID>
-    <ID>Wrapping:SearchDebugLogger.kt$SearchDebugLogger$(TAG, """ |│ Semantic matches: $matchCount / $totalCandidates candidates |│ Similarity range: [${"%.3f".format(minSimilarity)}, ${"%.3f".format(maxSimilarity)}] |├─ SEMANTIC SEARCH COMPLETE: ${timeMs}ms """.trimMargin())</ID>
-    <ID>Wrapping:SearchDebugLogger.kt$SearchDebugLogger$(TAG, """ |│ Total unique: $totalUnique |│ Both sources (HYBRID): $hybridMatches |│ FTS only: $ftsOnlyMatches |│ Semantic only: $semanticOnlyMatches |├─ HYBRID MERGE COMPLETE: ${timeMs}ms """.trimMargin())</ID>
-    <ID>Wrapping:SearchDebugLogger.kt$SearchDebugLogger$(TAG, """ |┌─ FTS QUERY SANITIZATION ───────────────────────────────────── |│ Original: "$originalQuery" |│ Sanitized: "$sanitizedQuery" |│ Removed terms: ${removedTerms.ifEmpty { "(none)" }} |│ Final MATCH query: ${finalMatchQuery ?: "(same as sanitized)"} |└─────────────────────────────────────────────────────────────── """.trimMargin())</ID>
-    <ID>Wrapping:SearchDebugLogger.kt$SearchDebugLogger$(TAG, """ |├─ FILTER APPLICATION ───────────────────────────────────────── |│ Input: $inputCount results |│ Output: $outputCount results |│ Emoji filters: ${emojiFiltersApplied.ifEmpty { "(none)" }} |│ Quick filter emoji: ${quickFilterEmoji ?: "(none)"} |│ Removed by filters: ${inputCount - outputCount} """.trimMargin())</ID>
-    <ID>Wrapping:SearchDebugLogger.kt$SearchDebugLogger$(TAG, """ |├─ HYBRID MERGE START ───────────────────────────────────────── |│ FTS results: $ftsCount |│ Semantic results: $semanticCount """.trimMargin())</ID>
-    <ID>Wrapping:SearchDebugLogger.kt$SearchDebugLogger$(TAG, """ |├─ SEMANTIC SEARCH START ────────────────────────────────────── |│ Query: "$query" |│ Candidates: $candidateCount memes with embeddings |│ Embedding dimension: $embeddingDimension |│ Similarity threshold: $threshold """.trimMargin())</ID>
-    <ID>Wrapping:SearchDebugLogger.kt$SearchDebugLogger$(TAG, """ |╔══════════════════════════════════════════════════════════════ |║ SEARCH COMPLETE |╠══════════════════════════════════════════════════════════════ |║ Mode: $searchMode |║ Final results: $totalResults |║ Total time: ${totalTimeMs}ms |╚══════════════════════════════════════════════════════════════ """.trimMargin())</ID>
-    <ID>Wrapping:SearchDebugLogger.kt$SearchDebugLogger$(TAG, """ |╔══════════════════════════════════════════════════════════════ |║ SEARCH ERROR |╠══════════════════════════════════════════════════════════════ |║ Phase: $phase |║ Error: ${error.message} |║ Type: ${error::class.simpleName} |╚══════════════════════════════════════════════════════════════ """.trimMargin(), error)</ID>
-    <ID>Wrapping:SearchDebugLogger.kt$SearchDebugLogger$(TAG, """ |╔══════════════════════════════════════════════════════════════ |║ SEARCH START |╠══════════════════════════════════════════════════════════════ |║ Mode: $searchMode |║ Query: "$query" |║ Emoji Filters: ${emojiFilters.ifEmpty { "(none)" }} |║ Quick Filter: ${quickFilter ?: "(none)"} |╚══════════════════════════════════════════════════════════════ """.trimMargin())</ID>
-    <ID>Wrapping:ShareTargetDao.kt$ShareTargetDao$(</ID>
     <ID>Wrapping:SliderSettingItem.kt${ Icon(imageVector = it, contentDescription = null) }</ID>
     <ID>Wrapping:SwitchSettingItem.kt${ Icon(imageVector = it, contentDescription = null) }</ID>
   </CurrentIssues>
