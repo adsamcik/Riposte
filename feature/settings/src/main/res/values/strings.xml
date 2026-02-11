@@ -39,6 +39,7 @@
     <string name="settings_search_index_complete">All %1$d memes indexed</string>
     <string name="settings_search_index_progress">%1$d of %2$d memes indexed</string>
     <string name="settings_search_index_regenerating">%1$d of %2$d memes indexed, %3$d regenerating</string>
+    <string name="settings_search_index_error">Unavailable: %1$s</string>
     <string name="settings_search_history_title">Search History</string>
     <string name="settings_search_history_subtitle">Save recent searches</string>
     

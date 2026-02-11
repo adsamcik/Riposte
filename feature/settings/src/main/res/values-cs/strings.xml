@@ -38,6 +38,7 @@
     <string name="settings_search_index_complete">Všech %1$d memů indexováno</string>
     <string name="settings_search_index_progress">%1$d z %2$d memů indexováno</string>
     <string name="settings_search_index_regenerating">%1$d z %2$d memů indexováno, %3$d se regeneruje</string>
+    <string name="settings_search_index_error">Nedostupné: %1$s</string>
     <string name="settings_search_history_title">Historie vyhledávání</string>
     <string name="settings_search_history_subtitle">Ukládat poslední hledání</string>
     

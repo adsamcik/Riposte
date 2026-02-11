@@ -28,6 +28,7 @@ data class EmbeddingSearchState(
     val totalCount: Int,
     val pendingCount: Int,
     val regenerationCount: Int,
+    val modelError: String? = null,
 ) {
     val isFullyIndexed: Boolean
         get() = pendingCount == 0 && regenerationCount == 0

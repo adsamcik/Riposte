@@ -38,6 +38,7 @@
     <string name="settings_search_index_complete">Alle %1$d Memes indexiert</string>
     <string name="settings_search_index_progress">%1$d von %2$d Memes indexiert</string>
     <string name="settings_search_index_regenerating">%1$d von %2$d Memes indexiert, %3$d werden regeneriert</string>
+    <string name="settings_search_index_error">Nicht verfügbar: %1$s</string>
     <string name="settings_search_history_title">Suchverlauf</string>
     <string name="settings_search_history_subtitle">Letzte Suchen speichern</string>
     

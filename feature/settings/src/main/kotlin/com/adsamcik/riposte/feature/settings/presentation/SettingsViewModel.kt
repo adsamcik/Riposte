@@ -125,6 +125,7 @@ class SettingsViewModel
                                         totalCount = stats.validEmbeddingCount + stats.pendingEmbeddingCount,
                                         pendingCount = stats.pendingEmbeddingCount,
                                         regenerationCount = stats.regenerationNeededCount,
+                                        modelError = stats.modelError,
                                     ),
                             )
                         }

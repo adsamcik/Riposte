@@ -412,7 +412,12 @@ fun SettingsScreen(
                                 ClickableSettingItem(
                                     title = stringResource(R.string.settings_search_index_title),
                                     subtitle =
-                                        if (embeddingState.isFullyIndexed) {
+                                        if (embeddingState.modelError != null) {
+                                            stringResource(
+                                                R.string.settings_search_index_error,
+                                                embeddingState.modelError,
+                                            )
+                                        } else if (embeddingState.isFullyIndexed) {
                                             stringResource(
                                                 R.string.settings_search_index_complete,
                                                 embeddingState.indexedCount,
