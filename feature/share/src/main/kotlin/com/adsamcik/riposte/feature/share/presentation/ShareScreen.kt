@@ -4,6 +4,7 @@ import android.content.res.Configuration
 import android.graphics.Bitmap
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -16,7 +17,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -46,18 +46,18 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.res.stringResource
-import com.adsamcik.riposte.feature.share.R
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.adsamcik.riposte.core.ui.component.EmptyState
 import com.adsamcik.riposte.core.ui.component.LoadingScreen
 import com.adsamcik.riposte.core.ui.modifier.animatedPressScale
+import com.adsamcik.riposte.feature.share.R
 import kotlinx.coroutines.flow.collectLatest
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -69,7 +69,7 @@ fun ShareScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
-    
+
     // Hoist string resources for use in LaunchedEffect
     val shareChooserTitle = stringResource(R.string.share_chooser_title)
     val savedToGalleryMessage = stringResource(R.string.share_message_saved_to_gallery)
@@ -107,13 +107,16 @@ fun ShareScreen(
                 title = { Text(stringResource(R.string.share_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.share_navigation_back))
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.share_navigation_back),
+                        )
                     }
                 },
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        contentWindowInsets = WindowInsets.safeDrawing
+        contentWindowInsets = WindowInsets.safeDrawing,
     ) { paddingValues ->
         when {
             uiState.isLoading -> {
@@ -122,10 +125,11 @@ fun ShareScreen(
 
             uiState.errorMessage != null -> {
                 Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues)
-                        .semantics { liveRegion = LiveRegionMode.Assertive },
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .padding(paddingValues)
+                            .semantics { liveRegion = LiveRegionMode.Assertive },
                     contentAlignment = Alignment.Center,
                 ) {
                     EmptyState(
@@ -140,9 +144,10 @@ fun ShareScreen(
                 ShareContent(
                     uiState = uiState,
                     onIntent = viewModel::onIntent,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues),
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .padding(paddingValues),
                 )
             }
         }
@@ -167,7 +172,10 @@ internal fun ShareScreen(
                 title = { Text(stringResource(R.string.share_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.share_navigation_back))
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.share_navigation_back),
+                        )
                     }
                 },
             )
@@ -181,10 +189,11 @@ internal fun ShareScreen(
 
             uiState.errorMessage != null -> {
                 Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues)
-                        .semantics { liveRegion = LiveRegionMode.Assertive },
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .padding(paddingValues)
+                            .semantics { liveRegion = LiveRegionMode.Assertive },
                     contentAlignment = Alignment.Center,
                 ) {
                     EmptyState(
@@ -199,9 +208,10 @@ internal fun ShareScreen(
                 ShareContent(
                     uiState = uiState,
                     onIntent = onIntent,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues),
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .padding(paddingValues),
                 )
             }
         }
@@ -215,9 +225,10 @@ private fun ShareContent(
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
+        modifier =
+            modifier
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
     ) {
         // Single centered preview
         PreviewSection(
@@ -239,14 +250,16 @@ private fun ShareContent(
             onClick = { onIntent(ShareIntent.Share) },
             enabled = !uiState.isProcessing,
             interactionSource = shareInteractionSource,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-            ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
-                .animatedPressScale(shareInteractionSource),
+            colors =
+                ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                ),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .animatedPressScale(shareInteractionSource),
         ) {
             if (uiState.isProcessing) {
                 CircularProgressIndicator(
@@ -295,11 +308,12 @@ private fun PreviewSection(
     val maxPreviewHeight = screenHeightDp * 0.4f
 
     Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .heightIn(max = maxPreviewHeight)
-            .clip(MaterialTheme.shapes.medium)
-            .background(MaterialTheme.colorScheme.surfaceVariant),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .heightIn(max = maxPreviewHeight)
+                .clip(MaterialTheme.shapes.medium)
+                .background(MaterialTheme.colorScheme.surfaceVariant),
         contentAlignment = Alignment.Center,
     ) {
         val displayBitmap = processedBitmap ?: originalBitmap
@@ -334,15 +348,19 @@ private fun FileSizeBanner(
 ) {
     val estimatedKb = estimatedFileSize / 1024f
 
-    val (message, messageColor) = when {
-        estimatedFileSize <= 0 -> null to MaterialTheme.colorScheme.onSurfaceVariant
-        estimatedKb < 100 -> stringResource(R.string.share_size_quick_to_send) to
-                MaterialTheme.colorScheme.tertiary
-        estimatedKb <= 500 -> stringResource(R.string.share_size_good_quality) to
-                MaterialTheme.colorScheme.onSurfaceVariant
-        else -> stringResource(R.string.share_size_large_file) to
-                MaterialTheme.colorScheme.error
-    }
+    val (message, messageColor) =
+        when {
+            estimatedFileSize <= 0 -> null to MaterialTheme.colorScheme.onSurfaceVariant
+            estimatedKb < 100 ->
+                stringResource(R.string.share_size_quick_to_send) to
+                    MaterialTheme.colorScheme.tertiary
+            estimatedKb <= 500 ->
+                stringResource(R.string.share_size_good_quality) to
+                    MaterialTheme.colorScheme.onSurfaceVariant
+            else ->
+                stringResource(R.string.share_size_large_file) to
+                    MaterialTheme.colorScheme.error
+        }
 
     if (message != null) {
         Text(
@@ -356,18 +374,19 @@ private fun FileSizeBanner(
 
 // region Previews
 
-private val sharePreviewMeme = com.adsamcik.riposte.core.model.Meme(
-    id = 1L,
-    filePath = "/preview/meme.jpg",
-    fileName = "meme.jpg",
-    mimeType = "image/jpeg",
-    width = 1024,
-    height = 768,
-    fileSizeBytes = 256_000L,
-    importedAt = System.currentTimeMillis(),
-    emojiTags = listOf(com.adsamcik.riposte.core.model.EmojiTag.fromEmoji("😂")),
-    title = "Sample meme",
-)
+private val sharePreviewMeme =
+    com.adsamcik.riposte.core.model.Meme(
+        id = 1L,
+        filePath = "/preview/meme.jpg",
+        fileName = "meme.jpg",
+        mimeType = "image/jpeg",
+        width = 1024,
+        height = 768,
+        fileSizeBytes = 256_000L,
+        importedAt = System.currentTimeMillis(),
+        emojiTags = listOf(com.adsamcik.riposte.core.model.EmojiTag.fromEmoji("😂")),
+        title = "Sample meme",
+    )
 
 @Preview(name = "Loading", showBackground = true)
 @Composable
@@ -387,12 +406,13 @@ private fun ShareScreenLoadingPreview() {
 private fun ShareScreenContentPreview() {
     com.adsamcik.riposte.core.ui.theme.RiposteTheme {
         ShareScreen(
-            uiState = ShareUiState(
-                meme = sharePreviewMeme,
-                isLoading = false,
-                originalFileSize = 256_000L,
-                estimatedFileSize = 68_000L,
-            ),
+            uiState =
+                ShareUiState(
+                    meme = sharePreviewMeme,
+                    isLoading = false,
+                    originalFileSize = 256_000L,
+                    estimatedFileSize = 68_000L,
+                ),
             onIntent = {},
             onNavigateBack = {},
         )
@@ -404,12 +424,13 @@ private fun ShareScreenContentPreview() {
 private fun ShareScreenLargeFilePreview() {
     com.adsamcik.riposte.core.ui.theme.RiposteTheme {
         ShareScreen(
-            uiState = ShareUiState(
-                meme = sharePreviewMeme,
-                isLoading = false,
-                originalFileSize = 2_048_000L,
-                estimatedFileSize = 1_024_000L,
-            ),
+            uiState =
+                ShareUiState(
+                    meme = sharePreviewMeme,
+                    isLoading = false,
+                    originalFileSize = 2_048_000L,
+                    estimatedFileSize = 1_024_000L,
+                ),
             onIntent = {},
             onNavigateBack = {},
         )
@@ -421,10 +442,11 @@ private fun ShareScreenLargeFilePreview() {
 private fun ShareScreenErrorPreview() {
     com.adsamcik.riposte.core.ui.theme.RiposteTheme {
         ShareScreen(
-            uiState = ShareUiState(
-                isLoading = false,
-                errorMessage = stringResource(R.string.share_error_load_failed),
-            ),
+            uiState =
+                ShareUiState(
+                    isLoading = false,
+                    errorMessage = stringResource(R.string.share_error_load_failed),
+                ),
             onIntent = {},
             onNavigateBack = {},
         )

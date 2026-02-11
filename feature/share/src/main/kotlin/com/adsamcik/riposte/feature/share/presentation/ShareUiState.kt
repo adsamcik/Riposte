@@ -1,7 +1,6 @@
 package com.adsamcik.riposte.feature.share.presentation
 
 import android.graphics.Bitmap
-import com.adsamcik.riposte.core.model.ImageFormat
 import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.core.model.ShareConfig
 
@@ -17,9 +16,12 @@ data class ShareUiState(
     val errorMessage: String? = null,
 ) {
     val compressionRatio: Float
-        get() = if (originalFileSize > 0) {
-            estimatedFileSize.toFloat() / originalFileSize
-        } else 0f
+        get() =
+            if (originalFileSize > 0) {
+                estimatedFileSize.toFloat() / originalFileSize
+            } else {
+                0f
+            }
 
     val formattedEstimatedSize: String
         get() = formatFileSize(estimatedFileSize)

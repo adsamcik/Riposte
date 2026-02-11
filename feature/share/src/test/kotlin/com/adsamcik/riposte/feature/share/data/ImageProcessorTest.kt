@@ -3,15 +3,14 @@ package com.adsamcik.riposte.feature.share.data
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import com.google.common.truth.Truth.assertThat
 import com.adsamcik.riposte.core.model.ImageFormat
 import com.adsamcik.riposte.core.model.ShareConfig
+import com.google.common.truth.Truth.assertThat
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.spyk
 import io.mockk.unmockkStatic
-import io.mockk.verify
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -23,7 +22,6 @@ import java.io.File
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33], manifest = Config.NONE)
 class ImageProcessorTest {
-
     private lateinit var context: Context
     private lateinit var imageProcessor: ImageProcessor
 
@@ -60,7 +58,7 @@ class ImageProcessorTest {
 
         assertThat(result.width).isEqualTo(1000)
         assertThat(result.height).isEqualTo(500)
-        
+
         // Cleanup
         if (result != originalBitmap) {
             result.recycle()
@@ -76,7 +74,7 @@ class ImageProcessorTest {
 
         assertThat(result.width).isEqualTo(500)
         assertThat(result.height).isEqualTo(1000)
-        
+
         // Cleanup
         if (result != originalBitmap) {
             result.recycle()
@@ -95,7 +93,7 @@ class ImageProcessorTest {
 
         assertThat(result.width).isEqualTo(expectedWidth)
         assertThat(result.height).isEqualTo(expectedHeight)
-        
+
         // Cleanup
         if (result != originalBitmap) {
             result.recycle()
@@ -111,7 +109,7 @@ class ImageProcessorTest {
 
         assertThat(result.width).isEqualTo(1000)
         assertThat(result.height).isEqualTo(1000)
-        
+
         // Cleanup
         if (result != originalBitmap) {
             result.recycle()
@@ -180,11 +178,12 @@ class ImageProcessorTest {
         val outputFile = File.createTempFile("test", ".jpg")
         val config = ShareConfig()
 
-        val result = imageProcessor.processImage(
-            sourcePath = "/nonexistent/path.jpg",
-            config = config,
-            outputFile = outputFile,
-        )
+        val result =
+            imageProcessor.processImage(
+                sourcePath = "/nonexistent/path.jpg",
+                config = config,
+                outputFile = outputFile,
+            )
 
         assertThat(result).isInstanceOf(ImageProcessor.ProcessResult.Error::class.java)
         assertThat((result as ImageProcessor.ProcessResult.Error).message)
@@ -201,18 +200,20 @@ class ImageProcessorTest {
         every { BitmapFactory.decodeFile(any()) } returns inputBitmap
 
         val outputFile = File.createTempFile("test", ".jpg")
-        val config = ShareConfig(
-            format = ImageFormat.JPEG,
-            quality = 80,
-            maxWidth = 500,
-            maxHeight = 500,
-        )
+        val config =
+            ShareConfig(
+                format = ImageFormat.JPEG,
+                quality = 80,
+                maxWidth = 500,
+                maxHeight = 500,
+            )
 
-        val result = imageProcessor.processImage(
-            sourcePath = "/test/path.jpg",
-            config = config,
-            outputFile = outputFile,
-        )
+        val result =
+            imageProcessor.processImage(
+                sourcePath = "/test/path.jpg",
+                config = config,
+                outputFile = outputFile,
+            )
 
         assertThat(result).isInstanceOf(ImageProcessor.ProcessResult.Success::class.java)
         val success = result as ImageProcessor.ProcessResult.Success
@@ -232,16 +233,18 @@ class ImageProcessorTest {
         every { BitmapFactory.decodeFile(any()) } returns inputBitmap
 
         val outputFile = File.createTempFile("test", ".png")
-        val config = ShareConfig(
-            format = ImageFormat.PNG,
-            quality = 100,
-        )
+        val config =
+            ShareConfig(
+                format = ImageFormat.PNG,
+                quality = 100,
+            )
 
-        val result = imageProcessor.processImage(
-            sourcePath = "/test/path.png",
-            config = config,
-            outputFile = outputFile,
-        )
+        val result =
+            imageProcessor.processImage(
+                sourcePath = "/test/path.png",
+                config = config,
+                outputFile = outputFile,
+            )
 
         assertThat(result).isInstanceOf(ImageProcessor.ProcessResult.Success::class.java)
 
@@ -257,16 +260,18 @@ class ImageProcessorTest {
         every { BitmapFactory.decodeFile(any()) } returns inputBitmap
 
         val outputFile = File.createTempFile("test", ".webp")
-        val config = ShareConfig(
-            format = ImageFormat.WEBP,
-            quality = 85,
-        )
+        val config =
+            ShareConfig(
+                format = ImageFormat.WEBP,
+                quality = 85,
+            )
 
-        val result = imageProcessor.processImage(
-            sourcePath = "/test/path.webp",
-            config = config,
-            outputFile = outputFile,
-        )
+        val result =
+            imageProcessor.processImage(
+                sourcePath = "/test/path.webp",
+                config = config,
+                outputFile = outputFile,
+            )
 
         assertThat(result).isInstanceOf(ImageProcessor.ProcessResult.Success::class.java)
 
@@ -280,31 +285,33 @@ class ImageProcessorTest {
         // Regression test: simulates real Android behavior where accessing
         // a recycled bitmap's properties throws IllegalStateException.
         var sourceRecycled = false
-        val sourceBitmap = mockk<Bitmap> {
-            every { width } answers {
-                if (sourceRecycled) throw IllegalStateException("recycled bitmap")
-                2000
+        val sourceBitmap =
+            mockk<Bitmap> {
+                every { width } answers {
+                    if (sourceRecycled) throw IllegalStateException("recycled bitmap")
+                    2000
+                }
+                every { height } answers {
+                    if (sourceRecycled) throw IllegalStateException("recycled bitmap")
+                    1000
+                }
+                every { recycle() } answers { sourceRecycled = true }
             }
-            every { height } answers {
-                if (sourceRecycled) throw IllegalStateException("recycled bitmap")
-                1000
-            }
-            every { recycle() } answers { sourceRecycled = true }
-        }
 
         var resizedRecycled = false
-        val resizedBitmap = mockk<Bitmap> {
-            every { width } answers {
-                if (resizedRecycled) throw IllegalStateException("recycled bitmap")
-                500
+        val resizedBitmap =
+            mockk<Bitmap> {
+                every { width } answers {
+                    if (resizedRecycled) throw IllegalStateException("recycled bitmap")
+                    500
+                }
+                every { height } answers {
+                    if (resizedRecycled) throw IllegalStateException("recycled bitmap")
+                    250
+                }
+                every { compress(any(), any(), any()) } returns true
+                every { recycle() } answers { resizedRecycled = true }
             }
-            every { height } answers {
-                if (resizedRecycled) throw IllegalStateException("recycled bitmap")
-                250
-            }
-            every { compress(any(), any(), any()) } returns true
-            every { recycle() } answers { resizedRecycled = true }
-        }
 
         mockkStatic(BitmapFactory::class)
         every { BitmapFactory.decodeFile(any()) } returns sourceBitmap
@@ -313,13 +320,14 @@ class ImageProcessorTest {
         every { spyProcessor.resizeBitmap(any(), any(), any()) } returns resizedBitmap
 
         val outputFile = File.createTempFile("test", ".jpg")
-        val config = ShareConfig(
-            format = ImageFormat.JPEG,
-            quality = 80,
-            maxWidth = 500,
-            maxHeight = 500,
-            stripMetadata = true,
-        )
+        val config =
+            ShareConfig(
+                format = ImageFormat.JPEG,
+                quality = 80,
+                maxWidth = 500,
+                maxHeight = 500,
+                stripMetadata = true,
+            )
 
         val result = spyProcessor.processImage("/test/path.jpg", config, outputFile)
 
@@ -337,30 +345,32 @@ class ImageProcessorTest {
         // Regression test: when image is within max bounds, the same bitmap is returned
         // from resizeBitmap and then recycled. Dimensions must be captured before recycle.
         var recycled = false
-        val sourceBitmap = mockk<Bitmap> {
-            every { width } answers {
-                if (recycled) throw IllegalStateException("recycled bitmap")
-                500
+        val sourceBitmap =
+            mockk<Bitmap> {
+                every { width } answers {
+                    if (recycled) throw IllegalStateException("recycled bitmap")
+                    500
+                }
+                every { height } answers {
+                    if (recycled) throw IllegalStateException("recycled bitmap")
+                    500
+                }
+                every { compress(any(), any(), any()) } returns true
+                every { recycle() } answers { recycled = true }
             }
-            every { height } answers {
-                if (recycled) throw IllegalStateException("recycled bitmap")
-                500
-            }
-            every { compress(any(), any(), any()) } returns true
-            every { recycle() } answers { recycled = true }
-        }
 
         mockkStatic(BitmapFactory::class)
         every { BitmapFactory.decodeFile(any()) } returns sourceBitmap
 
         val outputFile = File.createTempFile("test", ".jpg")
-        val config = ShareConfig(
-            format = ImageFormat.JPEG,
-            quality = 80,
-            maxWidth = 1000,
-            maxHeight = 1000,
-            stripMetadata = true,
-        )
+        val config =
+            ShareConfig(
+                format = ImageFormat.JPEG,
+                quality = 80,
+                maxWidth = 1000,
+                maxHeight = 1000,
+                stripMetadata = true,
+            )
 
         val result = imageProcessor.processImage("/test/path.jpg", config, outputFile)
 
@@ -380,12 +390,13 @@ class ImageProcessorTest {
         every { BitmapFactory.decodeFile(any()) } returns inputBitmap
 
         val outputFile = File.createTempFile("test", ".jpg")
-        val config = ShareConfig(
-            format = ImageFormat.JPEG,
-            quality = 80,
-            maxWidth = null,
-            maxHeight = null,
-        )
+        val config =
+            ShareConfig(
+                format = ImageFormat.JPEG,
+                quality = 80,
+                maxWidth = null,
+                maxHeight = null,
+            )
 
         val result = imageProcessor.processImage("/test/path.jpg", config, outputFile)
 
@@ -406,12 +417,13 @@ class ImageProcessorTest {
         every { BitmapFactory.decodeFile(any()) } returns inputBitmap
 
         val outputFile = File.createTempFile("test", ".jpg")
-        val config = ShareConfig(
-            format = ImageFormat.JPEG,
-            quality = 80,
-            maxWidth = 800,
-            maxHeight = 800,
-        )
+        val config =
+            ShareConfig(
+                format = ImageFormat.JPEG,
+                quality = 80,
+                maxWidth = 800,
+                maxHeight = 800,
+            )
 
         val result = imageProcessor.processImage("/test/path.jpg", config, outputFile)
 
@@ -431,10 +443,11 @@ class ImageProcessorTest {
         every { BitmapFactory.decodeFile(any()) } returns inputBitmap
 
         val outputFile = File.createTempFile("test", ".jpg")
-        val config = ShareConfig(
-            format = ImageFormat.JPEG,
-            quality = 80,
-        )
+        val config =
+            ShareConfig(
+                format = ImageFormat.JPEG,
+                quality = 80,
+            )
 
         val result = imageProcessor.processImage("/test/path.jpg", config, outputFile)
 
@@ -456,12 +469,13 @@ class ImageProcessorTest {
         val bitmap = createRealBitmap(100, 100)
         val outputFile = File.createTempFile("test", ".jpg")
 
-        val result = imageProcessor.compressToFormat(
-            bitmap = bitmap,
-            outputFile = outputFile,
-            format = ImageFormat.JPEG,
-            quality = 80,
-        )
+        val result =
+            imageProcessor.compressToFormat(
+                bitmap = bitmap,
+                outputFile = outputFile,
+                format = ImageFormat.JPEG,
+                quality = 80,
+            )
 
         assertThat(result).isTrue()
         assertThat(outputFile.exists()).isTrue()
@@ -476,12 +490,13 @@ class ImageProcessorTest {
         val bitmap = createRealBitmap(100, 100)
         val outputFile = File.createTempFile("test", ".png")
 
-        val result = imageProcessor.compressToFormat(
-            bitmap = bitmap,
-            outputFile = outputFile,
-            format = ImageFormat.PNG,
-            quality = 100,
-        )
+        val result =
+            imageProcessor.compressToFormat(
+                bitmap = bitmap,
+                outputFile = outputFile,
+                format = ImageFormat.PNG,
+                quality = 100,
+            )
 
         assertThat(result).isTrue()
         assertThat(outputFile.exists()).isTrue()
@@ -496,12 +511,13 @@ class ImageProcessorTest {
         val bitmap = createRealBitmap(100, 100)
         val outputFile = File.createTempFile("test", ".webp")
 
-        val result = imageProcessor.compressToFormat(
-            bitmap = bitmap,
-            outputFile = outputFile,
-            format = ImageFormat.WEBP,
-            quality = 85,
-        )
+        val result =
+            imageProcessor.compressToFormat(
+                bitmap = bitmap,
+                outputFile = outputFile,
+                format = ImageFormat.WEBP,
+                quality = 85,
+            )
 
         assertThat(result).isTrue()
         assertThat(outputFile.exists()).isTrue()
@@ -540,7 +556,10 @@ class ImageProcessorTest {
 
     // region Helper Functions
 
-    private fun createRealBitmap(width: Int, height: Int): Bitmap {
+    private fun createRealBitmap(
+        width: Int,
+        height: Int,
+    ): Bitmap {
         return Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
     }
 

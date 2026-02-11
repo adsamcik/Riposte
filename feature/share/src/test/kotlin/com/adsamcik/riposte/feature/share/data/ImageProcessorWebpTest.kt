@@ -10,7 +10,6 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [31], manifest = Config.NONE)
 class ImageProcessorWebpTest {
-
     @Test
     fun `WEBP format uses WEBP_LOSSY on API 31`() {
         // After minSdk 31 bump, WEBP_LOSSY should be used directly without version check

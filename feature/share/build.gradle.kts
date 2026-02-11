@@ -45,7 +45,7 @@ dependencies {
 
     // Image Loading
     implementation(libs.coil.compose)
-    
+
     // ExifInterface
     implementation(libs.exifinterface)
 

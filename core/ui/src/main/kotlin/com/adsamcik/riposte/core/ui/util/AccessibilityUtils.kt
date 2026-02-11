@@ -7,9 +7,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 
-/**
- * Accessibility utilities per VISUAL_DESIGN_SPEC.md Section 10.
- */
+// Accessibility utilities per VISUAL_DESIGN_SPEC.md Section 10.
 
 /**
  * Composition local to provide reduced motion preference throughout the tree.

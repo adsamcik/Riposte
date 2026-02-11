@@ -3,15 +3,13 @@ package com.adsamcik.riposte.feature.share.data
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import com.google.common.truth.Truth.assertThat
 import com.adsamcik.riposte.core.database.dao.MemeDao
 import com.adsamcik.riposte.core.database.entity.MemeEntity
 import com.adsamcik.riposte.core.datastore.PreferencesDataStore
 import com.adsamcik.riposte.core.ml.XmpMetadataHandler
-import com.adsamcik.riposte.core.model.EmojiTag
 import com.adsamcik.riposte.core.model.ImageFormat
-import com.adsamcik.riposte.core.model.ShareConfig
 import com.adsamcik.riposte.core.model.SharingPreferences
+import com.google.common.truth.Truth.assertThat
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
@@ -32,7 +30,6 @@ import java.io.File
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33], manifest = Config.NONE)
 class ShareRepositoryImplTest {
-
     private lateinit var context: Context
     private lateinit var memeDao: MemeDao
     private lateinit var preferencesDataStore: PreferencesDataStore
@@ -53,13 +50,14 @@ class ShareRepositoryImplTest {
         every { context.cacheDir } returns mockCacheDir
         every { mockCacheDir.absolutePath } returns "/cache"
 
-        repository = ShareRepositoryImpl(
-            context = context,
-            memeDao = memeDao,
-            preferencesDataStore = preferencesDataStore,
-            imageProcessor = imageProcessor,
-            xmpMetadataHandler = xmpMetadataHandler,
-        )
+        repository =
+            ShareRepositoryImpl(
+                context = context,
+                memeDao = memeDao,
+                preferencesDataStore = preferencesDataStore,
+                imageProcessor = imageProcessor,
+                xmpMetadataHandler = xmpMetadataHandler,
+            )
     }
 
     @After
@@ -70,56 +68,61 @@ class ShareRepositoryImplTest {
     // region getMeme Tests
 
     @Test
-    fun `getMeme returns meme when entity exists`() = runTest {
-        val entity = createTestMemeEntity(1L)
-        coEvery { memeDao.getMemeById(1L) } returns entity
+    fun `getMeme returns meme when entity exists`() =
+        runTest {
+            val entity = createTestMemeEntity(1L)
+            coEvery { memeDao.getMemeById(1L) } returns entity
 
-        val result = repository.getMeme(1L)
+            val result = repository.getMeme(1L)
 
-        assertThat(result).isNotNull()
-        assertThat(result?.id).isEqualTo(1L)
-        assertThat(result?.fileName).isEqualTo("meme_1.jpg")
-    }
+            assertThat(result).isNotNull()
+            assertThat(result?.id).isEqualTo(1L)
+            assertThat(result?.fileName).isEqualTo("meme_1.jpg")
+        }
 
     @Test
-    fun `getMeme returns null when entity does not exist`() = runTest {
-        coEvery { memeDao.getMemeById(999L) } returns null
+    fun `getMeme returns null when entity does not exist`() =
+        runTest {
+            coEvery { memeDao.getMemeById(999L) } returns null
 
-        val result = repository.getMeme(999L)
+            val result = repository.getMeme(999L)
 
-        assertThat(result).isNull()
-    }
+            assertThat(result).isNull()
+        }
 
     // endregion
 
     // region getDefaultShareConfig Tests
 
     @Test
-    fun `getDefaultShareConfig returns preferences from data store`() = runTest {
-        val preferences = SharingPreferences(
-            defaultFormat = ImageFormat.PNG,
-            defaultQuality = 85,
-            stripMetadata = true,
-        )
-        every { preferencesDataStore.sharingPreferences } returns flowOf(preferences)
+    fun `getDefaultShareConfig returns preferences from data store`() =
+        runTest {
+            val preferences =
+                SharingPreferences(
+                    defaultFormat = ImageFormat.PNG,
+                    defaultQuality = 85,
+                    stripMetadata = true,
+                )
+            every { preferencesDataStore.sharingPreferences } returns flowOf(preferences)
 
-        val result = repository.getDefaultShareConfig()
+            val result = repository.getDefaultShareConfig()
 
-        assertThat(result.format).isEqualTo(ImageFormat.PNG)
-        assertThat(result.quality).isEqualTo(85)
-        assertThat(result.stripMetadata).isTrue()
-    }
+            assertThat(result.format).isEqualTo(ImageFormat.PNG)
+            assertThat(result.quality).isEqualTo(85)
+            assertThat(result.stripMetadata).isTrue()
+        }
 
     @Test
-    fun `getDefaultShareConfig uses defaults when datastore is empty`() = runTest {
-        val preferences = SharingPreferences()
-        every { preferencesDataStore.sharingPreferences } returns flowOf(preferences)
+    fun `getDefaultShareConfig uses defaults when datastore is empty`() =
+        runTest {
+            val preferences = SharingPreferences()
+            every { preferencesDataStore.sharingPreferences } returns flowOf(preferences)
 
-        val result = repository.getDefaultShareConfig()
+            val result = repository.getDefaultShareConfig()
 
-        assertThat(result.format).isEqualTo(ImageFormat.WEBP)
-        assertThat(result.quality).isEqualTo(85)
-    }
+            assertThat(result.format).isEqualTo(ImageFormat.WEBP)
+            assertThat(result.quality).isEqualTo(85)
+        }
 
     // endregion
 
@@ -168,7 +171,7 @@ class ShareRepositoryImplTest {
     private fun createTestMemeEntity(
         id: Long,
         width: Int = 1080,
-        height: Int = 1920
+        height: Int = 1920,
     ): MemeEntity {
         return MemeEntity(
             id = id,

@@ -1,23 +1,19 @@
 package com.adsamcik.riposte.feature.share.presentation
 
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
-import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onAllNodesWithTag
-import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.google.common.truth.Truth.assertThat
 import com.adsamcik.riposte.core.model.EmojiTag
 import com.adsamcik.riposte.core.model.ImageFormat
 import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.core.model.ShareConfig
 import com.adsamcik.riposte.core.ui.theme.RiposteTheme
+import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -37,22 +33,22 @@ import org.junit.runner.RunWith
  */
 @RunWith(AndroidJUnit4::class)
 class ShareScreenTest {
-
     @get:Rule
     val composeTestRule = createComposeRule()
 
-    private val testMeme = Meme(
-        id = 1L,
-        filePath = "/test/meme.jpg",
-        fileName = "meme.jpg",
-        mimeType = "image/jpeg",
-        width = 1920,
-        height = 1080,
-        fileSizeBytes = 500000,
-        importedAt = System.currentTimeMillis(),
-        emojiTags = listOf(EmojiTag("😂", "laughing")),
-        title = "Test Meme"
-    )
+    private val testMeme =
+        Meme(
+            id = 1L,
+            filePath = "/test/meme.jpg",
+            fileName = "meme.jpg",
+            mimeType = "image/jpeg",
+            width = 1920,
+            height = 1080,
+            fileSizeBytes = 500000,
+            importedAt = System.currentTimeMillis(),
+            emojiTags = listOf(EmojiTag("😂", "laughing")),
+            title = "Test Meme",
+        )
 
     private val defaultConfig = ShareConfig()
 
@@ -63,13 +59,14 @@ class ShareScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 ShareScreen(
-                    uiState = ShareUiState(
-                        meme = testMeme,
-                        config = defaultConfig,
-                        isLoading = false
-                    ),
+                    uiState =
+                        ShareUiState(
+                            meme = testMeme,
+                            config = defaultConfig,
+                            isLoading = false,
+                        ),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -82,13 +79,14 @@ class ShareScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 ShareScreen(
-                    uiState = ShareUiState(
-                        meme = testMeme,
-                        config = defaultConfig,
-                        isLoading = false
-                    ),
+                    uiState =
+                        ShareUiState(
+                            meme = testMeme,
+                            config = defaultConfig,
+                            isLoading = false,
+                        ),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -101,13 +99,14 @@ class ShareScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 ShareScreen(
-                    uiState = ShareUiState(
-                        meme = testMeme,
-                        config = defaultConfig,
-                        isLoading = false
-                    ),
+                    uiState =
+                        ShareUiState(
+                            meme = testMeme,
+                            config = defaultConfig,
+                            isLoading = false,
+                        ),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -122,13 +121,14 @@ class ShareScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 ShareScreen(
-                    uiState = ShareUiState(
-                        meme = testMeme,
-                        config = defaultConfig,
-                        isLoading = false
-                    ),
+                    uiState =
+                        ShareUiState(
+                            meme = testMeme,
+                            config = defaultConfig,
+                            isLoading = false,
+                        ),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -146,13 +146,14 @@ class ShareScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 ShareScreen(
-                    uiState = ShareUiState(
-                        meme = testMeme,
-                        config = defaultConfig,
-                        isLoading = false
-                    ),
+                    uiState =
+                        ShareUiState(
+                            meme = testMeme,
+                            config = defaultConfig,
+                            isLoading = false,
+                        ),
                     onIntent = { receivedIntent = it },
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -170,13 +171,14 @@ class ShareScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 ShareScreen(
-                    uiState = ShareUiState(
-                        meme = testMeme,
-                        config = defaultConfig,
-                        isLoading = false
-                    ),
+                    uiState =
+                        ShareUiState(
+                            meme = testMeme,
+                            config = defaultConfig,
+                            isLoading = false,
+                        ),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -190,13 +192,14 @@ class ShareScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 ShareScreen(
-                    uiState = ShareUiState(
-                        meme = testMeme,
-                        config = ShareConfig(quality = 85),
-                        isLoading = false
-                    ),
+                    uiState =
+                        ShareUiState(
+                            meme = testMeme,
+                            config = ShareConfig(quality = 85),
+                            isLoading = false,
+                        ),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -211,13 +214,14 @@ class ShareScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 ShareScreen(
-                    uiState = ShareUiState(
-                        meme = testMeme,
-                        config = defaultConfig,
-                        isLoading = false
-                    ),
+                    uiState =
+                        ShareUiState(
+                            meme = testMeme,
+                            config = defaultConfig,
+                            isLoading = false,
+                        ),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -235,13 +239,14 @@ class ShareScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 ShareScreen(
-                    uiState = ShareUiState(
-                        meme = testMeme,
-                        config = defaultConfig,
-                        isLoading = false
-                    ),
+                    uiState =
+                        ShareUiState(
+                            meme = testMeme,
+                            config = defaultConfig,
+                            isLoading = false,
+                        ),
                     onIntent = { receivedIntent = it },
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -258,13 +263,14 @@ class ShareScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 ShareScreen(
-                    uiState = ShareUiState(
-                        meme = testMeme,
-                        config = defaultConfig,
-                        isLoading = false
-                    ),
+                    uiState =
+                        ShareUiState(
+                            meme = testMeme,
+                            config = defaultConfig,
+                            isLoading = false,
+                        ),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -279,13 +285,14 @@ class ShareScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 ShareScreen(
-                    uiState = ShareUiState(
-                        meme = testMeme,
-                        config = ShareConfig(stripMetadata = true),
-                        isLoading = false
-                    ),
+                    uiState =
+                        ShareUiState(
+                            meme = testMeme,
+                            config = ShareConfig(stripMetadata = true),
+                            isLoading = false,
+                        ),
                     onIntent = { receivedIntent = it },
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -302,13 +309,14 @@ class ShareScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 ShareScreen(
-                    uiState = ShareUiState(
-                        meme = testMeme,
-                        config = defaultConfig,
-                        isLoading = false
-                    ),
+                    uiState =
+                        ShareUiState(
+                            meme = testMeme,
+                            config = defaultConfig,
+                            isLoading = false,
+                        ),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -321,13 +329,14 @@ class ShareScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 ShareScreen(
-                    uiState = ShareUiState(
-                        meme = testMeme,
-                        config = defaultConfig,
-                        isLoading = false
-                    ),
+                    uiState =
+                        ShareUiState(
+                            meme = testMeme,
+                            config = defaultConfig,
+                            isLoading = false,
+                        ),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -342,13 +351,14 @@ class ShareScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 ShareScreen(
-                    uiState = ShareUiState(
-                        meme = testMeme,
-                        config = defaultConfig,
-                        isLoading = false
-                    ),
+                    uiState =
+                        ShareUiState(
+                            meme = testMeme,
+                            config = defaultConfig,
+                            isLoading = false,
+                        ),
                     onIntent = { receivedIntent = it },
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -365,13 +375,14 @@ class ShareScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 ShareScreen(
-                    uiState = ShareUiState(
-                        meme = testMeme,
-                        config = defaultConfig,
-                        isLoading = false
-                    ),
+                    uiState =
+                        ShareUiState(
+                            meme = testMeme,
+                            config = defaultConfig,
+                            isLoading = false,
+                        ),
                     onIntent = { receivedIntent = it },
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -386,13 +397,14 @@ class ShareScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 ShareScreen(
-                    uiState = ShareUiState(
-                        meme = testMeme,
-                        config = defaultConfig,
-                        isProcessing = true
-                    ),
+                    uiState =
+                        ShareUiState(
+                            meme = testMeme,
+                            config = defaultConfig,
+                            isProcessing = true,
+                        ),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -408,13 +420,14 @@ class ShareScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 ShareScreen(
-                    uiState = ShareUiState(
-                        meme = testMeme,
-                        config = defaultConfig,
-                        isProcessing = true
-                    ),
+                    uiState =
+                        ShareUiState(
+                            meme = testMeme,
+                            config = defaultConfig,
+                            isProcessing = true,
+                        ),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -427,14 +440,15 @@ class ShareScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 ShareScreen(
-                    uiState = ShareUiState(
-                        meme = testMeme,
-                        config = defaultConfig,
-                        isProcessing = true,
-                        processingMessage = "Preparing image..."
-                    ),
+                    uiState =
+                        ShareUiState(
+                            meme = testMeme,
+                            config = defaultConfig,
+                            isProcessing = true,
+                            processingMessage = "Preparing image...",
+                        ),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -451,7 +465,7 @@ class ShareScreenTest {
                 ShareScreen(
                     uiState = ShareUiState(isLoading = true),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -466,13 +480,14 @@ class ShareScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 ShareScreen(
-                    uiState = ShareUiState(
-                        meme = testMeme,
-                        config = defaultConfig,
-                        error = "Failed to process image"
-                    ),
+                    uiState =
+                        ShareUiState(
+                            meme = testMeme,
+                            config = defaultConfig,
+                            error = "Failed to process image",
+                        ),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -487,12 +502,13 @@ class ShareScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 ShareScreen(
-                    uiState = ShareUiState(
-                        meme = testMeme,
-                        config = defaultConfig
-                    ),
+                    uiState =
+                        ShareUiState(
+                            meme = testMeme,
+                            config = defaultConfig,
+                        ),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -507,12 +523,13 @@ class ShareScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 ShareScreen(
-                    uiState = ShareUiState(
-                        meme = testMeme,
-                        config = defaultConfig
-                    ),
+                    uiState =
+                        ShareUiState(
+                            meme = testMeme,
+                            config = defaultConfig,
+                        ),
                     onIntent = {},
-                    onNavigateBack = { navigatedBack = true }
+                    onNavigateBack = { navigatedBack = true },
                 )
             }
         }
@@ -529,13 +546,14 @@ class ShareScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 ShareScreen(
-                    uiState = ShareUiState(
-                        meme = testMeme,
-                        config = defaultConfig,
-                        estimatedSize = "~250 KB"
-                    ),
+                    uiState =
+                        ShareUiState(
+                            meme = testMeme,
+                            config = defaultConfig,
+                            estimatedSize = "~250 KB",
+                        ),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }

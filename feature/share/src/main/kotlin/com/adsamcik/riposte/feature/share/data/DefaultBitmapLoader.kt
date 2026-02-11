@@ -13,17 +13,18 @@ import javax.inject.Singleton
  * Default implementation of [BitmapLoader] using BitmapFactory and File.
  */
 @Singleton
-class DefaultBitmapLoader @Inject constructor() : BitmapLoader {
+class DefaultBitmapLoader
+    @Inject
+    constructor() : BitmapLoader {
+        override suspend fun loadBitmap(filePath: String): Bitmap? {
+            return withContext(Dispatchers.IO) {
+                BitmapFactory.decodeFile(filePath)
+            }
+        }
 
-    override suspend fun loadBitmap(filePath: String): Bitmap? {
-        return withContext(Dispatchers.IO) {
-            BitmapFactory.decodeFile(filePath)
+        override suspend fun getFileSize(filePath: String): Long {
+            return withContext(Dispatchers.IO) {
+                File(filePath).length()
+            }
         }
     }
-
-    override suspend fun getFileSize(filePath: String): Long {
-        return withContext(Dispatchers.IO) {
-            File(filePath).length()
-        }
-    }
-}

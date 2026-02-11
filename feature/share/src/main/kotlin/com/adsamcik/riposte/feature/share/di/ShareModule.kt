@@ -13,16 +13,11 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class ShareModule {
+    @Binds
+    @Singleton
+    abstract fun bindShareRepository(impl: ShareRepositoryImpl): ShareRepository
 
     @Binds
     @Singleton
-    abstract fun bindShareRepository(
-        impl: ShareRepositoryImpl,
-    ): ShareRepository
-
-    @Binds
-    @Singleton
-    abstract fun bindBitmapLoader(
-        impl: DefaultBitmapLoader,
-    ): BitmapLoader
+    abstract fun bindBitmapLoader(impl: DefaultBitmapLoader): BitmapLoader
 }
