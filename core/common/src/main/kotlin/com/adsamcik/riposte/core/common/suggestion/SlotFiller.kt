@@ -15,7 +15,6 @@ import kotlin.math.ln
 class SlotFiller(
     private val config: SuggestionConfig = SuggestionConfig(),
 ) {
-
     data class FilledHand(
         val keepers: List<Meme>,
         val new: List<Meme>,
@@ -44,8 +43,12 @@ class SlotFiller(
         now: Long,
     ): FilledHand {
         val selectedIds = mutableSetOf<Long>()
+
         fun isAvailable(meme: Meme) = meme.id !in selectedIds
-        fun markSelected(memes: List<Meme>) { selectedIds += memes.map { it.id } }
+
+        fun markSelected(memes: List<Meme>) {
+            selectedIds += memes.map { it.id }
+        }
 
         // KEEPERS: top stickers by score with staleness penalty
         val keepers = fillKeepers(scoredMemes, context.lastSessionSuggestionIds, selectedIds)
@@ -93,10 +96,11 @@ class SlotFiller(
         val remaining = config.handSize - current.size
         if (remaining <= 0) return current
 
-        val backfilled = scoredMemes
-            .map { it.first }
-            .filter { it.id !in currentIds }
-            .take(remaining)
+        val backfilled =
+            scoredMemes
+                .map { it.first }
+                .filter { it.id !in currentIds }
+                .take(remaining)
 
         return current + backfilled
     }
@@ -133,9 +137,10 @@ class SlotFiller(
         alreadySelected: List<Meme>,
         excludeIds: Set<Long>,
     ): List<Meme> {
-        val coveredEmojis = alreadySelected
-            .flatMap { it.emojiTags.map { t -> t.emoji } }
-            .toSet()
+        val coveredEmojis =
+            alreadySelected
+                .flatMap { it.emojiTags.map { t -> t.emoji } }
+                .toSet()
 
         return allMemes
             .filter { it.id !in excludeIds && it.emojiTags.any { t -> t.emoji !in coveredEmojis } }
@@ -157,9 +162,10 @@ class SlotFiller(
                     (meme.lastViewedAt?.let { (now - it) > thresholdMs } ?: true)
             }
             .sortedByDescending { meme ->
-                val daysSinceView = meme.lastViewedAt?.let {
-                    (now - it).toDouble() / MS_PER_DAY
-                } ?: 60.0
+                val daysSinceView =
+                    meme.lastViewedAt?.let {
+                        (now - it).toDouble() / MS_PER_DAY
+                    } ?: 60.0
                 ln(1.0 + meme.useCount) * ln(1.0 + daysSinceView)
             }
             .take(config.forgottenSlots)
@@ -171,13 +177,15 @@ class SlotFiller(
         excludeIds: Set<Long>,
     ): List<Meme> {
         // Find emoji categories the user has never interacted with
-        val usedEmojis = allMemes
-            .filter { it.viewCount > 0 || it.useCount > 0 }
-            .flatMap { it.emojiTags.map { t -> t.emoji } }
-            .toSet()
+        val usedEmojis =
+            allMemes
+                .filter { it.viewCount > 0 || it.useCount > 0 }
+                .flatMap { it.emojiTags.map { t -> t.emoji } }
+                .toSet()
 
-        val candidates = allMemes
-            .filter { it.id !in excludeIds && it.emojiTags.any { t -> t.emoji !in usedEmojis } }
+        val candidates =
+            allMemes
+                .filter { it.id !in excludeIds && it.emojiTags.any { t -> t.emoji !in usedEmojis } }
 
         // Pick randomly for serendipity, but deterministic via import order as tiebreaker
         return candidates

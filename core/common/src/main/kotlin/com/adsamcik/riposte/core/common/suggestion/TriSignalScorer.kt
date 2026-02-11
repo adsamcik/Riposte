@@ -16,10 +16,13 @@ import kotlin.math.ln
 class TriSignalScorer(
     private val config: SuggestionConfig = SuggestionConfig(),
 ) {
-
     private val lambda: Double = ln(2.0) / config.halfLifeDays
 
-    fun score(meme: Meme, context: SuggestionContext, now: Long): Double {
+    fun score(
+        meme: Meme,
+        context: SuggestionContext,
+        now: Long,
+    ): Double {
         val engagement = engagementScore(meme)
         val recency = recencyScore(meme, now)
         val scope = scopeScore(meme, context)
@@ -39,14 +42,21 @@ class TriSignalScorer(
             (if (meme.isFavorite) 5.0 else 0.0)
     }
 
-    internal fun recencyScore(meme: Meme, now: Long): Double {
-        val daysSinceView = meme.lastViewedAt?.let {
-            (now - it).toDouble() / MS_PER_DAY
-        } ?: 30.0
+    internal fun recencyScore(
+        meme: Meme,
+        now: Long,
+    ): Double {
+        val daysSinceView =
+            meme.lastViewedAt?.let {
+                (now - it).toDouble() / MS_PER_DAY
+            } ?: 30.0
         return exp(-lambda * daysSinceView)
     }
 
-    internal fun scopeScore(meme: Meme, context: SuggestionContext): Double {
+    internal fun scopeScore(
+        meme: Meme,
+        context: SuggestionContext,
+    ): Double {
         if (context.currentEmojiFilter != null &&
             meme.emojiTags.any { it.emoji == context.currentEmojiFilter }
         ) {

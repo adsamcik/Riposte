@@ -21,7 +21,6 @@ class SuggestionEngine(
     private val slotFiller: SlotFiller = SlotFiller(config),
     private val orderer: PositionalOrderer = PositionalOrderer(),
 ) {
-
     /**
      * Compute suggestions for the given context.
      *
@@ -57,19 +56,21 @@ class SuggestionEngine(
 
     internal fun coldStartSuggestions(allMemes: List<Meme>): List<Meme> {
         // Recent imports (8 slots)
-        val recent = allMemes
-            .sortedByDescending { it.importedAt }
-            .take(8)
+        val recent =
+            allMemes
+                .sortedByDescending { it.importedAt }
+                .take(8)
         val recentIds = recent.map { it.id }.toSet()
 
         // Diverse emoji spread (4 slots)
-        val diverse = allMemes
-            .filter { it.id !in recentIds && it.emojiTags.isNotEmpty() }
-            .groupBy { it.emojiTags.first().emoji }
-            .values
-            .mapNotNull { group -> group.maxByOrNull { it.importedAt } }
-            .filter { it.id !in recentIds }
-            .take(4)
+        val diverse =
+            allMemes
+                .filter { it.id !in recentIds && it.emojiTags.isNotEmpty() }
+                .groupBy { it.emojiTags.first().emoji }
+                .values
+                .mapNotNull { group -> group.maxByOrNull { it.importedAt } }
+                .filter { it.id !in recentIds }
+                .take(4)
 
         return (recent + diverse)
             .distinctBy { it.id }
@@ -82,9 +83,10 @@ class SuggestionEngine(
         now: Long,
     ): List<Meme> {
         // Step 1: Score all memes
-        val scoredMemes = allMemes
-            .map { it to scorer.score(it, context, now) }
-            .sortedByDescending { it.second }
+        val scoredMemes =
+            allMemes
+                .map { it to scorer.score(it, context, now) }
+                .sortedByDescending { it.second }
 
         // Step 2: Detect emoji drift
         val drift = driftDetector.detectDrift(allMemes, now)

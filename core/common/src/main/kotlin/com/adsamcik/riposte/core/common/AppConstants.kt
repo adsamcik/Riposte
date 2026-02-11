@@ -2,7 +2,7 @@ package com.adsamcik.riposte.core.common
 
 /**
  * App-wide constants that need to be shared across modules.
- * 
+ *
  * Note: For the actual release version, consider using BuildConfig from
  * the app module and injecting it via Hilt. This constant serves as a
  * single source of truth for hardcoded version references.
@@ -13,7 +13,7 @@ object AppConstants {
      * Update this when releasing a new version.
      */
     const val APP_VERSION = "1.0.0"
-    
+
     /**
      * Metadata schema version for XMP and sidecar files.
      */

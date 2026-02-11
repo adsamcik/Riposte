@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
  * Type-safe navigation routes for the app.
  * Uses Kotlin serialization for compile-time safety.
  */
-// Gallery Feature Routes
+
 @Serializable
 object GalleryRoute
 

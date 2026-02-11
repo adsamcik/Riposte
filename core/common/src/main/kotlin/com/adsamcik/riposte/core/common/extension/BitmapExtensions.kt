@@ -9,7 +9,10 @@ import java.io.FileOutputStream
 /**
  * Scales a bitmap to fit within the specified max dimensions while maintaining aspect ratio.
  */
-fun Bitmap.scaleToFit(maxWidth: Int, maxHeight: Int): Bitmap {
+fun Bitmap.scaleToFit(
+    maxWidth: Int,
+    maxHeight: Int,
+): Bitmap {
     val ratioX = maxWidth.toFloat() / width
     val ratioY = maxHeight.toFloat() / height
     val ratio = minOf(ratioX, ratioY)
@@ -27,7 +30,7 @@ fun Bitmap.scaleToFit(maxWidth: Int, maxHeight: Int): Bitmap {
  */
 fun Bitmap.compress(
     format: Bitmap.CompressFormat,
-    quality: Int
+    quality: Int,
 ): ByteArray {
     return ByteArrayOutputStream().use { stream ->
         compress(format, quality.coerceIn(0, 100), stream)
@@ -41,7 +44,7 @@ fun Bitmap.compress(
 fun Bitmap.saveToFile(
     file: File,
     format: Bitmap.CompressFormat,
-    quality: Int
+    quality: Int,
 ): Boolean {
     return try {
         FileOutputStream(file).use { stream ->
@@ -56,23 +59,28 @@ fun Bitmap.saveToFile(
 /**
  * Loads a bitmap from a file with optional sample size for memory efficiency.
  */
-fun File.loadBitmap(maxWidth: Int? = null, maxHeight: Int? = null): Bitmap? {
+fun File.loadBitmap(
+    maxWidth: Int? = null,
+    maxHeight: Int? = null,
+): Bitmap? {
     if (!exists()) return null
 
     // First, decode bounds only
-    val options = BitmapFactory.Options().apply {
-        inJustDecodeBounds = true
-    }
+    val options =
+        BitmapFactory.Options().apply {
+            inJustDecodeBounds = true
+        }
     BitmapFactory.decodeFile(absolutePath, options)
 
     // Calculate sample size
     if (maxWidth != null && maxHeight != null) {
-        options.inSampleSize = calculateInSampleSize(
-            options.outWidth,
-            options.outHeight,
-            maxWidth,
-            maxHeight
-        )
+        options.inSampleSize =
+            calculateInSampleSize(
+                options.outWidth,
+                options.outHeight,
+                maxWidth,
+                maxHeight,
+            )
     }
 
     // Decode with sample size
@@ -84,7 +92,7 @@ private fun calculateInSampleSize(
     width: Int,
     height: Int,
     reqWidth: Int,
-    reqHeight: Int
+    reqHeight: Int,
 ): Int {
     var inSampleSize = 1
 

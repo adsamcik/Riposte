@@ -22,10 +22,11 @@ fun Uri.getFileName(context: Context): String? {
         }
     }
     if (result == null) {
-        result = path?.let { path ->
-            val cut = path.lastIndexOf('/')
-            if (cut != -1) path.substring(cut + 1) else path
-        }
+        result =
+            path?.let { path ->
+                val cut = path.lastIndexOf('/')
+                if (cut != -1) path.substring(cut + 1) else path
+            }
     }
     return result
 }
@@ -51,7 +52,10 @@ fun Uri.getFileSize(context: Context): Long {
 /**
  * Copies a content URI to a file in the app's cache directory.
  */
-fun Uri.copyToFile(context: Context, destinationFile: File): Boolean {
+fun Uri.copyToFile(
+    context: Context,
+    destinationFile: File,
+): Boolean {
     return try {
         context.contentResolver.openInputStream(this)?.use { input ->
             FileOutputStream(destinationFile).use { output ->

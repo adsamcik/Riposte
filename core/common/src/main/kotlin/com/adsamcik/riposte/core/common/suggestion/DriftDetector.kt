@@ -12,12 +12,14 @@ import com.adsamcik.riposte.core.model.Meme
 class DriftDetector(
     private val config: SuggestionConfig = SuggestionConfig(),
 ) {
-
     /**
      * Returns a map of emoji → drift value.
      * Positive values indicate the emoji is trending up in recent usage.
      */
-    fun detectDrift(memes: List<Meme>, now: Long): Map<String, Double> {
+    fun detectDrift(
+        memes: List<Meme>,
+        now: Long,
+    ): Map<String, Double> {
         val recentWindowMs = config.driftWindowDays.toLong() * MS_PER_DAY
 
         val recentCounts = mutableMapOf<String, Int>()
@@ -46,7 +48,10 @@ class DriftDetector(
         return drift
     }
 
-    fun risingEmojis(memes: List<Meme>, now: Long): Set<String> {
+    fun risingEmojis(
+        memes: List<Meme>,
+        now: Long,
+    ): Set<String> {
         return detectDrift(memes, now).filter { it.value > 0 }.keys
     }
 }

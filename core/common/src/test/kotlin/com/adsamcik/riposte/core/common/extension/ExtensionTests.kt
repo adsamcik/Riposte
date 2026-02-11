@@ -2,16 +2,13 @@ package com.adsamcik.riposte.core.common.extension
 
 import android.content.ContentResolver
 import android.content.Context
-import android.database.Cursor
 import android.database.MatrixCursor
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
 import android.provider.OpenableColumns
 import com.google.common.truth.Truth.assertThat
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.mockkStatic
 import io.mockk.unmockkAll
 import org.junit.After
 import org.junit.Before
@@ -21,7 +18,6 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.io.ByteArrayInputStream
 import java.io.File
-import java.io.FileOutputStream
 
 /**
  * Tests for Bitmap extension functions.
@@ -30,7 +26,6 @@ import java.io.FileOutputStream
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
 class BitmapExtensionsTest {
-
     private lateinit var testBitmap: Bitmap
 
     @Before
@@ -280,7 +275,6 @@ class BitmapExtensionsTest {
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
 class UriExtensionsTest {
-
     private lateinit var mockContext: Context
     private lateinit var mockContentResolver: ContentResolver
 

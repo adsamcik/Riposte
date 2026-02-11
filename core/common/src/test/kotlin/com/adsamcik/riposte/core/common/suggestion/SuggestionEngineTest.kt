@@ -8,7 +8,6 @@ import org.junit.Before
 import org.junit.Test
 
 class TriSignalScorerTest {
-
     private lateinit var scorer: TriSignalScorer
     private val now = 1_700_000_000_000L
 
@@ -56,20 +55,22 @@ class TriSignalScorerTest {
     @Test
     fun `scope score is 3 when matching current emoji filter`() {
         val meme = testMeme(emojiTags = listOf(tag("😂")))
-        val context = SuggestionContext(
-            surface = Surface.SEARCH,
-            currentEmojiFilter = "😂",
-        )
+        val context =
+            SuggestionContext(
+                surface = Surface.SEARCH,
+                currentEmojiFilter = "😂",
+            )
         assertThat(scorer.scopeScore(meme, context)).isWithin(0.01).of(3.0)
     }
 
     @Test
     fun `scope score is 2 when matching recent search`() {
         val meme = testMeme(title = "funny cat")
-        val context = SuggestionContext(
-            surface = Surface.SEARCH,
-            recentSearches = listOf("funny"),
-        )
+        val context =
+            SuggestionContext(
+                surface = Surface.SEARCH,
+                recentSearches = listOf("funny"),
+            )
         assertThat(scorer.scopeScore(meme, context)).isWithin(0.01).of(2.0)
     }
 
@@ -98,10 +99,11 @@ class TriSignalScorerTest {
     fun `search surface boosts scope-matching memes`() {
         val matching = testMeme(emojiTags = listOf(tag("🔥")), useCount = 3, lastViewedAt = now)
         val unmatching = testMeme(id = 2, useCount = 3, lastViewedAt = now)
-        val context = SuggestionContext(
-            surface = Surface.SEARCH,
-            currentEmojiFilter = "🔥",
-        )
+        val context =
+            SuggestionContext(
+                surface = Surface.SEARCH,
+                currentEmojiFilter = "🔥",
+            )
 
         val matchScore = scorer.score(matching, context, now)
         val unmatchScore = scorer.score(unmatching, context, now)
@@ -112,18 +114,18 @@ class TriSignalScorerTest {
 }
 
 class DriftDetectorTest {
-
     private val detector = DriftDetector()
     private val now = 1_700_000_000_000L
 
     @Test
     fun `rising emoji has positive drift`() {
-        val memes = listOf(
-            // Old 😂 memes with lots of history
-            testMeme(emojiTags = listOf(tag("😂")), viewCount = 50, lastViewedAt = now - 30 * MS_PER_DAY),
-            // Recent 🔥 meme
-            testMeme(id = 2, emojiTags = listOf(tag("🔥")), viewCount = 10, lastViewedAt = now - MS_PER_DAY),
-        )
+        val memes =
+            listOf(
+                // Old 😂 memes with lots of history
+                testMeme(emojiTags = listOf(tag("😂")), viewCount = 50, lastViewedAt = now - 30 * MS_PER_DAY),
+                // Recent 🔥 meme
+                testMeme(id = 2, emojiTags = listOf(tag("🔥")), viewCount = 10, lastViewedAt = now - MS_PER_DAY),
+            )
 
         val drift = detector.detectDrift(memes, now)
         assertThat(drift["🔥"]).isGreaterThan(0.0)
@@ -136,10 +138,11 @@ class DriftDetectorTest {
 
     @Test
     fun `risingEmojis returns only positive drift emojis`() {
-        val memes = listOf(
-            testMeme(emojiTags = listOf(tag("😂")), viewCount = 50, lastViewedAt = now - 30 * MS_PER_DAY),
-            testMeme(id = 2, emojiTags = listOf(tag("🔥")), viewCount = 10, lastViewedAt = now - MS_PER_DAY),
-        )
+        val memes =
+            listOf(
+                testMeme(emojiTags = listOf(tag("😂")), viewCount = 50, lastViewedAt = now - 30 * MS_PER_DAY),
+                testMeme(id = 2, emojiTags = listOf(tag("🔥")), viewCount = 10, lastViewedAt = now - MS_PER_DAY),
+            )
 
         val rising = detector.risingEmojis(memes, now)
         assertThat(rising).contains("🔥")
@@ -147,7 +150,6 @@ class DriftDetectorTest {
 }
 
 class SlotFillerTest {
-
     private val filler = SlotFiller()
     private val now = 1_700_000_000_000L
 
@@ -172,20 +174,22 @@ class SlotFillerTest {
         val laugh = testMeme(emojiTags = listOf(tag("😂")), useCount = 5)
         val fire = testMeme(id = 2, emojiTags = listOf(tag("🔥")), useCount = 3)
 
-        val result = filler.fillDiverse(
-            allMemes = listOf(laugh, fire),
-            alreadySelected = listOf(laugh),
-            excludeIds = setOf(laugh.id),
-        )
+        val result =
+            filler.fillDiverse(
+                allMemes = listOf(laugh, fire),
+                alreadySelected = listOf(laugh),
+                excludeIds = setOf(laugh.id),
+            )
         assertThat(result).containsExactly(fire)
     }
 
     @Test
     fun `fillForgotten picks old favorites with high useCount`() {
-        val forgotten = testMeme(
-            useCount = 10,
-            lastViewedAt = now - 30 * MS_PER_DAY,
-        )
+        val forgotten =
+            testMeme(
+                useCount = 10,
+                lastViewedAt = now - 30 * MS_PER_DAY,
+            )
         val recent = testMeme(id = 2, useCount = 10, lastViewedAt = now - MS_PER_DAY)
 
         val result = filler.fillForgotten(listOf(forgotten, recent), now, emptySet())
@@ -232,7 +236,6 @@ class SlotFillerTest {
 }
 
 class PositionalOrdererTest {
-
     private val orderer = PositionalOrderer()
 
     @Test
@@ -247,11 +250,12 @@ class PositionalOrdererTest {
 
     @Test
     fun `greedy diversify avoids adjacent same emoji`() {
-        val memes = listOf(
-            testMeme(id = 1, emojiTags = listOf(tag("😂"))),
-            testMeme(id = 2, emojiTags = listOf(tag("😂"))),
-            testMeme(id = 3, emojiTags = listOf(tag("🔥"))),
-        )
+        val memes =
+            listOf(
+                testMeme(id = 1, emojiTags = listOf(tag("😂"))),
+                testMeme(id = 2, emojiTags = listOf(tag("😂"))),
+                testMeme(id = 3, emojiTags = listOf(tag("🔥"))),
+            )
 
         val result = orderer.greedyDiversify(memes)
         // Should not have two 😂 adjacent — expects [😂, 🔥, 😂]
@@ -273,7 +277,6 @@ class PositionalOrdererTest {
 }
 
 class SuggestionEngineTest {
-
     private val engine = SuggestionEngine()
     private val now = 1_700_000_000_000L
 
@@ -286,9 +289,10 @@ class SuggestionEngineTest {
 
     @Test
     fun `small library returns all sorted by import recency`() {
-        val memes = (1..10).map {
-            testMeme(id = it.toLong(), importedAt = now - it * MS_PER_DAY)
-        }
+        val memes =
+            (1..10).map {
+                testMeme(id = it.toLong(), importedAt = now - it * MS_PER_DAY)
+            }
         val context = SuggestionContext(surface = Surface.GALLERY)
         val result = engine.suggest(memes, context, now)
 
@@ -298,13 +302,14 @@ class SuggestionEngineTest {
 
     @Test
     fun `cold start uses recency plus emoji diversity`() {
-        val memes = (1..25).map {
-            testMeme(
-                id = it.toLong(),
-                importedAt = now - it * MS_PER_DAY,
-                emojiTags = listOf(tag(if (it % 3 == 0) "🔥" else "😂")),
-            )
-        }
+        val memes =
+            (1..25).map {
+                testMeme(
+                    id = it.toLong(),
+                    importedAt = now - it * MS_PER_DAY,
+                    emojiTags = listOf(tag(if (it % 3 == 0) "🔥" else "😂")),
+                )
+            }
         val context = SuggestionContext(surface = Surface.GALLERY)
         val result = engine.suggest(memes, context, now)
 
@@ -314,16 +319,17 @@ class SuggestionEngineTest {
 
     @Test
     fun `full algorithm returns hand-size results for engaged library`() {
-        val memes = (1..50).map {
-            testMeme(
-                id = it.toLong(),
-                importedAt = now - it * MS_PER_DAY,
-                useCount = it % 5,
-                viewCount = it,
-                lastViewedAt = now - (it % 10).toLong() * MS_PER_DAY,
-                emojiTags = listOf(tag(listOf("😂", "🔥", "❤️", "🎉", "😎")[it % 5])),
-            )
-        }
+        val memes =
+            (1..50).map {
+                testMeme(
+                    id = it.toLong(),
+                    importedAt = now - it * MS_PER_DAY,
+                    useCount = it % 5,
+                    viewCount = it,
+                    lastViewedAt = now - (it % 10).toLong() * MS_PER_DAY,
+                    emojiTags = listOf(tag(listOf("😂", "🔥", "❤️", "🎉", "😎")[it % 5])),
+                )
+            }
         val context = SuggestionContext(surface = Surface.GALLERY)
         val result = engine.suggest(memes, context, now)
 
@@ -333,27 +339,29 @@ class SuggestionEngineTest {
 
     @Test
     fun `search surface produces different ordering than gallery`() {
-        val memes = (1..30).map {
-            testMeme(
-                id = it.toLong(),
-                importedAt = now - it * MS_PER_DAY,
-                useCount = it % 3,
-                viewCount = it * 2,
-                lastViewedAt = now - (it % 7).toLong() * MS_PER_DAY,
-                emojiTags = listOf(tag(listOf("😂", "🔥", "❤️")[it % 3])),
-            )
-        }
+        val memes =
+            (1..30).map {
+                testMeme(
+                    id = it.toLong(),
+                    importedAt = now - it * MS_PER_DAY,
+                    useCount = it % 3,
+                    viewCount = it * 2,
+                    lastViewedAt = now - (it % 7).toLong() * MS_PER_DAY,
+                    emojiTags = listOf(tag(listOf("😂", "🔥", "❤️")[it % 3])),
+                )
+            }
 
         val gallery = engine.suggest(memes, SuggestionContext(surface = Surface.GALLERY), now)
-        val search = engine.suggest(
-            memes,
-            SuggestionContext(
-                surface = Surface.SEARCH,
-                recentSearches = listOf("fire"),
-                currentEmojiFilter = "🔥",
-            ),
-            now,
-        )
+        val search =
+            engine.suggest(
+                memes,
+                SuggestionContext(
+                    surface = Surface.SEARCH,
+                    recentSearches = listOf("fire"),
+                    currentEmojiFilter = "🔥",
+                ),
+                now,
+            )
 
         // Both return results but likely different orderings
         assertThat(gallery).isNotEmpty()
@@ -363,26 +371,28 @@ class SuggestionEngineTest {
     @Test
     fun `staleness rotation changes keepers between sessions`() {
         // Use very close scores so staleness penalty can flip ordering
-        val memes = (1..30).map {
-            testMeme(
-                id = it.toLong(),
-                importedAt = now - 30 * MS_PER_DAY,
-                useCount = 1,
-                viewCount = 1,
-                lastViewedAt = now - (it % 3).toLong() * MS_PER_DAY,
-                emojiTags = listOf(tag(listOf("😂", "🔥", "❤️")[it % 3])),
-            )
-        }
+        val memes =
+            (1..30).map {
+                testMeme(
+                    id = it.toLong(),
+                    importedAt = now - 30 * MS_PER_DAY,
+                    useCount = 1,
+                    viewCount = 1,
+                    lastViewedAt = now - (it % 3).toLong() * MS_PER_DAY,
+                    emojiTags = listOf(tag(listOf("😂", "🔥", "❤️")[it % 3])),
+                )
+            }
 
         val firstRun = engine.suggest(memes, SuggestionContext(surface = Surface.GALLERY), now)
-        val secondRun = engine.suggest(
-            memes,
-            SuggestionContext(
-                surface = Surface.GALLERY,
-                lastSessionSuggestionIds = firstRun.map { it.id }.toSet(),
-            ),
-            now,
-        )
+        val secondRun =
+            engine.suggest(
+                memes,
+                SuggestionContext(
+                    surface = Surface.GALLERY,
+                    lastSessionSuggestionIds = firstRun.map { it.id }.toSet(),
+                ),
+                now,
+            )
 
         // At least one item should differ due to staleness penalty on keepers
         val firstIds = firstRun.map { it.id }.toSet()
@@ -405,27 +415,29 @@ private fun testMeme(
     useCount: Int = 0,
     viewCount: Int = 0,
     lastViewedAt: Long? = null,
-): Meme = Meme(
-    id = id,
-    filePath = "/test/meme_$id.jpg",
-    fileName = "meme_$id.jpg",
-    mimeType = "image/jpeg",
-    width = 100,
-    height = 100,
-    fileSizeBytes = 1024,
-    importedAt = importedAt,
-    emojiTags = emojiTags,
-    title = title,
-    description = description,
-    textContent = textContent,
-    isFavorite = isFavorite,
-    useCount = useCount,
-    viewCount = viewCount,
-    lastViewedAt = lastViewedAt,
-)
+): Meme =
+    Meme(
+        id = id,
+        filePath = "/test/meme_$id.jpg",
+        fileName = "meme_$id.jpg",
+        mimeType = "image/jpeg",
+        width = 100,
+        height = 100,
+        fileSizeBytes = 1024,
+        importedAt = importedAt,
+        emojiTags = emojiTags,
+        title = title,
+        description = description,
+        textContent = textContent,
+        isFavorite = isFavorite,
+        useCount = useCount,
+        viewCount = viewCount,
+        lastViewedAt = lastViewedAt,
+    )
 
-private fun tag(emoji: String): EmojiTag = EmojiTag(
-    emoji = emoji,
-    name = "test_${emoji.hashCode()}",
-    keywords = listOf(emoji),
-)
+private fun tag(emoji: String): EmojiTag =
+    EmojiTag(
+        emoji = emoji,
+        name = "test_${emoji.hashCode()}",
+        keywords = listOf(emoji),
+    )

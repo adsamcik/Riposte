@@ -10,5 +10,5 @@ fun normalizeEmoji(emoji: String): String {
     return emoji
         .replace("\uFE0E", "") // text presentation selector
         .replace("\uFE0F", "") // emoji presentation selector
-        .trimEnd('\u200D')     // trailing zero-width joiner (if alone)
+        .trimEnd('\u200D') // trailing zero-width joiner (if alone)
 }

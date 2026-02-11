@@ -4,7 +4,6 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
 class EmojiUtilsTest {
-
     @Test
     fun `normalizeEmoji strips emoji presentation selector`() {
         // ❤️ = U+2764 U+FE0F → ❤ = U+2764

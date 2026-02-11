@@ -5,7 +5,6 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 class ResourceTest {
-
     // region Success State Tests
 
     @Test
@@ -174,10 +173,11 @@ class ResourceTest {
     fun `map chain works correctly`() {
         val resource = Resource.Success(2)
 
-        val mapped = resource
-            .map { it * 3 }
-            .map { it + 1 }
-            .map { it.toString() }
+        val mapped =
+            resource
+                .map { it * 3 }
+                .map { it + 1 }
+                .map { it.toString() }
 
         assertThat((mapped as Resource.Success).data).isEqualTo("7")
     }
@@ -187,47 +187,52 @@ class ResourceTest {
     // region SuspendMap Tests
 
     @Test
-    fun `suspendMap transforms Success data`() = runTest {
-        val resource = Resource.Success("hello")
+    fun `suspendMap transforms Success data`() =
+        runTest {
+            val resource = Resource.Success("hello")
 
-        val mapped = resource.suspendMap { it.uppercase() }
+            val mapped = resource.suspendMap { it.uppercase() }
 
-        assertThat((mapped as Resource.Success).data).isEqualTo("HELLO")
-    }
-
-    @Test
-    fun `suspendMap preserves Error state`() = runTest {
-        val exception = RuntimeException("test")
-        val resource: Resource<String> = Resource.Error("error", exception)
-
-        val mapped = resource.suspendMap { it.uppercase() }
-
-        assertThat(mapped).isInstanceOf(Resource.Error::class.java)
-        assertThat((mapped as Resource.Error).message).isEqualTo("error")
-        assertThat(mapped.exception).isEqualTo(exception)
-    }
-
-    @Test
-    fun `suspendMap preserves Loading state`() = runTest {
-        val resource: Resource<String> = Resource.Loading
-
-        val mapped = resource.suspendMap { it.uppercase() }
-
-        assertThat(mapped).isEqualTo(Resource.Loading)
-    }
-
-    @Test
-    fun `suspendMap works with suspend function`() = runTest {
-        val resource = Resource.Success(10)
-
-        val mapped = resource.suspendMap { value ->
-            // Simulate async operation
-            kotlinx.coroutines.delay(10)
-            value * 2
+            assertThat((mapped as Resource.Success).data).isEqualTo("HELLO")
         }
 
-        assertThat((mapped as Resource.Success).data).isEqualTo(20)
-    }
+    @Test
+    fun `suspendMap preserves Error state`() =
+        runTest {
+            val exception = RuntimeException("test")
+            val resource: Resource<String> = Resource.Error("error", exception)
+
+            val mapped = resource.suspendMap { it.uppercase() }
+
+            assertThat(mapped).isInstanceOf(Resource.Error::class.java)
+            assertThat((mapped as Resource.Error).message).isEqualTo("error")
+            assertThat(mapped.exception).isEqualTo(exception)
+        }
+
+    @Test
+    fun `suspendMap preserves Loading state`() =
+        runTest {
+            val resource: Resource<String> = Resource.Loading
+
+            val mapped = resource.suspendMap { it.uppercase() }
+
+            assertThat(mapped).isEqualTo(Resource.Loading)
+        }
+
+    @Test
+    fun `suspendMap works with suspend function`() =
+        runTest {
+            val resource = Resource.Success(10)
+
+            val mapped =
+                resource.suspendMap { value ->
+                    // Simulate async operation
+                    kotlinx.coroutines.delay(10)
+                    value * 2
+                }
+
+            assertThat((mapped as Resource.Success).data).isEqualTo(20)
+        }
 
     // endregion
 
@@ -277,23 +282,26 @@ class ResourceTest {
         val errorResource: Resource<String> = Resource.Error("error")
         val loadingResource: Resource<String> = Resource.Loading
 
-        val successResult = when (successResource) {
-            is Resource.Success -> "success: ${successResource.data}"
-            is Resource.Error -> "error: ${successResource.message}"
-            is Resource.Loading -> "loading"
-        }
+        val successResult =
+            when (successResource) {
+                is Resource.Success -> "success: ${successResource.data}"
+                is Resource.Error -> "error: ${successResource.message}"
+                is Resource.Loading -> "loading"
+            }
 
-        val errorResult = when (errorResource) {
-            is Resource.Success -> "success: ${errorResource.data}"
-            is Resource.Error -> "error: ${errorResource.message}"
-            is Resource.Loading -> "loading"
-        }
+        val errorResult =
+            when (errorResource) {
+                is Resource.Success -> "success: ${errorResource.data}"
+                is Resource.Error -> "error: ${errorResource.message}"
+                is Resource.Loading -> "loading"
+            }
 
-        val loadingResult = when (loadingResource) {
-            is Resource.Success -> "success: ${loadingResource.data}"
-            is Resource.Error -> "error: ${loadingResource.message}"
-            is Resource.Loading -> "loading"
-        }
+        val loadingResult =
+            when (loadingResource) {
+                is Resource.Success -> "success: ${loadingResource.data}"
+                is Resource.Error -> "error: ${loadingResource.message}"
+                is Resource.Loading -> "loading"
+            }
 
         assertThat(successResult).isEqualTo("success: data")
         assertThat(errorResult).isEqualTo("error: error")

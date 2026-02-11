@@ -1,10 +1,10 @@
 package com.adsamcik.riposte.core.common.util
 
+import com.adsamcik.riposte.core.common.result.Resource
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
-import com.adsamcik.riposte.core.common.result.Resource
 
 /**
  * Wraps a Flow to emit Resource states (Loading, Success, Error).

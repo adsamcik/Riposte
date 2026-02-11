@@ -11,7 +11,6 @@ import com.adsamcik.riposte.core.model.Meme
  * Inspired by restaurant menu design (Session 2).
  */
 class PositionalOrderer {
-
     fun order(
         hand: List<Meme>,
         scores: Map<Long, Double>,
@@ -50,13 +49,14 @@ class PositionalOrderer {
 
         while (pool.isNotEmpty()) {
             val lastEmoji = result.lastOrNull()?.emojiTags?.firstOrNull()?.emoji
-            val nextIdx = if (lastEmoji != null) {
-                // Prefer a meme with a different primary emoji
-                pool.indexOfFirst { it.emojiTags.firstOrNull()?.emoji != lastEmoji }
-                    .takeIf { it >= 0 } ?: 0
-            } else {
-                0
-            }
+            val nextIdx =
+                if (lastEmoji != null) {
+                    // Prefer a meme with a different primary emoji
+                    pool.indexOfFirst { it.emojiTags.firstOrNull()?.emoji != lastEmoji }
+                        .takeIf { it >= 0 } ?: 0
+                } else {
+                    0
+                }
             result.add(pool.removeAt(nextIdx))
         }
         return result
