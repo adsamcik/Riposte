@@ -101,6 +101,9 @@ import com.adsamcik.riposte.core.ui.component.ErrorState
 import com.adsamcik.riposte.core.ui.component.LoadingScreen
 import com.adsamcik.riposte.core.ui.component.MemeCardCompact
 import com.adsamcik.riposte.core.ui.modifier.animatedPressScale
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import kotlinx.coroutines.flow.collectLatest
 import com.adsamcik.riposte.core.ui.theme.MoodShapes
 import com.adsamcik.riposte.core.ui.theme.rememberGridColumns
 import com.adsamcik.riposte.feature.gallery.R
@@ -125,7 +128,7 @@ fun GalleryScreen(
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     LaunchedEffect(Unit) {
-        viewModel.effects.collect { effect ->
+        viewModel.effects.collectLatest { effect ->
             when (effect) {
                 is GalleryEffect.NavigateToMeme -> onNavigateToMeme(effect.memeId)
                 is GalleryEffect.NavigateToImport -> onNavigateToImport()
@@ -137,7 +140,11 @@ fun GalleryScreen(
                 is GalleryEffect.ShowError -> snackbarHostState.showSnackbar(effect.message)
                 is GalleryEffect.NavigateToShare -> onNavigateToShare(effect.memeId)
                 is GalleryEffect.LaunchQuickShare -> {
-                    context.startActivity(effect.intent)
+                    try {
+                        context.startActivity(effect.intent)
+                    } catch (e: android.content.ActivityNotFoundException) {
+                        snackbarHostState.showSnackbar("Unable to share — app not found")
+                    }
                 }
                 is GalleryEffect.TriggerHapticFeedback -> { /* Handled by Compose haptic feedback */ }
                 is GalleryEffect.CopyToClipboard -> {
@@ -960,6 +967,7 @@ internal fun MemeGridItem(
         }
     } else {
         val interactionSource = remember { MutableInteractionSource() }
+        val haptic = LocalHapticFeedback.current
         Box(
             modifier =
                 Modifier
@@ -969,11 +977,13 @@ internal fun MemeGridItem(
                         indication = ripple(),
                         onClick = { onIntent(GalleryIntent.OpenMeme(meme.id)) },
                         onLongClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             onIntent(GalleryIntent.QuickShare(meme.id))
                         },
                     )
                     .semantics(mergeDescendants = true) {
                         contentDescription = memeDescription
+                        role = Role.Button
                     },
         ) {
             MemeCardCompact(

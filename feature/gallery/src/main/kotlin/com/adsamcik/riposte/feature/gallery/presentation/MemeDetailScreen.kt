@@ -129,7 +129,11 @@ fun MemeDetailScreen(
                 is MemeDetailEffect.NavigateToShare -> onNavigateToShare(effect.memeId)
                 is MemeDetailEffect.NavigateToMeme -> onNavigateToMeme(effect.memeId)
                 is MemeDetailEffect.LaunchQuickShare -> {
-                    context.startActivity(effect.intent)
+                    try {
+                        context.startActivity(effect.intent)
+                    } catch (e: android.content.ActivityNotFoundException) {
+                        snackbarHostState.showSnackbar("Unable to share — app not found")
+                    }
                 }
                 is MemeDetailEffect.ShowSnackbar -> snackbarHostState.showSnackbar(effect.message)
                 is MemeDetailEffect.ShowError -> snackbarHostState.showSnackbar(effect.message)
