@@ -1,12 +1,12 @@
 package com.adsamcik.riposte.core.search.domain.usecase
 
 import app.cash.turbine.test
-import com.google.common.truth.Truth.assertThat
 import com.adsamcik.riposte.core.model.EmojiTag
 import com.adsamcik.riposte.core.model.MatchType
 import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.core.model.SearchResult
 import com.adsamcik.riposte.core.search.domain.repository.SearchRepository
+import com.google.common.truth.Truth.assertThat
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -19,22 +19,23 @@ import org.junit.Before
 import org.junit.Test
 
 class SearchUseCasesTest {
-
     private lateinit var repository: SearchRepository
 
-    private val testMemes = listOf(
-        createTestMeme(1, "meme1.jpg"),
-        createTestMeme(2, "meme2.jpg"),
-        createTestMeme(3, "meme3.jpg")
-    )
-
-    private val testSearchResults = testMemes.mapIndexed { index, meme ->
-        SearchResult(
-            meme = meme,
-            relevanceScore = 1.0f - (index * 0.1f),
-            matchType = MatchType.TEXT
+    private val testMemes =
+        listOf(
+            createTestMeme(1, "meme1.jpg"),
+            createTestMeme(2, "meme2.jpg"),
+            createTestMeme(3, "meme3.jpg"),
         )
-    }
+
+    private val testSearchResults =
+        testMemes.mapIndexed { index, meme ->
+            SearchResult(
+                meme = meme,
+                relevanceScore = 1.0f - (index * 0.1f),
+                matchType = MatchType.TEXT,
+            )
+        }
 
     private val recentSearches = listOf("funny", "cat", "dog")
     private val suggestions = listOf("funny meme", "funny cat", "funny dog")
@@ -47,324 +48,350 @@ class SearchUseCasesTest {
     // region TextSearchUseCase Tests
 
     @Test
-    fun `TextSearchUseCase returns flow of results from repository`() = runTest {
-        every { repository.searchByText("funny") } returns flowOf(testSearchResults)
-        val useCase = TextSearchUseCase(repository)
+    fun `TextSearchUseCase returns flow of results from repository`() =
+        runTest {
+            every { repository.searchByText("funny") } returns flowOf(testSearchResults)
+            val useCase = TextSearchUseCase(repository)
 
-        useCase("funny").test {
-            val results = awaitItem()
-            assertThat(results).hasSize(3)
-            assertThat(results[0].relevanceScore).isGreaterThan(results[1].relevanceScore)
-            awaitComplete()
+            useCase("funny").test {
+                val results = awaitItem()
+                assertThat(results).hasSize(3)
+                assertThat(results[0].relevanceScore).isGreaterThan(results[1].relevanceScore)
+                awaitComplete()
+            }
+
+            verify { repository.searchByText("funny") }
         }
-
-        verify { repository.searchByText("funny") }
-    }
 
     @Test
-    fun `TextSearchUseCase returns empty list for no matches`() = runTest {
-        every { repository.searchByText("xyz") } returns flowOf(emptyList())
-        val useCase = TextSearchUseCase(repository)
+    fun `TextSearchUseCase returns empty list for no matches`() =
+        runTest {
+            every { repository.searchByText("xyz") } returns flowOf(emptyList())
+            val useCase = TextSearchUseCase(repository)
 
-        useCase("xyz").test {
-            val results = awaitItem()
-            assertThat(results).isEmpty()
-            awaitComplete()
+            useCase("xyz").test {
+                val results = awaitItem()
+                assertThat(results).isEmpty()
+                awaitComplete()
+            }
         }
-    }
 
     @Test
-    fun `TextSearchUseCase emits updated results when repository updates`() = runTest {
-        val mutableFlow = MutableStateFlow(testSearchResults)
-        every { repository.searchByText("test") } returns mutableFlow
-        val useCase = TextSearchUseCase(repository)
+    fun `TextSearchUseCase emits updated results when repository updates`() =
+        runTest {
+            val mutableFlow = MutableStateFlow(testSearchResults)
+            every { repository.searchByText("test") } returns mutableFlow
+            val useCase = TextSearchUseCase(repository)
 
-        useCase("test").test {
-            assertThat(awaitItem()).hasSize(3)
+            useCase("test").test {
+                assertThat(awaitItem()).hasSize(3)
 
-            val newResults = testSearchResults + SearchResult(
-                meme = createTestMeme(4, "new.jpg"),
-                relevanceScore = 0.5f,
-                matchType = MatchType.TEXT
-            )
-            mutableFlow.value = newResults
-            assertThat(awaitItem()).hasSize(4)
+                val newResults =
+                    testSearchResults +
+                        SearchResult(
+                            meme = createTestMeme(4, "new.jpg"),
+                            relevanceScore = 0.5f,
+                            matchType = MatchType.TEXT,
+                        )
+                mutableFlow.value = newResults
+                assertThat(awaitItem()).hasSize(4)
+            }
         }
-    }
 
     // endregion
 
     // region SemanticSearchUseCase Tests
 
     @Test
-    fun `SemanticSearchUseCase returns results from repository`() = runTest {
-        coEvery { repository.searchSemantic("funny", 20) } returns testSearchResults
-        val useCase = SemanticSearchUseCase(repository)
+    fun `SemanticSearchUseCase returns results from repository`() =
+        runTest {
+            coEvery { repository.searchSemantic("funny", 20) } returns testSearchResults
+            val useCase = SemanticSearchUseCase(repository)
 
-        val results = useCase("funny")
+            val results = useCase("funny")
 
-        assertThat(results).hasSize(3)
-        assertThat(results[0].matchType).isEqualTo(MatchType.TEXT)
-        coVerify { repository.searchSemantic("funny", 20) }
-    }
-
-    @Test
-    fun `SemanticSearchUseCase uses custom limit`() = runTest {
-        coEvery { repository.searchSemantic("test", 10) } returns testSearchResults.take(1)
-        val useCase = SemanticSearchUseCase(repository)
-
-        val results = useCase("test", limit = 10)
-
-        assertThat(results).hasSize(1)
-        coVerify { repository.searchSemantic("test", 10) }
-    }
+            assertThat(results).hasSize(3)
+            assertThat(results[0].matchType).isEqualTo(MatchType.TEXT)
+            coVerify { repository.searchSemantic("funny", 20) }
+        }
 
     @Test
-    fun `SemanticSearchUseCase returns empty list for no matches`() = runTest {
-        coEvery { repository.searchSemantic("xyz", any()) } returns emptyList()
-        val useCase = SemanticSearchUseCase(repository)
+    fun `SemanticSearchUseCase uses custom limit`() =
+        runTest {
+            coEvery { repository.searchSemantic("test", 10) } returns testSearchResults.take(1)
+            val useCase = SemanticSearchUseCase(repository)
 
-        val results = useCase("xyz")
+            val results = useCase("test", limit = 10)
 
-        assertThat(results).isEmpty()
-    }
+            assertThat(results).hasSize(1)
+            coVerify { repository.searchSemantic("test", 10) }
+        }
+
+    @Test
+    fun `SemanticSearchUseCase returns empty list for no matches`() =
+        runTest {
+            coEvery { repository.searchSemantic("xyz", any()) } returns emptyList()
+            val useCase = SemanticSearchUseCase(repository)
+
+            val results = useCase("xyz")
+
+            assertThat(results).isEmpty()
+        }
 
     // endregion
 
     // region HybridSearchUseCase Tests
 
     @Test
-    fun `HybridSearchUseCase returns results from repository`() = runTest {
-        coEvery { repository.searchHybrid("funny", 20) } returns testSearchResults
-        val useCase = HybridSearchUseCase(repository)
+    fun `HybridSearchUseCase returns results from repository`() =
+        runTest {
+            coEvery { repository.searchHybrid("funny", 20) } returns testSearchResults
+            val useCase = HybridSearchUseCase(repository)
 
-        val results = useCase("funny")
+            val results = useCase("funny")
 
-        assertThat(results).hasSize(3)
-        coVerify { repository.searchHybrid("funny", 20) }
-    }
+            assertThat(results).hasSize(3)
+            coVerify { repository.searchHybrid("funny", 20) }
+        }
 
     @Test
-    fun `HybridSearchUseCase uses custom limit`() = runTest {
-        coEvery { repository.searchHybrid("test", 5) } returns testSearchResults.take(2)
-        val useCase = HybridSearchUseCase(repository)
+    fun `HybridSearchUseCase uses custom limit`() =
+        runTest {
+            coEvery { repository.searchHybrid("test", 5) } returns testSearchResults.take(2)
+            val useCase = HybridSearchUseCase(repository)
 
-        val results = useCase("test", limit = 5)
+            val results = useCase("test", limit = 5)
 
-        assertThat(results).hasSize(2)
-        coVerify { repository.searchHybrid("test", 5) }
-    }
+            assertThat(results).hasSize(2)
+            coVerify { repository.searchHybrid("test", 5) }
+        }
 
     // endregion
 
     // region EmojiSearchUseCase Tests
 
     @Test
-    fun `EmojiSearchUseCase returns flow of results`() = runTest {
-        val emojiResults = testSearchResults.map { it.copy(matchType = MatchType.EMOJI) }
-        every { repository.searchByEmoji("😂") } returns flowOf(emojiResults)
-        val useCase = EmojiSearchUseCase(repository)
+    fun `EmojiSearchUseCase returns flow of results`() =
+        runTest {
+            val emojiResults = testSearchResults.map { it.copy(matchType = MatchType.EMOJI) }
+            every { repository.searchByEmoji("😂") } returns flowOf(emojiResults)
+            val useCase = EmojiSearchUseCase(repository)
 
-        useCase("😂").test {
-            val results = awaitItem()
-            assertThat(results).hasSize(3)
-            assertThat(results[0].matchType).isEqualTo(MatchType.EMOJI)
-            awaitComplete()
+            useCase("😂").test {
+                val results = awaitItem()
+                assertThat(results).hasSize(3)
+                assertThat(results[0].matchType).isEqualTo(MatchType.EMOJI)
+                awaitComplete()
+            }
+
+            verify { repository.searchByEmoji("😂") }
         }
-
-        verify { repository.searchByEmoji("😂") }
-    }
 
     @Test
-    fun `EmojiSearchUseCase returns empty list for no matches`() = runTest {
-        every { repository.searchByEmoji("🤷") } returns flowOf(emptyList())
-        val useCase = EmojiSearchUseCase(repository)
+    fun `EmojiSearchUseCase returns empty list for no matches`() =
+        runTest {
+            every { repository.searchByEmoji("🤷") } returns flowOf(emptyList())
+            val useCase = EmojiSearchUseCase(repository)
 
-        useCase("🤷").test {
-            val results = awaitItem()
-            assertThat(results).isEmpty()
-            awaitComplete()
+            useCase("🤷").test {
+                val results = awaitItem()
+                assertThat(results).isEmpty()
+                awaitComplete()
+            }
         }
-    }
 
     // endregion
 
     // region GetSearchSuggestionsUseCase Tests
 
     @Test
-    fun `GetSearchSuggestionsUseCase returns suggestions from repository`() = runTest {
-        coEvery { repository.getSearchSuggestions("fun") } returns suggestions
-        val useCase = GetSearchSuggestionsUseCase(repository)
+    fun `GetSearchSuggestionsUseCase returns suggestions from repository`() =
+        runTest {
+            coEvery { repository.getSearchSuggestions("fun") } returns suggestions
+            val useCase = GetSearchSuggestionsUseCase(repository)
 
-        val result = useCase("fun")
+            val result = useCase("fun")
 
-        assertThat(result).isEqualTo(suggestions)
-        coVerify { repository.getSearchSuggestions("fun") }
-    }
+            assertThat(result).isEqualTo(suggestions)
+            coVerify { repository.getSearchSuggestions("fun") }
+        }
 
     @Test
-    fun `GetSearchSuggestionsUseCase returns empty list for no suggestions`() = runTest {
-        coEvery { repository.getSearchSuggestions("xyz") } returns emptyList()
-        val useCase = GetSearchSuggestionsUseCase(repository)
+    fun `GetSearchSuggestionsUseCase returns empty list for no suggestions`() =
+        runTest {
+            coEvery { repository.getSearchSuggestions("xyz") } returns emptyList()
+            val useCase = GetSearchSuggestionsUseCase(repository)
 
-        val result = useCase("xyz")
+            val result = useCase("xyz")
 
-        assertThat(result).isEmpty()
-    }
+            assertThat(result).isEmpty()
+        }
 
     // endregion
 
     // region RecentSearchesUseCase Tests
 
     @Test
-    fun `RecentSearchesUseCase getRecentSearches returns flow from repository`() = runTest {
-        every { repository.getRecentSearches() } returns flowOf(recentSearches)
-        val useCase = RecentSearchesUseCase(repository)
+    fun `RecentSearchesUseCase getRecentSearches returns flow from repository`() =
+        runTest {
+            every { repository.getRecentSearches() } returns flowOf(recentSearches)
+            val useCase = RecentSearchesUseCase(repository)
 
-        useCase.getRecentSearches().test {
-            val searches = awaitItem()
-            assertThat(searches).isEqualTo(recentSearches)
-            awaitComplete()
+            useCase.getRecentSearches().test {
+                val searches = awaitItem()
+                assertThat(searches).isEqualTo(recentSearches)
+                awaitComplete()
+            }
+
+            verify { repository.getRecentSearches() }
         }
 
-        verify { repository.getRecentSearches() }
-    }
+    @Test
+    fun `RecentSearchesUseCase addRecentSearch calls repository`() =
+        runTest {
+            coEvery { repository.addRecentSearch("new search") } returns Unit
+            val useCase = RecentSearchesUseCase(repository)
+
+            useCase.addRecentSearch("new search")
+
+            coVerify { repository.addRecentSearch("new search") }
+        }
 
     @Test
-    fun `RecentSearchesUseCase addRecentSearch calls repository`() = runTest {
-        coEvery { repository.addRecentSearch("new search") } returns Unit
-        val useCase = RecentSearchesUseCase(repository)
+    fun `RecentSearchesUseCase clearRecentSearches calls repository`() =
+        runTest {
+            coEvery { repository.clearRecentSearches() } returns Unit
+            val useCase = RecentSearchesUseCase(repository)
 
-        useCase.addRecentSearch("new search")
+            useCase.clearRecentSearches()
 
-        coVerify { repository.addRecentSearch("new search") }
-    }
-
-    @Test
-    fun `RecentSearchesUseCase clearRecentSearches calls repository`() = runTest {
-        coEvery { repository.clearRecentSearches() } returns Unit
-        val useCase = RecentSearchesUseCase(repository)
-
-        useCase.clearRecentSearches()
-
-        coVerify { repository.clearRecentSearches() }
-    }
+            coVerify { repository.clearRecentSearches() }
+        }
 
     // endregion
 
     // region SearchUseCases (Aggregated) Tests
 
     @Test
-    fun `SearchUseCases search returns flow from repository`() = runTest {
-        every { repository.searchMemes("test") } returns flowOf(testSearchResults)
-        val useCases = SearchUseCases(repository)
+    fun `SearchUseCases search returns flow from repository`() =
+        runTest {
+            every { repository.searchMemes("test") } returns flowOf(testSearchResults)
+            val useCases = SearchUseCases(repository)
 
-        useCases.search("test").test {
-            val results = awaitItem()
+            useCases.search("test").test {
+                val results = awaitItem()
+                assertThat(results).hasSize(3)
+                awaitComplete()
+            }
+
+            verify { repository.searchMemes("test") }
+        }
+
+    @Test
+    fun `SearchUseCases semanticSearch returns results from repository`() =
+        runTest {
+            coEvery { repository.searchSemantic("test", 20) } returns testSearchResults
+            val useCases = SearchUseCases(repository)
+
+            val results = useCases.semanticSearch("test")
+
             assertThat(results).hasSize(3)
-            awaitComplete()
+            coVerify { repository.searchSemantic("test", 20) }
         }
 
-        verify { repository.searchMemes("test") }
-    }
-
     @Test
-    fun `SearchUseCases semanticSearch returns results from repository`() = runTest {
-        coEvery { repository.searchSemantic("test", 20) } returns testSearchResults
-        val useCases = SearchUseCases(repository)
+    fun `SearchUseCases hybridSearch returns results from repository`() =
+        runTest {
+            coEvery { repository.searchHybrid("test", 20) } returns testSearchResults
+            val useCases = SearchUseCases(repository)
 
-        val results = useCases.semanticSearch("test")
+            val results = useCases.hybridSearch("test")
 
-        assertThat(results).hasSize(3)
-        coVerify { repository.searchSemantic("test", 20) }
-    }
-
-    @Test
-    fun `SearchUseCases hybridSearch returns results from repository`() = runTest {
-        coEvery { repository.searchHybrid("test", 20) } returns testSearchResults
-        val useCases = SearchUseCases(repository)
-
-        val results = useCases.hybridSearch("test")
-
-        assertThat(results).hasSize(3)
-        coVerify { repository.searchHybrid("test", 20) }
-    }
-
-    @Test
-    fun `SearchUseCases getRecentSearches returns flow from repository`() = runTest {
-        every { repository.getRecentSearches() } returns flowOf(recentSearches)
-        val useCases = SearchUseCases(repository)
-
-        useCases.getRecentSearches().test {
-            val searches = awaitItem()
-            assertThat(searches).isEqualTo(recentSearches)
-            awaitComplete()
+            assertThat(results).hasSize(3)
+            coVerify { repository.searchHybrid("test", 20) }
         }
-    }
 
     @Test
-    fun `SearchUseCases getSearchSuggestions returns suggestions`() = runTest {
-        coEvery { repository.getSearchSuggestions("fun") } returns suggestions
-        val useCases = SearchUseCases(repository)
+    fun `SearchUseCases getRecentSearches returns flow from repository`() =
+        runTest {
+            every { repository.getRecentSearches() } returns flowOf(recentSearches)
+            val useCases = SearchUseCases(repository)
 
-        val result = useCases.getSearchSuggestions("fun")
-
-        assertThat(result).isEqualTo(suggestions)
-    }
-
-    @Test
-    fun `SearchUseCases addRecentSearch calls repository`() = runTest {
-        coEvery { repository.addRecentSearch("query") } returns Unit
-        val useCases = SearchUseCases(repository)
-
-        useCases.addRecentSearch("query")
-
-        coVerify { repository.addRecentSearch("query") }
-    }
+            useCases.getRecentSearches().test {
+                val searches = awaitItem()
+                assertThat(searches).isEqualTo(recentSearches)
+                awaitComplete()
+            }
+        }
 
     @Test
-    fun `SearchUseCases clearRecentSearches calls repository`() = runTest {
-        coEvery { repository.clearRecentSearches() } returns Unit
-        val useCases = SearchUseCases(repository)
+    fun `SearchUseCases getSearchSuggestions returns suggestions`() =
+        runTest {
+            coEvery { repository.getSearchSuggestions("fun") } returns suggestions
+            val useCases = SearchUseCases(repository)
 
-        useCases.clearRecentSearches()
+            val result = useCases.getSearchSuggestions("fun")
 
-        coVerify { repository.clearRecentSearches() }
-    }
+            assertThat(result).isEqualTo(suggestions)
+        }
+
+    @Test
+    fun `SearchUseCases addRecentSearch calls repository`() =
+        runTest {
+            coEvery { repository.addRecentSearch("query") } returns Unit
+            val useCases = SearchUseCases(repository)
+
+            useCases.addRecentSearch("query")
+
+            coVerify { repository.addRecentSearch("query") }
+        }
+
+    @Test
+    fun `SearchUseCases clearRecentSearches calls repository`() =
+        runTest {
+            coEvery { repository.clearRecentSearches() } returns Unit
+            val useCases = SearchUseCases(repository)
+
+            useCases.clearRecentSearches()
+
+            coVerify { repository.clearRecentSearches() }
+        }
 
     // endregion
 
     // region SearchUseCases getFavoriteMemes/getRecentMemes Tests
 
     @Test
-    fun `SearchUseCases getFavoriteMemes returns flow from repository`() = runTest {
-        val favoriteResults = testSearchResults.take(1)
-        every { repository.getFavoriteMemes() } returns flowOf(favoriteResults)
-        val useCases = SearchUseCases(repository)
+    fun `SearchUseCases getFavoriteMemes returns flow from repository`() =
+        runTest {
+            val favoriteResults = testSearchResults.take(1)
+            every { repository.getFavoriteMemes() } returns flowOf(favoriteResults)
+            val useCases = SearchUseCases(repository)
 
-        useCases.getFavoriteMemes().test {
-            val results = awaitItem()
-            assertThat(results).hasSize(1)
-            awaitComplete()
+            useCases.getFavoriteMemes().test {
+                val results = awaitItem()
+                assertThat(results).hasSize(1)
+                awaitComplete()
+            }
+
+            verify { repository.getFavoriteMemes() }
         }
-
-        verify { repository.getFavoriteMemes() }
-    }
 
     @Test
-    fun `SearchUseCases getRecentMemes returns flow from repository`() = runTest {
-        val recentResults = testSearchResults.take(2)
-        every { repository.getRecentMemes() } returns flowOf(recentResults)
-        val useCases = SearchUseCases(repository)
+    fun `SearchUseCases getRecentMemes returns flow from repository`() =
+        runTest {
+            val recentResults = testSearchResults.take(2)
+            every { repository.getRecentMemes() } returns flowOf(recentResults)
+            val useCases = SearchUseCases(repository)
 
-        useCases.getRecentMemes().test {
-            val results = awaitItem()
-            assertThat(results).hasSize(2)
-            awaitComplete()
+            useCases.getRecentMemes().test {
+                val results = awaitItem()
+                assertThat(results).hasSize(2)
+                awaitComplete()
+            }
+
+            verify { repository.getRecentMemes() }
         }
-
-        verify { repository.getRecentMemes() }
-    }
 
     // endregion
 
@@ -376,7 +403,7 @@ class SearchUseCasesTest {
         emojiTags: List<EmojiTag> = emptyList(),
         isFavorite: Boolean = false,
         title: String? = null,
-        description: String? = null
+        description: String? = null,
     ): Meme {
         return Meme(
             id = id,
@@ -391,7 +418,7 @@ class SearchUseCasesTest {
             title = title,
             description = description,
             textContent = null,
-            isFavorite = isFavorite
+            isFavorite = isFavorite,
         )
     }
 

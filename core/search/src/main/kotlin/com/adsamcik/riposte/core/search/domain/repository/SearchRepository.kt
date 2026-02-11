@@ -8,10 +8,9 @@ import kotlinx.coroutines.flow.Flow
  * Repository interface for search operations.
  */
 interface SearchRepository {
-
     /**
      * Combined search on memes (alias for searchByText).
-     * 
+     *
      * @param query The search query.
      * @return Flow of search results.
      */
@@ -19,7 +18,7 @@ interface SearchRepository {
 
     /**
      * Perform full-text search on memes.
-     * 
+     *
      * @param query The search query.
      * @return Flow of search results.
      */
@@ -27,25 +26,31 @@ interface SearchRepository {
 
     /**
      * Perform semantic search using AI embeddings.
-     * 
+     *
      * @param query The search query.
      * @param limit Maximum number of results.
      * @return List of search results sorted by relevance.
      */
-    suspend fun searchSemantic(query: String, limit: Int = 20): List<SearchResult>
+    suspend fun searchSemantic(
+        query: String,
+        limit: Int = 20,
+    ): List<SearchResult>
 
     /**
      * Perform hybrid search (text + semantic).
-     * 
+     *
      * @param query The search query.
      * @param limit Maximum number of results.
      * @return List of combined and deduplicated search results.
      */
-    suspend fun searchHybrid(query: String, limit: Int = 20): List<SearchResult>
+    suspend fun searchHybrid(
+        query: String,
+        limit: Int = 20,
+    ): List<SearchResult>
 
     /**
      * Search by emoji.
-     * 
+     *
      * @param emoji The emoji character to search for.
      * @return Flow of search results.
      */
@@ -53,7 +58,7 @@ interface SearchRepository {
 
     /**
      * Get search suggestions based on query prefix.
-     * 
+     *
      * @param prefix The query prefix.
      * @return List of suggested search terms.
      */
