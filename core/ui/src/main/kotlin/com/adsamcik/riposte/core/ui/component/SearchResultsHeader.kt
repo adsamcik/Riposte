@@ -7,8 +7,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.adsamcik.riposte.core.ui.R
 import com.adsamcik.riposte.core.ui.theme.RiposteTheme
 
 /**
@@ -34,7 +36,7 @@ fun SearchResultsHeader(
             .padding(horizontal = 16.dp, vertical = 12.dp),
     ) {
         Text(
-            text = "$resultCount results",
+            text = pluralStringResource(R.plurals.ui_search_results_count, resultCount, resultCount),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

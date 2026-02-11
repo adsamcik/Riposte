@@ -207,14 +207,16 @@ fun SettingsScreen(
                         onCheckedChange = { onIntent(SettingsIntent.SetExportSettings(it)) },
                     )
                     ExportOptionRow(
-                        label = stringResource(R.string.settings_export_option_images),
-                        checked = uiState.exportImages,
-                        onCheckedChange = { onIntent(SettingsIntent.SetExportImages(it)) },
+                        label = stringResource(R.string.settings_export_option_images) + " (coming soon)",
+                        checked = false,
+                        onCheckedChange = { },
+                        enabled = false,
                     )
                     ExportOptionRow(
-                        label = stringResource(R.string.settings_export_option_tags),
-                        checked = uiState.exportTags,
-                        onCheckedChange = { onIntent(SettingsIntent.SetExportTags(it)) },
+                        label = stringResource(R.string.settings_export_option_tags) + " (coming soon)",
+                        checked = false,
+                        onCheckedChange = { },
+                        enabled = false,
                     )
                 }
             },
@@ -503,18 +505,15 @@ fun SettingsScreen(
             item {
                 SettingsSection(title = stringResource(R.string.settings_section_storage)) {
                     val isCacheEmpty = uiState.cacheSize == "0 B"
-                    ClickableSettingItem(
-                        title = stringResource(R.string.settings_clear_cache_title),
-                        subtitle = if (isCacheEmpty) {
-                            stringResource(R.string.settings_clear_cache_subtitle_empty)
-                        } else {
-                            stringResource(R.string.settings_clear_cache_subtitle, uiState.cacheSize)
-                        },
-                        onClick = { onIntent(SettingsIntent.ShowClearCacheDialog) },
-                        icon = Icons.Default.CleaningServices,
-                        showChevron = false,
-                        enabled = !isCacheEmpty,
-                    )
+                    if (!isCacheEmpty) {
+                        ClickableSettingItem(
+                            title = stringResource(R.string.settings_clear_cache_title),
+                            subtitle = stringResource(R.string.settings_clear_cache_subtitle, uiState.cacheSize),
+                            onClick = { onIntent(SettingsIntent.ShowClearCacheDialog) },
+                            icon = Icons.Default.CleaningServices,
+                            showChevron = false,
+                        )
+                    }
 
                     ClickableSettingItem(
                         title = stringResource(R.string.settings_export_data_title),
@@ -593,6 +592,7 @@ private fun ExportOptionRow(
     label: String,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
+    enabled: Boolean = true,
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -602,13 +602,19 @@ private fun ExportOptionRow(
                 value = checked,
                 role = Role.Checkbox,
                 onValueChange = onCheckedChange,
+                enabled = enabled,
             )
             .padding(vertical = 12.dp),
     ) {
-        Checkbox(checked = checked, onCheckedChange = null)
+        Checkbox(checked = checked, onCheckedChange = null, enabled = enabled)
         Text(
             text = label,
             style = MaterialTheme.typography.bodyLarge,
+            color = if (enabled) {
+                MaterialTheme.colorScheme.onSurface
+            } else {
+                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+            },
             modifier = Modifier.padding(start = 8.dp),
         )
     }

@@ -855,7 +855,7 @@ private fun GalleryContent(
             LazyVerticalGrid(
                 state = gridState,
                 columns = GridCells.Fixed(columns),
-                contentPadding = PaddingValues(8.dp),
+                contentPadding = PaddingValues(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 80.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 content = gridContent,

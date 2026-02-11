@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
+import kotlinx.coroutines.delay
 import com.adsamcik.riposte.core.common.di.DefaultDispatcher
 import com.adsamcik.riposte.core.common.suggestion.GetSuggestionsUseCase
 import com.adsamcik.riposte.core.common.suggestion.Surface
@@ -166,6 +167,10 @@ class GalleryViewModel @Inject constructor(
                             else -> ImportWorkStatus.Idle
                         }
                         _uiState.update { it.copy(importStatus = status) }
+                        if (status is ImportWorkStatus.Completed) {
+                            delay(5000L)
+                            dismissImportStatus()
+                        }
                     }
             } catch (_: IllegalStateException) {
                 // WorkManager not initialized — safe to ignore in tests

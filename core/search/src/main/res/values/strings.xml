@@ -57,7 +57,7 @@
 
     <!-- No Results State -->
     <string name="search_no_results_title">No Results Found</string>
-    <string name="search_no_results_description">No memes found for \"%1$s\"</string>
+    <string name="search_no_results_description">No memes found for \"%1$s\". Try different keywords or browse by emoji tags.</string>
 
     <!-- No Results Suggestions -->
     <string name="search_no_results_clear_filters">Clear All Filters</string>

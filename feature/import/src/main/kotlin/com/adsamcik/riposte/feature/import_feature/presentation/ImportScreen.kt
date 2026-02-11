@@ -397,9 +397,8 @@ internal fun EmptyImportContent(
             .verticalScroll(rememberScrollState())
             .padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Top,
+        verticalArrangement = Arrangement.Center,
     ) {
-        Spacer(Modifier.fillMaxHeight(0.25f))
         Icon(
             imageVector = Icons.Outlined.AddPhotoAlternate,
             contentDescription = stringResource(R.string.import_content_description_add_photos),

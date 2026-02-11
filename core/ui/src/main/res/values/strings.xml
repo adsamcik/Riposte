@@ -61,4 +61,10 @@
     <string name="quick_share_category_other">Other</string>
     <string name="quick_share_copy_clipboard">Copy to clipboard</string>
     <string name="quick_share_system_chooser">Use system share menu</string>
+
+    <!-- SearchResultsHeader -->
+    <plurals name="ui_search_results_count">
+        <item quantity="one">%1$d result</item>
+        <item quantity="other">%1$d results</item>
+    </plurals>
 </resources>

@@ -1,5 +1,8 @@
 package com.adsamcik.riposte.feature.gallery.presentation
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import android.content.res.Configuration
 import com.adsamcik.riposte.feature.gallery.domain.usecase.SimilarMemesStatus
@@ -75,6 +78,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
@@ -448,8 +452,31 @@ private fun MemeInfoSheet(
                 )
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                val haptic = LocalHapticFeedback.current
+                val favoriteScale by animateFloatAsState(
+                    targetValue = if (meme.isFavorite) 1f else 1f,
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessMedium,
+                    ),
+                    label = "favorite_scale",
+                )
+                var animateTrigger by remember { mutableStateOf(0) }
+                val animatedScale by animateFloatAsState(
+                    targetValue = if (animateTrigger > 0) 1.3f else 1f,
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessMedium,
+                    ),
+                    finishedListener = { animateTrigger = 0 },
+                    label = "favorite_bounce",
+                )
                 FilledTonalIconButton(
-                    onClick = { onIntent(MemeDetailIntent.ToggleFavorite) },
+                    onClick = {
+                        animateTrigger++
+                        haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                        onIntent(MemeDetailIntent.ToggleFavorite)
+                    },
                     colors = if (meme.isFavorite) {
                         IconButtonDefaults.filledTonalIconButtonColors(
                             containerColor = MaterialTheme.colorScheme.tertiaryContainer,
@@ -457,10 +484,15 @@ private fun MemeInfoSheet(
                     } else {
                         IconButtonDefaults.filledTonalIconButtonColors()
                     },
-                    modifier = Modifier.semantics {
-                        role = Role.Button
-                        stateDescription = if (meme.isFavorite) favoritedText else notFavoritedText
-                    },
+                    modifier = Modifier
+                        .graphicsLayer {
+                            scaleX = animatedScale
+                            scaleY = animatedScale
+                        }
+                        .semantics {
+                            role = Role.Button
+                            stateDescription = if (meme.isFavorite) favoritedText else notFavoritedText
+                        },
                 ) {
                     Icon(
                         if (meme.isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
