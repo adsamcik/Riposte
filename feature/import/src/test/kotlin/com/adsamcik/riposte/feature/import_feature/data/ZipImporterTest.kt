@@ -4,7 +4,6 @@ import com.adsamcik.riposte.core.model.MemeMetadata
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -18,7 +17,6 @@ import org.junit.Test
  * instrumentation tests due to Uri.fromFile() dependencies.
  */
 class ZipImporterTest {
-
     private val json = Json { ignoreUnknownKeys = true }
 
     // ==================== CLI Output Compatibility Tests ====================
@@ -26,14 +24,15 @@ class ZipImporterTest {
     @Test
     fun `parseMetadataJson handles minimal CLI output`() {
         // Minimal output from CLI: just emojis and required fields
-        val cliOutput = """
+        val cliOutput =
+            """
             {
                 "schemaVersion": "1.0",
                 "emojis": ["😂"],
                 "createdAt": "2026-01-25T12:00:00+00:00",
                 "appVersion": "cli-1.0.0"
             }
-        """.trimIndent()
+            """.trimIndent()
 
         val metadata = json.decodeFromString<MemeMetadata>(cliOutput)
 
@@ -46,7 +45,8 @@ class ZipImporterTest {
     @Test
     fun `parseMetadataJson handles full CLI output`() {
         // Full output from CLI with all fields populated
-        val cliOutput = """
+        val cliOutput =
+            """
             {
                 "schemaVersion": "1.0",
                 "emojis": ["👾", "🎮", "😎", "🕹️"],
@@ -57,7 +57,7 @@ class ZipImporterTest {
                 "tags": ["gaming", "space invaders", "retro", "arcade", "funny"],
                 "textContent": "Game Over"
             }
-        """.trimIndent()
+            """.trimIndent()
 
         val metadata = json.decodeFromString<MemeMetadata>(cliOutput)
 
@@ -74,12 +74,13 @@ class ZipImporterTest {
 
     @Test
     fun `parseMetadataJson handles Unicode emojis`() {
-        val cliOutput = """
+        val cliOutput =
+            """
             {
                 "schemaVersion": "1.0",
                 "emojis": ["😂", "🔥", "👾", "❤️", "🏳️‍🌈", "👨‍💻"]
             }
-        """.trimIndent()
+            """.trimIndent()
 
         val metadata = json.decodeFromString<MemeMetadata>(cliOutput)
 
@@ -95,7 +96,8 @@ class ZipImporterTest {
 
     @Test
     fun `parseMetadataJson handles Unicode text content`() {
-        val cliOutput = """
+        val cliOutput =
+            """
             {
                 "schemaVersion": "1.0",
                 "emojis": ["😂"],
@@ -103,7 +105,7 @@ class ZipImporterTest {
                 "description": "Описание на русском 中文描述",
                 "textContent": "مرحبا بالعالم"
             }
-        """.trimIndent()
+            """.trimIndent()
 
         val metadata = json.decodeFromString<MemeMetadata>(cliOutput)
 
@@ -115,14 +117,15 @@ class ZipImporterTest {
     @Test
     fun `parseMetadataJson ignores unknown fields`() {
         // CLI might add new fields in future versions
-        val cliOutput = """
+        val cliOutput =
+            """
             {
                 "schemaVersion": "1.0",
                 "emojis": ["😂"],
                 "unknownField": "should be ignored",
                 "anotherNewField": 123
             }
-        """.trimIndent()
+            """.trimIndent()
 
         val metadata = json.decodeFromString<MemeMetadata>(cliOutput)
 
@@ -132,13 +135,14 @@ class ZipImporterTest {
 
     @Test
     fun `parseMetadataJson handles empty tags list`() {
-        val cliOutput = """
+        val cliOutput =
+            """
             {
                 "schemaVersion": "1.0",
                 "emojis": ["😂"],
                 "tags": []
             }
-        """.trimIndent()
+            """.trimIndent()
 
         val metadata = json.decodeFromString<MemeMetadata>(cliOutput)
 
@@ -147,12 +151,13 @@ class ZipImporterTest {
 
     @Test
     fun `parseMetadataJson handles missing optional fields`() {
-        val cliOutput = """
+        val cliOutput =
+            """
             {
                 "schemaVersion": "1.0",
                 "emojis": ["😂"]
             }
-        """.trimIndent()
+            """.trimIndent()
 
         val metadata = json.decodeFromString<MemeMetadata>(cliOutput)
 
@@ -169,16 +174,17 @@ class ZipImporterTest {
     @Test
     fun `metadata round trip serialization works`() {
         // Create metadata as CLI would
-        val original = MemeMetadata(
-            schemaVersion = "1.0",
-            emojis = listOf("😂", "🔥", "💯"),
-            title = "Test Meme",
-            description = "A funny meme",
-            createdAt = "2026-01-25T12:00:00+00:00",
-            appVersion = "cli-1.0.0",
-            tags = listOf("funny", "test"),
-            textContent = "Hello World",
-        )
+        val original =
+            MemeMetadata(
+                schemaVersion = "1.0",
+                emojis = listOf("😂", "🔥", "💯"),
+                title = "Test Meme",
+                description = "A funny meme",
+                createdAt = "2026-01-25T12:00:00+00:00",
+                appVersion = "cli-1.0.0",
+                tags = listOf("funny", "test"),
+                textContent = "Hello World",
+            )
 
         // Serialize as CLI does
         val jsonString = json.encodeToString(original)
@@ -214,13 +220,14 @@ class ZipImporterTest {
         // CLI creates sidecars as: image.jpg -> image.jpg.json
         // ZipImporter does: entryName.removeSuffix(".json") to get image name
 
-        val testCases = listOf(
-            "image.jpg.json" to "image.jpg",
-            "meme.png.json" to "meme.png",
-            "photo.webp.json" to "photo.webp",
-            "funny meme.jpg.json" to "funny meme.jpg",
-            "test.image.jpg.json" to "test.image.jpg",
-        )
+        val testCases =
+            listOf(
+                "image.jpg.json" to "image.jpg",
+                "meme.png.json" to "meme.png",
+                "photo.webp.json" to "photo.webp",
+                "funny meme.jpg.json" to "funny meme.jpg",
+                "test.image.jpg.json" to "test.image.jpg",
+            )
 
         for ((sidecarName, expectedImageName) in testCases) {
             val recoveredImageName = sidecarName.removeSuffix(".json")

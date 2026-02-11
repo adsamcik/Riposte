@@ -9,19 +9,21 @@ import com.adsamcik.riposte.core.model.MemeMetadata
  * Repository interface for importing memes.
  */
 interface ImportRepository {
-
     /**
      * Import a single image from URI.
-     * 
+     *
      * @param uri The content URI of the image to import.
      * @param metadata Optional metadata to associate with the meme.
      * @return The imported meme or an error.
      */
-    suspend fun importImage(uri: Uri, metadata: MemeMetadata? = null): Result<Meme>
+    suspend fun importImage(
+        uri: Uri,
+        metadata: MemeMetadata? = null,
+    ): Result<Meme>
 
     /**
      * Import multiple images.
-     * 
+     *
      * @param uris List of content URIs to import.
      * @return List of results for each import.
      */
@@ -29,7 +31,7 @@ interface ImportRepository {
 
     /**
      * Extract metadata from an image (if present).
-     * 
+     *
      * @param uri The content URI of the image.
      * @return Extracted metadata or null if none found.
      */
@@ -37,7 +39,7 @@ interface ImportRepository {
 
     /**
      * Extract text from an image using OCR.
-     * 
+     *
      * @param uri The content URI of the image.
      * @return Extracted text or null if none found.
      */
@@ -45,7 +47,7 @@ interface ImportRepository {
 
     /**
      * Suggest emojis for an image based on its content.
-     * 
+     *
      * @param uri The content URI of the image.
      * @return List of suggested emoji tags.
      */
@@ -64,5 +66,8 @@ interface ImportRepository {
     /**
      * Update metadata (title, description, emojis, text content) for an existing meme.
      */
-    suspend fun updateMemeMetadata(memeId: Long, metadata: MemeMetadata): Result<Unit>
+    suspend fun updateMemeMetadata(
+        memeId: Long,
+        metadata: MemeMetadata,
+    ): Result<Unit>
 }

@@ -13,15 +13,10 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class ImportModule {
-
     @Binds
     @Singleton
-    abstract fun bindImportRepository(
-        impl: ImportRepositoryImpl
-    ): ImportRepository
+    abstract fun bindImportRepository(impl: ImportRepositoryImpl): ImportRepository
 
     @Binds
-    abstract fun bindZipImporter(
-        impl: DefaultZipImporter
-    ): ZipImporter
+    abstract fun bindZipImporter(impl: DefaultZipImporter): ZipImporter
 }

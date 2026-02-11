@@ -3,7 +3,6 @@ package com.adsamcik.riposte.feature.import_feature.presentation
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
-import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onFirst
@@ -12,9 +11,9 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.google.common.truth.Truth.assertThat
 import com.adsamcik.riposte.core.model.EmojiTag
 import com.adsamcik.riposte.core.ui.theme.RiposteTheme
+import com.google.common.truth.Truth.assertThat
 import io.mockk.mockk
 import org.junit.Rule
 import org.junit.Test
@@ -34,26 +33,26 @@ import org.junit.runner.RunWith
  */
 @RunWith(AndroidJUnit4::class)
 class ImportScreenTest {
-
     @get:Rule
     val composeTestRule = createComposeRule()
 
-    private val testImages = listOf(
-        ImportImage(
-            uri = mockk(relaxed = true),
-            fileName = "meme1.jpg",
-            isProcessing = false,
-            suggestedEmojis = listOf("😂", "🔥"),
-            emojis = listOf(EmojiTag("😂", "laughing"))
-        ),
-        ImportImage(
-            uri = mockk(relaxed = true),
-            fileName = "meme2.jpg",
-            isProcessing = false,
-            suggestedEmojis = listOf("😍", "❤️"),
-            emojis = listOf(EmojiTag("😍", "love"))
+    private val testImages =
+        listOf(
+            ImportImage(
+                uri = mockk(relaxed = true),
+                fileName = "meme1.jpg",
+                isProcessing = false,
+                suggestedEmojis = listOf("😂", "🔥"),
+                emojis = listOf(EmojiTag("😂", "laughing")),
+            ),
+            ImportImage(
+                uri = mockk(relaxed = true),
+                fileName = "meme2.jpg",
+                isProcessing = false,
+                suggestedEmojis = listOf("😍", "❤️"),
+                emojis = listOf(EmojiTag("😍", "love")),
+            ),
         )
-    )
 
     // ============ Empty State Tests ============
 
@@ -65,7 +64,7 @@ class ImportScreenTest {
                     uiState = ImportUiState(),
                     onIntent = {},
                     onNavigateBack = {},
-                    onPickImages = {}
+                    onPickImages = {},
                 )
             }
         }
@@ -82,7 +81,7 @@ class ImportScreenTest {
                     uiState = ImportUiState(),
                     onIntent = {},
                     onNavigateBack = {},
-                    onPickImages = {}
+                    onPickImages = {},
                 )
             }
         }
@@ -100,7 +99,7 @@ class ImportScreenTest {
                     uiState = ImportUiState(),
                     onIntent = {},
                     onNavigateBack = {},
-                    onPickImages = { pickerLaunched = true }
+                    onPickImages = { pickerLaunched = true },
                 )
             }
         }
@@ -120,16 +119,17 @@ class ImportScreenTest {
                     uiState = ImportUiState(selectedImages = testImages),
                     onIntent = {},
                     onNavigateBack = {},
-                    onPickImages = {}
+                    onPickImages = {},
                 )
             }
         }
 
         composeTestRule.onNodeWithTag("ImagePreviewGrid").assertIsDisplayed()
-        
-        val previewCards = composeTestRule.onAllNodesWithTag("ImagePreviewCard")
-            .fetchSemanticsNodes()
-        
+
+        val previewCards =
+            composeTestRule.onAllNodesWithTag("ImagePreviewCard")
+                .fetchSemanticsNodes()
+
         assertThat(previewCards.size).isEqualTo(2)
     }
 
@@ -141,7 +141,7 @@ class ImportScreenTest {
                     uiState = ImportUiState(selectedImages = testImages),
                     onIntent = {},
                     onNavigateBack = {},
-                    onPickImages = {}
+                    onPickImages = {},
                 )
             }
         }
@@ -158,14 +158,15 @@ class ImportScreenTest {
                     uiState = ImportUiState(selectedImages = testImages),
                     onIntent = {},
                     onNavigateBack = {},
-                    onPickImages = {}
+                    onPickImages = {},
                 )
             }
         }
 
-        val removeButtons = composeTestRule.onAllNodesWithContentDescription("Remove image")
-            .fetchSemanticsNodes()
-        
+        val removeButtons =
+            composeTestRule.onAllNodesWithContentDescription("Remove image")
+                .fetchSemanticsNodes()
+
         assertThat(removeButtons.size).isEqualTo(2)
     }
 
@@ -179,7 +180,7 @@ class ImportScreenTest {
                     uiState = ImportUiState(selectedImages = testImages),
                     onIntent = { receivedIntent = it },
                     onNavigateBack = {},
-                    onPickImages = {}
+                    onPickImages = {},
                 )
             }
         }
@@ -202,7 +203,7 @@ class ImportScreenTest {
                     uiState = ImportUiState(selectedImages = testImages),
                     onIntent = {},
                     onNavigateBack = {},
-                    onPickImages = {}
+                    onPickImages = {},
                 )
             }
         }
@@ -218,7 +219,7 @@ class ImportScreenTest {
                     uiState = ImportUiState(selectedImages = testImages),
                     onIntent = {},
                     onNavigateBack = {},
-                    onPickImages = {}
+                    onPickImages = {},
                 )
             }
         }
@@ -228,10 +229,11 @@ class ImportScreenTest {
 
     @Test
     fun importScreen_importButtonDisabled_whenImagesWithoutEmojis() {
-        val imagesWithoutEmojis = listOf(
-            testImages[0],
-            testImages[1].copy(emojis = emptyList())
-        )
+        val imagesWithoutEmojis =
+            listOf(
+                testImages[0],
+                testImages[1].copy(emojis = emptyList()),
+            )
 
         composeTestRule.setContent {
             RiposteTheme {
@@ -239,7 +241,7 @@ class ImportScreenTest {
                     uiState = ImportUiState(selectedImages = imagesWithoutEmojis),
                     onIntent = {},
                     onNavigateBack = {},
-                    onPickImages = {}
+                    onPickImages = {},
                 )
             }
         }
@@ -257,7 +259,7 @@ class ImportScreenTest {
                     uiState = ImportUiState(selectedImages = testImages),
                     onIntent = { receivedIntent = it },
                     onNavigateBack = {},
-                    onPickImages = {}
+                    onPickImages = {},
                 )
             }
         }
@@ -274,14 +276,15 @@ class ImportScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 ImportScreen(
-                    uiState = ImportUiState(
-                        selectedImages = testImages,
-                        isImporting = true,
-                        importProgress = 0.5f
-                    ),
+                    uiState =
+                        ImportUiState(
+                            selectedImages = testImages,
+                            isImporting = true,
+                            importProgress = 0.5f,
+                        ),
                     onIntent = {},
                     onNavigateBack = {},
-                    onPickImages = {}
+                    onPickImages = {},
                 )
             }
         }
@@ -294,14 +297,15 @@ class ImportScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 ImportScreen(
-                    uiState = ImportUiState(
-                        selectedImages = testImages,
-                        isImporting = true,
-                        importProgress = 0.5f
-                    ),
+                    uiState =
+                        ImportUiState(
+                            selectedImages = testImages,
+                            isImporting = true,
+                            importProgress = 0.5f,
+                        ),
                     onIntent = {},
                     onNavigateBack = {},
-                    onPickImages = {}
+                    onPickImages = {},
                 )
             }
         }
@@ -314,14 +318,15 @@ class ImportScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 ImportScreen(
-                    uiState = ImportUiState(
-                        selectedImages = testImages,
-                        isImporting = true,
-                        statusMessage = "Importing image 1 of 2..."
-                    ),
+                    uiState =
+                        ImportUiState(
+                            selectedImages = testImages,
+                            isImporting = true,
+                            statusMessage = "Importing image 1 of 2...",
+                        ),
                     onIntent = {},
                     onNavigateBack = {},
-                    onPickImages = {}
+                    onPickImages = {},
                 )
             }
         }
@@ -334,13 +339,14 @@ class ImportScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 ImportScreen(
-                    uiState = ImportUiState(
-                        selectedImages = testImages,
-                        isImporting = true
-                    ),
+                    uiState =
+                        ImportUiState(
+                            selectedImages = testImages,
+                            isImporting = true,
+                        ),
                     onIntent = {},
                     onNavigateBack = {},
-                    onPickImages = {}
+                    onPickImages = {},
                 )
             }
         }
@@ -355,13 +361,14 @@ class ImportScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 ImportScreen(
-                    uiState = ImportUiState(
-                        selectedImages = testImages,
-                        isImporting = true
-                    ),
+                    uiState =
+                        ImportUiState(
+                            selectedImages = testImages,
+                            isImporting = true,
+                        ),
                     onIntent = {},
                     onNavigateBack = {},
-                    onPickImages = {}
+                    onPickImages = {},
                 )
             }
         }
@@ -376,13 +383,14 @@ class ImportScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 ImportScreen(
-                    uiState = ImportUiState(
-                        selectedImages = testImages,
-                        isImporting = true
-                    ),
+                    uiState =
+                        ImportUiState(
+                            selectedImages = testImages,
+                            isImporting = true,
+                        ),
                     onIntent = { receivedIntent = it },
                     onNavigateBack = {},
-                    onPickImages = {}
+                    onPickImages = {},
                 )
             }
         }
@@ -399,13 +407,14 @@ class ImportScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 ImportScreen(
-                    uiState = ImportUiState(
-                        selectedImages = testImages,
-                        error = "Failed to import images"
-                    ),
+                    uiState =
+                        ImportUiState(
+                            selectedImages = testImages,
+                            error = "Failed to import images",
+                        ),
                     onIntent = {},
                     onNavigateBack = {},
-                    onPickImages = {}
+                    onPickImages = {},
                 )
             }
         }
@@ -417,10 +426,11 @@ class ImportScreenTest {
 
     @Test
     fun importScreen_showsProcessingIndicator_onProcessingImage() {
-        val processingImages = listOf(
-            testImages[0].copy(isProcessing = true),
-            testImages[1]
-        )
+        val processingImages =
+            listOf(
+                testImages[0].copy(isProcessing = true),
+                testImages[1],
+            )
 
         composeTestRule.setContent {
             RiposteTheme {
@@ -428,7 +438,7 @@ class ImportScreenTest {
                     uiState = ImportUiState(selectedImages = processingImages),
                     onIntent = {},
                     onNavigateBack = {},
-                    onPickImages = {}
+                    onPickImages = {},
                 )
             }
         }
@@ -452,7 +462,7 @@ class ImportScreenTest {
                     uiState = ImportUiState(selectedImages = testImages),
                     onIntent = { receivedIntent = it },
                     onNavigateBack = {},
-                    onPickImages = {}
+                    onPickImages = {},
                 )
             }
         }
@@ -469,13 +479,14 @@ class ImportScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 ImportScreen(
-                    uiState = ImportUiState(
-                        selectedImages = testImages,
-                        editingImageIndex = 0
-                    ),
+                    uiState =
+                        ImportUiState(
+                            selectedImages = testImages,
+                            editingImageIndex = 0,
+                        ),
                     onIntent = {},
                     onNavigateBack = {},
-                    onPickImages = {}
+                    onPickImages = {},
                 )
             }
         }
@@ -488,13 +499,14 @@ class ImportScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 ImportScreen(
-                    uiState = ImportUiState(
-                        selectedImages = testImages,
-                        editingImageIndex = 0
-                    ),
+                    uiState =
+                        ImportUiState(
+                            selectedImages = testImages,
+                            editingImageIndex = 0,
+                        ),
                     onIntent = {},
                     onNavigateBack = {},
-                    onPickImages = {}
+                    onPickImages = {},
                 )
             }
         }
@@ -507,13 +519,14 @@ class ImportScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 ImportScreen(
-                    uiState = ImportUiState(
-                        selectedImages = testImages,
-                        editingImageIndex = 0
-                    ),
+                    uiState =
+                        ImportUiState(
+                            selectedImages = testImages,
+                            editingImageIndex = 0,
+                        ),
                     onIntent = {},
                     onNavigateBack = {},
-                    onPickImages = {}
+                    onPickImages = {},
                 )
             }
         }
@@ -526,13 +539,14 @@ class ImportScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 ImportScreen(
-                    uiState = ImportUiState(
-                        selectedImages = testImages,
-                        editingImageIndex = 0
-                    ),
+                    uiState =
+                        ImportUiState(
+                            selectedImages = testImages,
+                            editingImageIndex = 0,
+                        ),
                     onIntent = {},
                     onNavigateBack = {},
-                    onPickImages = {}
+                    onPickImages = {},
                 )
             }
         }
@@ -550,7 +564,7 @@ class ImportScreenTest {
                     uiState = ImportUiState(selectedImages = testImages),
                     onIntent = {},
                     onNavigateBack = {},
-                    onPickImages = {}
+                    onPickImages = {},
                 )
             }
         }
@@ -568,7 +582,7 @@ class ImportScreenTest {
                     uiState = ImportUiState(),
                     onIntent = {},
                     onNavigateBack = {},
-                    onPickImages = {}
+                    onPickImages = {},
                 )
             }
         }
@@ -586,7 +600,7 @@ class ImportScreenTest {
                     uiState = ImportUiState(),
                     onIntent = {},
                     onNavigateBack = { navigatedBack = true },
-                    onPickImages = {}
+                    onPickImages = {},
                 )
             }
         }
@@ -606,7 +620,7 @@ class ImportScreenTest {
                     uiState = ImportUiState(selectedImages = testImages),
                     onIntent = {},
                     onNavigateBack = {},
-                    onPickImages = {}
+                    onPickImages = {},
                 )
             }
         }
@@ -624,7 +638,7 @@ class ImportScreenTest {
                     uiState = ImportUiState(selectedImages = testImages),
                     onIntent = { receivedIntent = it },
                     onNavigateBack = {},
-                    onPickImages = {}
+                    onPickImages = {},
                 )
             }
         }

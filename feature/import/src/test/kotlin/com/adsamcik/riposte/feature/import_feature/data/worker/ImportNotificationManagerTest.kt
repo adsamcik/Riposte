@@ -20,7 +20,6 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33], manifest = Config.NONE)
 class ImportNotificationManagerTest {
-
     private lateinit var context: Context
     private lateinit var manager: ImportNotificationManager
     private lateinit var notificationManager: NotificationManager
@@ -144,9 +143,10 @@ class ImportNotificationManagerTest {
         // Assert
         val posted = shadowNotificationManager.allNotifications
         assertThat(posted).isNotEmpty()
-        val match = posted.find {
-            it.extras.getString("android.title") == "Import complete"
-        }
+        val match =
+            posted.find {
+                it.extras.getString("android.title") == "Import complete"
+            }
         assertThat(match).isNotNull()
     }
 
@@ -163,9 +163,10 @@ class ImportNotificationManagerTest {
 
         // Assert
         val posted = shadowNotificationManager.allNotifications
-        val match = posted.find {
-            it.extras.getString("android.title") == "Import complete"
-        }
+        val match =
+            posted.find {
+                it.extras.getString("android.title") == "Import complete"
+            }
         assertThat(match).isNull()
     }
 

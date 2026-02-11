@@ -25,7 +25,6 @@ import java.io.IOException
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33], manifest = Config.NONE)
 class ImportStagingManagerTest {
-
     private lateinit var context: Context
     private lateinit var manager: ImportStagingManager
 
@@ -43,70 +42,76 @@ class ImportStagingManagerTest {
     }
 
     @Test
-    fun `stageImages creates staging directory and copies files`() = runTest {
-        // Arrange
-        val content1 = "image-data-1".toByteArray()
-        val content2 = "image-data-2".toByteArray()
-        val uri1 = Uri.parse("content://test/image1")
-        val uri2 = Uri.parse("content://test/image2")
+    fun `stageImages creates staging directory and copies files`() =
+        runTest {
+            // Arrange
+            val content1 = "image-data-1".toByteArray()
+            val content2 = "image-data-2".toByteArray()
+            val uri1 = Uri.parse("content://test/image1")
+            val uri2 = Uri.parse("content://test/image2")
 
-        val shadowResolver = shadowOf(context.contentResolver)
-        shadowResolver.registerInputStream(uri1, ByteArrayInputStream(content1))
-        shadowResolver.registerInputStream(uri2, ByteArrayInputStream(content2))
+            val shadowResolver = shadowOf(context.contentResolver)
+            shadowResolver.registerInputStream(uri1, ByteArrayInputStream(content1))
+            shadowResolver.registerInputStream(uri2, ByteArrayInputStream(content2))
 
-        val inputs = listOf(
-            ImportStagingManager.StagingInput(id = "img1.jpg", uri = uri1),
-            ImportStagingManager.StagingInput(id = "img2.jpg", uri = uri2),
-        )
+            val inputs =
+                listOf(
+                    ImportStagingManager.StagingInput(id = "img1.jpg", uri = uri1),
+                    ImportStagingManager.StagingInput(id = "img2.jpg", uri = uri2),
+                )
 
-        // Act
-        val stagingDir = manager.stageImages(inputs)
+            // Act
+            val stagingDir = manager.stageImages(inputs)
 
-        // Assert
-        assertThat(stagingDir.exists()).isTrue()
-        assertThat(stagingDir.isDirectory).isTrue()
+            // Assert
+            assertThat(stagingDir.exists()).isTrue()
+            assertThat(stagingDir.isDirectory).isTrue()
 
-        val file1 = File(stagingDir, "img1.jpg")
-        val file2 = File(stagingDir, "img2.jpg")
-        assertThat(file1.exists()).isTrue()
-        assertThat(file2.exists()).isTrue()
-        assertThat(file1.readBytes()).isEqualTo(content1)
-        assertThat(file2.readBytes()).isEqualTo(content2)
-    }
+            val file1 = File(stagingDir, "img1.jpg")
+            val file2 = File(stagingDir, "img2.jpg")
+            assertThat(file1.exists()).isTrue()
+            assertThat(file2.exists()).isTrue()
+            assertThat(file1.readBytes()).isEqualTo(content1)
+            assertThat(file2.readBytes()).isEqualTo(content2)
+        }
 
     @Test(expected = IOException::class)
-    fun `stageImages throws when directory creation fails`() = runTest {
-        // Arrange - place a regular file at the staging root path so mkdirs fails
-        val blockingFile = File(context.cacheDir, stagingRootName)
-        blockingFile.parentFile?.mkdirs()
-        blockingFile.createNewFile()
-        blockingFile.setReadOnly()
+    fun `stageImages throws when directory creation fails`() =
+        runTest {
+            // Arrange - place a regular file at the staging root path so mkdirs fails
+            val blockingFile = File(context.cacheDir, stagingRootName)
+            blockingFile.parentFile?.mkdirs()
+            blockingFile.createNewFile()
+            blockingFile.setReadOnly()
 
-        val uri = Uri.parse("content://test/blocked")
-        val inputs = listOf(
-            ImportStagingManager.StagingInput(id = "img.jpg", uri = uri),
-        )
+            val uri = Uri.parse("content://test/blocked")
+            val inputs =
+                listOf(
+                    ImportStagingManager.StagingInput(id = "img.jpg", uri = uri),
+                )
 
-        // Act - should throw IOException
-        manager.stageImages(inputs)
-    }
+            // Act - should throw IOException
+            manager.stageImages(inputs)
+        }
 
     @Test
-    fun `stageImages throws when input stream is null`() = runTest {
-        // Arrange - don't register any input stream for this URI
-        val uri = Uri.parse("content://test/missing")
+    fun `stageImages throws when input stream is null`() =
+        runTest {
+            // Arrange - don't register any input stream for this URI
+            val uri = Uri.parse("content://test/missing")
 
-        val inputs = listOf(
-            ImportStagingManager.StagingInput(id = "img.jpg", uri = uri),
-        )
+            val inputs =
+                listOf(
+                    ImportStagingManager.StagingInput(id = "img.jpg", uri = uri),
+                )
 
-        // Act - should throw (IOException from production code or
-        // UnsupportedOperationException from Robolectric's ShadowContentResolver)
-        val result = runCatching { manager.stageImages(inputs) }
+            // Act - should throw (IOException from production code or
+            // UnsupportedOperationException from Robolectric's ShadowContentResolver)
+            val result = runCatching { manager.stageImages(inputs) }
 
-        // Assert
-        assertThat(result.isFailure).isTrue()
-    }
+            // Assert
+            assertThat(result.isFailure).isTrue()
+        }
 
     @Test
     fun `cleanupStagingDir deletes directory and contents`() {

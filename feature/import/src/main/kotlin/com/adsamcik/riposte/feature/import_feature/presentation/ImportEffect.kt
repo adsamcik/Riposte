@@ -10,9 +10,10 @@ sealed interface ImportEffect {
     data object OpenImagePicker : ImportEffect
 
 /**
- * Open file picker for .meme.zip bundles.
- */
-data object OpenFilePicker : ImportEffect
+     * Open file picker for .meme.zip bundles.
+     */
+    data object OpenFilePicker : ImportEffect
+
     data class ImportComplete(val count: Int) : ImportEffect
 
     /**

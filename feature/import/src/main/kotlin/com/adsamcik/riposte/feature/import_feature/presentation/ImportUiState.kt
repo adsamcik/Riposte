@@ -11,62 +11,50 @@ data class ImportUiState(
      * Selected images to import.
      */
     val selectedImages: List<ImportImage> = emptyList(),
-
     /**
      * Whether import is in progress.
      */
     val isImporting: Boolean = false,
-
     /**
      * Import progress (0.0 to 1.0).
      */
     val importProgress: Float = 0f,
-
     /**
      * Total number of images being imported (persisted across selectedImages clear).
      */
     val totalImportCount: Int = 0,
-
     /**
      * Current status message.
      */
     val statusMessage: String? = null,
-
     /**
      * Error message if any.
      */
     val error: String? = null,
-
     /**
      * Index of currently editing image.
      */
     val editingImageIndex: Int? = null,
-
     /**
      * Whether in emoji picker mode.
      */
     val showEmojiPicker: Boolean = false,
-
     /**
      * Indices of images detected as duplicates pending user decision.
      */
     val duplicateIndices: Set<Int> = emptySet(),
-
     /**
      * Whether to show the duplicate confirmation dialog.
      */
     val showDuplicateDialog: Boolean = false,
-
     /**
      * Indices of duplicates that have changed metadata compared to existing memes.
      */
     val duplicatesWithChangedMetadata: Set<Int> = emptySet(),
-
     /**
      * Map of duplicate image index to existing meme ID in the database.
      */
     val duplicateMemeIds: Map<Int, Long> = emptyMap(),
-
     /**
      * Result of the import operation, shown in summary screen.
      */
@@ -92,7 +80,7 @@ data class ImportImage(
     val extractedText: String? = null,
     val suggestedEmojis: List<EmojiTag> = emptyList(),
     val isProcessing: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
 )
 
 /**

@@ -1,7 +1,6 @@
 package com.adsamcik.riposte.feature.import_feature.domain
 
 import android.net.Uri
-import com.adsamcik.riposte.feature.import_feature.data.ExtractedMeme
 import com.adsamcik.riposte.feature.import_feature.data.ZipExtractionEvent
 import com.adsamcik.riposte.feature.import_feature.data.ZipExtractionResult
 import kotlinx.coroutines.flow.Flow
@@ -10,7 +9,6 @@ import kotlinx.coroutines.flow.Flow
  * Interface for extracting memes from .meme.zip bundles.
  */
 interface ZipImporter {
-
     /**
      * Check if a URI points to a .meme.zip bundle.
      */
