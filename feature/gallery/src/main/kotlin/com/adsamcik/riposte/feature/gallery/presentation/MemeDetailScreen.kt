@@ -335,14 +335,14 @@ private fun MemeDetailScreenContent(
                         modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars),
                     )
                 },
-                containerColor = MaterialTheme.colorScheme.scrim,
+                containerColor = Color.Black,
             ) { paddingValues ->
                 Box(
                     modifier =
                         Modifier
                             .fillMaxSize()
                             .padding(paddingValues)
-                            .background(MaterialTheme.colorScheme.scrim),
+                            .background(Color.Black),
                 ) {
                     val allMemeIds = uiState.allMemeIds
                     if (allMemeIds.size > 1) {
@@ -412,7 +412,7 @@ private fun MemeDetailScreenContent(
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.gallery_cd_navigate_back),
-                            tint = MaterialTheme.colorScheme.surface,
+                            tint = Color.White,
                         )
                     }
                 }
