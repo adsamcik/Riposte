@@ -46,4 +46,6 @@ sealed interface MemeDetailIntent {
     data object DismissQuickShare : MemeDetailIntent
 
     data object CopyToClipboard : MemeDetailIntent
+
+    data class ChangeMeme(val memeId: Long) : MemeDetailIntent
 }

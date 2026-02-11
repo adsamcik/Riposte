@@ -10,6 +10,7 @@ import com.adsamcik.riposte.core.datastore.PreferencesDataStore
 import com.adsamcik.riposte.core.model.EmojiTag
 import com.adsamcik.riposte.feature.gallery.R
 import com.adsamcik.riposte.feature.gallery.domain.usecase.DeleteMemesUseCase
+import com.adsamcik.riposte.feature.gallery.domain.usecase.GetAllMemeIdsUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GetMemeByIdUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GetSimilarMemesUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.RecordMemeViewUseCase
@@ -40,11 +41,12 @@ class MemeDetailViewModel
         private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
         private val recordMemeViewUseCase: RecordMemeViewUseCase,
         private val getSimilarMemesUseCase: GetSimilarMemesUseCase,
+        private val getAllMemeIdsUseCase: GetAllMemeIdsUseCase,
         private val userActionTracker: UserActionTracker,
         private val preferencesDataStore: PreferencesDataStore,
         private val shareTargetRepository: ShareTargetRepository,
     ) : ViewModel() {
-        private val memeId: Long = savedStateHandle.get<Long>("memeId") ?: -1L
+        private var currentMemeId: Long = savedStateHandle.get<Long>("memeId") ?: -1L
 
         private val _uiState = MutableStateFlow(MemeDetailUiState())
         val uiState: StateFlow<MemeDetailUiState> = _uiState.asStateFlow()
@@ -54,6 +56,7 @@ class MemeDetailViewModel
 
         init {
             loadMeme()
+            loadAllMemeIds()
         }
 
         fun onIntent(intent: MemeDetailIntent) {
@@ -81,17 +84,18 @@ class MemeDetailViewModel
                 is MemeDetailIntent.QuickShareMore -> quickShareMore()
                 is MemeDetailIntent.DismissQuickShare -> dismissQuickShare()
                 is MemeDetailIntent.CopyToClipboard -> copyToClipboard()
+                is MemeDetailIntent.ChangeMeme -> changeMeme(intent.memeId)
             }
         }
 
         private fun openShareScreen() {
             viewModelScope.launch {
-                _effects.send(MemeDetailEffect.NavigateToShare(memeId))
+                _effects.send(MemeDetailEffect.NavigateToShare(currentMemeId))
             }
         }
 
         private fun loadMeme() {
-            if (memeId == -1L) {
+            if (currentMemeId == -1L) {
                 _uiState.update {
                     it.copy(
                         isLoading = false,
@@ -105,7 +109,7 @@ class MemeDetailViewModel
                 _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
                 try {
-                    val meme = getMemeByIdUseCase(memeId)
+                    val meme = getMemeByIdUseCase(currentMemeId)
                     if (meme != null) {
                         _uiState.update {
                             it.copy(
@@ -118,7 +122,7 @@ class MemeDetailViewModel
                             )
                         }
                         // Record view (fire-and-forget, don't block UI)
-                        launch { recordMemeViewUseCase(memeId) }
+                        launch { recordMemeViewUseCase(currentMemeId) }
                         // Load similar memes in background
                         launch { loadSimilarMemes() }
                     } else {
@@ -184,10 +188,10 @@ class MemeDetailViewModel
 
         private fun toggleFavorite() {
             viewModelScope.launch {
-                toggleFavoriteUseCase(memeId)
+                toggleFavoriteUseCase(currentMemeId)
                     .onSuccess {
                         // Reload to get updated state
-                        val meme = getMemeByIdUseCase(memeId)
+                        val meme = getMemeByIdUseCase(currentMemeId)
                         if (meme != null) {
                             _uiState.update { it.copy(meme = meme) }
                             if (meme.isFavorite) userActionTracker.trackPositiveAction()
@@ -222,7 +226,7 @@ class MemeDetailViewModel
             viewModelScope.launch {
                 _uiState.update { it.copy(showDeleteDialog = false, isLoading = true) }
 
-                deleteMemeUseCase(memeId)
+                deleteMemeUseCase(currentMemeId)
                     .onSuccess {
                         _effects.send(
                             MemeDetailEffect.ShowSnackbar(context.getString(R.string.gallery_snackbar_meme_deleted)),
@@ -336,7 +340,7 @@ class MemeDetailViewModel
             viewModelScope.launch {
                 _uiState.update { it.copy(isLoadingSimilar = true) }
                 try {
-                    val status = getSimilarMemesUseCase(memeId)
+                    val status = getSimilarMemesUseCase(currentMemeId)
                     _uiState.update { it.copy(similarMemesStatus = status, isLoadingSimilar = false) }
                 } catch (e: Exception) {
                     android.util.Log.e("MemeDetailViewModel", "Failed to load similar memes", e)
@@ -395,6 +399,31 @@ class MemeDetailViewModel
             _uiState.update { it.copy(quickShareMeme = null, quickShareTargets = emptyList()) }
             viewModelScope.launch {
                 _effects.send(MemeDetailEffect.CopyToClipboard(meme.id))
+            }
+        }
+
+        private fun changeMeme(memeId: Long) {
+            if (memeId == currentMemeId) return
+            currentMemeId = memeId
+            // Reset similar memes and loading state for new meme
+            _uiState.update {
+                it.copy(
+                    similarMemesStatus = null,
+                    isLoadingSimilar = false,
+                )
+            }
+            loadMeme()
+        }
+
+        private fun loadAllMemeIds() {
+            viewModelScope.launch {
+                try {
+                    val ids = getAllMemeIdsUseCase()
+                    _uiState.update { it.copy(allMemeIds = ids) }
+                } catch (e: Exception) {
+                    // Failed to load meme IDs
+                    // Non-critical — pager won't show but single view works
+                }
             }
         }
     }

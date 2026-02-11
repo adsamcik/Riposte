@@ -8,6 +8,7 @@ import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.core.model.SharingPreferences
 import com.adsamcik.riposte.feature.gallery.R
 import com.adsamcik.riposte.feature.gallery.domain.usecase.DeleteMemesUseCase
+import com.adsamcik.riposte.feature.gallery.domain.usecase.GetAllMemeIdsUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GetMemeByIdUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GetSimilarMemesUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.RecordMemeViewUseCase
@@ -47,6 +48,7 @@ class MemeDetailViewModelTest {
     private lateinit var toggleFavoriteUseCase: ToggleFavoriteUseCase
     private lateinit var recordMemeViewUseCase: RecordMemeViewUseCase
     private lateinit var getSimilarMemesUseCase: GetSimilarMemesUseCase
+    private lateinit var getAllMemeIdsUseCase: GetAllMemeIdsUseCase
     private lateinit var context: Context
     private lateinit var viewModel: MemeDetailViewModel
 
@@ -80,10 +82,12 @@ class MemeDetailViewModelTest {
         toggleFavoriteUseCase = mockk()
         recordMemeViewUseCase = mockk(relaxUnitFun = true)
         getSimilarMemesUseCase = mockk()
+        getAllMemeIdsUseCase = mockk()
 
         // Default mock setup
         coEvery { getMemeByIdUseCase(1L) } returns testMeme
         coEvery { getSimilarMemesUseCase(any(), any()) } returns SimilarMemesStatus.NoCandidates
+        coEvery { getAllMemeIdsUseCase() } returns listOf(1L, 2L, 3L)
     }
 
     @After
@@ -101,6 +105,7 @@ class MemeDetailViewModelTest {
             toggleFavoriteUseCase = toggleFavoriteUseCase,
             recordMemeViewUseCase = recordMemeViewUseCase,
             getSimilarMemesUseCase = getSimilarMemesUseCase,
+            getAllMemeIdsUseCase = getAllMemeIdsUseCase,
             userActionTracker = mockk(relaxed = true),
             preferencesDataStore =
                 mockk(relaxed = true) {
@@ -1183,6 +1188,131 @@ class MemeDetailViewModelTest {
 
             // Should not crash, and updateMemeUseCase should not be called
             coVerify(exactly = 0) { updateMemeUseCase(any()) }
+        }
+
+    // endregion
+
+    // region HorizontalPager Tests
+
+    @Test
+    fun `allMemeIds is loaded on initialization`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.allMemeIds).containsExactly(1L, 2L, 3L)
+        }
+
+    @Test
+    fun `ChangeMeme loads new meme data`() =
+        runTest {
+            val meme2 = createTestMeme(2L).copy(title = "Second Meme")
+            coEvery { getMemeByIdUseCase(2L) } returns meme2
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.meme?.id).isEqualTo(1L)
+
+            viewModel.onIntent(MemeDetailIntent.ChangeMeme(2L))
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.meme?.id).isEqualTo(2L)
+            assertThat(viewModel.uiState.value.meme?.title).isEqualTo("Second Meme")
+        }
+
+    @Test
+    fun `ChangeMeme resets edit state for new meme`() =
+        runTest {
+            val meme2 = createTestMeme(2L)
+            coEvery { getMemeByIdUseCase(2L) } returns meme2
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onIntent(MemeDetailIntent.ChangeMeme(2L))
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertThat(state.editedTitle).isEqualTo(meme2.title)
+            assertThat(state.editedDescription).isEqualTo(meme2.description)
+        }
+
+    @Test
+    fun `ChangeMeme to same meme ID is a no-op`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            val stateBefore = viewModel.uiState.value
+
+            viewModel.onIntent(MemeDetailIntent.ChangeMeme(1L))
+            advanceUntilIdle()
+
+            // getMemeByIdUseCase should only be called once (initial load)
+            coVerify(exactly = 1) { getMemeByIdUseCase(1L) }
+        }
+
+    @Test
+    fun `ChangeMeme reloads similar memes for new meme`() =
+        runTest {
+            val meme2 = createTestMeme(2L)
+            coEvery { getMemeByIdUseCase(2L) } returns meme2
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onIntent(MemeDetailIntent.ChangeMeme(2L))
+            advanceUntilIdle()
+
+            coVerify { getSimilarMemesUseCase(2L, any()) }
+        }
+
+    @Test
+    fun `ChangeMeme records view for new meme`() =
+        runTest {
+            val meme2 = createTestMeme(2L)
+            coEvery { getMemeByIdUseCase(2L) } returns meme2
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onIntent(MemeDetailIntent.ChangeMeme(2L))
+            advanceUntilIdle()
+
+            coVerify { recordMemeViewUseCase(2L) }
+        }
+
+    @Test
+    fun `operations use current meme ID after ChangeMeme`() =
+        runTest {
+            val meme2 = createTestMeme(2L)
+            coEvery { getMemeByIdUseCase(2L) } returns meme2
+            coEvery { toggleFavoriteUseCase(2L) } returns Result.success(Unit)
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onIntent(MemeDetailIntent.ChangeMeme(2L))
+            advanceUntilIdle()
+
+            viewModel.onIntent(MemeDetailIntent.ToggleFavorite)
+            advanceUntilIdle()
+
+            coVerify { toggleFavoriteUseCase(2L) }
+        }
+
+    @Test
+    fun `allMemeIds failure is non-fatal`() =
+        runTest {
+            coEvery { getAllMemeIdsUseCase() } throws RuntimeException("DB error")
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            // Meme still loads successfully
+            assertThat(viewModel.uiState.value.meme).isNotNull()
+            assertThat(viewModel.uiState.value.allMemeIds).isEmpty()
         }
 
     // endregion

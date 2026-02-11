@@ -28,6 +28,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -66,6 +68,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -102,6 +105,7 @@ import com.adsamcik.riposte.feature.gallery.R
 import com.adsamcik.riposte.feature.gallery.domain.usecase.SimilarMemesStatus
 import com.adsamcik.riposte.feature.gallery.presentation.component.EditEmojiDialog
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
@@ -202,12 +206,6 @@ fun MemeDetailScreen(
     )
 }
 
-// TODO: Add HorizontalPager for swipe-between-memes support.
-//  - Add `initialIndex: Int = 0` to MemeDetailRoute
-//  - ViewModel exposes list of meme IDs (sorted by current gallery order)
-//  - Wrap content in HorizontalPager(state = rememberPagerState(initialPage = initialIndex) { memeIds.size })
-//  - Load meme data on demand per page
-//  - Update GalleryNavigation and RiposteNavHost for new route parameter
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 private fun MemeDetailScreenContent(
@@ -326,66 +324,62 @@ private fun MemeDetailScreenContent(
                 },
                 containerColor = MaterialTheme.colorScheme.scrim,
             ) { paddingValues ->
-                var viewportSize by remember { mutableStateOf(IntSize.Zero) }
-
                 Box(
                     modifier =
                         Modifier
                             .fillMaxSize()
                             .padding(paddingValues)
-                            .background(MaterialTheme.colorScheme.scrim)
-                            .onSizeChanged { viewportSize = it }
-                            .pointerInput(zoomState) {
-                                detectTapGestures(
-                                    onTap = { zoomState.toggleControls() },
-                                    onDoubleTap = { zoomState.doubleTapToggle() },
-                                )
-                            }
-                            .pointerInput(zoomState) {
-                                detectTransformGestures { _, pan, zoom, _ ->
-                                    zoomState.zoomBy(zoom)
-                                    zoomState.panBy(
-                                        delta = pan,
-                                        viewportWidth = viewportSize.width.toFloat(),
-                                        viewportHeight = viewportSize.height.toFloat(),
-                                    )
-                                }
-                            },
+                            .background(MaterialTheme.colorScheme.scrim),
                 ) {
-                    // Zoomable image with placeholder/error background
-                    var imageState by remember {
-                        mutableStateOf<AsyncImagePainter.State>(AsyncImagePainter.State.Empty)
-                    }
-                    val backgroundColor =
-                        when (imageState) {
-                            is AsyncImagePainter.State.Error -> MaterialTheme.colorScheme.errorContainer
-                            is AsyncImagePainter.State.Loading -> MaterialTheme.colorScheme.surfaceVariant
-                            else -> Color.Transparent
+                    val allMemeIds = uiState.allMemeIds
+                    if (allMemeIds.size > 1) {
+                        val initialPage = allMemeIds.indexOf(meme.id).coerceAtLeast(0)
+                        val pagerState = rememberPagerState(
+                            initialPage = initialPage,
+                            pageCount = { allMemeIds.size },
+                        )
+
+                        // Dispatch ChangeMeme when user settles on a new page
+                        LaunchedEffect(pagerState) {
+                            snapshotFlow { pagerState.settledPage }
+                                .distinctUntilChanged()
+                                .collect { page ->
+                                    val newMemeId = allMemeIds[page]
+                                    if (newMemeId != uiState.meme?.id) {
+                                        zoomState.reset()
+                                        onIntent(MemeDetailIntent.ChangeMeme(newMemeId))
+                                    }
+                                }
                         }
-                    Box(
-                        modifier =
-                            Modifier
-                                .fillMaxSize()
-                                .background(backgroundColor)
-                                .graphicsLayer {
-                                    scaleX = zoomState.scale
-                                    scaleY = zoomState.scale
-                                    translationX = zoomState.offset.x
-                                    translationY = zoomState.offset.y
+
+                        HorizontalPager(
+                            state = pagerState,
+                            userScrollEnabled = !uiState.isEditMode && !zoomState.isZoomed,
+                            key = { allMemeIds[it] },
+                        ) { page ->
+                            val pageMemeId = allMemeIds[page]
+                            MemeImage(
+                                filePath = if (pageMemeId == meme.id) meme.filePath else null,
+                                contentDescription = if (pageMemeId == meme.id) {
+                                    stringResource(
+                                        R.string.gallery_cd_meme_image,
+                                        meme.title ?: meme.fileName,
+                                    )
+                                } else {
+                                    null
                                 },
-                    ) {
-                        AsyncImage(
-                            model = meme.filePath,
-                            contentDescription =
-                                stringResource(
-                                    R.string.gallery_cd_meme_image,
-                                    meme.title ?: meme.fileName,
-                                ),
-                            // Crop fills the container but may clip edges on extreme aspect ratios;
-                            // acceptable here since users can pinch-to-zoom to see the full image.
-                            contentScale = ContentScale.Crop,
-                            onState = { imageState = it },
-                            modifier = Modifier.fillMaxSize(),
+                                zoomState = if (pageMemeId == meme.id) zoomState else null,
+                            )
+                        }
+                    } else {
+                        // Single meme or allMemeIds not loaded yet
+                        MemeImage(
+                            filePath = meme.filePath,
+                            contentDescription = stringResource(
+                                R.string.gallery_cd_meme_image,
+                                meme.title ?: meme.fileName,
+                            ),
+                            zoomState = zoomState,
                         )
                     }
 
@@ -751,6 +745,94 @@ private fun formatFileSize(bytes: Long): String {
         bytes >= 1024 * 1024 -> String.format("%.1f MB", bytes / (1024.0 * 1024.0))
         bytes >= 1024 -> String.format("%.1f KB", bytes / 1024.0)
         else -> "$bytes B"
+    }
+}
+
+@Composable
+private fun MemeImage(
+    filePath: String?,
+    contentDescription: String?,
+    zoomState: ZoomState?,
+    modifier: Modifier = Modifier,
+) {
+    var viewportSize by remember { mutableStateOf(IntSize.Zero) }
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .onSizeChanged { viewportSize = it }
+            .then(
+                if (zoomState != null) {
+                    Modifier
+                        .pointerInput(zoomState) {
+                            detectTapGestures(
+                                onTap = { zoomState.toggleControls() },
+                                onDoubleTap = { zoomState.doubleTapToggle() },
+                            )
+                        }
+                        .pointerInput(zoomState, zoomState.isZoomed) {
+                            // Only handle pan/zoom gestures when zoomed to avoid
+                            // consuming horizontal swipes needed by HorizontalPager
+                            if (zoomState.isZoomed) {
+                                detectTransformGestures { _, pan, zoom, _ ->
+                                    zoomState.zoomBy(zoom)
+                                    zoomState.panBy(
+                                        delta = pan,
+                                        viewportWidth = viewportSize.width.toFloat(),
+                                        viewportHeight = viewportSize.height.toFloat(),
+                                    )
+                                }
+                            }
+                        }
+                } else {
+                    Modifier
+                },
+            ),
+    ) {
+        if (filePath != null) {
+            var imageState by remember {
+                mutableStateOf<AsyncImagePainter.State>(AsyncImagePainter.State.Empty)
+            }
+            val backgroundColor = when (imageState) {
+                is AsyncImagePainter.State.Error -> MaterialTheme.colorScheme.errorContainer
+                is AsyncImagePainter.State.Loading -> MaterialTheme.colorScheme.surfaceVariant
+                else -> Color.Transparent
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(backgroundColor)
+                    .graphicsLayer {
+                        val scale = zoomState?.scale ?: 1f
+                        scaleX = scale
+                        scaleY = scale
+                        translationX = zoomState?.offset?.x ?: 0f
+                        translationY = zoomState?.offset?.y ?: 0f
+                    },
+            ) {
+                AsyncImage(
+                    model = filePath,
+                    contentDescription = contentDescription,
+                    contentScale = ContentScale.Crop,
+                    onState = { imageState = it },
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+        } else {
+            // Placeholder for adjacent pages during swipe
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.scrim),
+                contentAlignment = Alignment.Center,
+            ) {
+                androidx.compose.material3.CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                )
+            }
+        }
     }
 }
 

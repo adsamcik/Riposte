@@ -19,6 +19,7 @@ data class MemeDetailUiState(
     val isLoadingSimilar: Boolean = false,
     val quickShareMeme: Meme? = null,
     val quickShareTargets: List<ShareTarget> = emptyList(),
+    val allMemeIds: List<Long> = emptyList(),
 ) {
     val hasUnsavedChanges: Boolean
         get() =
