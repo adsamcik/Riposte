@@ -48,7 +48,49 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
         db.execSQL("CREATE INDEX IF NOT EXISTS index_meme_embeddings_generatedAt ON meme_embeddings (generatedAt)")
         db.execSQL("CREATE INDEX IF NOT EXISTS index_meme_embeddings_needsRegeneration ON meme_embeddings (needsRegeneration)")
 
-        // 3. Rebuild FTS index to pick up new searchPhrasesJson column
+        // 3. Recreate FTS table with searchPhrasesJson column (FTS4 schema is fixed at creation)
+        db.execSQL("DROP TRIGGER IF EXISTS room_fts_content_sync_memes_fts_BEFORE_UPDATE")
+        db.execSQL("DROP TRIGGER IF EXISTS room_fts_content_sync_memes_fts_BEFORE_DELETE")
+        db.execSQL("DROP TRIGGER IF EXISTS room_fts_content_sync_memes_fts_AFTER_UPDATE")
+        db.execSQL("DROP TRIGGER IF EXISTS room_fts_content_sync_memes_fts_AFTER_INSERT")
+        db.execSQL("DROP TABLE IF EXISTS memes_fts")
+
+        db.execSQL(
+            """CREATE VIRTUAL TABLE IF NOT EXISTS `memes_fts` USING FTS4(
+                `fileName` TEXT NOT NULL,
+                `emojiTagsJson` TEXT NOT NULL,
+                `title` TEXT,
+                `description` TEXT,
+                `textContent` TEXT,
+                `searchPhrasesJson` TEXT,
+                content=`memes`
+            )"""
+        )
+
+        db.execSQL(
+            """CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_memes_fts_BEFORE_UPDATE
+               BEFORE UPDATE ON `memes`
+               BEGIN DELETE FROM `memes_fts` WHERE `docid`=OLD.`rowid`; END"""
+        )
+        db.execSQL(
+            """CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_memes_fts_BEFORE_DELETE
+               BEFORE DELETE ON `memes`
+               BEGIN DELETE FROM `memes_fts` WHERE `docid`=OLD.`rowid`; END"""
+        )
+        db.execSQL(
+            """CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_memes_fts_AFTER_UPDATE
+               AFTER UPDATE ON `memes`
+               BEGIN INSERT INTO `memes_fts`(`docid`, `fileName`, `emojiTagsJson`, `title`, `description`, `textContent`, `searchPhrasesJson`)
+               VALUES (NEW.`rowid`, NEW.`fileName`, NEW.`emojiTagsJson`, NEW.`title`, NEW.`description`, NEW.`textContent`, NEW.`searchPhrasesJson`); END"""
+        )
+        db.execSQL(
+            """CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_memes_fts_AFTER_INSERT
+               AFTER INSERT ON `memes`
+               BEGIN INSERT INTO `memes_fts`(`docid`, `fileName`, `emojiTagsJson`, `title`, `description`, `textContent`, `searchPhrasesJson`)
+               VALUES (NEW.`rowid`, NEW.`fileName`, NEW.`emojiTagsJson`, NEW.`title`, NEW.`description`, NEW.`textContent`, NEW.`searchPhrasesJson`); END"""
+        )
+
+        // 4. Rebuild FTS index with existing data
         db.execSQL("INSERT INTO memes_fts(memes_fts) VALUES('rebuild')")
     }
 }
@@ -95,11 +137,66 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
 /**
  * Migration from version 3 to 4:
  * - Adds basedOn column to memes table for cultural source recognition
- * - Rebuilds FTS index to include basedOn
+ * - Recreates FTS virtual table with basedOn column (FTS4 tables cannot be altered)
+ * - Recreates content sync triggers to include basedOn
  */
 val MIGRATION_3_4 = object : Migration(3, 4) {
     override fun migrate(db: SupportSQLiteDatabase) {
+        // 1. Add basedOn to memes table
         db.execSQL("ALTER TABLE memes ADD COLUMN basedOn TEXT DEFAULT NULL")
+
+        // 2. Drop old FTS table and sync triggers (FTS4 schema is fixed at creation)
+        db.execSQL("DROP TRIGGER IF EXISTS room_fts_content_sync_memes_fts_BEFORE_UPDATE")
+        db.execSQL("DROP TRIGGER IF EXISTS room_fts_content_sync_memes_fts_BEFORE_DELETE")
+        db.execSQL("DROP TRIGGER IF EXISTS room_fts_content_sync_memes_fts_AFTER_UPDATE")
+        db.execSQL("DROP TRIGGER IF EXISTS room_fts_content_sync_memes_fts_AFTER_INSERT")
+        db.execSQL("DROP TABLE IF EXISTS memes_fts")
+
+        // 3. Recreate FTS table with basedOn column
+        db.execSQL(
+            """CREATE VIRTUAL TABLE IF NOT EXISTS `memes_fts` USING FTS4(
+                `fileName` TEXT NOT NULL,
+                `emojiTagsJson` TEXT NOT NULL,
+                `title` TEXT,
+                `description` TEXT,
+                `textContent` TEXT,
+                `searchPhrasesJson` TEXT,
+                `basedOn` TEXT,
+                content=`memes`
+            )"""
+        )
+
+        // 4. Recreate content sync triggers
+        db.execSQL(
+            """CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_memes_fts_BEFORE_UPDATE
+               BEFORE UPDATE ON `memes`
+               BEGIN DELETE FROM `memes_fts` WHERE `docid`=OLD.`rowid`; END"""
+        )
+        db.execSQL(
+            """CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_memes_fts_BEFORE_DELETE
+               BEFORE DELETE ON `memes`
+               BEGIN DELETE FROM `memes_fts` WHERE `docid`=OLD.`rowid`; END"""
+        )
+        db.execSQL(
+            """CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_memes_fts_AFTER_UPDATE
+               AFTER UPDATE ON `memes`
+               BEGIN INSERT INTO `memes_fts`(`docid`, `fileName`, `emojiTagsJson`, `title`, `description`, `textContent`, `searchPhrasesJson`, `basedOn`)
+               VALUES (NEW.`rowid`, NEW.`fileName`, NEW.`emojiTagsJson`, NEW.`title`, NEW.`description`, NEW.`textContent`, NEW.`searchPhrasesJson`, NEW.`basedOn`); END"""
+        )
+        db.execSQL(
+            """CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_memes_fts_AFTER_INSERT
+               AFTER INSERT ON `memes`
+               BEGIN INSERT INTO `memes_fts`(`docid`, `fileName`, `emojiTagsJson`, `title`, `description`, `textContent`, `searchPhrasesJson`, `basedOn`)
+               VALUES (NEW.`rowid`, NEW.`fileName`, NEW.`emojiTagsJson`, NEW.`title`, NEW.`description`, NEW.`textContent`, NEW.`searchPhrasesJson`, NEW.`basedOn`); END"""
+        )
+
+        // 5. Rebuild FTS index with existing data
         db.execSQL("INSERT INTO memes_fts(memes_fts) VALUES('rebuild')")
     }
 }
+
+/**
+ * All migrations in order. Used by [DatabaseModule] and migration tests
+ * to ensure the full chain is registered and validated.
+ */
+val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)

@@ -126,6 +126,9 @@ jobs:
           ./gradlew assembleStandardDebug --no-daemon
           ./gradlew testStandardDebugUnitTest --no-daemon
 
+      - name: Validate database schema version
+        run: ./gradlew :core:database:validateDatabaseSchema --no-daemon
+
   cli-checks:
     name: CLI Checks
     needs: changes

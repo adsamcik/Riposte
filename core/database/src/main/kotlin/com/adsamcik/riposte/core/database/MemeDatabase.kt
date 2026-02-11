@@ -33,6 +33,14 @@ import com.adsamcik.riposte.core.database.entity.ShareTargetEntity
     exportSchema = true
 )
 abstract class MemeDatabase : RoomDatabase() {
+
+    companion object {
+        /**
+         * Current database version. Must match the version in the @Database annotation.
+         * Referenced by migration tests to verify the migration chain is complete.
+         */
+        const val LATEST_VERSION = 4
+    }
     
     /**
      * DAO for meme CRUD operations.
