@@ -466,11 +466,12 @@ private fun GalleryScreenContent(
         ) {
             when {
                 uiState.screenMode == ScreenMode.Searching -> {
+                    val searchColumns = maxOf(2, columns - 1)
                     GalleryContent(
                         uiState = uiState,
                         uniqueEmojis = uiState.uniqueEmojis,
                         onIntent = onIntent,
-                        columns = columns,
+                        columns = searchColumns,
                     ) {
                         // Recent searches (when query is empty and not searched yet)
                         if (uiState.searchState.query.isBlank() && !uiState.searchState.hasSearched) {
