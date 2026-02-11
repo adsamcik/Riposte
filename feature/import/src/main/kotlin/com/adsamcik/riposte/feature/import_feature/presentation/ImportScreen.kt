@@ -90,6 +90,26 @@ import com.adsamcik.riposte.core.ui.component.EmojiChip
 import com.adsamcik.riposte.feature.import_feature.R
 import kotlinx.coroutines.flow.collectLatest
 
+// TODO: Replace with emojis from the user's meme collection (query from DB) plus freeform input.
+private val CommonEmojis =
+    listOf(
+        EmojiTag("😂", "😂"),
+        EmojiTag("❤️", "❤️"),
+        EmojiTag("🔥", "🔥"),
+        EmojiTag("😍", "😍"),
+        EmojiTag("🤣", "🤣"),
+        EmojiTag("😊", "😊"),
+        EmojiTag("🙏", "🙏"),
+        EmojiTag("😭", "😭"),
+        EmojiTag("😘", "😘"),
+        EmojiTag("💯", "💯"),
+        EmojiTag("🤔", "🤔"),
+        EmojiTag("👀", "👀"),
+        EmojiTag("💀", "💀"),
+        EmojiTag("🎉", "🎉"),
+        EmojiTag("✨", "✨"),
+    )
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun ImportScreen(
@@ -227,10 +247,11 @@ fun ImportScreen(
                     .fillMaxSize()
                     .padding(paddingValues),
         ) {
+            val importResult = uiState.importResult
             when {
-                uiState.importResult != null -> {
+                importResult != null -> {
                     ImportResultSummary(
-                        result = uiState.importResult!!,
+                        result = importResult,
                         onRetry = { viewModel.onIntent(ImportIntent.RetryFailedImports) },
                         onDone = { viewModel.onIntent(ImportIntent.DismissImportResult) },
                     )
@@ -482,9 +503,10 @@ private fun ImportGridContent(
     ) {
         items(images.size, key = { images[it].uri.toString() }) { index ->
             val image = images[index]
+            val emojiStrings = remember(image.emojis) { image.emojis.map { it.emoji } }
             ImportImageCard(
                 uri = image.uri,
-                emojis = image.emojis.map { it.emoji },
+                emojis = emojiStrings,
                 isSelected = index == editingIndex,
                 hasError = image.error != null,
                 isProcessing = image.isProcessing,
@@ -674,25 +696,6 @@ private fun EditImageSheet(
     onDone: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // TODO: Replace with emojis from the user's meme collection (query from DB) plus freeform input.
-    val commonEmojis =
-        listOf(
-            EmojiTag("😂", "😂"),
-            EmojiTag("❤️", "❤️"),
-            EmojiTag("🔥", "🔥"),
-            EmojiTag("😍", "😍"),
-            EmojiTag("🤣", "🤣"),
-            EmojiTag("😊", "😊"),
-            EmojiTag("🙏", "🙏"),
-            EmojiTag("😭", "😭"),
-            EmojiTag("😘", "😘"),
-            EmojiTag("💯", "💯"),
-            EmojiTag("🤔", "🤔"),
-            EmojiTag("👀", "👀"),
-            EmojiTag("💀", "💀"),
-            EmojiTag("🎉", "🎉"),
-            EmojiTag("✨", "✨"),
-        )
     Column(
         modifier =
             modifier
@@ -760,7 +763,7 @@ private fun EditImageSheet(
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                items(suggestedEmojis) { emojiTag ->
+                items(suggestedEmojis, key = { it.emoji }) { emojiTag ->
                     EmojiChip(
                         emojiTag = emojiTag,
                         onClick = { onEmojiToggle(emojiTag) },
@@ -792,7 +795,7 @@ private fun EditImageSheet(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            commonEmojis.forEach { emojiTag ->
+            CommonEmojis.forEach { emojiTag ->
                 EmojiChip(
                     emojiTag = emojiTag,
                     onClick = { onEmojiToggle(emojiTag) },
