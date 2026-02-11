@@ -11,6 +11,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
@@ -275,6 +276,10 @@ private fun GalleryScreenContent(
             onCopyToClipboard = { onIntent(GalleryIntent.CopyToClipboard) },
             onDismiss = { onIntent(GalleryIntent.DismissQuickShare) },
         )
+    }
+
+    BackHandler(enabled = uiState.screenMode == ScreenMode.Searching) {
+        onIntent(GalleryIntent.ClearSearch)
     }
 
     Scaffold(
