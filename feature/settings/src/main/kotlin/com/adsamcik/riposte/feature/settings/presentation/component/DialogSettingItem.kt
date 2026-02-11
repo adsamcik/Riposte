@@ -46,9 +46,10 @@ fun <T> DialogSettingItem(
         supportingContent = {
             Text(subtitle ?: valueLabel(selectedValue))
         },
-        leadingContent = icon?.let {
-            { Icon(imageVector = it, contentDescription = null) }
-        },
+        leadingContent =
+            icon?.let {
+                { Icon(imageVector = it, contentDescription = null) }
+            },
         modifier = modifier.clickable(enabled = enabled) { showDialog = true },
     )
 
@@ -62,17 +63,18 @@ fun <T> DialogSettingItem(
                         val label = valueLabel(value)
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .selectable(
-                                    selected = value == selectedValue,
-                                    onClick = {
-                                        onValueChange(value)
-                                        showDialog = false
-                                    },
-                                    role = Role.RadioButton,
-                                )
-                                .padding(vertical = 12.dp),
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .selectable(
+                                        selected = value == selectedValue,
+                                        onClick = {
+                                            onValueChange(value)
+                                            showDialog = false
+                                        },
+                                        role = Role.RadioButton,
+                                    )
+                                    .padding(vertical = 12.dp),
                         ) {
                             RadioButton(
                                 selected = value == selectedValue,

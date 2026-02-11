@@ -1,18 +1,16 @@
 package com.adsamcik.riposte.feature.settings.presentation
 
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
-import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.google.common.truth.Truth.assertThat
 import com.adsamcik.riposte.core.datastore.DarkMode
 import com.adsamcik.riposte.core.ui.theme.RiposteTheme
+import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -30,7 +28,6 @@ import org.junit.runner.RunWith
  */
 @RunWith(AndroidJUnit4::class)
 class SettingsScreenTest {
-
     @get:Rule
     val composeTestRule = createComposeRule()
 
@@ -43,7 +40,7 @@ class SettingsScreenTest {
                 SettingsScreen(
                     uiState = SettingsUiState(),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -61,7 +58,7 @@ class SettingsScreenTest {
                 SettingsScreen(
                     uiState = SettingsUiState(),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -78,7 +75,7 @@ class SettingsScreenTest {
                 SettingsScreen(
                     uiState = SettingsUiState(darkMode = DarkMode.SYSTEM),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -96,7 +93,7 @@ class SettingsScreenTest {
                 SettingsScreen(
                     uiState = SettingsUiState(),
                     onIntent = { receivedIntent = it },
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -113,7 +110,7 @@ class SettingsScreenTest {
                 SettingsScreen(
                     uiState = SettingsUiState(showThemeDialog = true),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -133,7 +130,7 @@ class SettingsScreenTest {
                 SettingsScreen(
                     uiState = SettingsUiState(showThemeDialog = true),
                     onIntent = { receivedIntent = it },
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -151,7 +148,7 @@ class SettingsScreenTest {
                 SettingsScreen(
                     uiState = SettingsUiState(dynamicColors = true),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -169,7 +166,7 @@ class SettingsScreenTest {
                 SettingsScreen(
                     uiState = SettingsUiState(dynamicColors = true),
                     onIntent = { receivedIntent = it },
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -187,7 +184,7 @@ class SettingsScreenTest {
                 SettingsScreen(
                     uiState = SettingsUiState(gridColumns = 3),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -205,7 +202,7 @@ class SettingsScreenTest {
                 SettingsScreen(
                     uiState = SettingsUiState(enableSemanticSearch = true),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -223,7 +220,7 @@ class SettingsScreenTest {
                 SettingsScreen(
                     uiState = SettingsUiState(enableSemanticSearch = true),
                     onIntent = { receivedIntent = it },
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -240,7 +237,7 @@ class SettingsScreenTest {
                 SettingsScreen(
                     uiState = SettingsUiState(autoExtractText = true),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -255,7 +252,7 @@ class SettingsScreenTest {
                 SettingsScreen(
                     uiState = SettingsUiState(saveSearchHistory = true),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -272,7 +269,7 @@ class SettingsScreenTest {
                 SettingsScreen(
                     uiState = SettingsUiState(),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -287,7 +284,7 @@ class SettingsScreenTest {
                 SettingsScreen(
                     uiState = SettingsUiState(cacheSize = "25.5 MB"),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -304,7 +301,7 @@ class SettingsScreenTest {
                 SettingsScreen(
                     uiState = SettingsUiState(),
                     onIntent = { receivedIntent = it },
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -321,7 +318,7 @@ class SettingsScreenTest {
                 SettingsScreen(
                     uiState = SettingsUiState(showClearCacheDialog = true),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -339,7 +336,7 @@ class SettingsScreenTest {
                 SettingsScreen(
                     uiState = SettingsUiState(showClearCacheDialog = true),
                     onIntent = { receivedIntent = it },
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -356,7 +353,7 @@ class SettingsScreenTest {
                 SettingsScreen(
                     uiState = SettingsUiState(),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -373,7 +370,7 @@ class SettingsScreenTest {
                 SettingsScreen(
                     uiState = SettingsUiState(appVersion = "1.0.0"),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -389,7 +386,7 @@ class SettingsScreenTest {
                 SettingsScreen(
                     uiState = SettingsUiState(),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -404,7 +401,7 @@ class SettingsScreenTest {
                 SettingsScreen(
                     uiState = SettingsUiState(),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -421,7 +418,7 @@ class SettingsScreenTest {
                 SettingsScreen(
                     uiState = SettingsUiState(),
                     onIntent = { receivedIntent = it },
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -440,7 +437,7 @@ class SettingsScreenTest {
                 SettingsScreen(
                     uiState = SettingsUiState(),
                     onIntent = { receivedIntent = it },
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -459,7 +456,7 @@ class SettingsScreenTest {
                 SettingsScreen(
                     uiState = SettingsUiState(),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -476,7 +473,7 @@ class SettingsScreenTest {
                 SettingsScreen(
                     uiState = SettingsUiState(),
                     onIntent = {},
-                    onNavigateBack = { navigatedBack = true }
+                    onNavigateBack = { navigatedBack = true },
                 )
             }
         }
@@ -495,7 +492,7 @@ class SettingsScreenTest {
                 SettingsScreen(
                     uiState = SettingsUiState(showEmojiNames = false),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -512,7 +509,7 @@ class SettingsScreenTest {
                 SettingsScreen(
                     uiState = SettingsUiState(showEmojiNames = false),
                     onIntent = { receivedIntent = it },
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }

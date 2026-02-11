@@ -31,9 +31,10 @@ fun <T> DropdownSettingItem(
     ListItem(
         headlineContent = { Text(title) },
         supportingContent = subtitle?.let { { Text(it) } },
-        leadingContent = icon?.let {
-            { Icon(imageVector = it, contentDescription = null) }
-        },
+        leadingContent =
+            icon?.let {
+                { Icon(imageVector = it, contentDescription = null) }
+            },
         trailingContent = {
             Text(valueLabel(selectedValue))
             DropdownMenu(

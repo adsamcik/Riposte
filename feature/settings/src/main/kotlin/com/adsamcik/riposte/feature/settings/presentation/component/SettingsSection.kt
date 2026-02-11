@@ -21,14 +21,15 @@ fun SettingsSection(
             text = title,
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier
-                .padding(
-                    start = 16.dp,
-                    end = 16.dp,
-                    top = 24.dp,
-                    bottom = 8.dp,
-                )
-                .semantics { heading() },
+            modifier =
+                Modifier
+                    .padding(
+                        start = 16.dp,
+                        end = 16.dp,
+                        top = 24.dp,
+                        bottom = 8.dp,
+                    )
+                    .semantics { heading() },
         )
         content()
     }

@@ -21,20 +21,22 @@ data class EmbeddingStatusInfo(
  *
  * Emits updated [EmbeddingStatusInfo] whenever the valid embedding count changes.
  */
-class ObserveEmbeddingStatisticsUseCase @Inject constructor(
-    private val embeddingManager: EmbeddingManager,
-) {
-    operator fun invoke(): Flow<EmbeddingStatusInfo> {
-        return embeddingManager.observeValidEmbeddingCount()
-            .flatMapLatest {
-                flow {
-                    emit(
-                        EmbeddingStatusInfo(
-                            statistics = embeddingManager.getStatistics(),
-                            modelInfo = embeddingManager.getModelInfo(),
-                        ),
-                    )
+class ObserveEmbeddingStatisticsUseCase
+    @Inject
+    constructor(
+        private val embeddingManager: EmbeddingManager,
+    ) {
+        operator fun invoke(): Flow<EmbeddingStatusInfo> {
+            return embeddingManager.observeValidEmbeddingCount()
+                .flatMapLatest {
+                    flow {
+                        emit(
+                            EmbeddingStatusInfo(
+                                statistics = embeddingManager.getStatistics(),
+                                modelInfo = embeddingManager.getModelInfo(),
+                            ),
+                        )
+                    }
                 }
-            }
+        }
     }
-}

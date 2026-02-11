@@ -24,9 +24,10 @@ fun ClickableSettingItem(
     ListItem(
         headlineContent = { Text(title) },
         supportingContent = subtitle?.let { { Text(it) } },
-        leadingContent = icon?.let {
-            { Icon(imageVector = it, contentDescription = null) }
-        },
+        leadingContent =
+            icon?.let {
+                { Icon(imageVector = it, contentDescription = null) }
+            },
         trailingContent = {
             if (trailingText != null) {
                 Text(trailingText)

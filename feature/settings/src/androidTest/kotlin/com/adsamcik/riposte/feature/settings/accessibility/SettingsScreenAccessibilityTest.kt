@@ -1,16 +1,9 @@
 package com.adsamcik.riposte.feature.settings.accessibility
 
 import androidx.activity.ComponentActivity
-import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.junit4.accessibility.enableAccessibilityChecks
-import androidx.compose.ui.test.onNodeWithContentDescription
-import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.onRoot
-import androidx.compose.ui.test.tryPerformAccessibilityChecks
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.adsamcik.riposte.core.testing.assertHasRole
-import com.adsamcik.riposte.core.testing.assertIsFocusable
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import org.junit.Before
@@ -24,7 +17,7 @@ import org.junit.runner.RunWith
  *
  * Note: The SettingsScreen composable requires a ViewModel which is injected by Hilt.
  * These tests need to use HiltAndroidTest to provide the required dependencies.
- * 
+ *
  * TODO: Implement full accessibility tests when SettingsScreen has a stateless variant
  * for testing, or use HiltAndroidTest with proper test module setup.
  *
@@ -33,7 +26,6 @@ import org.junit.runner.RunWith
 @HiltAndroidTest
 @RunWith(AndroidJUnit4::class)
 class SettingsScreenAccessibilityTest {
-
     @get:Rule(order = 0)
     val hiltRule = HiltAndroidRule(this)
 
@@ -49,7 +41,7 @@ class SettingsScreenAccessibilityTest {
 
     // ============ Placeholder Tests ============
     // TODO: These tests require navigation to the settings screen or a stateless variant
-    
+
     @Ignore("SettingsScreen requires ViewModel injection - needs full integration test setup")
     @Test
     fun settingsScreen_hasAccessibleTitle() {

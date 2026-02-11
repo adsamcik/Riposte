@@ -11,7 +11,6 @@ import kotlinx.coroutines.flow.Flow
  * Repository interface for settings and preferences operations.
  */
 interface SettingsRepository {
-
     /**
      * Flow of app preferences (dark mode, dynamic colors, search settings, etc.).
      */

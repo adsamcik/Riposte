@@ -30,7 +30,7 @@ fun SliderSettingItem(
     onValueChangeFinished: (() -> Unit)? = null,
 ) {
     val labelText = valueLabel?.invoke(value)
-    
+
     Column(modifier = modifier) {
         ListItem(
             headlineContent = {
@@ -48,9 +48,10 @@ fun SliderSettingItem(
                 }
             },
             supportingContent = subtitle?.let { { Text(it) } },
-            leadingContent = icon?.let {
-                { Icon(imageVector = it, contentDescription = null) }
-            },
+            leadingContent =
+                icon?.let {
+                    { Icon(imageVector = it, contentDescription = null) }
+                },
         )
         Slider(
             value = value,
@@ -59,9 +60,10 @@ fun SliderSettingItem(
             valueRange = valueRange,
             steps = steps,
             enabled = enabled,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
         )
     }
 }

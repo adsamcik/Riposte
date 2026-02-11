@@ -42,44 +42,34 @@ data class SettingsUiState(
     val currentLanguage: String? = null,
     val availableLanguages: List<AppLanguage> = emptyList(),
     val dynamicColorsEnabled: Boolean = true,
-
     // Display
     val gridDensityPreference: UserDensityPreference = UserDensityPreference.AUTO,
-
     // Sharing
     val useNativeShareDialog: Boolean = false,
-
     // Sharing defaults
     val defaultFormat: ImageFormat = ImageFormat.WEBP,
     val defaultQuality: Int = 85,
     val defaultMaxDimension: Int = 1080,
     val stripMetadata: Boolean = true,
-
     // Search
     val enableSemanticSearch: Boolean = true,
     val saveSearchHistory: Boolean = true,
     val embeddingSearchState: EmbeddingSearchState? = null,
-
     // Storage
     val cacheSize: String = "0 B",
     val showClearCacheDialog: Boolean = false,
-
     // Export options dialog
     val showExportOptionsDialog: Boolean = false,
     val exportSettings: Boolean = true,
     val exportImages: Boolean = true,
     val exportTags: Boolean = true,
-
     // Import confirmation dialog
     val showImportConfirmDialog: Boolean = false,
     val pendingImportJson: String? = null,
     val importBackupTimestamp: Long? = null,
-
     // About
     val appVersion: String = "1.0.0",
-
     // Crash Logs
     val crashLogCount: Int = 0,
-
     val isLoading: Boolean = true,
 )
