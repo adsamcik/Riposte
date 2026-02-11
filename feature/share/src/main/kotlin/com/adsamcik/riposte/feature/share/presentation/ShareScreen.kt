@@ -120,7 +120,7 @@ fun ShareScreen(
     ) { paddingValues ->
         when {
             uiState.isLoading -> {
-                LoadingScreen()
+                LoadingScreen(modifier = Modifier.padding(paddingValues))
             }
 
             uiState.errorMessage != null -> {
@@ -184,7 +184,7 @@ internal fun ShareScreen(
     ) { paddingValues ->
         when {
             uiState.isLoading -> {
-                LoadingScreen()
+                LoadingScreen(modifier = Modifier.padding(paddingValues))
             }
 
             uiState.errorMessage != null -> {
