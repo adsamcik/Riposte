@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -74,12 +73,17 @@ fun ShareScreen(
     // Hoist string resources for use in LaunchedEffect
     val shareChooserTitle = stringResource(R.string.share_chooser_title)
     val savedToGalleryMessage = stringResource(R.string.share_message_saved_to_gallery)
+    val noShareAppsMessage = stringResource(R.string.share_error_no_apps)
 
     LaunchedEffect(Unit) {
         viewModel.effects.collectLatest { effect ->
             when (effect) {
                 is ShareEffect.LaunchShareIntent -> {
-                    context.startActivity(android.content.Intent.createChooser(effect.intent, shareChooserTitle))
+                    try {
+                        context.startActivity(android.content.Intent.createChooser(effect.intent, shareChooserTitle))
+                    } catch (e: android.content.ActivityNotFoundException) {
+                        snackbarHostState.showSnackbar(noShareAppsMessage)
+                    }
                 }
                 is ShareEffect.ShowSnackbar -> {
                     snackbarHostState.showSnackbar(effect.message)
@@ -281,7 +285,7 @@ private fun PreviewSection(
         modifier = modifier
             .fillMaxWidth()
             .heightIn(max = maxPreviewHeight)
-            .clip(RoundedCornerShape(12.dp))
+            .clip(MaterialTheme.shapes.medium)
             .background(MaterialTheme.colorScheme.surfaceVariant),
         contentAlignment = Alignment.Center,
     ) {

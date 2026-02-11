@@ -58,6 +58,7 @@
     <string name="share_error_meme_not_found">Meme not found</string>
     <string name="share_error_share_failed">Share failed</string>
     <string name="share_error_load_failed">Failed to load meme</string>
+    <string name="share_error_no_apps">No apps available to share. Install a messaging app to share memes.</string>
 
     <!-- Snackbar Messages -->
     <string name="share_snackbar_saved_to_gallery">Saved to gallery</string>
