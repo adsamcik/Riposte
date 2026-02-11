@@ -114,6 +114,7 @@ The app implements `Configuration.Provider` for `HiltWorkerFactory`. Workers use
 - Dependencies go in `gradle/libs.versions.toml` (version catalog), not inline
 - Custom convention plugins live in `buildSrc/` (e.g., `riposte.android.library`, `riposte.android.compose`, `riposte.android.hilt`)
 - Metadata schema is v1.3 — supports `primaryLanguage`, `localizations` for i18n, and `basedOn` for meme origin
+- **Database schema versioning**: Only one schema version bump per release cycle. If the database version was already bumped since the last release, add changes to the existing migration instead of creating a new one. The released version is tracked in `core/database/released-schema-version.txt` and enforced by the `validateDatabaseSchema` Gradle task.
 
 ### Testing Stack
 

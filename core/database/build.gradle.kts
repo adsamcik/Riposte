@@ -38,7 +38,7 @@ room {
 
 tasks.register("validateDatabaseSchema") {
     group = "verification"
-    description = "Validates Room database schema version consistency across annotations, constants, schema exports, and migrations"
+    description = "Validates Room database schema version consistency and ensures at most one version bump per release"
 
     val dbFilePath = layout.projectDirectory.file(
         "src/main/kotlin/com/adsamcik/riposte/core/database/MemeDatabase.kt"
@@ -49,10 +49,12 @@ tasks.register("validateDatabaseSchema") {
     val schemaDirPath = layout.projectDirectory.dir(
         "schemas/com.adsamcik.riposte.core.database.MemeDatabase"
     )
+    val releasedVersionFile = layout.projectDirectory.file("released-schema-version.txt")
 
     inputs.file(dbFilePath)
     inputs.file(migrationsFilePath)
     inputs.dir(schemaDirPath)
+    inputs.file(releasedVersionFile)
 
     doLast {
         val dbContent = dbFilePath.asFile.readText()
@@ -68,6 +70,29 @@ tasks.register("validateDatabaseSchema") {
         if (annotationVersion != latestVersion) {
             throw GradleException(
                 "Version mismatch: @Database(version=$annotationVersion) != LATEST_VERSION=$latestVersion"
+            )
+        }
+
+        // Enforce at most one version bump per release cycle
+        val releasedVersion = releasedVersionFile.asFile.readText().trim().toIntOrNull()
+            ?: throw GradleException(
+                "Could not read released-schema-version.txt. " +
+                    "It must contain a single integer (the database version from the last release)."
+            )
+
+        if (annotationVersion > releasedVersion + 1) {
+            throw GradleException(
+                "Database version $annotationVersion is more than 1 ahead of the released " +
+                    "version $releasedVersion. Only one schema version bump is allowed per release. " +
+                    "Batch all schema changes into a single migration " +
+                    "(MIGRATION_${releasedVersion}_${releasedVersion + 1})."
+            )
+        }
+
+        if (annotationVersion < releasedVersion) {
+            throw GradleException(
+                "Database version $annotationVersion is behind released version $releasedVersion. " +
+                    "This should never happen — do not decrease the database version."
             )
         }
 
@@ -113,9 +138,12 @@ tasks.register("validateDatabaseSchema") {
             }
         }
 
+        val versionDelta = annotationVersion - releasedVersion
+        val deltaStatus = if (versionDelta == 0) "no bump (matches release)" else "1 bump pending"
         logger.lifecycle("Database schema version $annotationVersion is consistent:")
         logger.lifecycle("  @Database annotation: $annotationVersion")
         logger.lifecycle("  LATEST_VERSION constant: $latestVersion")
+        logger.lifecycle("  Released version: $releasedVersion ($deltaStatus)")
         logger.lifecycle("  Schema exports: ${schemaVersions.size} files (1..$annotationVersion)")
         logger.lifecycle(
             "  Migrations: ${migrationVersions.size} " +

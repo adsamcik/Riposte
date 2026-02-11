@@ -139,3 +139,32 @@ jobs:
           draft: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  stamp-schema-version:
+    name: Stamp Released Schema Version
+    needs: build-release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Update released schema version
+        run: |
+          DB_VERSION=$(grep -oP 'version\s*=\s*\K\d+' core/database/src/main/kotlin/com/adsamcik/riposte/core/database/MemeDatabase.kt | head -1)
+          CURRENT=$(cat core/database/released-schema-version.txt | tr -d '[:space:]')
+          if [ "$DB_VERSION" != "$CURRENT" ]; then
+            echo "$DB_VERSION" > core/database/released-schema-version.txt
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add core/database/released-schema-version.txt
+            git commit -m "chore(database): stamp released schema version $DB_VERSION"
+            git push
+            echo "Updated released schema version: $CURRENT -> $DB_VERSION"
+          else
+            echo "Released schema version already at $DB_VERSION, no update needed"
+          fi

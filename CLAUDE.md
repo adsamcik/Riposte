@@ -165,6 +165,7 @@ Pager(config = PagingConfig(pageSize = 20)) { ... }.flow
 - **Metadata schema**: v1.3 supports `primaryLanguage`, `localizations` for i18n, and `basedOn` for meme origin
 - **CLI tool**: Uses GitHub Copilot SDK, requires `copilot auth login` first
 - **Paging for All filter**: Use `usePaging=true` for All memes, regular lists for filtered views
+- **Database schema versioning**: Only one schema version bump allowed per release cycle. If the schema was already bumped, add your changes to the existing migration instead of creating a new one. See `core/database/released-schema-version.txt`.
 
 ## Agent Instructions
 
