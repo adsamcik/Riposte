@@ -55,6 +55,7 @@
 
     <!-- Loading State -->
     <string name="gallery_loading_message">Loading memes…</string>
+    <string name="gallery_cd_searching">Searching memes</string>
 
     <!-- Error State -->
     <string name="gallery_error_default">Error</string>

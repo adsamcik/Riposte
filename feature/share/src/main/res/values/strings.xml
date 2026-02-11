@@ -44,6 +44,7 @@
 
     <!-- Action Buttons -->
     <string name="share_button_share">Share</string>
+    <string name="share_button_preparing">Preparing…</string>
     <string name="share_button_save_to_gallery">or save to gallery</string>
 
     <!-- Intent Chooser -->

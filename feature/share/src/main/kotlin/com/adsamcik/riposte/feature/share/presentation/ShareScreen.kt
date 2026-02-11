@@ -248,12 +248,25 @@ private fun ShareContent(
                 .height(56.dp)
                 .animatedPressScale(shareInteractionSource),
         ) {
-            Icon(Icons.Default.Share, contentDescription = stringResource(R.string.share_button_share))
-            Spacer(Modifier.width(8.dp))
-            Text(
-                text = stringResource(R.string.share_button_share),
-                style = MaterialTheme.typography.titleMedium,
-            )
+            if (uiState.isProcessing) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = stringResource(R.string.share_button_preparing),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+            } else {
+                Icon(Icons.Default.Share, contentDescription = stringResource(R.string.share_button_share))
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = stringResource(R.string.share_button_share),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+            }
         }
 
         // Demoted save link

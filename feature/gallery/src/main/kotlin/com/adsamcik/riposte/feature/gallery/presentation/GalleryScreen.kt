@@ -462,10 +462,15 @@ private fun GalleryScreenContent(
                         // Loading indicator
                         else if (uiState.searchState.isSearching) {
                             item(span = { GridItemSpan(maxLineSpan) }, key = "search_loading") {
+                                val searchingDescription = stringResource(R.string.gallery_cd_searching)
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(32.dp),
+                                        .padding(32.dp)
+                                        .semantics {
+                                            contentDescription = searchingDescription
+                                            liveRegion = LiveRegionMode.Polite
+                                        },
                                     contentAlignment = Alignment.Center,
                                 ) {
                                     CircularProgressIndicator()
