@@ -96,8 +96,7 @@ class TestDispatcherProvider(
  * advance the virtual time or run pending coroutines.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
-fun standardTestDispatcherProvider(): TestDispatcherProvider =
-    TestDispatcherProvider(StandardTestDispatcher())
+fun standardTestDispatcherProvider(): TestDispatcherProvider = TestDispatcherProvider(StandardTestDispatcher())
 
 /**
  * Creates a [TestDispatcherProvider] with an [UnconfinedTestDispatcher].
@@ -106,5 +105,4 @@ fun standardTestDispatcherProvider(): TestDispatcherProvider =
  * for most unit tests.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
-fun unconfinedTestDispatcherProvider(): TestDispatcherProvider =
-    TestDispatcherProvider(UnconfinedTestDispatcher())
+fun unconfinedTestDispatcherProvider(): TestDispatcherProvider = TestDispatcherProvider(UnconfinedTestDispatcher())

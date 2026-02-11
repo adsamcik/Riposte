@@ -22,7 +22,6 @@ import com.adsamcik.riposte.core.model.SharingPreferences
  * ```
  */
 object TestDataFactory {
-
     private var idCounter = 0L
 
     /**
@@ -69,40 +68,42 @@ object TestDataFactory {
         title: String? = "Test Meme $id",
         description: String? = "A funny test meme",
         textContent: String? = null,
-        isFavorite: Boolean = false
-    ): Meme = Meme(
-        id = id,
-        filePath = filePath,
-        fileName = fileName,
-        mimeType = mimeType,
-        width = width,
-        height = height,
-        fileSizeBytes = fileSizeBytes,
-        importedAt = importedAt,
-        emojiTags = emojiTags,
-        title = title,
-        description = description,
-        textContent = textContent,
-        isFavorite = isFavorite
-    )
+        isFavorite: Boolean = false,
+    ): Meme =
+        Meme(
+            id = id,
+            filePath = filePath,
+            fileName = fileName,
+            mimeType = mimeType,
+            width = width,
+            height = height,
+            fileSizeBytes = fileSizeBytes,
+            importedAt = importedAt,
+            emojiTags = emojiTags,
+            title = title,
+            description = description,
+            textContent = textContent,
+            isFavorite = isFavorite,
+        )
 
     /**
      * Creates a minimal meme with only required fields.
      */
     fun createMinimalMeme(
         id: Long = nextId(),
-        filePath: String = "/test/meme_$id.jpg"
-    ): Meme = Meme(
-        id = id,
-        filePath = filePath,
-        fileName = "meme_$id.jpg",
-        mimeType = "image/jpeg",
-        width = 500,
-        height = 500,
-        fileSizeBytes = 50000L,
-        importedAt = System.currentTimeMillis(),
-        emojiTags = emptyList()
-    )
+        filePath: String = "/test/meme_$id.jpg",
+    ): Meme =
+        Meme(
+            id = id,
+            filePath = filePath,
+            fileName = "meme_$id.jpg",
+            mimeType = "image/jpeg",
+            width = 500,
+            height = 500,
+            fileSizeBytes = 50000L,
+            importedAt = System.currentTimeMillis(),
+            emojiTags = emptyList(),
+        )
 
     /**
      * Creates a list of memes for testing grid/list displays.
@@ -112,16 +113,18 @@ object TestDataFactory {
      */
     fun createMemeList(
         count: Int = 10,
-        favoriteIndices: Set<Int> = emptySet()
-    ): List<Meme> = (0 until count).map { index ->
-        createMeme(
-            id = nextId(),
-            isFavorite = index in favoriteIndices,
-            emojiTags = listOf(
-                createEmojiTag(emoji = SAMPLE_EMOJIS[index % SAMPLE_EMOJIS.size])
+        favoriteIndices: Set<Int> = emptySet(),
+    ): List<Meme> =
+        (0 until count).map { index ->
+            createMeme(
+                id = nextId(),
+                isFavorite = index in favoriteIndices,
+                emojiTags =
+                    listOf(
+                        createEmojiTag(emoji = SAMPLE_EMOJIS[index % SAMPLE_EMOJIS.size]),
+                    ),
             )
-        )
-    }
+        }
 
     // ============ EmojiTag Creation ============
 
@@ -137,29 +140,31 @@ object TestDataFactory {
         emoji: String = "😂",
         name: String = "face_with_tears_of_joy",
         category: String? = "Smileys & Emotion",
-        keywords: List<String> = listOf("funny", "laughing", "lol")
-    ): EmojiTag = EmojiTag(
-        emoji = emoji,
-        name = name,
-        category = category,
-        keywords = keywords
-    )
+        keywords: List<String> = listOf("funny", "laughing", "lol"),
+    ): EmojiTag =
+        EmojiTag(
+            emoji = emoji,
+            name = name,
+            category = category,
+            keywords = keywords,
+        )
 
     /**
      * Creates a list of common emoji tags for testing.
      */
-    fun createCommonEmojiTags(): List<EmojiTag> = listOf(
-        createEmojiTag("😂", "face_with_tears_of_joy", "Smileys & Emotion"),
-        createEmojiTag("😍", "smiling_face_with_heart_eyes", "Smileys & Emotion"),
-        createEmojiTag("🔥", "fire", "Travel & Places"),
-        createEmojiTag("💀", "skull", "Smileys & Emotion"),
-        createEmojiTag("😭", "loudly_crying_face", "Smileys & Emotion"),
-        createEmojiTag("🤣", "rolling_on_the_floor_laughing", "Smileys & Emotion"),
-        createEmojiTag("❤️", "red_heart", "Smileys & Emotion"),
-        createEmojiTag("✨", "sparkles", "Activities"),
-        createEmojiTag("👍", "thumbs_up", "People & Body"),
-        createEmojiTag("🎉", "party_popper", "Activities")
-    )
+    fun createCommonEmojiTags(): List<EmojiTag> =
+        listOf(
+            createEmojiTag("😂", "face_with_tears_of_joy", "Smileys & Emotion"),
+            createEmojiTag("😍", "smiling_face_with_heart_eyes", "Smileys & Emotion"),
+            createEmojiTag("🔥", "fire", "Travel & Places"),
+            createEmojiTag("💀", "skull", "Smileys & Emotion"),
+            createEmojiTag("😭", "loudly_crying_face", "Smileys & Emotion"),
+            createEmojiTag("🤣", "rolling_on_the_floor_laughing", "Smileys & Emotion"),
+            createEmojiTag("❤️", "red_heart", "Smileys & Emotion"),
+            createEmojiTag("✨", "sparkles", "Activities"),
+            createEmojiTag("👍", "thumbs_up", "People & Body"),
+            createEmojiTag("🎉", "party_popper", "Activities"),
+        )
 
     // ============ SearchResult Creation ============
 
@@ -173,12 +178,13 @@ object TestDataFactory {
     fun createSearchResult(
         meme: Meme = createMeme(),
         relevanceScore: Float = 0.95f,
-        matchType: MatchType = MatchType.TEXT
-    ): SearchResult = SearchResult(
-        meme = meme,
-        relevanceScore = relevanceScore,
-        matchType = matchType
-    )
+        matchType: MatchType = MatchType.TEXT,
+    ): SearchResult =
+        SearchResult(
+            meme = meme,
+            relevanceScore = relevanceScore,
+            matchType = matchType,
+        )
 
     /**
      * Creates a list of search results with decreasing relevance scores.
@@ -188,14 +194,15 @@ object TestDataFactory {
      */
     fun createSearchResultList(
         count: Int = 5,
-        matchType: MatchType = MatchType.HYBRID
-    ): List<SearchResult> = (0 until count).map { index ->
-        createSearchResult(
-            meme = createMeme(),
-            relevanceScore = 1.0f - (index * 0.1f),
-            matchType = matchType
-        )
-    }
+        matchType: MatchType = MatchType.HYBRID,
+    ): List<SearchResult> =
+        (0 until count).map { index ->
+            createSearchResult(
+                meme = createMeme(),
+                relevanceScore = 1.0f - (index * 0.1f),
+                matchType = matchType,
+            )
+        }
 
     // ============ MemeMetadata Creation ============
 
@@ -215,15 +222,16 @@ object TestDataFactory {
         title: String? = "Test Meme",
         description: String? = "A test meme for unit testing",
         createdAt: String? = "2025-01-15T12:00:00Z",
-        appVersion: String? = "1.0.0"
-    ): MemeMetadata = MemeMetadata(
-        schemaVersion = schemaVersion,
-        emojis = emojis,
-        title = title,
-        description = description,
-        createdAt = createdAt,
-        appVersion = appVersion
-    )
+        appVersion: String? = "1.0.0",
+    ): MemeMetadata =
+        MemeMetadata(
+            schemaVersion = schemaVersion,
+            emojis = emojis,
+            title = title,
+            description = description,
+            createdAt = createdAt,
+            appVersion = appVersion,
+        )
 
     // ============ ShareConfig Creation ============
 
@@ -241,25 +249,27 @@ object TestDataFactory {
         quality: Int = 85,
         maxWidth: Int? = 1080,
         maxHeight: Int? = 1080,
-        stripMetadata: Boolean = true
-    ): ShareConfig = ShareConfig(
-        format = format,
-        quality = quality,
-        maxWidth = maxWidth,
-        maxHeight = maxHeight,
-        stripMetadata = stripMetadata
-    )
+        stripMetadata: Boolean = true,
+    ): ShareConfig =
+        ShareConfig(
+            format = format,
+            quality = quality,
+            maxWidth = maxWidth,
+            maxHeight = maxHeight,
+            stripMetadata = stripMetadata,
+        )
 
     /**
      * Creates a high-quality share config (no compression, no scaling).
      */
-    fun createHighQualityShareConfig(): ShareConfig = createShareConfig(
-        format = ImageFormat.PNG,
-        quality = 100,
-        maxWidth = null,
-        maxHeight = null,
-        stripMetadata = false
-    )
+    fun createHighQualityShareConfig(): ShareConfig =
+        createShareConfig(
+            format = ImageFormat.PNG,
+            quality = 100,
+            maxWidth = null,
+            maxHeight = null,
+            stripMetadata = false,
+        )
 
     // ============ SharingPreferences Creation ============
 
@@ -273,16 +283,17 @@ object TestDataFactory {
         maxHeight: Int = 1080,
         stripMetadata: Boolean = true,
         recentShareTargets: List<String> = emptyList(),
-        favoriteShareTargets: List<String> = emptyList()
-    ): SharingPreferences = SharingPreferences(
-        defaultFormat = defaultFormat,
-        defaultQuality = defaultQuality,
-        maxWidth = maxWidth,
-        maxHeight = maxHeight,
-        stripMetadata = stripMetadata,
-        recentShareTargets = recentShareTargets,
-        favoriteShareTargets = favoriteShareTargets
-    )
+        favoriteShareTargets: List<String> = emptyList(),
+    ): SharingPreferences =
+        SharingPreferences(
+            defaultFormat = defaultFormat,
+            defaultQuality = defaultQuality,
+            maxWidth = maxWidth,
+            maxHeight = maxHeight,
+            stripMetadata = stripMetadata,
+            recentShareTargets = recentShareTargets,
+            favoriteShareTargets = favoriteShareTargets,
+        )
 
     // ============ Test Embeddings ============
 
@@ -294,7 +305,7 @@ object TestDataFactory {
      */
     fun createTestEmbedding(
         dimensions: Int = 128,
-        seed: Int = 42
+        seed: Int = 42,
     ): FloatArray {
         val random = java.util.Random(seed.toLong())
         return FloatArray(dimensions) { random.nextFloat() * 2 - 1 }
@@ -305,7 +316,7 @@ object TestDataFactory {
      */
     fun createNormalizedEmbedding(
         dimensions: Int = 128,
-        seed: Int = 42
+        seed: Int = 42,
     ): FloatArray {
         val embedding = createTestEmbedding(dimensions, seed)
         val magnitude = kotlin.math.sqrt(embedding.map { it * it }.sum())
@@ -314,22 +325,25 @@ object TestDataFactory {
 
     // ============ Sample Data ============
 
-    private val SAMPLE_EMOJIS = listOf(
-        "😂", "😍", "🔥", "💀", "😭", "🤣", "❤️", "✨", "👍", "🎉"
-    )
+    private val SAMPLE_EMOJIS =
+        listOf(
+            "😂", "😍", "🔥", "💀", "😭", "🤣", "❤️", "✨", "👍", "🎉",
+        )
 
-    val SAMPLE_SEARCH_QUERIES = listOf(
-        "funny cat",
-        "reaction face",
-        "laughing",
-        "when you realize",
-        "monday mood",
-        "weekend vibes"
-    )
+    val SAMPLE_SEARCH_QUERIES =
+        listOf(
+            "funny cat",
+            "reaction face",
+            "laughing",
+            "when you realize",
+            "monday mood",
+            "weekend vibes",
+        )
 
-    val SAMPLE_FILE_PATHS = listOf(
-        "/storage/emulated/0/DCIM/meme1.jpg",
-        "/storage/emulated/0/Pictures/meme2.png",
-        "/storage/emulated/0/Download/meme3.webp"
-    )
+    val SAMPLE_FILE_PATHS =
+        listOf(
+            "/storage/emulated/0/DCIM/meme1.jpg",
+            "/storage/emulated/0/Pictures/meme2.png",
+            "/storage/emulated/0/Download/meme3.webp",
+        )
 }

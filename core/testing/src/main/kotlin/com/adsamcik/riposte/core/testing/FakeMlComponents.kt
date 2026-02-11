@@ -13,13 +13,12 @@ import kotlinx.coroutines.delay
  * ```kotlin
  * val fakeRecognizer = FakeTextRecognizer()
  * fakeRecognizer.setResult("Hello World!")
- * 
+ *
  * val result = fakeRecognizer.recognizeText(bitmap)
  * assertThat(result).isEqualTo("Hello World!")
  * ```
  */
 class FakeTextRecognizer {
-
     private var defaultResult: String = ""
     private var resultsByUri = mutableMapOf<String, String>()
     private var simulatedError: Throwable? = null
@@ -39,14 +38,20 @@ class FakeTextRecognizer {
     /**
      * Sets a specific result for a given URI.
      */
-    fun setResultForUri(uri: Uri, text: String) {
+    fun setResultForUri(
+        uri: Uri,
+        text: String,
+    ) {
         resultsByUri[uri.toString()] = text
     }
 
     /**
      * Sets a specific result for a URI string.
      */
-    fun setResultForUri(uriString: String, text: String) {
+    fun setResultForUri(
+        uriString: String,
+        text: String,
+    ) {
         resultsByUri[uriString] = text
     }
 
@@ -159,9 +164,8 @@ class FakeTextRecognizer {
  * ```
  */
 class FakeEmbeddingGenerator(
-    private val dimensions: Int = 128
+    private val dimensions: Int = 128,
 ) {
-
     private var presetEmbeddings = mutableMapOf<String, FloatArray>()
     private var simulatedError: Throwable? = null
     private var simulatedDelay: Long = 0L
@@ -172,7 +176,10 @@ class FakeEmbeddingGenerator(
     /**
      * Sets a preset embedding for a specific input.
      */
-    fun setEmbeddingForInput(input: String, embedding: FloatArray) {
+    fun setEmbeddingForInput(
+        input: String,
+        embedding: FloatArray,
+    ) {
         presetEmbeddings[input] = embedding
     }
 
@@ -265,7 +272,7 @@ class FakeEmbeddingGenerator(
         val hash = input.hashCode()
         val random = java.util.Random(hash.toLong())
         val embedding = FloatArray(dimensions) { random.nextFloat() * 2 - 1 }
-        
+
         // Normalize to unit vector
         val magnitude = kotlin.math.sqrt(embedding.map { it * it }.sum())
         return if (magnitude > 0) {
@@ -285,13 +292,12 @@ class FakeEmbeddingGenerator(
  * ```kotlin
  * val fakeSearch = FakeSemanticSearchEngine()
  * fakeSearch.setSearchResults(listOf(searchResult1, searchResult2))
- * 
+ *
  * val results = fakeSearch.findSimilar(queryEmbedding, candidates)
  * assertThat(results).hasSize(2)
  * ```
  */
 class FakeSemanticSearchEngine {
-
     private var presetResults: List<Pair<Any, Float>>? = null
     private var simulatedError: Throwable? = null
     private var simulatedDelay: Long = 0L
@@ -335,7 +341,7 @@ class FakeSemanticSearchEngine {
         queryEmbedding: FloatArray,
         candidates: List<Pair<T, FloatArray>>,
         topK: Int = 10,
-        threshold: Float = 0.5f
+        threshold: Float = 0.5f,
     ): Result<List<Pair<T, Float>>> {
         searchCount++
 
@@ -355,13 +361,14 @@ class FakeSemanticSearchEngine {
         }
 
         // Otherwise calculate actual cosine similarity
-        val results = candidates.map { (item, embedding) ->
-            val similarity = cosineSimilarity(queryEmbedding, embedding)
-            item to similarity
-        }
-            .filter { it.second >= threshold }
-            .sortedByDescending { it.second }
-            .take(topK)
+        val results =
+            candidates.map { (item, embedding) ->
+                val similarity = cosineSimilarity(queryEmbedding, embedding)
+                item to similarity
+            }
+                .filter { it.second >= threshold }
+                .sortedByDescending { it.second }
+                .take(topK)
 
         return Result.success(results)
     }
@@ -369,7 +376,10 @@ class FakeSemanticSearchEngine {
     /**
      * Calculates cosine similarity between two embeddings.
      */
-    fun cosineSimilarity(a: FloatArray, b: FloatArray): Float {
+    fun cosineSimilarity(
+        a: FloatArray,
+        b: FloatArray,
+    ): Float {
         require(a.size == b.size) { "Embeddings must have the same dimensions" }
 
         var dotProduct = 0f

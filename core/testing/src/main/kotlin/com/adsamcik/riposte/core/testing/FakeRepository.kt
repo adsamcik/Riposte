@@ -115,7 +115,10 @@ abstract class BaseFakeRepository<T> : FakeRepository<T> {
     /**
      * Replaces an item in the repository.
      */
-    protected fun replaceItem(predicate: (T) -> Boolean, newItem: T) {
+    protected fun replaceItem(
+        predicate: (T) -> Boolean,
+        newItem: T,
+    ) {
         _items.update { items ->
             items.map { if (predicate(it)) newItem else it }
         }
@@ -150,8 +153,7 @@ abstract class BaseFakeRepositoryWithEvents<T, E> : BaseFakeRepository<T>() {
 /**
  * Extension function to get a flow of a single item by predicate.
  */
-fun <T> FakeRepository<T>.itemFlow(predicate: (T) -> Boolean): Flow<T?> =
-    items.map { list -> list.find(predicate) }
+fun <T> FakeRepository<T>.itemFlow(predicate: (T) -> Boolean): Flow<T?> = items.map { list -> list.find(predicate) }
 
 /**
  * Extension function to get a flow of items matching a predicate.

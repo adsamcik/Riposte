@@ -15,7 +15,7 @@ import kotlinx.coroutines.test.setMain
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
-/**
+/*
  * Collection of test utility functions for common testing patterns.
  */
 

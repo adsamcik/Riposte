@@ -19,7 +19,7 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 
-/**
+/*
  * Compose UI test extension functions for cleaner, more readable tests.
  */
 
@@ -28,80 +28,68 @@ import androidx.compose.ui.test.performTextInput
 /**
  * Finds a node by test tag with improved readability.
  */
-fun ComposeContentTestRule.findByTag(tag: String): SemanticsNodeInteraction =
-    onNodeWithTag(tag)
+fun ComposeContentTestRule.findByTag(tag: String): SemanticsNodeInteraction = onNodeWithTag(tag)
 
 /**
  * Finds a node by text with improved readability.
  */
-fun ComposeContentTestRule.findByText(text: String): SemanticsNodeInteraction =
-    onNodeWithText(text)
+fun ComposeContentTestRule.findByText(text: String): SemanticsNodeInteraction = onNodeWithText(text)
 
 /**
  * Finds a node by content description with improved readability.
  */
-fun ComposeContentTestRule.findByContentDescription(
-    description: String,
-): SemanticsNodeInteraction = onNodeWithContentDescription(description)
+fun ComposeContentTestRule.findByContentDescription(description: String): SemanticsNodeInteraction =
+    onNodeWithContentDescription(description)
 
 /**
  * Finds all nodes by test tag.
  */
-fun ComposeContentTestRule.findAllByTag(tag: String): SemanticsNodeInteractionCollection =
-    onAllNodesWithTag(tag)
+fun ComposeContentTestRule.findAllByTag(tag: String): SemanticsNodeInteractionCollection = onAllNodesWithTag(tag)
 
 /**
  * Finds all nodes by text.
  */
-fun ComposeContentTestRule.findAllByText(text: String): SemanticsNodeInteractionCollection =
-    onAllNodesWithText(text)
+fun ComposeContentTestRule.findAllByText(text: String): SemanticsNodeInteractionCollection = onAllNodesWithText(text)
 
 /**
  * Finds all nodes by content description.
  */
-fun ComposeContentTestRule.findAllByContentDescription(
-    description: String,
-): SemanticsNodeInteractionCollection = onAllNodesWithContentDescription(description)
+fun ComposeContentTestRule.findAllByContentDescription(description: String): SemanticsNodeInteractionCollection =
+    onAllNodesWithContentDescription(description)
 
 // ============ Assertion Extensions ============
 
 /**
  * Asserts node exists and is displayed.
  */
-fun SemanticsNodeInteraction.assertVisible(): SemanticsNodeInteraction =
-    assertExists().assertIsDisplayed()
+fun SemanticsNodeInteraction.assertVisible(): SemanticsNodeInteraction = assertExists().assertIsDisplayed()
 
 /**
  * Asserts node is not visible (either doesn't exist or is not displayed).
  */
-fun SemanticsNodeInteraction.assertNotVisible(): SemanticsNodeInteraction =
-    assertIsNotDisplayed()
+fun SemanticsNodeInteraction.assertNotVisible(): SemanticsNodeInteraction = assertIsNotDisplayed()
 
 /**
  * Asserts node has exact text.
  */
-fun SemanticsNodeInteraction.assertHasText(text: String): SemanticsNodeInteraction =
-    assertTextEquals(text)
+fun SemanticsNodeInteraction.assertHasText(text: String): SemanticsNodeInteraction = assertTextEquals(text)
 
 /**
  * Asserts node is clickable and enabled.
  */
-fun SemanticsNodeInteraction.assertClickable(): SemanticsNodeInteraction =
-    assertIsEnabled()
+fun SemanticsNodeInteraction.assertClickable(): SemanticsNodeInteraction = assertIsEnabled()
 
 /**
  * Asserts node is disabled.
  */
-fun SemanticsNodeInteraction.assertDisabled(): SemanticsNodeInteraction =
-    assertIsNotEnabled()
+fun SemanticsNodeInteraction.assertDisabled(): SemanticsNodeInteraction = assertIsNotEnabled()
 
 // ============ Action Extensions ============
 
 /**
  * Clicks on a node after scrolling to it if necessary.
  */
-fun SemanticsNodeInteraction.scrollAndClick(): SemanticsNodeInteraction =
-    performScrollTo().performClick()
+fun SemanticsNodeInteraction.scrollAndClick(): SemanticsNodeInteraction = performScrollTo().performClick()
 
 /**
  * Clears text and enters new text.
@@ -163,14 +151,12 @@ fun ComposeContentTestRule.waitFor(
 /**
  * Gets the count of nodes matching the given tag.
  */
-fun ComposeContentTestRule.countNodesWithTag(tag: String): Int =
-    onAllNodesWithTag(tag).fetchSemanticsNodes().size
+fun ComposeContentTestRule.countNodesWithTag(tag: String): Int = onAllNodesWithTag(tag).fetchSemanticsNodes().size
 
 /**
  * Gets the count of nodes matching the given text.
  */
-fun ComposeContentTestRule.countNodesWithText(text: String): Int =
-    onAllNodesWithText(text).fetchSemanticsNodes().size
+fun ComposeContentTestRule.countNodesWithText(text: String): Int = onAllNodesWithText(text).fetchSemanticsNodes().size
 
 /**
  * Checks if a node with the given tag exists.

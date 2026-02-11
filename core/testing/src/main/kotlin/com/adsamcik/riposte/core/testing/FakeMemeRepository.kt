@@ -19,7 +19,7 @@ import kotlinx.coroutines.flow.update
  * ```kotlin
  * val fakeRepo = FakeMemeRepository()
  * fakeRepo.emit(listOf(testMeme1, testMeme2))
- * 
+ *
  * // Test error handling
  * fakeRepo.setError(IOException("Network error"))
  * viewModel.loadMemes()
@@ -27,7 +27,7 @@ import kotlinx.coroutines.flow.update
  * ```
  */
 class FakeMemeRepository {
-
+    @Suppress("ktlint:standard:property-naming")
     private val _memes = MutableStateFlow<List<Meme>>(emptyList())
     private var simulatedError: Throwable? = null
     private var simulatedDelay: Long = 0L
@@ -42,38 +42,42 @@ class FakeMemeRepository {
     /**
      * Flow of favorite memes only.
      */
-    val favorites: Flow<List<Meme>> = _memes.map { memes ->
-        memes.filter { it.isFavorite }
-    }
+    val favorites: Flow<List<Meme>> =
+        _memes.map { memes ->
+            memes.filter { it.isFavorite }
+        }
 
     /**
      * Gets a flow of a single meme by ID.
      */
-    fun getMemeById(id: Long): Flow<Meme?> = _memes.map { memes ->
-        memes.find { it.id == id }
-    }
+    fun getMemeById(id: Long): Flow<Meme?> =
+        _memes.map { memes ->
+            memes.find { it.id == id }
+        }
 
     /**
      * Gets a flow of memes filtered by emoji.
      */
-    fun getMemesByEmoji(emoji: String): Flow<List<Meme>> = _memes.map { memes ->
-        memes.filter { meme -> 
-            meme.emojiTags.any { it.emoji == emoji }
+    fun getMemesByEmoji(emoji: String): Flow<List<Meme>> =
+        _memes.map { memes ->
+            memes.filter { meme ->
+                meme.emojiTags.any { it.emoji == emoji }
+            }
         }
-    }
 
     /**
      * Gets a flow of memes matching a text query.
      */
-    fun searchMemes(query: String): Flow<List<Meme>> = _memes.map { memes ->
-        val lowerQuery = query.lowercase()
-        memes.filter { meme ->
-            meme.title?.lowercase()?.contains(lowerQuery) == true ||
-            meme.description?.lowercase()?.contains(lowerQuery) == true ||
-            meme.textContent?.lowercase()?.contains(lowerQuery) == true ||
-            meme.emojiTags.any { it.name.lowercase().contains(lowerQuery) }
+    fun searchMemes(query: String): Flow<List<Meme>> =
+        _memes.map { memes ->
+            val lowerQuery = query.lowercase()
+            memes.filter { meme ->
+                meme.title?.lowercase()?.contains(lowerQuery) == true ||
+                    meme.description?.lowercase()?.contains(lowerQuery) == true ||
+                    meme.textContent?.lowercase()?.contains(lowerQuery) == true ||
+                    meme.emojiTags.any { it.name.lowercase().contains(lowerQuery) }
+            }
         }
-    }
 
     // ============ Mutable Operations ============
 
@@ -85,12 +89,13 @@ class FakeMemeRepository {
      */
     suspend fun saveMeme(meme: Meme): Result<Meme> {
         return executeWithErrorHandling {
-            val savedMeme = if (meme.id == 0L) {
-                meme.copy(id = generateId())
-            } else {
-                meme
-            }
-            
+            val savedMeme =
+                if (meme.id == 0L) {
+                    meme.copy(id = generateId())
+                } else {
+                    meme
+                }
+
             _memes.update { memes ->
                 val index = memes.indexOfFirst { it.id == savedMeme.id }
                 if (index >= 0) {
@@ -158,7 +163,10 @@ class FakeMemeRepository {
     /**
      * Updates the emoji tags for a meme.
      */
-    suspend fun updateEmojiTags(id: Long, tags: List<EmojiTag>): Result<Meme> {
+    suspend fun updateEmojiTags(
+        id: Long,
+        tags: List<EmojiTag>,
+    ): Result<Meme> {
         return executeWithErrorHandling {
             var updatedMeme: Meme? = null
             _memes.update { memes ->
@@ -180,7 +188,7 @@ class FakeMemeRepository {
     suspend fun updateMemeDetails(
         id: Long,
         title: String?,
-        description: String?
+        description: String?,
     ): Result<Meme> {
         return executeWithErrorHandling {
             var updatedMeme: Meme? = null

@@ -19,14 +19,13 @@ import kotlinx.coroutines.flow.update
  * ```kotlin
  * val fakeDataStore = FakePreferencesDataStore()
  * fakeDataStore.setDarkMode(DarkMode.DARK)
- * 
+ *
  * viewModel.uiState.test {
  *     assertThat(awaitItem().darkMode).isEqualTo(DarkMode.DARK)
  * }
  * ```
  */
 class FakePreferencesDataStore {
-
     private val _appPreferences = MutableStateFlow(DEFAULT_APP_PREFERENCES)
     private val _sharingPreferences = MutableStateFlow(DEFAULT_SHARING_PREFERENCES)
     private val _recentSearches = MutableStateFlow<List<String>>(emptyList())
@@ -211,24 +210,26 @@ class FakePreferencesDataStore {
     companion object {
         private const val MAX_RECENT_SEARCHES = 20
 
-        val DEFAULT_APP_PREFERENCES = AppPreferences(
-            darkMode = DarkMode.SYSTEM,
-            dynamicColors = true,
-            gridColumns = 2,
-            showEmojiNames = false,
-            enableSemanticSearch = true,
-            autoExtractText = true,
-            saveSearchHistory = true
-        )
+        val DEFAULT_APP_PREFERENCES =
+            AppPreferences(
+                darkMode = DarkMode.SYSTEM,
+                dynamicColors = true,
+                gridColumns = 2,
+                showEmojiNames = false,
+                enableSemanticSearch = true,
+                autoExtractText = true,
+                saveSearchHistory = true,
+            )
 
-        val DEFAULT_SHARING_PREFERENCES = SharingPreferences(
-            defaultFormat = ImageFormat.WEBP,
-            defaultQuality = 85,
-            maxWidth = 1080,
-            maxHeight = 1080,
-            stripMetadata = true,
-            recentShareTargets = emptyList(),
-            favoriteShareTargets = emptyList()
-        )
+        val DEFAULT_SHARING_PREFERENCES =
+            SharingPreferences(
+                defaultFormat = ImageFormat.WEBP,
+                defaultQuality = 85,
+                maxWidth = 1080,
+                maxHeight = 1080,
+                stripMetadata = true,
+                recentShareTargets = emptyList(),
+                favoriteShareTargets = emptyList(),
+            )
     }
 }
