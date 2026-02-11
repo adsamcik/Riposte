@@ -590,7 +590,7 @@ private fun ExportOptionRow(
                 role = Role.Checkbox,
                 onValueChange = onCheckedChange,
             )
-            .padding(vertical = 4.dp),
+            .padding(vertical = 12.dp),
     ) {
         Checkbox(checked = checked, onCheckedChange = null)
         Text(

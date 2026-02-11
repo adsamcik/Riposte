@@ -1236,7 +1236,7 @@ private fun ImportStatusBanner(
                         color = contentColor,
                         modifier = Modifier.weight(1f),
                     )
-                    IconButton(onClick = onDismiss, modifier = Modifier.size(20.dp)) {
+                    IconButton(onClick = onDismiss) {
                         Icon(
                             Icons.Default.Close,
                             contentDescription = stringResource(R.string.gallery_cd_dismiss_import_status),
@@ -1252,7 +1252,7 @@ private fun ImportStatusBanner(
                         color = contentColor,
                         modifier = Modifier.weight(1f),
                     )
-                    IconButton(onClick = onDismiss, modifier = Modifier.size(20.dp)) {
+                    IconButton(onClick = onDismiss) {
                         Icon(
                             Icons.Default.Close,
                             contentDescription = stringResource(R.string.gallery_cd_dismiss_import_status),
