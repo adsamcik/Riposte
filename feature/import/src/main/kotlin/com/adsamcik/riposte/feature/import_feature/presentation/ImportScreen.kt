@@ -461,7 +461,7 @@ private fun ImportGridContent(
     modifier: Modifier = Modifier,
 ) {
     LazyVerticalGrid(
-        columns = GridCells.Fixed(3),
+        columns = GridCells.Adaptive(minSize = 100.dp),
         contentPadding = PaddingValues(
             start = 8.dp,
             end = 8.dp,
@@ -479,6 +479,7 @@ private fun ImportGridContent(
                 emojis = image.emojis.map { it.emoji },
                 isSelected = index == editingIndex,
                 hasError = image.error != null,
+                isProcessing = image.isProcessing,
                 onClick = { onImageClick(index) },
                 onRemove = { onRemoveImage(index) },
             )
@@ -496,6 +497,7 @@ private fun ImportImageCard(
     emojis: List<String>,
     isSelected: Boolean,
     hasError: Boolean,
+    isProcessing: Boolean,
     onClick: () -> Unit,
     onRemove: () -> Unit,
     modifier: Modifier = Modifier,
@@ -545,6 +547,21 @@ private fun ImportImageCard(
                     contentDescription = stringResource(R.string.import_content_description_remove),
                     modifier = Modifier.size(18.dp),
                 )
+            }
+
+            // Processing indicator
+            if (isProcessing) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.6f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        strokeWidth = 2.dp,
+                    )
+                }
             }
 
             // Error indicator
