@@ -713,6 +713,480 @@ class MemeDetailViewModelTest {
 
     // endregion
 
+    // region Meme Identity Regression Tests
+
+    @Test
+    fun `ToggleFavorite uses correct meme ID`() =
+        runTest {
+            coEvery { toggleFavoriteUseCase(1L) } returns Result.success(Unit)
+            coEvery { getMemeByIdUseCase(1L) } returns testMeme.copy(isFavorite = true)
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onIntent(MemeDetailIntent.ToggleFavorite)
+            advanceUntilIdle()
+
+            coVerify { toggleFavoriteUseCase(1L) }
+        }
+
+    @Test
+    fun `ConfirmDelete uses correct meme ID`() =
+        runTest {
+            coEvery { deleteMemeUseCase(1L) } returns Result.success(Unit)
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onIntent(MemeDetailIntent.ConfirmDelete)
+            advanceUntilIdle()
+
+            coVerify { deleteMemeUseCase(1L) }
+        }
+
+    @Test
+    fun `Share uses correct meme ID`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.effects.test {
+                viewModel.onIntent(MemeDetailIntent.Share)
+                advanceUntilIdle()
+
+                val effect = awaitItem()
+                assertThat(effect).isInstanceOf(MemeDetailEffect.NavigateToShare::class.java)
+                assertThat((effect as MemeDetailEffect.NavigateToShare).memeId).isEqualTo(1L)
+            }
+        }
+
+    @Test
+    fun `SaveChanges preserves meme identity`() =
+        runTest {
+            coEvery { updateMemeUseCase(any()) } returns Result.success(Unit)
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onIntent(MemeDetailIntent.ToggleEditMode)
+            viewModel.onIntent(MemeDetailIntent.UpdateTitle("Updated Title"))
+            viewModel.onIntent(MemeDetailIntent.SaveChanges)
+            advanceUntilIdle()
+
+            coVerify { updateMemeUseCase(match { it.id == 1L }) }
+        }
+
+    @Test
+    fun `loadMeme uses meme ID from SavedStateHandle`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            coVerify { getMemeByIdUseCase(1L) }
+        }
+
+    @Test
+    fun `NavigateToSimilarMeme emits correct meme ID`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.effects.test {
+                viewModel.onIntent(MemeDetailIntent.NavigateToSimilarMeme(42L))
+                advanceUntilIdle()
+
+                val effect = awaitItem()
+                assertThat(effect).isEqualTo(MemeDetailEffect.NavigateToMeme(42L))
+            }
+        }
+
+    @Test
+    fun `CopyToClipboard uses current meme ID`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.effects.test {
+                viewModel.onIntent(MemeDetailIntent.CopyToClipboard)
+                advanceUntilIdle()
+
+                val effect = awaitItem()
+                assertThat(effect).isInstanceOf(MemeDetailEffect.CopyToClipboard::class.java)
+                assertThat((effect as MemeDetailEffect.CopyToClipboard).memeId).isEqualTo(1L)
+            }
+        }
+
+    // endregion
+
+    // region State Integrity Under Meme Change
+
+    @Test
+    fun `loading a different meme resets edit state`() =
+        runTest {
+            val meme2 = createTestMeme(2L).copy(title = "Different Meme", description = "Different description")
+            savedStateHandle = SavedStateHandle(mapOf("memeId" to 2L))
+            coEvery { getMemeByIdUseCase(2L) } returns meme2
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertThat(state.editedTitle).isEqualTo("Different Meme")
+            assertThat(state.editedDescription).isEqualTo("Different description")
+        }
+
+    @Test
+    fun `loading meme with different emojis updates editedEmojis`() =
+        runTest {
+            val memeWithEmojis = createTestMeme(1L).copy(
+                emojiTags = listOf(
+                    EmojiTag(emoji = "🔥", name = "fire"),
+                    EmojiTag(emoji = "💀", name = "skull"),
+                ),
+            )
+            coEvery { getMemeByIdUseCase(1L) } returns memeWithEmojis
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.editedEmojis).containsExactly("🔥", "💀")
+        }
+
+    @Test
+    fun `loading meme clears previous error`() =
+        runTest {
+            coEvery { getMemeByIdUseCase(1L) } returns null
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.errorMessage).isNotNull()
+
+            // Now make it return a valid meme and reload
+            coEvery { getMemeByIdUseCase(1L) } returns testMeme
+            viewModel.onIntent(MemeDetailIntent.LoadMeme)
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.errorMessage).isNull()
+            assertThat(viewModel.uiState.value.meme).isEqualTo(testMeme)
+        }
+
+    @Test
+    fun `hasUnsavedChanges resets when meme changes`() =
+        runTest {
+            val meme2 = createTestMeme(2L)
+            savedStateHandle = SavedStateHandle(mapOf("memeId" to 2L))
+            coEvery { getMemeByIdUseCase(2L) } returns meme2
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onIntent(MemeDetailIntent.ToggleEditMode)
+            viewModel.onIntent(MemeDetailIntent.UpdateTitle("Changed Title"))
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.hasUnsavedChanges).isTrue()
+
+            // Discard and reload to simulate meme change
+            viewModel.onIntent(MemeDetailIntent.DiscardChanges)
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.hasUnsavedChanges).isFalse()
+        }
+
+    // endregion
+
+    // region Edit Mode Isolation Tests
+
+    @Test
+    fun `edit mode state is preserved during save operation`() =
+        runTest {
+            coEvery { updateMemeUseCase(any()) } returns Result.success(Unit)
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onIntent(MemeDetailIntent.ToggleEditMode)
+            viewModel.onIntent(MemeDetailIntent.UpdateTitle("New Title"))
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.isEditMode).isTrue()
+
+            viewModel.onIntent(MemeDetailIntent.SaveChanges)
+            advanceUntilIdle()
+
+            // After save succeeds, edit mode is exited
+            assertThat(viewModel.uiState.value.isEditMode).isFalse()
+            assertThat(viewModel.uiState.value.isSaving).isFalse()
+        }
+
+    @Test
+    fun `multiple edits accumulate correctly`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onIntent(MemeDetailIntent.ToggleEditMode)
+            viewModel.onIntent(MemeDetailIntent.UpdateTitle("New Title"))
+            viewModel.onIntent(MemeDetailIntent.UpdateDescription("New Description"))
+            viewModel.onIntent(MemeDetailIntent.AddEmoji("🎉"))
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertThat(state.editedTitle).isEqualTo("New Title")
+            assertThat(state.editedDescription).isEqualTo("New Description")
+            assertThat(state.editedEmojis).contains("🎉")
+        }
+
+    @Test
+    fun `discard changes restores ALL fields`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onIntent(MemeDetailIntent.ToggleEditMode)
+            viewModel.onIntent(MemeDetailIntent.UpdateTitle("Changed Title"))
+            viewModel.onIntent(MemeDetailIntent.UpdateDescription("Changed Description"))
+            viewModel.onIntent(MemeDetailIntent.AddEmoji("🔥"))
+            advanceUntilIdle()
+
+            viewModel.onIntent(MemeDetailIntent.DiscardChanges)
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertThat(state.editedTitle).isEqualTo(testMeme.title)
+            assertThat(state.editedDescription).isEqualTo(testMeme.description)
+            assertThat(state.editedEmojis).containsExactly("😀")
+            assertThat(state.isEditMode).isFalse()
+        }
+
+    @Test
+    fun `save failure preserves edit state`() =
+        runTest {
+            coEvery { updateMemeUseCase(any()) } returns Result.failure(RuntimeException("Save failed"))
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onIntent(MemeDetailIntent.ToggleEditMode)
+            viewModel.onIntent(MemeDetailIntent.UpdateTitle("Changed Title"))
+            viewModel.onIntent(MemeDetailIntent.SaveChanges)
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertThat(state.editedTitle).isEqualTo("Changed Title")
+            assertThat(state.isEditMode).isTrue()
+            assertThat(state.isSaving).isFalse()
+        }
+
+    @Test
+    fun `save success updates meme in state`() =
+        runTest {
+            coEvery { updateMemeUseCase(any()) } returns Result.success(Unit)
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onIntent(MemeDetailIntent.ToggleEditMode)
+            viewModel.onIntent(MemeDetailIntent.UpdateTitle("Updated Title"))
+            viewModel.onIntent(MemeDetailIntent.SaveChanges)
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertThat(state.meme).isNotNull()
+            // Title is saved as null when blank, or the value otherwise
+            assertThat(state.meme!!.title).isEqualTo("Updated Title")
+        }
+
+    // endregion
+
+    // region Similar Memes Regression Tests
+
+    @Test
+    fun `similar memes load after meme loads`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            coVerify { getSimilarMemesUseCase(1L, any()) }
+        }
+
+    @Test
+    fun `similar memes error does not crash`() =
+        runTest {
+            coEvery { getSimilarMemesUseCase(any(), any()) } throws RuntimeException("ML error")
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertThat(state.meme).isNotNull()
+            assertThat(state.similarMemesStatus).isInstanceOf(SimilarMemesStatus.Error::class.java)
+            assertThat(state.isLoadingSimilar).isFalse()
+        }
+
+    @Test
+    fun `NavigateToSimilarMeme does not interfere with current meme state`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            val stateBefore = viewModel.uiState.value
+
+            viewModel.effects.test {
+                viewModel.onIntent(MemeDetailIntent.NavigateToSimilarMeme(99L))
+                advanceUntilIdle()
+
+                awaitItem() // consume the NavigateToMeme effect
+            }
+
+            val stateAfter = viewModel.uiState.value
+            assertThat(stateAfter.meme).isEqualTo(stateBefore.meme)
+            assertThat(stateAfter.editedTitle).isEqualTo(stateBefore.editedTitle)
+            assertThat(stateAfter.editedDescription).isEqualTo(stateBefore.editedDescription)
+        }
+
+    // endregion
+
+    // region Quick Share Regression Tests
+
+    @Test
+    fun `Share with native dialog preference navigates to share screen`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.effects.test {
+                viewModel.onIntent(MemeDetailIntent.Share)
+                advanceUntilIdle()
+
+                val effect = awaitItem()
+                assertThat(effect).isInstanceOf(MemeDetailEffect.NavigateToShare::class.java)
+            }
+        }
+
+    @Test
+    fun `QuickShareMore navigates to share screen and clears quick share state`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.effects.test {
+                viewModel.onIntent(MemeDetailIntent.QuickShareMore)
+                advanceUntilIdle()
+
+                val effect = awaitItem()
+                assertThat(effect).isInstanceOf(MemeDetailEffect.NavigateToShare::class.java)
+            }
+
+            val state = viewModel.uiState.value
+            assertThat(state.quickShareMeme).isNull()
+            assertThat(state.quickShareTargets).isEmpty()
+        }
+
+    @Test
+    fun `DismissQuickShare clears quick share state`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onIntent(MemeDetailIntent.DismissQuickShare)
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertThat(state.quickShareMeme).isNull()
+            assertThat(state.quickShareTargets).isEmpty()
+        }
+
+    @Test
+    fun `CopyToClipboard clears quick share state`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onIntent(MemeDetailIntent.CopyToClipboard)
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertThat(state.quickShareMeme).isNull()
+            assertThat(state.quickShareTargets).isEmpty()
+        }
+
+    // endregion
+
+    // region Error Handling Regression Tests
+
+    @Test
+    fun `ToggleFavorite failure shows error snackbar`() =
+        runTest {
+            coEvery { toggleFavoriteUseCase(1L) } returns Result.failure(RuntimeException("Network error"))
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.effects.test {
+                viewModel.onIntent(MemeDetailIntent.ToggleFavorite)
+                advanceUntilIdle()
+
+                val effect = awaitItem()
+                assertThat(effect).isInstanceOf(MemeDetailEffect.ShowSnackbar::class.java)
+                assertThat((effect as MemeDetailEffect.ShowSnackbar).message).isEqualTo("Failed to update favorite")
+            }
+        }
+
+    @Test
+    fun `ConfirmDelete failure shows error and resets loading`() =
+        runTest {
+            coEvery { deleteMemeUseCase(1L) } returns Result.failure(RuntimeException("Delete error"))
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.effects.test {
+                viewModel.onIntent(MemeDetailIntent.ConfirmDelete)
+                advanceUntilIdle()
+
+                val effect = awaitItem()
+                assertThat(effect).isInstanceOf(MemeDetailEffect.ShowSnackbar::class.java)
+                assertThat((effect as MemeDetailEffect.ShowSnackbar).message).isEqualTo("Failed to delete meme")
+            }
+
+            assertThat(viewModel.uiState.value.isLoading).isFalse()
+        }
+
+    @Test
+    fun `loadMeme exception sets error message`() =
+        runTest {
+            coEvery { getMemeByIdUseCase(1L) } throws RuntimeException("Database crashed")
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertThat(state.errorMessage).isEqualTo("Database crashed")
+            assertThat(state.isLoading).isFalse()
+        }
+
+    @Test
+    fun `SaveChanges with null meme does nothing`() =
+        runTest {
+            coEvery { getMemeByIdUseCase(1L) } returns null
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            // Meme is null at this point
+            assertThat(viewModel.uiState.value.meme).isNull()
+
+            viewModel.onIntent(MemeDetailIntent.SaveChanges)
+            advanceUntilIdle()
+
+            // Should not crash, and updateMemeUseCase should not be called
+            coVerify(exactly = 0) { updateMemeUseCase(any()) }
+        }
+
+    // endregion
+
     companion object {
         private fun createTestMeme(id: Long) =
             Meme(
