@@ -39,21 +39,20 @@ object GridDensity {
  * @return Number of columns to display (3, 4, or 5)
  */
 @Composable
-fun rememberGridColumns(
-    userPreference: UserDensityPreference = UserDensityPreference.AUTO,
-): Int {
+fun rememberGridColumns(userPreference: UserDensityPreference = UserDensityPreference.AUTO): Int {
     val configuration = LocalConfiguration.current
     val screenWidthDp = configuration.screenWidthDp
 
     return remember(screenWidthDp, userPreference) {
         when (userPreference) {
-            UserDensityPreference.AUTO -> when {
-                screenWidthDp <= GridDensity.ULTRA_COMPACT_MAX -> GridDensity.COLUMNS_ULTRA_COMPACT
-                screenWidthDp <= GridDensity.COMPACT_MAX -> GridDensity.COLUMNS_COMPACT
-                screenWidthDp <= GridDensity.MEDIUM_MAX -> GridDensity.COLUMNS_MEDIUM
-                screenWidthDp <= GridDensity.TABLET_MAX -> GridDensity.COLUMNS_EXPANDED
-                else -> GridDensity.COLUMNS_TABLET
-            }
+            UserDensityPreference.AUTO ->
+                when {
+                    screenWidthDp <= GridDensity.ULTRA_COMPACT_MAX -> GridDensity.COLUMNS_ULTRA_COMPACT
+                    screenWidthDp <= GridDensity.COMPACT_MAX -> GridDensity.COLUMNS_COMPACT
+                    screenWidthDp <= GridDensity.MEDIUM_MAX -> GridDensity.COLUMNS_MEDIUM
+                    screenWidthDp <= GridDensity.TABLET_MAX -> GridDensity.COLUMNS_EXPANDED
+                    else -> GridDensity.COLUMNS_TABLET
+                }
             UserDensityPreference.COMPACT -> GridDensity.COLUMNS_COMPACT
             UserDensityPreference.STANDARD -> GridDensity.COLUMNS_MEDIUM
             UserDensityPreference.DENSE -> GridDensity.COLUMNS_EXPANDED

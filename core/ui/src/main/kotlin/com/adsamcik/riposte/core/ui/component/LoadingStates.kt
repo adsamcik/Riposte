@@ -26,26 +26,26 @@ import com.adsamcik.riposte.core.ui.R
 @Composable
 fun LoadingScreen(
     modifier: Modifier = Modifier,
-    message: String? = null
+    message: String? = null,
 ) {
     Box(
         modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Center,
         ) {
             CircularProgressIndicator(
                 modifier = Modifier.size(48.dp),
-                color = MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.primary,
             )
             if (message != null) {
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     text = message,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -59,7 +59,7 @@ fun LoadingScreen(
 fun ErrorState(
     message: String,
     modifier: Modifier = Modifier,
-    onRetry: (() -> Unit)? = null
+    onRetry: (() -> Unit)? = null,
 ) {
     EmptyState(
         icon = "😵",
@@ -78,7 +78,7 @@ fun ErrorState(
 fun NoSearchResults(
     query: String,
     modifier: Modifier = Modifier,
-    onClearSearch: (() -> Unit)? = null
+    onClearSearch: (() -> Unit)? = null,
 ) {
     EmptyState(
         icon = "🔍",
@@ -97,11 +97,11 @@ fun NoSearchResults(
 fun ShimmerPlaceholder(
     visible: Boolean,
     modifier: Modifier = Modifier,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val alpha by animateFloatAsState(
         targetValue = if (visible) 0.3f else 1f,
-        label = "shimmer_alpha"
+        label = "shimmer_alpha",
     )
 
     Box(modifier = modifier.alpha(alpha)) {

@@ -18,39 +18,42 @@ import androidx.core.view.WindowCompat
 import com.adsamcik.riposte.core.ui.util.LocalReducedMotion
 import com.adsamcik.riposte.core.ui.util.rememberReducedMotion
 
-private val DarkColorScheme = darkColorScheme(
-    primary = MoodPrimaryDark,
-    secondary = MoodSecondaryDark,
-    tertiary = MoodTertiaryDark,
-    surface = SurfaceDark,
-    surfaceContainer = SurfaceContainerDark,
-    error = Error
-)
+private val DarkColorScheme =
+    darkColorScheme(
+        primary = MoodPrimaryDark,
+        secondary = MoodSecondaryDark,
+        tertiary = MoodTertiaryDark,
+        surface = SurfaceDark,
+        surfaceContainer = SurfaceContainerDark,
+        error = Error,
+    )
 
-private val LightColorScheme = lightColorScheme(
-    primary = MoodPrimary,
-    secondary = MoodSecondary,
-    tertiary = MoodTertiary,
-    surface = SurfaceLight,
-    surfaceContainer = SurfaceContainerLight,
-    error = Error
-)
+private val LightColorScheme =
+    lightColorScheme(
+        primary = MoodPrimary,
+        secondary = MoodSecondary,
+        tertiary = MoodTertiary,
+        surface = SurfaceLight,
+        surfaceContainer = SurfaceContainerLight,
+        error = Error,
+    )
 
 @Composable
 fun RiposteTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on all supported devices (minSdk 31+)
     dynamicColor: Boolean = true,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
-    val colorScheme = when {
-        dynamicColor -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+    val colorScheme =
+        when {
+            dynamicColor -> {
+                val context = LocalContext.current
+                if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+            }
+            darkTheme -> DarkColorScheme
+            else -> LightColorScheme
         }
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
-    }
 
     val view = LocalView.current
     if (!view.isInEditMode) {
@@ -70,7 +73,7 @@ fun RiposteTheme(
             colorScheme = colorScheme,
             typography = Typography,
             shapes = Shapes,
-            content = content
+            content = content,
         )
     }
 }

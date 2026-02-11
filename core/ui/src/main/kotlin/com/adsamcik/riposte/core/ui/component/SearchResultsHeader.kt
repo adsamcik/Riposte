@@ -31,9 +31,10 @@ fun SearchResultsHeader(
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
     ) {
         Text(
             text = pluralStringResource(R.plurals.ui_search_results_count, resultCount, resultCount),

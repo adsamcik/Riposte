@@ -14,19 +14,21 @@ object MotionTokens {
      * Standard pressed scale spring for interactive elements.
      * Used for tap feedback on buttons, chips, and grid items.
      */
-    val PressedScale = spring<Float>(
-        dampingRatio = Spring.DampingRatioMediumBouncy,
-        stiffness = Spring.StiffnessMedium,
-    )
+    val PressedScale =
+        spring<Float>(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium,
+        )
 
     /**
      * Quick bounce spring for snappy interactions.
      * Used for quick feedback on emoji chips and fast actions.
      */
-    val QuickBounce = spring<Float>(
-        dampingRatio = 0.6f,
-        stiffness = 800f,
-    )
+    val QuickBounce =
+        spring<Float>(
+            dampingRatio = 0.6f,
+            stiffness = 800f,
+        )
 }
 
 /**

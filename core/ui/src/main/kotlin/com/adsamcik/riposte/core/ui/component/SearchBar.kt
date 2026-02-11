@@ -40,7 +40,7 @@ fun SearchBar(
     onSearch: () -> Unit,
     modifier: Modifier = Modifier,
     placeholder: String? = null,
-    autoFocus: Boolean = false
+    autoFocus: Boolean = false,
 ) {
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -55,9 +55,10 @@ fun SearchBar(
     OutlinedTextField(
         value = query,
         onValueChange = onQueryChange,
-        modifier = modifier
-            .fillMaxWidth()
-            .focusRequester(focusRequester),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .focusRequester(focusRequester),
         placeholder = {
             Text(text = placeholder ?: defaultPlaceholder)
         },
@@ -65,41 +66,44 @@ fun SearchBar(
             Icon(
                 imageVector = Icons.Default.Search,
                 contentDescription = stringResource(R.string.ui_search_icon_description),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         },
         trailingIcon = {
             AnimatedVisibility(
                 visible = query.isNotEmpty(),
                 enter = fadeIn(),
-                exit = fadeOut()
+                exit = fadeOut(),
             ) {
                 IconButton(onClick = { onQueryChange("") }) {
                     Icon(
                         imageVector = Icons.Default.Clear,
                         contentDescription = stringResource(R.string.ui_search_clear_description),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
         },
         singleLine = true,
         shape = MoodShapes.SearchBar,
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-            focusedBorderColor = MaterialTheme.colorScheme.primary,
-            unfocusedBorderColor = MaterialTheme.colorScheme.surfaceContainer
-        ),
-        keyboardOptions = KeyboardOptions(
-            imeAction = ImeAction.Search
-        ),
-        keyboardActions = KeyboardActions(
-            onSearch = {
-                onSearch()
-                keyboardController?.hide()
-            }
-        )
+        colors =
+            OutlinedTextFieldDefaults.colors(
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.surfaceContainer,
+            ),
+        keyboardOptions =
+            KeyboardOptions(
+                imeAction = ImeAction.Search,
+            ),
+        keyboardActions =
+            KeyboardActions(
+                onSearch = {
+                    onSearch()
+                    keyboardController?.hide()
+                },
+            ),
     )
 }
 
@@ -113,14 +117,14 @@ fun SearchBarWithEmoji(
     onSearch: () -> Unit,
     recentEmojis: List<String>,
     onEmojiClick: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Box(modifier = modifier) {
         SearchBar(
             query = query,
             onQueryChange = onQueryChange,
             onSearch = onSearch,
-            modifier = Modifier.padding(bottom = if (recentEmojis.isNotEmpty()) 48.dp else 0.dp)
+            modifier = Modifier.padding(bottom = if (recentEmojis.isNotEmpty()) 48.dp else 0.dp),
         )
 
         // Recent emoji quick filters would go here

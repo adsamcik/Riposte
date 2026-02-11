@@ -16,14 +16,18 @@ import androidx.compose.ui.draw.alpha
  * @param total The total number of results.
  * @return Modifier with the appropriate alpha applied.
  */
-fun Modifier.relevanceOpacity(rank: Int, total: Int): Modifier {
+fun Modifier.relevanceOpacity(
+    rank: Int,
+    total: Int,
+): Modifier {
     if (total <= 0) return this
 
     val percentile = rank.toFloat() / total
-    val alpha = when {
-        percentile <= 0.2f -> 1.0f
-        percentile <= 0.5f -> 0.9f
-        else -> 0.8f
-    }
+    val alpha =
+        when {
+            percentile <= 0.2f -> 1.0f
+            percentile <= 0.5f -> 0.9f
+            else -> 0.8f
+        }
     return this.alpha(alpha)
 }

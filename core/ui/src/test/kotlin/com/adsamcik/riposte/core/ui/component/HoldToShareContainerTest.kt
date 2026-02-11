@@ -12,8 +12,8 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.dp
-import com.google.common.truth.Truth.assertThat
 import com.adsamcik.riposte.core.ui.theme.RiposteTheme
+import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -21,7 +21,6 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class HoldToShareContainerTest {
-
     @get:Rule
     val composeRule = createComposeRule()
 
@@ -35,9 +34,10 @@ class HoldToShareContainerTest {
                 HoldToShareContainer(
                     onTap = { tapped = true },
                     onHoldComplete = { holdCompleted = true },
-                    modifier = Modifier
-                        .size(100.dp)
-                        .testTag("container"),
+                    modifier =
+                        Modifier
+                            .size(100.dp)
+                            .testTag("container"),
                 ) {
                     Text("Content")
                 }
@@ -60,9 +60,10 @@ class HoldToShareContainerTest {
                 HoldToShareContainer(
                     onTap = { tapped = true },
                     onHoldComplete = { holdCompleted = true },
-                    modifier = Modifier
-                        .size(100.dp)
-                        .testTag("container"),
+                    modifier =
+                        Modifier
+                            .size(100.dp)
+                            .testTag("container"),
                 ) {
                     Box(modifier = Modifier.matchParentSize())
                 }
@@ -95,9 +96,10 @@ class HoldToShareContainerTest {
                 HoldToShareContainer(
                     onTap = {},
                     onHoldComplete = {},
-                    modifier = Modifier
-                        .size(100.dp)
-                        .testTag("container"),
+                    modifier =
+                        Modifier
+                            .size(100.dp)
+                            .testTag("container"),
                 ) {
                     Box(modifier = Modifier.matchParentSize())
                 }

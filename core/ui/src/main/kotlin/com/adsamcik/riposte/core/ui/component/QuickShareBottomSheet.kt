@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -113,17 +112,20 @@ fun QuickShareBottomSheet(
     val context = LocalContext.current
     var expanded by remember { mutableStateOf(false) }
 
-    val resolvedTargets = remember(frequentTargets) {
-        resolveShareTargets(context, frequentTargets)
-    }
+    val resolvedTargets =
+        remember(frequentTargets) {
+            resolveShareTargets(context, frequentTargets)
+        }
 
-    val allCategorizedTargets = remember(frequentTargets) {
-        resolveAllShareTargets(context, frequentTargets)
-    }
+    val allCategorizedTargets =
+        remember(frequentTargets) {
+            resolveAllShareTargets(context, frequentTargets)
+        }
 
-    val extraAppCount = remember(allCategorizedTargets, resolvedTargets) {
-        allCategorizedTargets.values.sumOf { it.size } - resolvedTargets.size
-    }
+    val extraAppCount =
+        remember(allCategorizedTargets, resolvedTargets) {
+            allCategorizedTargets.values.sumOf { it.size } - resolvedTargets.size
+        }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -131,16 +133,18 @@ fun QuickShareBottomSheet(
         modifier = modifier,
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .animateContentSize(
-                    animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioLowBouncy,
-                        stiffness = Spring.StiffnessMediumLow,
-                    ),
-                )
-                .padding(bottom = 24.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .animateContentSize(
+                        animationSpec =
+                            spring(
+                                dampingRatio = Spring.DampingRatioLowBouncy,
+                                stiffness = Spring.StiffnessMediumLow,
+                            ),
+                    )
+                    .padding(bottom = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             // Meme preview thumbnail
@@ -148,10 +152,11 @@ fun QuickShareBottomSheet(
                 model = File(meme.filePath),
                 contentDescription = meme.title ?: meme.fileName,
                 contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .size(80.dp)
-                    .aspectRatio(1f)
-                    .clip(RoundedCornerShape(12.dp)),
+                modifier =
+                    Modifier
+                        .size(80.dp)
+                        .aspectRatio(1f)
+                        .clip(RoundedCornerShape(12.dp)),
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -167,9 +172,10 @@ fun QuickShareBottomSheet(
             if (!expanded) {
                 // Collapsed: 4-column grid of curated targets
                 FlowRow(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     maxItemsInEachRow = 4,
                 ) {
@@ -183,12 +189,13 @@ fun QuickShareBottomSheet(
                 }
             } else {
                 // Expanded: categorized sections
-                val categoryOrder = listOf(
-                    ShareTargetCategory.MESSAGING,
-                    ShareTargetCategory.EMAIL,
-                    ShareTargetCategory.SOCIAL,
-                    ShareTargetCategory.OTHER,
-                )
+                val categoryOrder =
+                    listOf(
+                        ShareTargetCategory.MESSAGING,
+                        ShareTargetCategory.EMAIL,
+                        ShareTargetCategory.SOCIAL,
+                        ShareTargetCategory.OTHER,
+                    )
                 for (category in categoryOrder) {
                     val targets = allCategorizedTargets[category] ?: continue
                     if (targets.isEmpty()) continue
@@ -196,9 +203,10 @@ fun QuickShareBottomSheet(
                     CategoryHeader(category)
 
                     FlowRow(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp),
                         horizontalArrangement = Arrangement.SpaceEvenly,
                         maxItemsInEachRow = 4,
                     ) {
@@ -230,11 +238,12 @@ fun QuickShareBottomSheet(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = if (expanded) {
-                            stringResource(R.string.quick_share_show_fewer)
-                        } else {
-                            stringResource(R.string.quick_share_show_all_apps, extraAppCount)
-                        },
+                        text =
+                            if (expanded) {
+                                stringResource(R.string.quick_share_show_fewer)
+                            } else {
+                                stringResource(R.string.quick_share_show_all_apps, extraAppCount)
+                            },
                     )
                 }
             }
@@ -281,19 +290,21 @@ private fun CategoryHeader(
     category: ShareTargetCategory,
     modifier: Modifier = Modifier,
 ) {
-    val label = when (category) {
-        ShareTargetCategory.MESSAGING -> stringResource(R.string.quick_share_category_messaging)
-        ShareTargetCategory.EMAIL -> stringResource(R.string.quick_share_category_email)
-        ShareTargetCategory.SOCIAL -> stringResource(R.string.quick_share_category_social)
-        ShareTargetCategory.OTHER -> stringResource(R.string.quick_share_category_other)
-    }
+    val label =
+        when (category) {
+            ShareTargetCategory.MESSAGING -> stringResource(R.string.quick_share_category_messaging)
+            ShareTargetCategory.EMAIL -> stringResource(R.string.quick_share_category_email)
+            ShareTargetCategory.SOCIAL -> stringResource(R.string.quick_share_category_social)
+            ShareTargetCategory.OTHER -> stringResource(R.string.quick_share_category_other)
+        }
     Text(
         text = label,
         style = MaterialTheme.typography.labelMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 8.dp),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 8.dp),
     )
 }
 
@@ -308,22 +319,25 @@ private fun ShareTargetItem(
     val iconSizePx = remember(density) { with(density) { 48.dp.roundToPx() } }
 
     Column(
-        modifier = modifier
-            .width(80.dp)
-            .clickable(onClick = onClick)
-            .padding(vertical = 4.dp),
+        modifier =
+            modifier
+                .width(80.dp)
+                .clickable(onClick = onClick)
+                .padding(vertical = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         if (icon != null) {
-            val bitmap = remember(icon, iconSizePx) {
-                icon.toBitmap(iconSizePx, iconSizePx).asImageBitmap()
-            }
+            val bitmap =
+                remember(icon, iconSizePx) {
+                    icon.toBitmap(iconSizePx, iconSizePx).asImageBitmap()
+                }
             Image(
                 bitmap = bitmap,
                 contentDescription = label,
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape),
+                modifier =
+                    Modifier
+                        .size(48.dp)
+                        .clip(CircleShape),
             )
         } else {
             Surface(
@@ -359,40 +373,67 @@ private fun ShareTargetItem(
  * Well-known messaging app packages in default priority order.
  */
 @VisibleForTesting
-internal val MESSAGING_PACKAGES = listOf(
-    "com.whatsapp",                      // WhatsApp
-    "org.telegram.messenger",            // Telegram
-    "com.discord",                       // Discord
-    "org.thoughtcrime.securesms",        // Signal
-    "com.facebook.orca",                 // Messenger
-    "com.google.android.apps.messaging", // Google Messages
-    "com.slack",                         // Slack
-    "com.microsoft.teams",              // Microsoft Teams
-    "com.viber.voip",                    // Viber
-    "com.skype.raider",                  // Skype
-    "com.kakao.talk",                    // KakaoTalk
-    "jp.naver.line.android",             // LINE
-    "com.tencent.mm",                    // WeChat
-)
+internal val MESSAGING_PACKAGES =
+    listOf(
+        // WhatsApp
+        "com.whatsapp",
+        // Telegram
+        "org.telegram.messenger",
+        // Discord
+        "com.discord",
+        // Signal
+        "org.thoughtcrime.securesms",
+        // Messenger
+        "com.facebook.orca",
+        // Google Messages
+        "com.google.android.apps.messaging",
+        // Slack
+        "com.slack",
+        // Microsoft Teams
+        "com.microsoft.teams",
+        // Viber
+        "com.viber.voip",
+        // Skype
+        "com.skype.raider",
+        // KakaoTalk
+        "com.kakao.talk",
+        // LINE
+        "jp.naver.line.android",
+        // WeChat
+        "com.tencent.mm",
+    )
 
 @VisibleForTesting
-internal val EMAIL_PACKAGES = listOf(
-    "com.google.android.gm",            // Gmail
-    "com.microsoft.office.outlook",      // Outlook
-    "com.yahoo.mobile.client.android.mail", // Yahoo Mail
-    "com.samsung.android.email.provider", // Samsung Email
-    "me.proton.android.mail",            // Proton Mail
-)
+internal val EMAIL_PACKAGES =
+    listOf(
+        // Gmail
+        "com.google.android.gm",
+        // Outlook
+        "com.microsoft.office.outlook",
+        // Yahoo Mail
+        "com.yahoo.mobile.client.android.mail",
+        // Samsung Email
+        "com.samsung.android.email.provider",
+        // Proton Mail
+        "me.proton.android.mail",
+    )
 
 @VisibleForTesting
-internal val SOCIAL_PACKAGES = listOf(
-    "com.instagram.android",             // Instagram
-    "com.snapchat.android",              // Snapchat
-    "com.twitter.android",               // X / Twitter
-    "com.reddit.frontpage",              // Reddit
-    "com.zhiliaoapp.musically",          // TikTok
-    "com.facebook.katana",               // Facebook
-)
+internal val SOCIAL_PACKAGES =
+    listOf(
+        // Instagram
+        "com.instagram.android",
+        // Snapchat
+        "com.snapchat.android",
+        // X / Twitter
+        "com.twitter.android",
+        // Reddit
+        "com.reddit.frontpage",
+        // TikTok
+        "com.zhiliaoapp.musically",
+        // Facebook
+        "com.facebook.katana",
+    )
 
 private val MESSAGING_SET = MESSAGING_PACKAGES.toSet()
 private val EMAIL_SET = EMAIL_PACKAGES.toSet()
@@ -408,12 +449,13 @@ private val ALL_KNOWN_PACKAGES = MESSAGING_PACKAGES + EMAIL_PACKAGES + SOCIAL_PA
 /**
  * Assigns a category to a package name based on known app lists.
  */
-private fun categorize(packageName: String): ShareTargetCategory = when (packageName) {
-    in MESSAGING_SET -> ShareTargetCategory.MESSAGING
-    in EMAIL_SET -> ShareTargetCategory.EMAIL
-    in SOCIAL_SET -> ShareTargetCategory.SOCIAL
-    else -> ShareTargetCategory.OTHER
-}
+private fun categorize(packageName: String): ShareTargetCategory =
+    when (packageName) {
+        in MESSAGING_SET -> ShareTargetCategory.MESSAGING
+        in EMAIL_SET -> ShareTargetCategory.EMAIL
+        in SOCIAL_SET -> ShareTargetCategory.SOCIAL
+        else -> ShareTargetCategory.OTHER
+    }
 
 /**
  * Sorts share targets using a blended score of usage frequency and known-app priority.
@@ -423,11 +465,12 @@ private fun categorize(packageName: String): ShareTargetCategory = when (package
 internal fun prioritizeShareTargets(targets: List<ShareTarget>): List<ShareTarget> {
     return targets.sortedByDescending { target ->
         val knownRank = ALL_KNOWN_PACKAGES.indexOf(target.packageName)
-        val knownBoost = if (knownRank >= 0) {
-            (ALL_KNOWN_PACKAGES.size - knownRank).toFloat() / ALL_KNOWN_PACKAGES.size
-        } else {
-            0f
-        }
+        val knownBoost =
+            if (knownRank >= 0) {
+                (ALL_KNOWN_PACKAGES.size - knownRank).toFloat() / ALL_KNOWN_PACKAGES.size
+            } else {
+                0f
+            }
         target.shareCount * 10f + knownBoost
     }
 }
@@ -461,23 +504,25 @@ private fun resolveShareTargets(
 
     // Pad with system targets if needed, prioritizing known apps
     if (resolved.size < maxItems) {
-        val remaining = systemInfos
-            .filter { it.activityInfo.packageName !in seenPackages && it.activityInfo.packageName != ownPackage }
-            .sortedByDescending { info ->
-                val idx = ALL_KNOWN_PACKAGES.indexOf(info.activityInfo.packageName)
-                if (idx >= 0) ALL_KNOWN_PACKAGES.size - idx else 0
-            }
+        val remaining =
+            systemInfos
+                .filter { it.activityInfo.packageName !in seenPackages && it.activityInfo.packageName != ownPackage }
+                .sortedByDescending { info ->
+                    val idx = ALL_KNOWN_PACKAGES.indexOf(info.activityInfo.packageName)
+                    if (idx >= 0) ALL_KNOWN_PACKAGES.size - idx else 0
+                }
 
         for (info in remaining) {
             val pkg = info.activityInfo.packageName
             if (pkg in seenPackages) continue
             resolved.add(
                 ResolvedTarget(
-                    target = ShareTarget(
-                        packageName = pkg,
-                        activityName = info.activityInfo.name,
-                        displayLabel = info.loadLabel(pm).toString(),
-                    ),
+                    target =
+                        ShareTarget(
+                            packageName = pkg,
+                            activityName = info.activityInfo.name,
+                            displayLabel = info.loadLabel(pm).toString(),
+                        ),
                     icon = info.loadIcon(pm),
                     category = categorize(pkg),
                 ),
@@ -503,32 +548,35 @@ private fun resolveAllShareTargets(
     val systemInfos = queryShareCapableApps(pm)
     val frequentByPackage = frequentTargets.associateBy { it.packageName }
 
-    val all = systemInfos
-        .filter { it.activityInfo.packageName != ownPackage }
-        .map { info ->
-            val pkg = info.activityInfo.packageName
-            val tracked = frequentByPackage[pkg]
-            ResolvedTarget(
-                target = tracked ?: ShareTarget(
-                    packageName = pkg,
-                    activityName = info.activityInfo.name,
-                    displayLabel = info.loadLabel(pm).toString(),
-                ),
-                icon = info.loadIcon(pm),
-                category = categorize(pkg),
-            )
-        }
+    val all =
+        systemInfos
+            .filter { it.activityInfo.packageName != ownPackage }
+            .map { info ->
+                val pkg = info.activityInfo.packageName
+                val tracked = frequentByPackage[pkg]
+                ResolvedTarget(
+                    target =
+                        tracked ?: ShareTarget(
+                            packageName = pkg,
+                            activityName = info.activityInfo.name,
+                            displayLabel = info.loadLabel(pm).toString(),
+                        ),
+                    icon = info.loadIcon(pm),
+                    category = categorize(pkg),
+                )
+            }
 
     return all
         .groupBy { it.category }
         .mapValues { (_, targets) ->
             targets.sortedByDescending { resolved ->
                 val knownRank = ALL_KNOWN_PACKAGES.indexOf(resolved.target.packageName)
-                val knownBoost = if (knownRank >= 0) {
-                    (ALL_KNOWN_PACKAGES.size - knownRank).toFloat() / ALL_KNOWN_PACKAGES.size
-                } else {
-                    0f
-                }
+                val knownBoost =
+                    if (knownRank >= 0) {
+                        (ALL_KNOWN_PACKAGES.size - knownRank).toFloat() / ALL_KNOWN_PACKAGES.size
+                    } else {
+                        0f
+                    }
                 resolved.target.shareCount * 10f + knownBoost
             }
         }

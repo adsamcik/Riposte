@@ -60,9 +60,10 @@ fun EmojiGridOverlay(
         Column {
             // Header row
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
@@ -106,22 +107,23 @@ fun EmojiGridOverlay(
 private fun EmojiGridOverlayPreview() {
     RiposteTheme {
         EmojiGridOverlay(
-            emojis = listOf(
-                "😂" to 42,
-                "🔥" to 35,
-                "💀" to 28,
-                "😭" to 22,
-                "🥺" to 18,
-                "😤" to 15,
-                "🤔" to 12,
-                "😏" to 10,
-                "🤣" to 8,
-                "😅" to 5,
-                "🙃" to 4,
-                "😊" to 3,
-                "🥹" to 2,
-                "😩" to 1,
-            ),
+            emojis =
+                listOf(
+                    "😂" to 42,
+                    "🔥" to 35,
+                    "💀" to 28,
+                    "😭" to 22,
+                    "🥺" to 18,
+                    "😤" to 15,
+                    "🤔" to 12,
+                    "😏" to 10,
+                    "🤣" to 8,
+                    "😅" to 5,
+                    "🙃" to 4,
+                    "😊" to 3,
+                    "🥹" to 2,
+                    "😩" to 1,
+                ),
             activeFilters = setOf("😂", "🔥", "💀"),
             onEmojiToggle = {},
             onDismiss = {},

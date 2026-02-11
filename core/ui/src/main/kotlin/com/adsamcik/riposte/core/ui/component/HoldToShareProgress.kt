@@ -55,12 +55,13 @@ fun HoldToShareProgress(
 
     CircularProgressIndicator(
         progress = { progress.coerceIn(0f, 1f) },
-        modifier = modifier
-            .size(48.dp)
-            .semantics {
-                contentDescription = progressDescription
-                liveRegion = LiveRegionMode.Polite
-            },
+        modifier =
+            modifier
+                .size(48.dp)
+                .semantics {
+                    contentDescription = progressDescription
+                    liveRegion = LiveRegionMode.Polite
+                },
         color = MaterialTheme.colorScheme.primary,
     )
 }

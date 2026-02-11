@@ -84,59 +84,63 @@ fun HoldToShareContainer(
     val shareActionLabel = stringResource(R.string.ui_hold_to_share_action)
 
     Box(
-        modifier = modifier
-            .semantics {
-                customActions = listOf(
-                    CustomAccessibilityAction(shareActionLabel) {
-                        onHoldComplete()
-                        true
-                    }
-                )
-            }
-            .pointerInput(Unit) {
-                awaitEachGesture {
-                    val down = awaitFirstDown(requireUnconsumed = false)
-                    down.consume()
-
-                    // Start hold detection
-                    holdJob = scope.launch {
-                        delay(HOLD_START_DELAY_MS)
-                        onLongPress?.invoke()
-                        isHolding = true
-                        holdProgress.animateTo(
-                            targetValue = 1f,
-                            animationSpec = tween(
-                                durationMillis = HOLD_TO_SHARE_DURATION_MS.toInt(),
-                                easing = LinearEasing,
-                            ),
+        modifier =
+            modifier
+                .semantics {
+                    customActions =
+                        listOf(
+                            CustomAccessibilityAction(shareActionLabel) {
+                                onHoldComplete()
+                                true
+                            },
                         )
-                    }
-
-                    val up = waitForUpOrCancellation()
-
-                    // Cancel or complete
-                    holdJob?.cancel()
-                    holdJob = null
-
-                    if (up != null) {
-                        up.consume()
-                        if (holdProgress.value >= 1f) {
-                            // Hold completed - trigger share
-                            onHoldComplete()
-                        } else if (!isHolding) {
-                            // Released before hold started - treat as tap
-                            onTap()
-                        }
-                        // If holding but not complete, just cancel (do nothing)
-                    }
-
-                    // Reset state
-                    isHolding = false
-                    scope.launch {
-                        holdProgress.snapTo(0f)
-                    }
                 }
-            },
+                .pointerInput(Unit) {
+                    awaitEachGesture {
+                        val down = awaitFirstDown(requireUnconsumed = false)
+                        down.consume()
+
+                        // Start hold detection
+                        holdJob =
+                            scope.launch {
+                                delay(HOLD_START_DELAY_MS)
+                                onLongPress?.invoke()
+                                isHolding = true
+                                holdProgress.animateTo(
+                                    targetValue = 1f,
+                                    animationSpec =
+                                        tween(
+                                            durationMillis = HOLD_TO_SHARE_DURATION_MS.toInt(),
+                                            easing = LinearEasing,
+                                        ),
+                                )
+                            }
+
+                        val up = waitForUpOrCancellation()
+
+                        // Cancel or complete
+                        holdJob?.cancel()
+                        holdJob = null
+
+                        if (up != null) {
+                            up.consume()
+                            if (holdProgress.value >= 1f) {
+                                // Hold completed - trigger share
+                                onHoldComplete()
+                            } else if (!isHolding) {
+                                // Released before hold started - treat as tap
+                                onTap()
+                            }
+                            // If holding but not complete, just cancel (do nothing)
+                        }
+
+                        // Reset state
+                        isHolding = false
+                        scope.launch {
+                            holdProgress.snapTo(0f)
+                        }
+                    }
+                },
         contentAlignment = Alignment.Center,
     ) {
         content()

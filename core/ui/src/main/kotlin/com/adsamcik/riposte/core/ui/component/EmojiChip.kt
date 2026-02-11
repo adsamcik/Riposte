@@ -9,7 +9,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
@@ -33,8 +32,8 @@ import androidx.compose.ui.unit.sp
 import com.adsamcik.riposte.core.model.EmojiTag
 import com.adsamcik.riposte.core.ui.R
 import com.adsamcik.riposte.core.ui.theme.EmojiCardBackgrounds
-import com.adsamcik.riposte.core.ui.theme.RiposteTheme
 import com.adsamcik.riposte.core.ui.theme.MoodShapes
+import com.adsamcik.riposte.core.ui.theme.RiposteTheme
 
 private val EmojiChipShape = RoundedCornerShape(18.dp)
 
@@ -57,11 +56,12 @@ fun EmojiChip(
     showName: Boolean = false,
     backgroundColor: Color? = null,
 ) {
-    val bgColor = backgroundColor ?: if (isSelected) {
-        MaterialTheme.colorScheme.primaryContainer
-    } else {
-        MaterialTheme.colorScheme.surfaceContainerHigh
-    }
+    val bgColor =
+        backgroundColor ?: if (isSelected) {
+            MaterialTheme.colorScheme.primaryContainer
+        } else {
+            MaterialTheme.colorScheme.surfaceContainerHigh
+        }
 
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -72,42 +72,45 @@ fun EmojiChip(
         label = "EmojiChipScale",
     )
 
-    val chipDescription = if (isSelected) {
-        stringResource(R.string.ui_emoji_chip_filter_active, emojiTag.emoji)
-    } else {
-        stringResource(R.string.ui_emoji_chip_filter_inactive, emojiTag.emoji)
-    }
+    val chipDescription =
+        if (isSelected) {
+            stringResource(R.string.ui_emoji_chip_filter_active, emojiTag.emoji)
+        } else {
+            stringResource(R.string.ui_emoji_chip_filter_inactive, emojiTag.emoji)
+        }
 
-    val borderModifier = if (isSelected) {
-        Modifier.border(
-            width = 2.dp,
-            color = MaterialTheme.colorScheme.primary,
-            shape = EmojiChipShape,
-        )
-    } else {
-        Modifier
-    }
+    val borderModifier =
+        if (isSelected) {
+            Modifier.border(
+                width = 2.dp,
+                color = MaterialTheme.colorScheme.primary,
+                shape = EmojiChipShape,
+            )
+        } else {
+            Modifier
+        }
 
     Surface(
-        modifier = modifier
-            .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
-            .then(borderModifier)
-            .semantics {
-                contentDescription = chipDescription
-            }
-            .then(
-                if (onClick != null) {
-                    Modifier.clickable(
-                        interactionSource = interactionSource,
-                        indication = LocalIndication.current,
-                        onClick = onClick,
-                    )
-                } else {
-                    Modifier
-                },
-            )
-            .sizeIn(minWidth = 36.dp)
-            .scale(scale),
+        modifier =
+            modifier
+                .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                .then(borderModifier)
+                .semantics {
+                    contentDescription = chipDescription
+                }
+                .then(
+                    if (onClick != null) {
+                        Modifier.clickable(
+                            interactionSource = interactionSource,
+                            indication = LocalIndication.current,
+                            onClick = onClick,
+                        )
+                    } else {
+                        Modifier
+                    },
+                )
+                .sizeIn(minWidth = 36.dp)
+                .scale(scale),
         shape = EmojiChipShape,
         color = bgColor,
     ) {
@@ -124,9 +127,10 @@ fun EmojiChip(
             }
         } else {
             Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .padding(4.dp),
+                modifier =
+                    Modifier
+                        .size(36.dp)
+                        .padding(4.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
@@ -182,20 +186,21 @@ private fun EmojiChipWithNamePreview() {
 fun EmojiLarge(
     emoji: String,
     modifier: Modifier = Modifier,
-    size: Int = 48
+    size: Int = 48,
 ) {
     Box(
-        modifier = modifier
-            .size(size.dp)
-            .background(
-                color = getEmojiBackgroundColor(emoji),
-                shape = MoodShapes.EmojiChip
-            ),
-        contentAlignment = Alignment.Center
+        modifier =
+            modifier
+                .size(size.dp)
+                .background(
+                    color = getEmojiBackgroundColor(emoji),
+                    shape = MoodShapes.EmojiChip,
+                ),
+        contentAlignment = Alignment.Center,
     ) {
         Text(
             text = emoji,
-            fontSize = (size * 0.6f).sp
+            fontSize = (size * 0.6f).sp,
         )
     }
 }
@@ -204,8 +209,9 @@ fun EmojiLarge(
  * Gets a consistent background color for an emoji based on its hash.
  */
 private fun getEmojiBackgroundColor(emoji: String): Color {
-    val index = emoji.hashCode().mod(EmojiCardBackgrounds.size).let {
-        if (it < 0) it + EmojiCardBackgrounds.size else it
-    }
+    val index =
+        emoji.hashCode().mod(EmojiCardBackgrounds.size).let {
+            if (it < 0) it + EmojiCardBackgrounds.size else it
+        }
     return EmojiCardBackgrounds[index]
 }

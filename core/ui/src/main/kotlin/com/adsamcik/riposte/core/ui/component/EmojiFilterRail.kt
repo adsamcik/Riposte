@@ -116,18 +116,19 @@ fun EmojiFilterRail(
 private fun EmojiFilterRailPreview() {
     RiposteTheme {
         EmojiFilterRail(
-            emojis = listOf(
-                "😂" to 42,
-                "🔥" to 35,
-                "💀" to 28,
-                "😭" to 22,
-                "🥺" to 18,
-                "😤" to 15,
-                "🤔" to 12,
-                "😏" to 10,
-                "🤣" to 8,
-                "😅" to 5,
-            ),
+            emojis =
+                listOf(
+                    "😂" to 42,
+                    "🔥" to 35,
+                    "💀" to 28,
+                    "😭" to 22,
+                    "🥺" to 18,
+                    "😤" to 15,
+                    "🤔" to 12,
+                    "😏" to 10,
+                    "🤣" to 8,
+                    "😅" to 5,
+                ),
             activeFilters = setOf("😂", "🔥"),
             onEmojiToggle = {},
         )
@@ -139,11 +140,12 @@ private fun EmojiFilterRailPreview() {
 private fun EmojiFilterRailFewEmojisPreview() {
     RiposteTheme {
         EmojiFilterRail(
-            emojis = listOf(
-                "😂" to 10,
-                "🔥" to 5,
-                "💀" to 3,
-            ),
+            emojis =
+                listOf(
+                    "😂" to 10,
+                    "🔥" to 5,
+                    "💀" to 3,
+                ),
             activeFilters = emptySet(),
             onEmojiToggle = {},
         )
@@ -155,15 +157,16 @@ private fun EmojiFilterRailFewEmojisPreview() {
 private fun EmojiFilterRailNoneSelectedPreview() {
     RiposteTheme {
         EmojiFilterRail(
-            emojis = listOf(
-                "😂" to 42,
-                "🔥" to 35,
-                "💀" to 28,
-                "😭" to 22,
-                "🥺" to 18,
-                "😤" to 15,
-                "🤔" to 12,
-            ),
+            emojis =
+                listOf(
+                    "😂" to 42,
+                    "🔥" to 35,
+                    "💀" to 28,
+                    "😭" to 22,
+                    "🥺" to 18,
+                    "😤" to 15,
+                    "🤔" to 12,
+                ),
             activeFilters = emptySet(),
             onEmojiToggle = {},
         )

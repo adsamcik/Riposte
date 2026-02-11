@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -30,7 +29,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -41,13 +39,9 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.graphics.ColorFilter
 import coil3.compose.AsyncImage
-import coil3.compose.AsyncImagePainter
-import coil3.compose.rememberAsyncImagePainter
-import com.adsamcik.riposte.core.ui.R
-import com.adsamcik.riposte.core.model.EmojiTag
 import com.adsamcik.riposte.core.model.Meme
+import com.adsamcik.riposte.core.ui.R
 import com.adsamcik.riposte.core.ui.theme.MoodShapes
 import java.io.File
 
@@ -61,90 +55,98 @@ fun MemeCard(
     onFavoriteClick: () -> Unit,
     modifier: Modifier = Modifier,
     showTitle: Boolean = true,
-    showEmojis: Boolean = true
+    showEmojis: Boolean = true,
 ) {
     val favoritedText = stringResource(R.string.ui_state_favorited)
     val notFavoritedText = stringResource(R.string.ui_state_not_favorited)
-    val memeDescription = buildString {
-        append(meme.title ?: meme.fileName)
-        if (meme.emojiTags.isNotEmpty()) {
-            append(", tags: ")
-            append(meme.emojiTags.take(5).joinToString(", ") { it.name })
+    val memeDescription =
+        buildString {
+            append(meme.title ?: meme.fileName)
+            if (meme.emojiTags.isNotEmpty()) {
+                append(", tags: ")
+                append(meme.emojiTags.take(5).joinToString(", ") { it.name })
+            }
+            if (meme.isFavorite) {
+                append(", $favoritedText")
+            }
         }
-        if (meme.isFavorite) {
-            append(", $favoritedText")
-        }
-    }
-    
+
     Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .semantics(mergeDescendants = true) {
-                contentDescription = memeDescription
-            },
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick)
+                .semantics(mergeDescendants = true) {
+                    contentDescription = memeDescription
+                },
         shape = MoodShapes.MemeCard,
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
         Column {
             // Image
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(1f)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(1f),
             ) {
                 AsyncImage(
                     model = File(meme.filePath),
                     contentDescription = null,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                        .clearAndSetSemantics { },
-                    contentScale = ContentScale.Crop
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .clearAndSetSemantics { },
+                    contentScale = ContentScale.Crop,
                 )
                 IconButton(
                     onClick = onFavoriteClick,
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(4.dp)
-                        .semantics {
-                            role = Role.Button
-                            stateDescription = if (meme.isFavorite) favoritedText else notFavoritedText
-                        }
+                    modifier =
+                        Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(4.dp)
+                            .semantics {
+                                role = Role.Button
+                                stateDescription = if (meme.isFavorite) favoritedText else notFavoritedText
+                            },
                 ) {
                     Icon(
-                        imageVector = if (meme.isFavorite) {
-                            Icons.Filled.Favorite
-                        } else {
-                            Icons.Outlined.FavoriteBorder
-                        },
-                        contentDescription = if (meme.isFavorite) {
-                            stringResource(R.string.ui_meme_card_remove_from_favorites)
-                        } else {
-                            stringResource(R.string.ui_meme_card_add_to_favorites)
-                        },
-                        tint = if (meme.isFavorite) {
-                        MaterialTheme.colorScheme.error
-                    } else {
-                        MaterialTheme.colorScheme.onSurface
-                    }
+                        imageVector =
+                            if (meme.isFavorite) {
+                                Icons.Filled.Favorite
+                            } else {
+                                Icons.Outlined.FavoriteBorder
+                            },
+                        contentDescription =
+                            if (meme.isFavorite) {
+                                stringResource(R.string.ui_meme_card_remove_from_favorites)
+                            } else {
+                                stringResource(R.string.ui_meme_card_add_to_favorites)
+                            },
+                        tint =
+                            if (meme.isFavorite) {
+                                MaterialTheme.colorScheme.error
+                            } else {
+                                MaterialTheme.colorScheme.onSurface
+                            },
                     )
                 }
             }
 
             // Content
             Column(
-                modifier = Modifier.padding(12.dp)
+                modifier = Modifier.padding(12.dp),
             ) {
                 // Emojis
                 if (showEmojis && meme.emojiTags.isNotEmpty()) {
                     LazyRow(
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
                         items(meme.emojiTags.take(5)) { emojiTag ->
                             EmojiChip(
                                 emojiTag = emojiTag,
-                                modifier = Modifier.padding(end = 4.dp)
+                                modifier = Modifier.padding(end = 4.dp),
                             )
                         }
                         if (meme.emojiTags.size > 5) {
@@ -153,7 +155,7 @@ fun MemeCard(
                                     text = "+${meme.emojiTags.size - 5}",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(start = 4.dp)
+                                    modifier = Modifier.padding(start = 4.dp),
                                 )
                             }
                         }
@@ -168,7 +170,7 @@ fun MemeCard(
                         text = title,
                         style = MaterialTheme.typography.titleSmall,
                         maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
@@ -190,59 +192,64 @@ fun MemeCardCompact(
     interactionSource: MutableInteractionSource? = null,
 ) {
     val favoritedText = stringResource(R.string.ui_state_favorited)
-    val memeDescription = buildString {
-        append(meme.title ?: meme.fileName)
-        if (meme.emojiTags.isNotEmpty()) {
-            append(", ")
-            append(meme.emojiTags.take(3).joinToString(" ") { it.emoji })
+    val memeDescription =
+        buildString {
+            append(meme.title ?: meme.fileName)
+            if (meme.emojiTags.isNotEmpty()) {
+                append(", ")
+                append(meme.emojiTags.take(3).joinToString(" ") { it.emoji })
+            }
+            if (meme.isFavorite) {
+                append(", $favoritedText")
+            }
         }
-        if (meme.isFavorite) {
-            append(", $favoritedText")
-        }
-    }
 
-    val clickModifier = if (onClick != null) {
-        Modifier.clickable(
-            interactionSource = interactionSource,
-            indication = if (interactionSource != null) ripple() else null,
-            onClick = onClick,
-        )
-    } else {
-        Modifier
-    }
+    val clickModifier =
+        if (onClick != null) {
+            Modifier.clickable(
+                interactionSource = interactionSource,
+                indication = if (interactionSource != null) ripple() else null,
+                onClick = onClick,
+            )
+        } else {
+            Modifier
+        }
 
     Box(
-        modifier = modifier
-            .aspectRatio(1f)
-            .clip(MoodShapes.MemeCard)
-            .then(clickModifier)
-            .semantics(mergeDescendants = true) {
-                contentDescription = memeDescription
-            }
+        modifier =
+            modifier
+                .aspectRatio(1f)
+                .clip(MoodShapes.MemeCard)
+                .then(clickModifier)
+                .semantics(mergeDescendants = true) {
+                    contentDescription = memeDescription
+                },
     ) {
         AsyncImage(
             model = File(meme.filePath),
             contentDescription = null,
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.surfaceVariant)
-                .clearAndSetSemantics { },
-            contentScale = ContentScale.Crop
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .clearAndSetSemantics { },
+            contentScale = ContentScale.Crop,
         )
         if (meme.emojiTags.isNotEmpty()) {
             Row(
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(8.dp)
-                    .background(
-                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
-                        shape = MoodShapes.EmojiChip
-                    )
-                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                modifier =
+                    Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(8.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
+                            shape = MoodShapes.EmojiChip,
+                        )
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
             ) {
                 Text(
                     text = meme.emojiTags.take(3).joinToString("") { it.emoji },
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyMedium,
                 )
             }
         }
@@ -253,10 +260,11 @@ fun MemeCardCompact(
                 imageVector = Icons.Filled.Favorite,
                 contentDescription = stringResource(R.string.ui_state_favorited),
                 tint = MaterialTheme.colorScheme.error,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(8.dp)
-                    .size(20.dp)
+                modifier =
+                    Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(8.dp)
+                        .size(20.dp),
             )
         }
     }

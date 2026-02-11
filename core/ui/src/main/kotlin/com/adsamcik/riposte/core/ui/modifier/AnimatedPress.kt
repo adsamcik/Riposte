@@ -31,23 +31,22 @@ import com.adsamcik.riposte.core.ui.util.LocalReducedMotion
  *                          unless used with a clickable that shares the same source).
  * @return Modifier with press scale animation applied.
  */
-fun Modifier.animatedPressScale(
-    interactionSource: InteractionSource? = null,
-): Modifier = composed {
-    val reducedMotion = LocalReducedMotion.current
-    val source = interactionSource ?: remember { MutableInteractionSource() }
-    val isPressed by source.collectIsPressedAsState()
+fun Modifier.animatedPressScale(interactionSource: InteractionSource? = null): Modifier =
+    composed {
+        val reducedMotion = LocalReducedMotion.current
+        val source = interactionSource ?: remember { MutableInteractionSource() }
+        val isPressed by source.collectIsPressedAsState()
 
-    val scale by animateFloatAsState(
-        targetValue = if (isPressed && !reducedMotion) 0.96f else 1f,
-        animationSpec = MotionTokens.PressedScale,
-        label = "pressScale",
-    )
+        val scale by animateFloatAsState(
+            targetValue = if (isPressed && !reducedMotion) 0.96f else 1f,
+            animationSpec = MotionTokens.PressedScale,
+            label = "pressScale",
+        )
 
-    this
-        .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
-        .graphicsLayer {
-            scaleX = scale
-            scaleY = scale
-        }
-}
+        this
+            .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+    }

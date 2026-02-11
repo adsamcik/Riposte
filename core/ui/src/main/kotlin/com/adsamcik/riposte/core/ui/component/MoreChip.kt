@@ -2,7 +2,6 @@ package com.adsamcik.riposte.core.ui.component
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -38,12 +37,13 @@ fun MoreChip(
     modifier: Modifier = Modifier,
 ) {
     val description = stringResource(R.string.ui_more_chip_description, count)
-    
+
     Surface(
-        modifier = modifier
-            .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
-            .clickable(onClick = onClick)
-            .semantics { contentDescription = description },
+        modifier =
+            modifier
+                .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                .clickable(onClick = onClick)
+                .semantics { contentDescription = description },
         shape = MoreChipShape,
         color = MaterialTheme.colorScheme.surfaceContainerHighest,
     ) {

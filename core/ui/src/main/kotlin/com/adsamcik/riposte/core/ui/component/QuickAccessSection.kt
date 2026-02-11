@@ -1,7 +1,6 @@
 package com.adsamcik.riposte.core.ui.component
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -72,9 +71,10 @@ fun QuickAccessSection(
         ) {
             // Header row
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
@@ -142,18 +142,20 @@ private fun QuickAccessItem(
     onHoldComplete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val itemDescription = stringResource(
-        R.string.ui_quick_access_item_description,
-        meme.title ?: meme.fileName,
-    )
+    val itemDescription =
+        stringResource(
+            R.string.ui_quick_access_item_description,
+            meme.title ?: meme.fileName,
+        )
 
     HoldToShareContainer(
         onTap = onTap,
         onHoldComplete = onHoldComplete,
-        modifier = modifier
-            .height(ThumbnailSizes.QUICK_ACCESS_HEIGHT)
-            .widthIn(max = ThumbnailSizes.QUICK_ACCESS_MAX_WIDTH)
-            .semantics { contentDescription = itemDescription },
+        modifier =
+            modifier
+                .height(ThumbnailSizes.QUICK_ACCESS_HEIGHT)
+                .widthIn(max = ThumbnailSizes.QUICK_ACCESS_MAX_WIDTH)
+                .semantics { contentDescription = itemDescription },
     ) {
         Surface(
             shape = RoundedCornerShape(ThumbnailSizes.THUMBNAIL_CORNER_RADIUS),
@@ -162,7 +164,8 @@ private fun QuickAccessItem(
         ) {
             AsyncImage(
                 model = File(meme.filePath),
-                contentDescription = null, // Handled by parent semantics
+                // Handled by parent semantics
+                contentDescription = null,
                 contentScale = ContentScale.Crop,
             )
         }
@@ -197,72 +200,73 @@ private fun QuickAccessSectionEmptyPreview() {
     }
 }
 
-private val sampleMemes = listOf(
-    Meme(
-        id = 1L,
-        filePath = "/storage/emulated/0/Memes/meme1.jpg",
-        fileName = "meme1.jpg",
-        mimeType = "image/jpeg",
-        width = 500,
-        height = 500,
-        fileSizeBytes = 50_000L,
-        importedAt = System.currentTimeMillis(),
-        emojiTags = listOf(EmojiTag(emoji = "😂", name = "joy")),
-        title = "Funny reaction",
-        useCount = 42,
-    ),
-    Meme(
-        id = 2L,
-        filePath = "/storage/emulated/0/Memes/meme2.png",
-        fileName = "meme2.png",
-        mimeType = "image/png",
-        width = 400,
-        height = 600,
-        fileSizeBytes = 75_000L,
-        importedAt = System.currentTimeMillis(),
-        emojiTags = listOf(EmojiTag(emoji = "🔥", name = "fire")),
-        title = "Hot take",
-        useCount = 28,
-    ),
-    Meme(
-        id = 3L,
-        filePath = "/storage/emulated/0/Memes/meme3.webp",
-        fileName = "meme3.webp",
-        mimeType = "image/webp",
-        width = 600,
-        height = 400,
-        fileSizeBytes = 60_000L,
-        importedAt = System.currentTimeMillis(),
-        emojiTags = listOf(EmojiTag(emoji = "💀", name = "skull")),
-        title = "Dead",
-        useCount = 15,
-    ),
-    Meme(
-        id = 4L,
-        filePath = "/storage/emulated/0/Memes/meme4.jpg",
-        fileName = "meme4.jpg",
-        mimeType = "image/jpeg",
-        width = 512,
-        height = 512,
-        fileSizeBytes = 45_000L,
-        importedAt = System.currentTimeMillis(),
-        emojiTags = listOf(EmojiTag(emoji = "😭", name = "crying")),
-        title = "Crying laughing",
-        useCount = 33,
-    ),
-    Meme(
-        id = 5L,
-        filePath = "/storage/emulated/0/Memes/meme5.gif",
-        fileName = "meme5.gif",
-        mimeType = "image/gif",
-        width = 300,
-        height = 300,
-        fileSizeBytes = 120_000L,
-        importedAt = System.currentTimeMillis(),
-        emojiTags = listOf(EmojiTag(emoji = "🥺", name = "pleading")),
-        title = "Please",
-        useCount = 21,
-    ),
-)
+private val sampleMemes =
+    listOf(
+        Meme(
+            id = 1L,
+            filePath = "/storage/emulated/0/Memes/meme1.jpg",
+            fileName = "meme1.jpg",
+            mimeType = "image/jpeg",
+            width = 500,
+            height = 500,
+            fileSizeBytes = 50_000L,
+            importedAt = System.currentTimeMillis(),
+            emojiTags = listOf(EmojiTag(emoji = "😂", name = "joy")),
+            title = "Funny reaction",
+            useCount = 42,
+        ),
+        Meme(
+            id = 2L,
+            filePath = "/storage/emulated/0/Memes/meme2.png",
+            fileName = "meme2.png",
+            mimeType = "image/png",
+            width = 400,
+            height = 600,
+            fileSizeBytes = 75_000L,
+            importedAt = System.currentTimeMillis(),
+            emojiTags = listOf(EmojiTag(emoji = "🔥", name = "fire")),
+            title = "Hot take",
+            useCount = 28,
+        ),
+        Meme(
+            id = 3L,
+            filePath = "/storage/emulated/0/Memes/meme3.webp",
+            fileName = "meme3.webp",
+            mimeType = "image/webp",
+            width = 600,
+            height = 400,
+            fileSizeBytes = 60_000L,
+            importedAt = System.currentTimeMillis(),
+            emojiTags = listOf(EmojiTag(emoji = "💀", name = "skull")),
+            title = "Dead",
+            useCount = 15,
+        ),
+        Meme(
+            id = 4L,
+            filePath = "/storage/emulated/0/Memes/meme4.jpg",
+            fileName = "meme4.jpg",
+            mimeType = "image/jpeg",
+            width = 512,
+            height = 512,
+            fileSizeBytes = 45_000L,
+            importedAt = System.currentTimeMillis(),
+            emojiTags = listOf(EmojiTag(emoji = "😭", name = "crying")),
+            title = "Crying laughing",
+            useCount = 33,
+        ),
+        Meme(
+            id = 5L,
+            filePath = "/storage/emulated/0/Memes/meme5.gif",
+            fileName = "meme5.gif",
+            mimeType = "image/gif",
+            width = 300,
+            height = 300,
+            fileSizeBytes = 120_000L,
+            importedAt = System.currentTimeMillis(),
+            emojiTags = listOf(EmojiTag(emoji = "🥺", name = "pleading")),
+            title = "Please",
+            useCount = 21,
+        ),
+    )
 
 // endregion
