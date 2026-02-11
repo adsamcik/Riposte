@@ -17,7 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
@@ -177,7 +177,7 @@ private fun EmojiChip(
 ) {
     Row(
         modifier = modifier
-            .clip(RoundedCornerShape(16.dp))
+            .clip(MaterialTheme.shapes.medium)
             .background(
                 if (isSelected) {
                     MaterialTheme.colorScheme.primaryContainer
@@ -192,7 +192,7 @@ private fun EmojiChip(
                 } else {
                     MaterialTheme.colorScheme.outline
                 },
-                shape = RoundedCornerShape(16.dp),
+                shape = MaterialTheme.shapes.medium,
             )
             .clickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 8.dp)
