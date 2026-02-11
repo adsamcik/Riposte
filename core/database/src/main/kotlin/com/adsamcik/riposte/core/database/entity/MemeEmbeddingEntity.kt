@@ -7,12 +7,12 @@ import androidx.room.PrimaryKey
 
 /**
  * Database entity for storing meme embeddings for semantic search.
- * 
+ *
  * Embeddings are stored separately from the main meme table for several reasons:
  * 1. Performance: Large BLOB data can slow down queries on the main table
  * 2. Flexibility: Allows easy re-generation when model changes
  * 3. Optional: Not all memes need embeddings immediately
- * 
+ *
  * Each embedding is associated with a specific model version, allowing
  * graceful migration when the embedding model is upgraded.
  */
@@ -23,26 +23,24 @@ import androidx.room.PrimaryKey
             entity = MemeEntity::class,
             parentColumns = ["id"],
             childColumns = ["memeId"],
-            onDelete = ForeignKey.CASCADE
-        )
+            onDelete = ForeignKey.CASCADE,
+        ),
     ],
     indices = [
         Index(value = ["memeId", "embeddingType"], unique = true),
         Index(value = ["memeId"]),
         Index(value = ["modelVersion"]),
         Index(value = ["generatedAt"]),
-        Index(value = ["needsRegeneration"])
-    ]
+        Index(value = ["needsRegeneration"]),
+    ],
 )
 data class MemeEmbeddingEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
-    
     /**
      * Foreign key to the meme this embedding belongs to.
      */
     val memeId: Long,
-    
     /**
      * Type of embedding (e.g., "content", "intent").
      * Each meme can have one embedding per type.
@@ -51,55 +49,48 @@ data class MemeEmbeddingEntity(
     
     /**
      * The embedding vector serialized as ByteArray.
-     * 
+     *
      * Format: Little-endian float32 array
      * Size: embeddingDimension * 4 bytes
      */
     val embedding: ByteArray,
-    
     /**
      * Dimension of the embedding vector.
      * Stored for validation and compatibility checks.
      */
     val dimension: Int,
-    
     /**
      * Version identifier for the embedding model used.
-     * 
+     *
      * Format: "model_name:version" (e.g., "use_v1:1.0.0", "litert_use:2.0.0")
      * Used to detect when embeddings need re-generation due to model updates.
      */
     val modelVersion: String,
-    
     /**
      * Timestamp when this embedding was generated (epoch millis).
      */
     val generatedAt: Long,
-    
     /**
      * Source text used to generate the embedding.
-     * 
+     *
      * This is useful for debugging and can be used to verify embedding quality.
      * Stores a hash or truncated version if the full text is too long.
      */
     val sourceTextHash: String? = null,
-    
     /**
      * Indicates whether this embedding needs regeneration.
-     * 
+     *
      * Set to true when:
      * - The source meme's text content changes
      * - The model version is outdated
      * - Manual regeneration is requested
      */
     val needsRegeneration: Boolean = false,
-
     /**
      * Number of times embedding generation has been attempted.
      * Used to track and limit retries for problematic memes.
      */
     val indexingAttempts: Int = 0,
-
     /**
      * Timestamp when embedding generation was last attempted (epoch millis).
      */
@@ -147,7 +138,7 @@ data class MemeEmbeddingEntity(
          * Update this when the embedding model changes.
          */
         const val CURRENT_MODEL_VERSION = "embeddinggemma:1.0.0"
-        
+
         /**
          * Default embedding dimension for the current model.
          * EmbeddingGemma produces 768-dimensional embeddings.
@@ -171,7 +162,7 @@ data class MemeWithEmbeddingData(
     val embedding: ByteArray?,
     val embeddingType: String?,
     val dimension: Int?,
-    val modelVersion: String?
+    val modelVersion: String?,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -184,7 +175,9 @@ data class MemeWithEmbeddingData(
         if (embedding != null) {
             if (other.embedding == null) return false
             if (!embedding.contentEquals(other.embedding)) return false
-        } else if (other.embedding != null) return false
+        } else if (other.embedding != null) {
+            return false
+        }
 
         return true
     }

@@ -12,7 +12,6 @@ import kotlinx.coroutines.flow.Flow
  */
 @Dao
 interface ShareTargetDao {
-
     /**
      * Returns all share targets ordered by usage frequency (most-used first).
      */
@@ -35,12 +34,17 @@ interface ShareTargetDao {
     /**
      * Record a share to a specific target.
      */
-    @Query("""
+    @Query(
+        """
         UPDATE share_targets 
         SET shareCount = shareCount + 1, lastSharedAt = :timestamp 
         WHERE packageName = :packageName
-    """)
-    suspend fun recordShare(packageName: String, timestamp: Long = System.currentTimeMillis()): Int
+    """,
+    )
+    suspend fun recordShare(
+        packageName: String,
+        timestamp: Long = System.currentTimeMillis(),
+    ): Int
 
     /**
      * Delete all share target history.

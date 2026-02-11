@@ -8,6 +8,8 @@ import kotlinx.coroutines.flow.Flow
  */
 interface ShareTargetRepository {
     fun getShareTargets(): Flow<List<ShareTarget>>
+
     suspend fun getTopShareTargets(limit: Int = 6): List<ShareTarget>
+
     suspend fun recordShare(target: ShareTarget)
 }

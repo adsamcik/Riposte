@@ -14,33 +14,27 @@ data class MemeFtsEntity(
      * File name for searching by name.
      */
     val fileName: String,
-    
     /**
      * JSON of emoji tags for emoji search.
      * Note: Contains both emoji characters and their names for better matching.
      */
     val emojiTagsJson: String,
-    
     /**
      * Title for text search.
      */
     val title: String?,
-    
     /**
      * Description for text search.
      */
     val description: String?,
-    
     /**
      * OCR-extracted text for content search.
      */
     val textContent: String?,
-
     /**
      * Search phrases for FTS search.
      */
     val searchPhrasesJson: String?,
-
     /**
      * Cultural source for search (e.g., "Drake Hotline Bling", "The Witcher 3").
      */

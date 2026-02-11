@@ -12,7 +12,6 @@ import kotlinx.coroutines.flow.Flow
  */
 @Dao
 interface EmojiTagDao {
-
     /**
      * Get all emoji tags for a specific meme.
      */
@@ -40,12 +39,14 @@ interface EmojiTagDao {
     /**
      * Get all unique emojis used in the database with their counts.
      */
-    @Query("""
+    @Query(
+        """
         SELECT emoji, emojiName, COUNT(*) as count 
         FROM emoji_tags 
         GROUP BY emoji 
         ORDER BY count DESC
-    """)
+    """,
+    )
     fun getAllEmojisWithCounts(): Flow<List<EmojiUsageStats>>
 
     /**
@@ -63,13 +64,18 @@ interface EmojiTagDao {
     /**
      * Get meme IDs that have all of the specified emojis.
      */
-    @Query("""
+    @Query(
+        """
         SELECT memeId FROM emoji_tags 
         WHERE emoji IN (:emojis)
         GROUP BY memeId 
         HAVING COUNT(DISTINCT emoji) = :count
-    """)
-    suspend fun getMemeIdsWithAllEmojis(emojis: List<String>, count: Int): List<Long>
+    """,
+    )
+    suspend fun getMemeIdsWithAllEmojis(
+        emojis: List<String>,
+        count: Int,
+    ): List<Long>
 }
 
 /**
@@ -78,5 +84,5 @@ interface EmojiTagDao {
 data class EmojiUsageStats(
     val emoji: String,
     val emojiName: String,
-    val count: Int
+    val count: Int,
 )

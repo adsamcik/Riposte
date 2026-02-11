@@ -12,13 +12,12 @@ import kotlinx.coroutines.flow.Flow
 
 /**
  * Data Access Object for meme embedding operations.
- * 
+ *
  * This DAO handles all operations related to semantic embeddings,
  * including storage, retrieval, and batch processing for search.
  */
 @Dao
 interface MemeEmbeddingDao {
-
     // ============ Insert Operations ============
 
     /**
@@ -65,7 +64,8 @@ interface MemeEmbeddingDao {
      * Joins meme data with embeddings for efficient search.
      */
     @Transaction
-    @Query("""
+    @Query(
+        """
         SELECT 
             m.id as memeId,
             m.filePath,
@@ -81,14 +81,16 @@ interface MemeEmbeddingDao {
         FROM memes m
         LEFT JOIN meme_embeddings e ON m.id = e.memeId
         WHERE e.embedding IS NOT NULL AND e.needsRegeneration = 0
-    """)
+    """,
+    )
     suspend fun getMemesWithEmbeddings(): List<MemeWithEmbeddingData>
 
     /**
      * Get memes with their embeddings as a Flow.
      */
     @Transaction
-    @Query("""
+    @Query(
+        """
         SELECT 
             m.id as memeId,
             m.filePath,
@@ -104,7 +106,8 @@ interface MemeEmbeddingDao {
         FROM memes m
         LEFT JOIN meme_embeddings e ON m.id = e.memeId
         WHERE e.embedding IS NOT NULL AND e.needsRegeneration = 0
-    """)
+    """,
+    )
     fun observeMemesWithEmbeddings(): Flow<List<MemeWithEmbeddingData>>
 
     // ============ Update Operations ============
@@ -159,32 +162,38 @@ interface MemeEmbeddingDao {
     /**
      * Get meme IDs that don't have embeddings yet.
      */
-    @Query("""
+    @Query(
+        """
         SELECT m.id FROM memes m
         LEFT JOIN meme_embeddings e ON m.id = e.memeId
         WHERE e.id IS NULL
         LIMIT :limit
-    """)
+    """,
+    )
     suspend fun getMemeIdsWithoutEmbeddings(limit: Int = 50): List<Long>
 
     /**
      * Get meme IDs that need embedding regeneration.
      */
-    @Query("""
+    @Query(
+        """
         SELECT memeId FROM meme_embeddings
         WHERE needsRegeneration = 1
         LIMIT :limit
-    """)
+    """,
+    )
     suspend fun getMemeIdsNeedingRegeneration(limit: Int = 50): List<Long>
 
     /**
      * Get total count of memes without embeddings.
      */
-    @Query("""
+    @Query(
+        """
         SELECT COUNT(*) FROM memes m
         LEFT JOIN meme_embeddings e ON m.id = e.memeId
         WHERE e.id IS NULL
-    """)
+    """,
+    )
     suspend fun countMemesWithoutEmbeddings(): Int
 
     /**
@@ -208,11 +217,13 @@ interface MemeEmbeddingDao {
     /**
      * Observe the count of memes without embeddings as a Flow.
      */
-    @Query("""
+    @Query(
+        """
         SELECT COUNT(*) FROM memes m
         LEFT JOIN meme_embeddings e ON m.id = e.memeId
         WHERE e.id IS NULL
-    """)
+    """,
+    )
     fun observeMemesWithoutEmbeddingsCount(): Flow<Int>
 
     // ============ Statistics ============
@@ -220,22 +231,26 @@ interface MemeEmbeddingDao {
     /**
      * Get embedding statistics by model version.
      */
-    @Query("""
+    @Query(
+        """
         SELECT modelVersion, COUNT(*) as count 
         FROM meme_embeddings 
         GROUP BY modelVersion
-    """)
+    """,
+    )
     suspend fun getEmbeddingCountByModelVersion(): List<EmbeddingVersionCount>
 
     /**
      * Check if a meme has a valid embedding.
      */
-    @Query("""
+    @Query(
+        """
         SELECT EXISTS(
             SELECT 1 FROM meme_embeddings 
             WHERE memeId = :memeId AND needsRegeneration = 0
         )
-    """)
+    """,
+    )
     suspend fun hasValidEmbedding(memeId: Long): Boolean
 }
 
@@ -244,5 +259,5 @@ interface MemeEmbeddingDao {
  */
 data class EmbeddingVersionCount(
     val modelVersion: String,
-    val count: Int
+    val count: Int,
 )

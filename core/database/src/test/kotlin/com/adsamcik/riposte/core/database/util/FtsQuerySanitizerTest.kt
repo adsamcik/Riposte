@@ -4,7 +4,6 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
 class FtsQuerySanitizerTest {
-
     // region sanitize() tests
 
     @Test
@@ -194,10 +193,11 @@ class FtsQuerySanitizerTest {
 
     @Test
     fun `prepareForColumns formats multiple terms and columns`() {
-        val result = FtsQuerySanitizer.prepareForColumns(
-            "hello world",
-            listOf("title", "description"),
-        )
+        val result =
+            FtsQuerySanitizer.prepareForColumns(
+                "hello world",
+                listOf("title", "description"),
+            )
         assertThat(result).contains("title:\"hello\"*")
         assertThat(result).contains("description:\"hello\"*")
         assertThat(result).contains("title:\"world\"*")

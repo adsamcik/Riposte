@@ -16,28 +16,26 @@ import androidx.room.Index
             entity = MemeEntity::class,
             parentColumns = ["id"],
             childColumns = ["memeId"],
-            onDelete = ForeignKey.CASCADE
-        )
+            onDelete = ForeignKey.CASCADE,
+        ),
     ],
     indices = [
         Index(value = ["emoji"]),
-        Index(value = ["memeId"])
-    ]
+        Index(value = ["memeId"]),
+    ],
 )
 data class EmojiTagEntity(
     /**
      * Foreign key to the meme.
      */
     val memeId: Long,
-    
     /**
      * The emoji character (e.g., "😂").
      */
     val emoji: String,
-    
     /**
      * The standardized name of the emoji (e.g., "face_with_tears_of_joy").
      * Used for search and display.
      */
-    val emojiName: String
+    val emojiName: String,
 )

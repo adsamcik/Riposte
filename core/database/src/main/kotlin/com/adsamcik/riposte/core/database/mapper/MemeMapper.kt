@@ -12,16 +12,16 @@ import kotlinx.serialization.json.Json
  * Maps between database entities and domain models.
  */
 object MemeMapper {
-
     private val json = Json { ignoreUnknownKeys = true }
 
     /**
      * Converts a MemeEntity to a Meme domain model.
      */
     fun MemeEntity.toDomain(emojiTags: List<EmojiTagEntity>? = null): Meme {
-        val parsedEmojis = emojiTags?.map { it.toDomain() } 
-            ?: parseEmojiTagsJson(emojiTagsJson)
-        
+        val parsedEmojis =
+            emojiTags?.map { it.toDomain() }
+                ?: parseEmojiTagsJson(emojiTagsJson)
+
         return Meme(
             id = id,
             filePath = filePath,
@@ -82,7 +82,7 @@ object MemeMapper {
     fun EmojiTagEntity.toDomain(): EmojiTag {
         return EmojiTag(
             emoji = emoji,
-            name = emojiName
+            name = emojiName,
         )
     }
 
@@ -93,7 +93,7 @@ object MemeMapper {
         return EmojiTagEntity(
             memeId = memeId,
             emoji = emoji,
-            emojiName = name
+            emojiName = name,
         )
     }
 

@@ -41,22 +41,22 @@ abstract class MemeDatabase : RoomDatabase() {
          */
         const val LATEST_VERSION = 4
     }
-    
+
     /**
      * DAO for meme CRUD operations.
      */
     abstract fun memeDao(): MemeDao
-    
+
     /**
      * DAO for full-text search operations.
      */
     abstract fun memeSearchDao(): MemeSearchDao
-    
+
     /**
      * DAO for emoji tag operations.
      */
     abstract fun emojiTagDao(): EmojiTagDao
-    
+
     /**
      * DAO for embedding operations.
      */

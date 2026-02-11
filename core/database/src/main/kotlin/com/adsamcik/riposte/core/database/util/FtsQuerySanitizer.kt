@@ -11,7 +11,6 @@ package com.adsamcik.riposte.core.database.util
  * This utility removes these dangerous patterns and prepares safe query strings.
  */
 object FtsQuerySanitizer {
-
     /**
      * Default minimum grapheme length for search terms.
      * ASCII-only terms shorter than this are filtered out.
@@ -62,22 +61,25 @@ object FtsQuerySanitizer {
         if (query.isBlank()) return ""
 
         // Step 1: Remove Unicode control characters
-        val withoutControlChars = query
-            .replace(RTL_MARKS_REGEX, "")
-            .replace(VARIATION_SELECTORS_REGEX, "")
+        val withoutControlChars =
+            query
+                .replace(RTL_MARKS_REGEX, "")
+                .replace(VARIATION_SELECTORS_REGEX, "")
 
         // Step 2: Remove FTS special characters and operators
-        val sanitized = withoutControlChars
-            .replace(FTS_SPECIAL_CHARS_REGEX, " ")
-            .replace(FTS_OPERATORS_REGEX, " ")
+        val sanitized =
+            withoutControlChars
+                .replace(FTS_SPECIAL_CHARS_REGEX, " ")
+                .replace(FTS_OPERATORS_REGEX, " ")
 
         // Step 3: Split, filter, and limit terms
-        val terms = sanitized
-            .split(WHITESPACE_REGEX)
-            .filter { term ->
-                term.isNotBlank() && isValidSearchTerm(term, minTermLength)
-            }
-            .take(maxTerms)
+        val terms =
+            sanitized
+                .split(WHITESPACE_REGEX)
+                .filter { term ->
+                    term.isNotBlank() && isValidSearchTerm(term, minTermLength)
+                }
+                .take(maxTerms)
 
         return terms.joinToString(" ").trim()
     }
@@ -101,22 +103,25 @@ object FtsQuerySanitizer {
         if (query.isBlank()) return ""
 
         // Step 1: Remove Unicode control characters
-        val withoutControlChars = query
-            .replace(RTL_MARKS_REGEX, "")
-            .replace(VARIATION_SELECTORS_REGEX, "")
+        val withoutControlChars =
+            query
+                .replace(RTL_MARKS_REGEX, "")
+                .replace(VARIATION_SELECTORS_REGEX, "")
 
         // Step 2: Remove FTS special characters and operators
-        val sanitized = withoutControlChars
-            .replace(FTS_SPECIAL_CHARS_REGEX, " ")
-            .replace(FTS_OPERATORS_REGEX, " ")
+        val sanitized =
+            withoutControlChars
+                .replace(FTS_SPECIAL_CHARS_REGEX, " ")
+                .replace(FTS_OPERATORS_REGEX, " ")
 
         // Step 3: Split, filter, and limit terms
-        val terms = sanitized
-            .split(WHITESPACE_REGEX)
-            .filter { term ->
-                term.isNotBlank() && isValidSearchTerm(term, minTermLength)
-            }
-            .take(maxTerms)
+        val terms =
+            sanitized
+                .split(WHITESPACE_REGEX)
+                .filter { term ->
+                    term.isNotBlank() && isValidSearchTerm(term, minTermLength)
+                }
+                .take(maxTerms)
 
         if (terms.isEmpty()) return ""
 
@@ -144,16 +149,18 @@ object FtsQuerySanitizer {
     ): String {
         if (query.isBlank() || columns.isEmpty()) return ""
 
-        val sanitized = query
-            .replace(FTS_SPECIAL_CHARS_REGEX, " ")
-            .replace(FTS_OPERATORS_REGEX, " ")
+        val sanitized =
+            query
+                .replace(FTS_SPECIAL_CHARS_REGEX, " ")
+                .replace(FTS_OPERATORS_REGEX, " ")
 
-        val terms = sanitized
-            .split(WHITESPACE_REGEX)
-            .filter { term ->
-                term.isNotBlank() && isValidSearchTerm(term, minTermLength)
-            }
-            .take(maxTerms)
+        val terms =
+            sanitized
+                .split(WHITESPACE_REGEX)
+                .filter { term ->
+                    term.isNotBlank() && isValidSearchTerm(term, minTermLength)
+                }
+                .take(maxTerms)
 
         if (terms.isEmpty()) return ""
 
@@ -178,10 +185,11 @@ object FtsQuerySanitizer {
         if (emoji.isBlank()) return ""
 
         // Remove FTS special characters while preserving emoji
-        val sanitized = emoji
-            .replace(FTS_SPECIAL_CHARS_REGEX, "")
-            .replace(VARIATION_SELECTORS_REGEX, "")
-            .trim()
+        val sanitized =
+            emoji
+                .replace(FTS_SPECIAL_CHARS_REGEX, "")
+                .replace(VARIATION_SELECTORS_REGEX, "")
+                .trim()
 
         if (sanitized.isBlank()) return ""
 
@@ -198,7 +206,10 @@ object FtsQuerySanitizer {
      * @param minLength Minimum length for ASCII-only terms
      * @return true if the term is valid for searching
      */
-    fun isValidSearchTerm(term: String, minLength: Int = DEFAULT_MIN_TERM_LENGTH): Boolean {
+    fun isValidSearchTerm(
+        term: String,
+        minLength: Int = DEFAULT_MIN_TERM_LENGTH,
+    ): Boolean {
         if (term.isBlank()) return false
 
         // If the term contains any non-ASCII character, it's valid (emoji, CJK, etc.)

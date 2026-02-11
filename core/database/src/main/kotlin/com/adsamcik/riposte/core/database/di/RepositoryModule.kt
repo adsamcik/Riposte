@@ -11,10 +11,7 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class RepositoryModule {
-
     @Binds
     @Singleton
-    abstract fun bindShareTargetRepository(
-        impl: ShareTargetRepositoryImpl
-    ): ShareTargetRepository
+    abstract fun bindShareTargetRepository(impl: ShareTargetRepositoryImpl): ShareTargetRepository
 }

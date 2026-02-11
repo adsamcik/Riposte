@@ -16,101 +16,83 @@ import androidx.room.PrimaryKey
         Index(value = ["viewCount"]),
         Index(value = ["lastViewedAt"]),
         Index(value = ["fileHash"]),
-    ]
+    ],
 )
 data class MemeEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
-    
     /**
      * Absolute path to the image file in app storage.
      */
     val filePath: String,
-    
     /**
      * Original file name.
      */
     val fileName: String,
-    
     /**
      * MIME type (e.g., "image/png", "image/jpeg").
      */
     val mimeType: String,
-    
     /**
      * Image width in pixels.
      */
     val width: Int,
-    
     /**
      * Image height in pixels.
      */
     val height: Int,
-    
     /**
      * File size in bytes.
      */
     val fileSizeBytes: Long,
-    
     /**
      * Timestamp when the meme was imported (epoch millis).
      */
     val importedAt: Long,
-    
     /**
      * JSON array of emoji characters associated with this meme.
      * Example: ["😂", "🔥", "💯"]
      */
     val emojiTagsJson: String,
-    
     /**
      * Optional title for the meme.
      */
     val title: String? = null,
-    
     /**
      * Optional description.
      */
     val description: String? = null,
-    
     /**
      * OCR-extracted text content from the image.
      */
     val textContent: String? = null,
-
     /**
      * JSON array of natural language search phrases.
      * Example: ["that feeling when code works", "confused programmer"]
      */
     val searchPhrasesJson: String? = null,
-
     /**
      * Serialized embedding vector for semantic search (FloatArray as ByteArray).
      */
     val embedding: ByteArray? = null,
-    
     /**
      * Whether this meme is marked as favorite.
      */
     val isFavorite: Boolean = false,
-    
     /**
      * Timestamp when the original image was created (epoch millis).
      * Falls back to importedAt if not available.
      */
     val createdAt: Long = importedAt,
-    
     /**
      * Number of times this meme has been shared or used.
      */
     val useCount: Int = 0,
-    
     /**
      * BCP 47 language code of the primary content (title, description, tags).
      * Examples: "en", "cs", "de", "zh-TW"
      */
     val primaryLanguage: String? = null,
-    
     /**
      * JSON object containing localized content for additional languages.
      * Keys are BCP 47 language codes, values are objects with title, description,
@@ -118,17 +100,14 @@ data class MemeEntity(
      * Example: {"cs": {"title": "...", "description": "...", "tags": [...]}}
      */
     val localizationsJson: String? = null,
-
     /**
      * Number of times this meme has been viewed.
      */
     val viewCount: Int = 0,
-
     /**
      * Timestamp when this meme was last viewed (epoch millis).
      */
     val lastViewedAt: Long? = null,
-
     /**
      * SHA-256 hash of the imported image file for duplicate detection.
      */
@@ -162,7 +141,9 @@ data class MemeEntity(
         if (embedding != null) {
             if (other.embedding == null) return false
             if (!embedding.contentEquals(other.embedding)) return false
-        } else if (other.embedding != null) return false
+        } else if (other.embedding != null) {
+            return false
+        }
         if (isFavorite != other.isFavorite) return false
         if (createdAt != other.createdAt) return false
         if (useCount != other.useCount) return false

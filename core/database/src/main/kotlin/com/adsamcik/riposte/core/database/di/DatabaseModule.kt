@@ -20,16 +20,15 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
-
     @Provides
     @Singleton
     fun provideMemeDatabase(
-        @ApplicationContext context: Context
+        @ApplicationContext context: Context,
     ): MemeDatabase {
         return Room.databaseBuilder(
             context,
             MemeDatabase::class.java,
-            "riposte.db"
+            "riposte.db",
         )
             .addMigrations(*ALL_MIGRATIONS)
             .build()

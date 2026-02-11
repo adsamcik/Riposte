@@ -6,7 +6,6 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import androidx.room.Transaction
 import androidx.room.Update
 import com.adsamcik.riposte.core.database.entity.MemeEntity
 import kotlinx.coroutines.flow.Flow
@@ -16,7 +15,6 @@ import kotlinx.coroutines.flow.Flow
  */
 @Dao
 interface MemeDao {
-
     /**
      * Get all memes ordered by import date (newest first).
      */
@@ -93,13 +91,19 @@ interface MemeDao {
      * Set favorite status for a meme.
      */
     @Query("UPDATE memes SET isFavorite = :isFavorite WHERE id = :id")
-    suspend fun setFavorite(id: Long, isFavorite: Boolean)
+    suspend fun setFavorite(
+        id: Long,
+        isFavorite: Boolean,
+    )
 
     /**
      * Update the embedding for a meme (for semantic search).
      */
     @Query("UPDATE memes SET embedding = :embedding WHERE id = :id")
-    suspend fun updateEmbedding(id: Long, embedding: ByteArray)
+    suspend fun updateEmbedding(
+        id: Long,
+        embedding: ByteArray,
+    )
 
     /**
      * Get memes that don't have embeddings yet (for batch processing).
@@ -134,12 +138,14 @@ interface MemeDao {
     /**
      * Get memes by emoji tag.
      */
-    @Query("""
+    @Query(
+        """
         SELECT m.* FROM memes m
         INNER JOIN emoji_tags e ON m.id = e.memeId
         WHERE e.emoji = :emoji
         ORDER BY m.importedAt DESC
-    """)
+    """,
+    )
     fun getMemesByEmoji(emoji: String): Flow<List<MemeEntity>>
 
     /**
@@ -195,7 +201,10 @@ interface MemeDao {
      * Increment the view count and update last viewed timestamp.
      */
     @Query("UPDATE memes SET viewCount = viewCount + 1, lastViewedAt = :timestamp WHERE id = :id")
-    suspend fun recordView(id: Long, timestamp: Long = System.currentTimeMillis())
+    suspend fun recordView(
+        id: Long,
+        timestamp: Long = System.currentTimeMillis(),
+    )
 
     /**
      * Get recently viewed memes ordered by last view time (most recent first).
