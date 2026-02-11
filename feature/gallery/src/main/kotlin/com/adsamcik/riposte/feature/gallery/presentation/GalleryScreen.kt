@@ -1,5 +1,7 @@
 package com.adsamcik.riposte.feature.gallery.presentation
 
+import android.content.res.Configuration
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
@@ -11,8 +13,8 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -32,13 +34,8 @@ import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.paging.LoadState
-import androidx.paging.compose.LazyPagingItems
-import androidx.paging.compose.collectAsLazyPagingItems
-import com.adsamcik.riposte.core.model.Meme
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
@@ -55,7 +52,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ripple
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -67,6 +63,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -84,21 +81,24 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
-import androidx.compose.ui.unit.dp
-import android.content.res.Configuration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.paging.LoadState
+import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.collectAsLazyPagingItems
 import com.adsamcik.riposte.core.model.MatchType
+import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.core.model.SearchResult
-import com.adsamcik.riposte.core.ui.component.EmptyState
 import com.adsamcik.riposte.core.ui.component.EmojiFilterRail
+import com.adsamcik.riposte.core.ui.component.EmptyState
 import com.adsamcik.riposte.core.ui.component.ErrorState
 import com.adsamcik.riposte.core.ui.component.LoadingScreen
 import com.adsamcik.riposte.core.ui.component.MemeCardCompact
@@ -106,7 +106,6 @@ import com.adsamcik.riposte.core.ui.modifier.animatedPressScale
 import com.adsamcik.riposte.core.ui.theme.MoodShapes
 import com.adsamcik.riposte.core.ui.theme.rememberGridColumns
 import com.adsamcik.riposte.feature.gallery.R
-import androidx.compose.ui.text.style.TextOverflow
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -115,7 +114,7 @@ fun GalleryScreen(
     onNavigateToImport: () -> Unit,
     onNavigateToSettings: () -> Unit,
     onNavigateToShare: (Long) -> Unit = {},
-    viewModel: GalleryViewModel = hiltViewModel()
+    viewModel: GalleryViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val pagedMemes = viewModel.pagedMemes.collectAsLazyPagingItems()
@@ -146,15 +145,26 @@ fun GalleryScreen(
                 is GalleryEffect.CopyToClipboard -> {
                     val meme = uiState.memes.find { it.id == effect.memeId }
                     if (meme != null) {
-                        val uri = androidx.core.content.FileProvider.getUriForFile(
-                            context,
-                            "${context.packageName}.fileprovider",
-                            java.io.File(meme.filePath),
-                        )
-                        val clip = android.content.ClipData.newUri(context.contentResolver, meme.title ?: meme.fileName, uri)
-                        val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                        val uri =
+                            androidx.core.content.FileProvider.getUriForFile(
+                                context,
+                                "${context.packageName}.fileprovider",
+                                java.io.File(meme.filePath),
+                            )
+                        val clip =
+                            android.content.ClipData.newUri(
+                                context.contentResolver,
+                                meme.title ?: meme.fileName,
+                                uri,
+                            )
+                        val clipboard =
+                            context.getSystemService(
+                                android.content.Context.CLIPBOARD_SERVICE,
+                            ) as android.content.ClipboardManager
                         clipboard.setPrimaryClip(clip)
-                        snackbarHostState.showSnackbar(context.getString(com.adsamcik.riposte.core.ui.R.string.quick_share_copy_clipboard))
+                        snackbarHostState.showSnackbar(
+                            context.getString(com.adsamcik.riposte.core.ui.R.string.quick_share_copy_clipboard),
+                        )
                     }
                 }
             }
@@ -247,7 +257,7 @@ private fun GalleryScreenContent(
                     onClick = {
                         onShowDeleteDialogChange(false)
                         onIntent(GalleryIntent.ConfirmDelete)
-                    }
+                    },
                 ) {
                     Text(stringResource(R.string.gallery_button_delete), color = MaterialTheme.colorScheme.error)
                 }
@@ -257,11 +267,11 @@ private fun GalleryScreenContent(
                     onClick = {
                         onShowDeleteDialogChange(false)
                         onIntent(GalleryIntent.CancelDelete)
-                    }
+                    },
                 ) {
                     Text(stringResource(R.string.gallery_button_cancel))
                 }
-            }
+            },
         )
     }
 
@@ -288,7 +298,13 @@ private fun GalleryScreenContent(
             TopAppBar(
                 title = {
                     if (uiState.isSelectionMode) {
-                        Text(pluralStringResource(R.plurals.gallery_selected_count, uiState.selectionCount, uiState.selectionCount))
+                        Text(
+                            pluralStringResource(
+                                R.plurals.gallery_selected_count,
+                                uiState.selectionCount,
+                                uiState.selectionCount,
+                            ),
+                        )
                     } else {
                         com.adsamcik.riposte.core.ui.component.SearchBar(
                             query = uiState.searchState.query,
@@ -301,40 +317,55 @@ private fun GalleryScreenContent(
                 navigationIcon = {
                     if (uiState.isSelectionMode) {
                         IconButton(onClick = { onIntent(GalleryIntent.ClearSelection) }) {
-                            Icon(Icons.Default.Close, contentDescription = stringResource(R.string.gallery_cd_cancel_selection))
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = stringResource(R.string.gallery_cd_cancel_selection),
+                            )
                         }
                     } else if (uiState.screenMode == ScreenMode.Searching) {
                         IconButton(onClick = { onIntent(GalleryIntent.ClearSearch) }) {
-                            Icon(Icons.Default.Close, contentDescription = stringResource(R.string.gallery_cd_clear_filter))
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = stringResource(R.string.gallery_cd_clear_filter),
+                            )
                         }
                     } else if (uiState.filter !is GalleryFilter.All || uiState.activeEmojiFilters.isNotEmpty()) {
                         IconButton(onClick = {
                             onIntent(GalleryIntent.ClearEmojiFilters)
                             onIntent(GalleryIntent.SetFilter(GalleryFilter.All))
                         }) {
-                            Icon(Icons.Default.Close, contentDescription = stringResource(R.string.gallery_cd_clear_filter))
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = stringResource(R.string.gallery_cd_clear_filter),
+                            )
                         }
                     }
                 },
                 actions = {
                     if (uiState.isSelectionMode) {
                         IconButton(onClick = { onIntent(GalleryIntent.SelectAll) }) {
-                            Icon(Icons.Default.SelectAll, contentDescription = stringResource(R.string.gallery_cd_select_all))
+                            Icon(
+                                Icons.Default.SelectAll,
+                                contentDescription = stringResource(R.string.gallery_cd_select_all),
+                            )
                         }
                     } else {
                         IconButton(onClick = { onShowMenuChange(true) }) {
-                            Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.gallery_cd_more_options))
+                            Icon(
+                                Icons.Default.MoreVert,
+                                contentDescription = stringResource(R.string.gallery_cd_more_options),
+                            )
                         }
                         DropdownMenu(
                             expanded = showMenu,
-                            onDismissRequest = { onShowMenuChange(false) }
+                            onDismissRequest = { onShowMenuChange(false) },
                         ) {
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.gallery_menu_all_memes)) },
                                 onClick = {
                                     onIntent(GalleryIntent.SetFilter(GalleryFilter.All))
                                     onShowMenuChange(false)
-                                }
+                                },
                             )
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.gallery_menu_favorites)) },
@@ -342,7 +373,7 @@ private fun GalleryScreenContent(
                                 onClick = {
                                     onIntent(GalleryIntent.SetFilter(GalleryFilter.Favorites))
                                     onShowMenuChange(false)
-                                }
+                                },
                             )
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.gallery_menu_select)) },
@@ -350,26 +381,26 @@ private fun GalleryScreenContent(
                                 onClick = {
                                     onIntent(GalleryIntent.EnterSelectionMode)
                                     onShowMenuChange(false)
-                                }
+                                },
                             )
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.gallery_menu_settings)) },
                                 onClick = {
                                     onNavigateToSettings()
                                     onShowMenuChange(false)
-                                }
+                                },
                             )
                         }
                     }
                 },
-                scrollBehavior = scrollBehavior
+                scrollBehavior = scrollBehavior,
             )
         },
         bottomBar = {
             AnimatedVisibility(
                 visible = uiState.isSelectionMode,
                 enter = slideInVertically { it } + fadeIn(),
-                exit = slideOutVertically { it } + fadeOut()
+                exit = slideOutVertically { it } + fadeOut(),
             ) {
                 BottomAppBar {
                     Row(
@@ -381,7 +412,10 @@ private fun GalleryScreenContent(
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
                             IconButton(onClick = { onIntent(GalleryIntent.ShareSelected) }) {
-                                Icon(Icons.Default.Share, contentDescription = stringResource(R.string.gallery_cd_share))
+                                Icon(
+                                    Icons.Default.Share,
+                                    contentDescription = stringResource(R.string.gallery_cd_share),
+                                )
                             }
                             Text(
                                 text = stringResource(R.string.gallery_cd_share),
@@ -413,21 +447,22 @@ private fun GalleryScreenContent(
             AnimatedVisibility(
                 visible = !uiState.isSelectionMode,
                 enter = fadeIn(),
-                exit = fadeOut()
+                exit = fadeOut(),
             ) {
                 FloatingActionButton(
-                    onClick = { onIntent(GalleryIntent.NavigateToImport) }
+                    onClick = { onIntent(GalleryIntent.NavigateToImport) },
                 ) {
                     Icon(Icons.Default.Add, contentDescription = stringResource(R.string.gallery_cd_import_memes))
                 }
             }
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { paddingValues ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
         ) {
             when {
                 uiState.screenMode == ScreenMode.Searching -> {
@@ -458,46 +493,50 @@ private fun GalleryScreenContent(
                                     )
                                 }
                             }
-                        }
-                        // Loading indicator
-                        else if (uiState.searchState.isSearching) {
+                        } else if (uiState.searchState.isSearching) {
+                            // Loading indicator
                             item(span = { GridItemSpan(maxLineSpan) }, key = "search_loading") {
                                 val searchingDescription = stringResource(R.string.gallery_cd_searching)
                                 Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(32.dp)
-                                        .semantics {
-                                            contentDescription = searchingDescription
-                                            liveRegion = LiveRegionMode.Polite
-                                        },
+                                    modifier =
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .padding(32.dp)
+                                            .semantics {
+                                                contentDescription = searchingDescription
+                                                liveRegion = LiveRegionMode.Polite
+                                            },
                                     contentAlignment = Alignment.Center,
                                 ) {
                                     CircularProgressIndicator()
                                 }
                             }
-                        }
-                        // Error state
-                        else if (uiState.searchState.errorMessage != null) {
+                        } else if (uiState.searchState.errorMessage != null) {
+                            // Error state
                             item(span = { GridItemSpan(maxLineSpan) }, key = "search_error") {
                                 ErrorState(
                                     message = uiState.searchState.errorMessage.orEmpty(),
                                     onRetry = { onIntent(GalleryIntent.UpdateSearchQuery(uiState.searchState.query)) },
                                 )
                             }
-                        }
-                        // No results
-                        else if (uiState.searchState.hasSearched && uiState.searchState.results.isEmpty()) {
+                        } else if (uiState.searchState.hasSearched && uiState.searchState.results.isEmpty()) {
+                            // No results
                             item(span = { GridItemSpan(maxLineSpan) }, key = "search_no_results") {
                                 EmptyState(
                                     icon = "🔍",
-                                    title = stringResource(com.adsamcik.riposte.core.search.R.string.search_no_results_title),
-                                    message = stringResource(com.adsamcik.riposte.core.search.R.string.search_no_results_description, uiState.searchState.query),
+                                    title =
+                                        stringResource(
+                                            com.adsamcik.riposte.core.search.R.string.search_no_results_title,
+                                        ),
+                                    message =
+                                        stringResource(
+                                            com.adsamcik.riposte.core.search.R.string.search_no_results_description,
+                                            uiState.searchState.query,
+                                        ),
                                 )
                             }
-                        }
-                        // Search results
-                        else if (uiState.searchState.results.isNotEmpty()) {
+                        } else if (uiState.searchState.results.isNotEmpty()) {
+                            // Search results
                             // Results header
                             item(span = { GridItemSpan(maxLineSpan) }, key = "search_results_header") {
                                 com.adsamcik.riposte.core.ui.component.SearchResultsHeader(
@@ -548,7 +587,7 @@ private fun GalleryScreenContent(
                 uiState.usePaging && pagedMemes != null -> {
                     // Handle paging load states
                     val loadState = pagedMemes.loadState
-                    
+
                     when {
                         loadState.refresh is LoadState.Loading -> {
                             LoadingScreen(
@@ -576,61 +615,67 @@ private fun GalleryScreenContent(
                         else -> {
                             // Compute paging-specific derived state in Compose
                             // (paged items are not available in ViewModel)
-                            val uniqueEmojis = remember(pagedMemes.itemCount) {
-                                (0 until pagedMemes.itemCount)
-                                    .mapNotNull { pagedMemes.peek(it) }
-                                    .flatMap { meme -> meme.emojiTags.map { it.emoji } }
-                                    .groupingBy { it }
-                                    .eachCount()
-                                    .toList()
-                                    .sortedByDescending { it.second }
-                            }
+                            val uniqueEmojis =
+                                remember(pagedMemes.itemCount) {
+                                    (0 until pagedMemes.itemCount)
+                                        .mapNotNull { pagedMemes.peek(it) }
+                                        .flatMap { meme -> meme.emojiTags.map { it.emoji } }
+                                        .groupingBy { it }
+                                        .eachCount()
+                                        .toList()
+                                        .sortedByDescending { it.second }
+                                }
 
-                            val suggestionIds = remember(uiState.suggestions) {
-                                uiState.suggestions.map { it.id }.toSet()
-                            }
+                            val suggestionIds =
+                                remember(uiState.suggestions) {
+                                    uiState.suggestions.map { it.id }.toSet()
+                                }
 
-                            val filteredMemeIndices = remember(pagedMemes.itemCount, uiState.activeEmojiFilters, suggestionIds) {
-                                val indices = if (uiState.activeEmojiFilters.isEmpty()) {
-                                    (0 until pagedMemes.itemCount).toList()
-                                } else {
-                                    (0 until pagedMemes.itemCount).filter { index ->
+                            val filteredMemeIndices =
+                                remember(pagedMemes.itemCount, uiState.activeEmojiFilters, suggestionIds) {
+                                    val indices =
+                                        if (uiState.activeEmojiFilters.isEmpty()) {
+                                            (0 until pagedMemes.itemCount).toList()
+                                        } else {
+                                            (0 until pagedMemes.itemCount).filter { index ->
+                                                val meme = pagedMemes.peek(index)
+                                                meme != null &&
+                                                    meme.emojiTags.any { it.emoji in uiState.activeEmojiFilters }
+                                            }
+                                        }
+                                    // Exclude suggestions — they are shown first
+                                    indices.filter { index ->
                                         val meme = pagedMemes.peek(index)
-                                        meme != null && meme.emojiTags.any { it.emoji in uiState.activeEmojiFilters }
+                                        meme == null || meme.id !in suggestionIds
                                     }
                                 }
-                                // Exclude suggestions — they are shown first
-                                indices.filter { index ->
-                                    val meme = pagedMemes.peek(index)
-                                    meme == null || meme.id !in suggestionIds
-                                }
-                            }
 
                             // Detect emoji group boundaries for section headers
-                            val emojiSectionHeaders = remember(filteredMemeIndices) {
-                                val headers = mutableMapOf<Int, Pair<String, Int>>()
-                                var currentEmoji: String? = null
-                                var currentStartIdx = 0
-                                var currentCount = 0
-                                filteredMemeIndices.forEachIndexed { filteredIdx, originalIdx ->
-                                    val meme = pagedMemes.peek(originalIdx)
-                                    val emoji = meme?.emojiTags?.firstOrNull()?.emoji ?: "❓"
-                                    if (emoji != currentEmoji) {
-                                        if (currentEmoji != null) {
-                                            headers[currentStartIdx] = currentEmoji!! to currentCount
+                            val emojiSectionHeaders =
+                                remember(filteredMemeIndices) {
+                                    val headers = mutableMapOf<Int, Pair<String, Int>>()
+                                    var currentEmoji: String? = null
+                                    var currentStartIdx = 0
+                                    var currentCount = 0
+                                    filteredMemeIndices.forEachIndexed { filteredIdx, originalIdx ->
+                                        val meme = pagedMemes.peek(originalIdx)
+                                        val emoji = meme?.emojiTags?.firstOrNull()?.emoji ?: "❓"
+                                        if (emoji != currentEmoji) {
+                                            if (currentEmoji != null) {
+                                                headers[currentStartIdx] = currentEmoji!! to currentCount
+                                            }
+                                            currentEmoji = emoji
+                                            currentStartIdx = filteredIdx
+                                            currentCount = 1
+                                        } else {
+                                            currentCount++
                                         }
-                                        currentEmoji = emoji
-                                        currentStartIdx = filteredIdx
-                                        currentCount = 1
-                                    } else {
-                                        currentCount++
                                     }
+                                    if (currentEmoji != null) {
+                                        headers[currentStartIdx] = currentEmoji!! to currentCount
+                                    }
+                                    headers
                                 }
-                                if (currentEmoji != null) {
-                                    headers[currentStartIdx] = currentEmoji!! to currentCount
-                                }
-                                headers
-                            }
 
                             GalleryContent(
                                 uiState = uiState,
@@ -705,9 +750,10 @@ private fun GalleryScreenContent(
                                         key = "append_loading",
                                     ) {
                                         Box(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(16.dp),
+                                            modifier =
+                                                Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(16.dp),
                                             contentAlignment = Alignment.Center,
                                         ) {
                                             CircularProgressIndicator(
@@ -737,18 +783,21 @@ private fun GalleryScreenContent(
                 }
                 else -> {
                     // Non-paged list view (Favorites, ByEmoji filters)
-                    val suggestionIds = remember(uiState.suggestions) {
-                        uiState.suggestions.map { it.id }.toSet()
-                    }
-                    val nonSuggestionMemes = remember(uiState.filteredMemes, suggestionIds) {
-                        uiState.filteredMemes.filter { it.id !in suggestionIds }
-                    }
-
-                    val emojiGroups = remember(nonSuggestionMemes) {
-                        nonSuggestionMemes.groupBy { meme ->
-                            meme.emojiTags.firstOrNull()?.emoji ?: "❓"
+                    val suggestionIds =
+                        remember(uiState.suggestions) {
+                            uiState.suggestions.map { it.id }.toSet()
                         }
-                    }
+                    val nonSuggestionMemes =
+                        remember(uiState.filteredMemes, suggestionIds) {
+                            uiState.filteredMemes.filter { it.id !in suggestionIds }
+                        }
+
+                    val emojiGroups =
+                        remember(nonSuggestionMemes) {
+                            nonSuggestionMemes.groupBy { meme ->
+                                meme.emojiTags.firstOrNull()?.emoji ?: "❓"
+                            }
+                        }
 
                     GalleryContent(
                         uiState = uiState,
@@ -923,12 +972,13 @@ private fun EmojiSectionScrollIndicator(
             Text(
                 text = emoji,
                 style = MaterialTheme.typography.displaySmall,
-                modifier = Modifier
-                    .background(
-                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                        shape = RoundedCornerShape(50),
-                    )
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                modifier =
+                    Modifier
+                        .background(
+                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                            shape = RoundedCornerShape(50),
+                        )
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
             )
         }
     }
@@ -944,9 +994,10 @@ private fun EmojiSectionHeader(
     modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 8.dp),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -993,18 +1044,20 @@ internal fun MemeGridItem(
         )
         val borderWidth by animateDpAsState(
             targetValue = if (isSelected) 3.dp else 0.dp,
-            animationSpec = spring(
-                dampingRatio = Spring.DampingRatioMediumBouncy,
-                stiffness = Spring.StiffnessMedium,
-            ),
+            animationSpec =
+                spring(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessMedium,
+                ),
             label = "borderWidth",
         )
         val checkScale by animateFloatAsState(
             targetValue = if (isSelected) 1f else 0.6f,
-            animationSpec = spring(
-                dampingRatio = Spring.DampingRatioMediumBouncy,
-                stiffness = Spring.StiffnessMedium,
-            ),
+            animationSpec =
+                spring(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessMedium,
+                ),
             label = "checkScale",
         )
         val checkBgColor by animateColorAsState(
@@ -1014,19 +1067,20 @@ internal fun MemeGridItem(
         )
 
         Box(
-            modifier = Modifier
-                .animatedPressScale(interactionSource)
-                .combinedClickable(
-                    interactionSource = interactionSource,
-                    indication = ripple(),
-                    onClick = { onIntent(GalleryIntent.ToggleSelection(meme.id)) },
-                    onLongClick = { /* No long click in selection mode */ },
-                )
-                .semantics(mergeDescendants = true) {
-                    contentDescription = memeDescription
-                    stateDescription = if (isSelected) selectedText else notSelectedText
-                    role = Role.Checkbox
-                },
+            modifier =
+                Modifier
+                    .animatedPressScale(interactionSource)
+                    .combinedClickable(
+                        interactionSource = interactionSource,
+                        indication = ripple(),
+                        onClick = { onIntent(GalleryIntent.ToggleSelection(meme.id)) },
+                        onLongClick = { /* No long click in selection mode */ },
+                    )
+                    .semantics(mergeDescendants = true) {
+                        contentDescription = memeDescription
+                        stateDescription = if (isSelected) selectedText else notSelectedText
+                        role = Role.Checkbox
+                    },
         ) {
             MemeCardCompact(
                 meme = meme,
@@ -1034,50 +1088,53 @@ internal fun MemeGridItem(
 
             // Animated scrim overlay (respects card shape)
             Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .clip(MoodShapes.MemeCard)
-                    .background(MaterialTheme.colorScheme.scrim.copy(alpha = overlayAlpha)),
+                modifier =
+                    Modifier
+                        .matchParentSize()
+                        .clip(MoodShapes.MemeCard)
+                        .background(MaterialTheme.colorScheme.scrim.copy(alpha = overlayAlpha)),
             )
 
             // Primary color border for selected items
             if (borderWidth > 0.dp) {
                 Box(
-                    modifier = Modifier
-                        .matchParentSize()
-                        .border(
-                            width = borderWidth,
-                            color = primaryColor,
-                            shape = MoodShapes.MemeCard,
-                        ),
+                    modifier =
+                        Modifier
+                            .matchParentSize()
+                            .border(
+                                width = borderWidth,
+                                color = primaryColor,
+                                shape = MoodShapes.MemeCard,
+                            ),
                 )
             }
 
             // Circular check indicator
             Box(
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(6.dp)
-                    .size(24.dp)
-                    .graphicsLayer {
-                        scaleX = checkScale
-                        scaleY = checkScale
-                    }
-                    .background(
-                        color = checkBgColor,
-                        shape = CircleShape,
-                    )
-                    .then(
-                        if (!isSelected) {
-                            Modifier.border(
-                                width = 1.5.dp,
-                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
-                                shape = CircleShape,
-                            )
-                        } else {
-                            Modifier
-                        },
-                    ),
+                modifier =
+                    Modifier
+                        .align(Alignment.TopStart)
+                        .padding(6.dp)
+                        .size(24.dp)
+                        .graphicsLayer {
+                            scaleX = checkScale
+                            scaleY = checkScale
+                        }
+                        .background(
+                            color = checkBgColor,
+                            shape = CircleShape,
+                        )
+                        .then(
+                            if (!isSelected) {
+                                Modifier.border(
+                                    width = 1.5.dp,
+                                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
+                                    shape = CircleShape,
+                                )
+                            } else {
+                                Modifier
+                            },
+                        ),
                 contentAlignment = Alignment.Center,
             ) {
                 if (isSelected) {
@@ -1093,19 +1150,20 @@ internal fun MemeGridItem(
     } else {
         val interactionSource = remember { MutableInteractionSource() }
         Box(
-            modifier = Modifier
-                .animatedPressScale(interactionSource)
-                .combinedClickable(
-                    interactionSource = interactionSource,
-                    indication = ripple(),
-                    onClick = { onIntent(GalleryIntent.OpenMeme(meme.id)) },
-                    onLongClick = {
-                        onIntent(GalleryIntent.QuickShare(meme.id))
+            modifier =
+                Modifier
+                    .animatedPressScale(interactionSource)
+                    .combinedClickable(
+                        interactionSource = interactionSource,
+                        indication = ripple(),
+                        onClick = { onIntent(GalleryIntent.OpenMeme(meme.id)) },
+                        onLongClick = {
+                            onIntent(GalleryIntent.QuickShare(meme.id))
+                        },
+                    )
+                    .semantics(mergeDescendants = true) {
+                        contentDescription = memeDescription
                     },
-                )
-                .semantics(mergeDescendants = true) {
-                    contentDescription = memeDescription
-                },
         ) {
             MemeCardCompact(
                 meme = meme,
@@ -1120,9 +1178,10 @@ private fun RecentSearchesHeader(
     modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -1149,10 +1208,11 @@ private fun RecentSearchItem(
     modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .combinedClickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .combinedClickable(onClick = onClick)
+                .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
@@ -1199,24 +1259,27 @@ private fun ImportStatusBanner(
         enter = slideInVertically() + fadeIn(),
         exit = slideOutVertically() + fadeOut(),
     ) {
-        val containerColor = when (status) {
-            is ImportWorkStatus.InProgress -> MaterialTheme.colorScheme.primaryContainer
-            is ImportWorkStatus.Completed -> MaterialTheme.colorScheme.secondaryContainer
-            is ImportWorkStatus.Failed -> MaterialTheme.colorScheme.errorContainer
-            is ImportWorkStatus.Idle -> MaterialTheme.colorScheme.surface
-        }
-        val contentColor = when (status) {
-            is ImportWorkStatus.InProgress -> MaterialTheme.colorScheme.onPrimaryContainer
-            is ImportWorkStatus.Completed -> MaterialTheme.colorScheme.onSecondaryContainer
-            is ImportWorkStatus.Failed -> MaterialTheme.colorScheme.onErrorContainer
-            is ImportWorkStatus.Idle -> MaterialTheme.colorScheme.onSurface
-        }
+        val containerColor =
+            when (status) {
+                is ImportWorkStatus.InProgress -> MaterialTheme.colorScheme.primaryContainer
+                is ImportWorkStatus.Completed -> MaterialTheme.colorScheme.secondaryContainer
+                is ImportWorkStatus.Failed -> MaterialTheme.colorScheme.errorContainer
+                is ImportWorkStatus.Idle -> MaterialTheme.colorScheme.surface
+            }
+        val contentColor =
+            when (status) {
+                is ImportWorkStatus.InProgress -> MaterialTheme.colorScheme.onPrimaryContainer
+                is ImportWorkStatus.Completed -> MaterialTheme.colorScheme.onSecondaryContainer
+                is ImportWorkStatus.Failed -> MaterialTheme.colorScheme.onErrorContainer
+                is ImportWorkStatus.Idle -> MaterialTheme.colorScheme.onSurface
+            }
 
         Row(
-            modifier = modifier
-                .fillMaxWidth()
-                .background(containerColor)
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+            modifier =
+                modifier
+                    .fillMaxWidth()
+                    .background(containerColor)
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -1235,11 +1298,16 @@ private fun ImportStatusBanner(
                     )
                 }
                 is ImportWorkStatus.Completed -> {
-                    val text = if (status.failed > 0) {
-                        stringResource(R.string.gallery_import_completed_with_errors, status.completed, status.failed)
-                    } else {
-                        stringResource(R.string.gallery_import_completed, status.completed)
-                    }
+                    val text =
+                        if (status.failed > 0) {
+                            stringResource(
+                                R.string.gallery_import_completed_with_errors,
+                                status.completed,
+                                status.failed,
+                            )
+                        } else {
+                            stringResource(R.string.gallery_import_completed, status.completed)
+                        }
                     Text(
                         text = text,
                         style = MaterialTheme.typography.bodySmall,
@@ -1279,28 +1347,35 @@ private fun ImportStatusBanner(
 
 // region Previews
 
-private val previewMeme = Meme(
-    id = 1L,
-    filePath = "/preview/meme1.jpg",
-    fileName = "meme1.jpg",
-    mimeType = "image/jpeg",
-    width = 800,
-    height = 600,
-    fileSizeBytes = 150_000L,
-    importedAt = System.currentTimeMillis(),
-    emojiTags = listOf(
-        com.adsamcik.riposte.core.model.EmojiTag.fromEmoji("😂"),
-        com.adsamcik.riposte.core.model.EmojiTag.fromEmoji("🔥"),
-    ),
-    title = "Funny cat meme",
-    isFavorite = true,
-)
+private val previewMeme =
+    Meme(
+        id = 1L,
+        filePath = "/preview/meme1.jpg",
+        fileName = "meme1.jpg",
+        mimeType = "image/jpeg",
+        width = 800,
+        height = 600,
+        fileSizeBytes = 150_000L,
+        importedAt = System.currentTimeMillis(),
+        emojiTags =
+            listOf(
+                com.adsamcik.riposte.core.model.EmojiTag.fromEmoji("😂"),
+                com.adsamcik.riposte.core.model.EmojiTag.fromEmoji("🔥"),
+            ),
+        title = "Funny cat meme",
+        isFavorite = true,
+    )
 
-private val previewMemes = listOf(
-    previewMeme,
-    previewMeme.copy(id = 2L, title = "Surprised Pikachu", emojiTags = listOf(com.adsamcik.riposte.core.model.EmojiTag.fromEmoji("😮"))),
-    previewMeme.copy(id = 3L, title = "Drake meme", isFavorite = false),
-)
+private val previewMemes =
+    listOf(
+        previewMeme,
+        previewMeme.copy(
+            id = 2L,
+            title = "Surprised Pikachu",
+            emojiTags = listOf(com.adsamcik.riposte.core.model.EmojiTag.fromEmoji("😮")),
+        ),
+        previewMeme.copy(id = 3L, title = "Drake meme", isFavorite = false),
+    )
 
 @Preview(name = "Loading", showBackground = true)
 @Composable
@@ -1322,13 +1397,14 @@ private fun GalleryScreenLoadingPreview() {
 private fun GalleryScreenContentPreview() {
     com.adsamcik.riposte.core.ui.theme.RiposteTheme {
         GalleryScreen(
-            uiState = GalleryUiState(
-                memes = previewMemes,
-                isLoading = false,
-                usePaging = false,
-                suggestions = previewMemes.take(2),
-                uniqueEmojis = listOf("😂" to 3, "🔥" to 2, "😮" to 1),
-            ),
+            uiState =
+                GalleryUiState(
+                    memes = previewMemes,
+                    isLoading = false,
+                    usePaging = false,
+                    suggestions = previewMemes.take(2),
+                    uniqueEmojis = listOf("😂" to 3, "🔥" to 2, "😮" to 1),
+                ),
             onIntent = {},
             onNavigateToMeme = {},
             onNavigateToImport = {},
@@ -1356,17 +1432,19 @@ private fun GalleryScreenEmptyPreview() {
 private fun GalleryScreenSearchResultsPreview() {
     com.adsamcik.riposte.core.ui.theme.RiposteTheme {
         GalleryScreen(
-            uiState = GalleryUiState(
-                isLoading = false,
-                usePaging = false,
-                screenMode = ScreenMode.Searching,
-                searchState = SearchSliceState(
-                    query = "funny cat",
-                    results = previewMemes.map { SearchResult(it, 0.9f, MatchType.HYBRID) },
-                    hasSearched = true,
-                    totalResultCount = 3,
+            uiState =
+                GalleryUiState(
+                    isLoading = false,
+                    usePaging = false,
+                    screenMode = ScreenMode.Searching,
+                    searchState =
+                        SearchSliceState(
+                            query = "funny cat",
+                            results = previewMemes.map { SearchResult(it, 0.9f, MatchType.HYBRID) },
+                            hasSearched = true,
+                            totalResultCount = 3,
+                        ),
                 ),
-            ),
             onIntent = {},
             onNavigateToMeme = {},
             onNavigateToImport = {},

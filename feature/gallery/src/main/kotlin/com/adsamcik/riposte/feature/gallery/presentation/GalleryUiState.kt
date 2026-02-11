@@ -35,87 +35,71 @@ data class GalleryUiState(
      * List of memes to display.
      */
     val memes: List<Meme> = emptyList(),
-
     /**
      * Smart suggestions from the StickerHand algorithm.
      * Populated by [GetSuggestionsUseCase] — replaces simple useCount sorting.
      */
     val suggestions: List<Meme> = emptyList(),
-
     /**
      * Whether the gallery is loading.
      */
     val isLoading: Boolean = true,
-
     /**
      * Error message if any.
      */
     val error: String? = null,
-
     /**
      * Currently selected meme IDs (for multi-select mode).
      */
     val selectedMemeIds: Set<Long> = emptySet(),
-
     /**
      * Whether in selection mode.
      */
     val isSelectionMode: Boolean = false,
-
     /**
      * Current filter: "all", "favorites", or an emoji string.
      */
     val filter: GalleryFilter = GalleryFilter.All,
-
     /**
      * User's grid density preference (from settings).
      */
     val densityPreference: UserDensityPreference = UserDensityPreference.AUTO,
-
     /**
      * Whether using paging for this view.
      * True for "All" filter with large datasets, false for filtered views.
      */
     val usePaging: Boolean = true,
-
     /**
      * Active emoji filters applied on top of the gallery filter.
      * Persisted in ViewModel so they survive navigation/recomposition.
      */
     val activeEmojiFilters: Set<String> = emptySet(),
-
     /**
      * Unique emojis with counts, derived from the current meme list.
      * Computed in the ViewModel to avoid expensive recomposition in Compose.
      */
     val uniqueEmojis: List<Pair<String, Int>> = emptyList(),
-
     /**
      * Memes filtered by active emoji filters (non-paged path).
      * Computed in the ViewModel as derived state.
      */
     val filteredMemes: List<Meme> = emptyList(),
-
     /**
      * Meme currently being quick-shared (shows the bottom sheet), or null.
      */
     val quickShareMeme: Meme? = null,
-
     /**
      * Frequent share targets for the quick share bottom sheet.
      */
     val quickShareTargets: List<com.adsamcik.riposte.core.model.ShareTarget> = emptyList(),
-
     /**
      * Current screen mode: browsing or searching.
      */
     val screenMode: ScreenMode = ScreenMode.Browsing,
-
     /**
      * Search-specific state slice.
      */
     val searchState: SearchSliceState = SearchSliceState(),
-
     /**
      * Status of a background import, if any.
      * Observed via WorkManager so gallery can show progress without
@@ -145,7 +129,9 @@ data class GalleryUiState(
  */
 sealed interface GalleryFilter {
     data object All : GalleryFilter
+
     data object Favorites : GalleryFilter
+
     data class ByEmoji(val emoji: String) : GalleryFilter
 }
 
@@ -154,7 +140,10 @@ sealed interface GalleryFilter {
  */
 sealed interface ImportWorkStatus {
     data object Idle : ImportWorkStatus
+
     data class InProgress(val completed: Int, val total: Int) : ImportWorkStatus
+
     data class Completed(val completed: Int, val failed: Int) : ImportWorkStatus
+
     data class Failed(val message: String? = null) : ImportWorkStatus
 }

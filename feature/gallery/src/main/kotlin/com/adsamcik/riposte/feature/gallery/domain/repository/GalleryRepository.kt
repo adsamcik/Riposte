@@ -8,7 +8,6 @@ import kotlinx.coroutines.flow.Flow
  * Repository interface for gallery operations.
  */
 interface GalleryRepository {
-
     /**
      * Get all memes ordered by import date.
      */
@@ -29,7 +28,7 @@ interface GalleryRepository {
      * Get a single meme by ID.
      */
     suspend fun getMemeById(id: Long): Meme?
-    
+
     /**
      * Observe a single meme by ID.
      */

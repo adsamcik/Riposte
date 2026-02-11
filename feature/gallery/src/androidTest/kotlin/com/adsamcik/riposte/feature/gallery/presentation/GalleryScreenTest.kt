@@ -1,9 +1,6 @@
 package com.adsamcik.riposte.feature.gallery.presentation
 
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertIsNotDisplayed
-import androidx.compose.ui.test.hasContentDescription
-import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -14,10 +11,10 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performLongClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.google.common.truth.Truth.assertThat
 import com.adsamcik.riposte.core.model.EmojiTag
 import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.core.ui.theme.RiposteTheme
+import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -35,15 +32,15 @@ import org.junit.runner.RunWith
  */
 @RunWith(AndroidJUnit4::class)
 class GalleryScreenTest {
-
     @get:Rule
     val composeTestRule = createComposeRule()
 
-    private val testMemes = listOf(
-        createTestMeme(1L, "meme1.jpg", isFavorite = true),
-        createTestMeme(2L, "meme2.jpg", isFavorite = false),
-        createTestMeme(3L, "meme3.jpg", isFavorite = false)
-    )
+    private val testMemes =
+        listOf(
+            createTestMeme(1L, "meme1.jpg", isFavorite = true),
+            createTestMeme(2L, "meme2.jpg", isFavorite = false),
+            createTestMeme(3L, "meme3.jpg", isFavorite = false),
+        )
 
     // ============ Empty State Tests ============
 
@@ -52,14 +49,15 @@ class GalleryScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 GalleryScreen(
-                    uiState = GalleryUiState(
-                        memes = emptyList(),
-                        isLoading = false
-                    ),
+                    uiState =
+                        GalleryUiState(
+                            memes = emptyList(),
+                            isLoading = false,
+                        ),
                     onIntent = {},
                     onNavigateToMeme = {},
                     onNavigateToImport = {},
-                    onNavigateToSettings = {}
+                    onNavigateToSettings = {},
                 )
             }
         }
@@ -74,14 +72,15 @@ class GalleryScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 GalleryScreen(
-                    uiState = GalleryUiState(
-                        memes = emptyList(),
-                        isLoading = false
-                    ),
+                    uiState =
+                        GalleryUiState(
+                            memes = emptyList(),
+                            isLoading = false,
+                        ),
                     onIntent = {},
                     onNavigateToMeme = {},
                     onNavigateToImport = {},
-                    onNavigateToSettings = {}
+                    onNavigateToSettings = {},
                 )
             }
         }
@@ -96,14 +95,15 @@ class GalleryScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 GalleryScreen(
-                    uiState = GalleryUiState(
-                        memes = emptyList(),
-                        isLoading = true
-                    ),
+                    uiState =
+                        GalleryUiState(
+                            memes = emptyList(),
+                            isLoading = true,
+                        ),
                     onIntent = {},
                     onNavigateToMeme = {},
                     onNavigateToImport = {},
-                    onNavigateToSettings = {}
+                    onNavigateToSettings = {},
                 )
             }
         }
@@ -118,21 +118,22 @@ class GalleryScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 GalleryScreen(
-                    uiState = GalleryUiState(
-                        memes = testMemes,
-                        isLoading = false
-                    ),
+                    uiState =
+                        GalleryUiState(
+                            memes = testMemes,
+                            isLoading = false,
+                        ),
                     onIntent = {},
                     onNavigateToMeme = {},
                     onNavigateToImport = {},
-                    onNavigateToSettings = {}
+                    onNavigateToSettings = {},
                 )
             }
         }
 
         // Grid should be displayed
         composeTestRule.onNodeWithTag("MemeGrid").assertIsDisplayed()
-        
+
         // Meme cards should be visible
         composeTestRule.onAllNodesWithTag("MemeCard").fetchSemanticsNodes()
             .let { nodes ->
@@ -145,21 +146,23 @@ class GalleryScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 GalleryScreen(
-                    uiState = GalleryUiState(
-                        memes = testMemes,
-                        isLoading = false
-                    ),
+                    uiState =
+                        GalleryUiState(
+                            memes = testMemes,
+                            isLoading = false,
+                        ),
                     onIntent = {},
                     onNavigateToMeme = {},
                     onNavigateToImport = {},
-                    onNavigateToSettings = {}
+                    onNavigateToSettings = {},
                 )
             }
         }
 
-        val memeCards = composeTestRule.onAllNodesWithTag("MemeCard")
-            .fetchSemanticsNodes()
-        
+        val memeCards =
+            composeTestRule.onAllNodesWithTag("MemeCard")
+                .fetchSemanticsNodes()
+
         assertThat(memeCards.size).isEqualTo(testMemes.size)
     }
 
@@ -170,14 +173,15 @@ class GalleryScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 GalleryScreen(
-                    uiState = GalleryUiState(
-                        memes = testMemes,
-                        isLoading = false
-                    ),
+                    uiState =
+                        GalleryUiState(
+                            memes = testMemes,
+                            isLoading = false,
+                        ),
                     onIntent = {},
                     onNavigateToMeme = {},
                     onNavigateToImport = {},
-                    onNavigateToSettings = {}
+                    onNavigateToSettings = {},
                 )
             }
         }
@@ -193,14 +197,15 @@ class GalleryScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 GalleryScreen(
-                    uiState = GalleryUiState(
-                        memes = testMemes,
-                        isLoading = false
-                    ),
+                    uiState =
+                        GalleryUiState(
+                            memes = testMemes,
+                            isLoading = false,
+                        ),
                     onIntent = { receivedIntent = it },
                     onNavigateToMeme = {},
                     onNavigateToImport = {},
-                    onNavigateToSettings = {}
+                    onNavigateToSettings = {},
                 )
             }
         }
@@ -221,14 +226,15 @@ class GalleryScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 GalleryScreen(
-                    uiState = GalleryUiState(
-                        memes = testMemes,
-                        isLoading = false
-                    ),
+                    uiState =
+                        GalleryUiState(
+                            memes = testMemes,
+                            isLoading = false,
+                        ),
                     onIntent = { receivedIntent = it },
                     onNavigateToMeme = {},
                     onNavigateToImport = {},
-                    onNavigateToSettings = {}
+                    onNavigateToSettings = {},
                 )
             }
         }
@@ -245,16 +251,17 @@ class GalleryScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 GalleryScreen(
-                    uiState = GalleryUiState(
-                        memes = testMemes,
-                        isLoading = false,
-                        isSelectionMode = true,
-                        selectedMemeIds = setOf(1L)
-                    ),
+                    uiState =
+                        GalleryUiState(
+                            memes = testMemes,
+                            isLoading = false,
+                            isSelectionMode = true,
+                            selectedMemeIds = setOf(1L),
+                        ),
                     onIntent = {},
                     onNavigateToMeme = {},
                     onNavigateToImport = {},
-                    onNavigateToSettings = {}
+                    onNavigateToSettings = {},
                 )
             }
         }
@@ -268,16 +275,17 @@ class GalleryScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 GalleryScreen(
-                    uiState = GalleryUiState(
-                        memes = testMemes,
-                        isLoading = false,
-                        isSelectionMode = true,
-                        selectedMemeIds = setOf(1L, 2L, 3L)
-                    ),
+                    uiState =
+                        GalleryUiState(
+                            memes = testMemes,
+                            isLoading = false,
+                            isSelectionMode = true,
+                            selectedMemeIds = setOf(1L, 2L, 3L),
+                        ),
                     onIntent = {},
                     onNavigateToMeme = {},
                     onNavigateToImport = {},
-                    onNavigateToSettings = {}
+                    onNavigateToSettings = {},
                 )
             }
         }
@@ -290,16 +298,17 @@ class GalleryScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 GalleryScreen(
-                    uiState = GalleryUiState(
-                        memes = testMemes,
-                        isLoading = false,
-                        isSelectionMode = true,
-                        selectedMemeIds = setOf(1L)
-                    ),
+                    uiState =
+                        GalleryUiState(
+                            memes = testMemes,
+                            isLoading = false,
+                            isSelectionMode = true,
+                            selectedMemeIds = setOf(1L),
+                        ),
                     onIntent = {},
                     onNavigateToMeme = {},
                     onNavigateToImport = {},
-                    onNavigateToSettings = {}
+                    onNavigateToSettings = {},
                 )
             }
         }
@@ -314,16 +323,17 @@ class GalleryScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 GalleryScreen(
-                    uiState = GalleryUiState(
-                        memes = testMemes,
-                        isLoading = false,
-                        isSelectionMode = true,
-                        selectedMemeIds = setOf(1L)
-                    ),
+                    uiState =
+                        GalleryUiState(
+                            memes = testMemes,
+                            isLoading = false,
+                            isSelectionMode = true,
+                            selectedMemeIds = setOf(1L),
+                        ),
                     onIntent = { receivedIntent = it },
                     onNavigateToMeme = {},
                     onNavigateToImport = {},
-                    onNavigateToSettings = {}
+                    onNavigateToSettings = {},
                 )
             }
         }
@@ -340,14 +350,15 @@ class GalleryScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 GalleryScreen(
-                    uiState = GalleryUiState(
-                        memes = testMemes,
-                        isLoading = false
-                    ),
+                    uiState =
+                        GalleryUiState(
+                            memes = testMemes,
+                            isLoading = false,
+                        ),
                     onIntent = {},
                     onNavigateToMeme = {},
                     onNavigateToImport = {},
-                    onNavigateToSettings = {}
+                    onNavigateToSettings = {},
                 )
             }
         }
@@ -364,14 +375,15 @@ class GalleryScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 GalleryScreen(
-                    uiState = GalleryUiState(
-                        memes = testMemes,
-                        isLoading = false
-                    ),
+                    uiState =
+                        GalleryUiState(
+                            memes = testMemes,
+                            isLoading = false,
+                        ),
                     onIntent = {},
                     onNavigateToMeme = {},
                     onNavigateToImport = {},
-                    onNavigateToSettings = {}
+                    onNavigateToSettings = {},
                 )
             }
         }
@@ -388,14 +400,15 @@ class GalleryScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 GalleryScreen(
-                    uiState = GalleryUiState(
-                        memes = testMemes,
-                        isLoading = false
-                    ),
+                    uiState =
+                        GalleryUiState(
+                            memes = testMemes,
+                            isLoading = false,
+                        ),
                     onIntent = {},
                     onNavigateToMeme = {},
                     onNavigateToImport = { navigatedToImport = true },
-                    onNavigateToSettings = {}
+                    onNavigateToSettings = {},
                 )
             }
         }
@@ -412,14 +425,15 @@ class GalleryScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 GalleryScreen(
-                    uiState = GalleryUiState(
-                        memes = testMemes,
-                        isLoading = false
-                    ),
+                    uiState =
+                        GalleryUiState(
+                            memes = testMemes,
+                            isLoading = false,
+                        ),
                     onIntent = {},
                     onNavigateToMeme = {},
                     onNavigateToImport = {},
-                    onNavigateToSettings = { navigatedToSettings = true }
+                    onNavigateToSettings = { navigatedToSettings = true },
                 )
             }
         }
@@ -438,14 +452,15 @@ class GalleryScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 GalleryScreen(
-                    uiState = GalleryUiState(
-                        memes = testMemes,
-                        isLoading = false
-                    ),
+                    uiState =
+                        GalleryUiState(
+                            memes = testMemes,
+                            isLoading = false,
+                        ),
                     onIntent = {},
                     onNavigateToMeme = { navigatedToMemeId = it },
                     onNavigateToImport = {},
-                    onNavigateToSettings = {}
+                    onNavigateToSettings = {},
                 )
             }
         }
@@ -464,14 +479,15 @@ class GalleryScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 GalleryScreen(
-                    uiState = GalleryUiState(
-                        memes = testMemes,
-                        isLoading = false
-                    ),
+                    uiState =
+                        GalleryUiState(
+                            memes = testMemes,
+                            isLoading = false,
+                        ),
                     onIntent = {},
                     onNavigateToMeme = {},
                     onNavigateToImport = {},
-                    onNavigateToSettings = {}
+                    onNavigateToSettings = {},
                 )
             }
         }
@@ -491,17 +507,18 @@ class GalleryScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 GalleryScreen(
-                    uiState = GalleryUiState(
-                        memes = testMemes,
-                        isLoading = false,
-                        isSelectionMode = true,
-                        selectedMemeIds = setOf(1L, 2L),
-                        showDeleteConfirmation = true
-                    ),
+                    uiState =
+                        GalleryUiState(
+                            memes = testMemes,
+                            isLoading = false,
+                            isSelectionMode = true,
+                            selectedMemeIds = setOf(1L, 2L),
+                            showDeleteConfirmation = true,
+                        ),
                     onIntent = {},
                     onNavigateToMeme = {},
                     onNavigateToImport = {},
-                    onNavigateToSettings = {}
+                    onNavigateToSettings = {},
                 )
             }
         }
@@ -517,15 +534,16 @@ class GalleryScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 GalleryScreen(
-                    uiState = GalleryUiState(
-                        memes = emptyList(),
-                        isLoading = false,
-                        error = "Failed to load memes"
-                    ),
+                    uiState =
+                        GalleryUiState(
+                            memes = emptyList(),
+                            isLoading = false,
+                            error = "Failed to load memes",
+                        ),
                     onIntent = {},
                     onNavigateToMeme = {},
                     onNavigateToImport = {},
-                    onNavigateToSettings = {}
+                    onNavigateToSettings = {},
                 )
             }
         }
@@ -538,7 +556,7 @@ class GalleryScreenTest {
     private fun createTestMeme(
         id: Long,
         fileName: String,
-        isFavorite: Boolean = false
+        isFavorite: Boolean = false,
     ) = Meme(
         id = id,
         filePath = "/test/$fileName",
@@ -550,6 +568,6 @@ class GalleryScreenTest {
         importedAt = System.currentTimeMillis(),
         emojiTags = listOf(EmojiTag("😂", "laughing")),
         title = "Test Meme $id",
-        isFavorite = isFavorite
+        isFavorite = isFavorite,
     )
 }

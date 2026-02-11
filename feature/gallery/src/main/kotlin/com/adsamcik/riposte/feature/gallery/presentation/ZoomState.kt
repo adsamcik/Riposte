@@ -18,7 +18,6 @@ import androidx.compose.ui.geometry.Offset
  */
 @Stable
 class ZoomState {
-
     var scale by mutableFloatStateOf(1f)
         private set
 
@@ -57,7 +56,11 @@ class ZoomState {
      * @param viewportWidth width of the viewport in pixels
      * @param viewportHeight height of the viewport in pixels
      */
-    fun panBy(delta: Offset, viewportWidth: Float, viewportHeight: Float) {
+    fun panBy(
+        delta: Offset,
+        viewportWidth: Float,
+        viewportHeight: Float,
+    ) {
         val raw = offset + delta
         offset = clampOffset(raw, scale, viewportWidth, viewportHeight)
     }

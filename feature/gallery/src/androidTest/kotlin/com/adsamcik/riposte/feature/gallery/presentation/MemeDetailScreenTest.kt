@@ -1,20 +1,16 @@
 package com.adsamcik.riposte.feature.gallery.presentation
 
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onAllNodesWithTag
-import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.google.common.truth.Truth.assertThat
 import com.adsamcik.riposte.core.model.EmojiTag
 import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.core.ui.theme.RiposteTheme
+import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -31,28 +27,29 @@ import org.junit.runner.RunWith
  */
 @RunWith(AndroidJUnit4::class)
 class MemeDetailScreenTest {
-
     @get:Rule
     val composeTestRule = createComposeRule()
 
-    private val testMeme = Meme(
-        id = 1L,
-        filePath = "/test/meme.jpg",
-        fileName = "meme.jpg",
-        mimeType = "image/jpeg",
-        width = 1080,
-        height = 1080,
-        fileSizeBytes = 102400,
-        importedAt = System.currentTimeMillis(),
-        emojiTags = listOf(
-            EmojiTag("😂", "face_with_tears_of_joy"),
-            EmojiTag("🔥", "fire"),
-            EmojiTag("💀", "skull")
-        ),
-        title = "Funny Cat Meme",
-        description = "A hilarious cat doing cat things",
-        isFavorite = false
-    )
+    private val testMeme =
+        Meme(
+            id = 1L,
+            filePath = "/test/meme.jpg",
+            fileName = "meme.jpg",
+            mimeType = "image/jpeg",
+            width = 1080,
+            height = 1080,
+            fileSizeBytes = 102400,
+            importedAt = System.currentTimeMillis(),
+            emojiTags =
+                listOf(
+                    EmojiTag("😂", "face_with_tears_of_joy"),
+                    EmojiTag("🔥", "fire"),
+                    EmojiTag("💀", "skull"),
+                ),
+            title = "Funny Cat Meme",
+            description = "A hilarious cat doing cat things",
+            isFavorite = false,
+        )
 
     // ============ Loading State Tests ============
 
@@ -63,7 +60,7 @@ class MemeDetailScreenTest {
                 MemeDetailScreen(
                     uiState = MemeDetailUiState(isLoading = true),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -78,12 +75,13 @@ class MemeDetailScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 MemeDetailScreen(
-                    uiState = MemeDetailUiState(
-                        meme = testMeme,
-                        isLoading = false
-                    ),
+                    uiState =
+                        MemeDetailUiState(
+                            meme = testMeme,
+                            isLoading = false,
+                        ),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -96,12 +94,13 @@ class MemeDetailScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 MemeDetailScreen(
-                    uiState = MemeDetailUiState(
-                        meme = testMeme,
-                        isLoading = false
-                    ),
+                    uiState =
+                        MemeDetailUiState(
+                            meme = testMeme,
+                            isLoading = false,
+                        ),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -114,12 +113,13 @@ class MemeDetailScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 MemeDetailScreen(
-                    uiState = MemeDetailUiState(
-                        meme = testMeme,
-                        isLoading = false
-                    ),
+                    uiState =
+                        MemeDetailUiState(
+                            meme = testMeme,
+                            isLoading = false,
+                        ),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -132,12 +132,13 @@ class MemeDetailScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 MemeDetailScreen(
-                    uiState = MemeDetailUiState(
-                        meme = testMeme,
-                        isLoading = false
-                    ),
+                    uiState =
+                        MemeDetailUiState(
+                            meme = testMeme,
+                            isLoading = false,
+                        ),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -154,12 +155,13 @@ class MemeDetailScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 MemeDetailScreen(
-                    uiState = MemeDetailUiState(
-                        meme = testMeme,
-                        isLoading = false
-                    ),
+                    uiState =
+                        MemeDetailUiState(
+                            meme = testMeme,
+                            isLoading = false,
+                        ),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -174,12 +176,13 @@ class MemeDetailScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 MemeDetailScreen(
-                    uiState = MemeDetailUiState(
-                        meme = testMeme,
-                        isLoading = false
-                    ),
+                    uiState =
+                        MemeDetailUiState(
+                            meme = testMeme,
+                            isLoading = false,
+                        ),
                     onIntent = {},
-                    onNavigateBack = { navigatedBack = true }
+                    onNavigateBack = { navigatedBack = true },
                 )
             }
         }
@@ -194,12 +197,13 @@ class MemeDetailScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 MemeDetailScreen(
-                    uiState = MemeDetailUiState(
-                        meme = testMeme,
-                        isLoading = false
-                    ),
+                    uiState =
+                        MemeDetailUiState(
+                            meme = testMeme,
+                            isLoading = false,
+                        ),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -212,12 +216,13 @@ class MemeDetailScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 MemeDetailScreen(
-                    uiState = MemeDetailUiState(
-                        meme = testMeme,
-                        isLoading = false
-                    ),
+                    uiState =
+                        MemeDetailUiState(
+                            meme = testMeme,
+                            isLoading = false,
+                        ),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -230,12 +235,13 @@ class MemeDetailScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 MemeDetailScreen(
-                    uiState = MemeDetailUiState(
-                        meme = testMeme,
-                        isLoading = false
-                    ),
+                    uiState =
+                        MemeDetailUiState(
+                            meme = testMeme,
+                            isLoading = false,
+                        ),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -250,12 +256,13 @@ class MemeDetailScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 MemeDetailScreen(
-                    uiState = MemeDetailUiState(
-                        meme = testMeme.copy(isFavorite = false),
-                        isLoading = false
-                    ),
+                    uiState =
+                        MemeDetailUiState(
+                            meme = testMeme.copy(isFavorite = false),
+                            isLoading = false,
+                        ),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -268,12 +275,13 @@ class MemeDetailScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 MemeDetailScreen(
-                    uiState = MemeDetailUiState(
-                        meme = testMeme.copy(isFavorite = true),
-                        isLoading = false
-                    ),
+                    uiState =
+                        MemeDetailUiState(
+                            meme = testMeme.copy(isFavorite = true),
+                            isLoading = false,
+                        ),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -288,12 +296,13 @@ class MemeDetailScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 MemeDetailScreen(
-                    uiState = MemeDetailUiState(
-                        meme = testMeme,
-                        isLoading = false
-                    ),
+                    uiState =
+                        MemeDetailUiState(
+                            meme = testMeme,
+                            isLoading = false,
+                        ),
                     onIntent = { receivedIntent = it },
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -310,15 +319,16 @@ class MemeDetailScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 MemeDetailScreen(
-                    uiState = MemeDetailUiState(
-                        meme = testMeme,
-                        isLoading = false,
-                        isEditMode = true,
-                        editedTitle = "Funny Cat Meme",
-                        editedDescription = "A hilarious cat doing cat things"
-                    ),
+                    uiState =
+                        MemeDetailUiState(
+                            meme = testMeme,
+                            isLoading = false,
+                            isEditMode = true,
+                            editedTitle = "Funny Cat Meme",
+                            editedDescription = "A hilarious cat doing cat things",
+                        ),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -332,14 +342,15 @@ class MemeDetailScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 MemeDetailScreen(
-                    uiState = MemeDetailUiState(
-                        meme = testMeme,
-                        isLoading = false,
-                        isEditMode = true,
-                        editedTitle = "Funny Cat Meme"
-                    ),
+                    uiState =
+                        MemeDetailUiState(
+                            meme = testMeme,
+                            isLoading = false,
+                            isEditMode = true,
+                            editedTitle = "Funny Cat Meme",
+                        ),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -355,12 +366,13 @@ class MemeDetailScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 MemeDetailScreen(
-                    uiState = MemeDetailUiState(
-                        meme = testMeme,
-                        isLoading = false
-                    ),
+                    uiState =
+                        MemeDetailUiState(
+                            meme = testMeme,
+                            isLoading = false,
+                        ),
                     onIntent = { receivedIntent = it },
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -377,14 +389,15 @@ class MemeDetailScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 MemeDetailScreen(
-                    uiState = MemeDetailUiState(
-                        meme = testMeme,
-                        isLoading = false,
-                        isEditMode = true,
-                        editedTitle = "New Title"
-                    ),
+                    uiState =
+                        MemeDetailUiState(
+                            meme = testMeme,
+                            isLoading = false,
+                            isEditMode = true,
+                            editedTitle = "New Title",
+                        ),
                     onIntent = { receivedIntent = it },
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -401,14 +414,15 @@ class MemeDetailScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 MemeDetailScreen(
-                    uiState = MemeDetailUiState(
-                        meme = testMeme,
-                        isLoading = false,
-                        isEditMode = true,
-                        editedTitle = "New Title"
-                    ),
+                    uiState =
+                        MemeDetailUiState(
+                            meme = testMeme,
+                            isLoading = false,
+                            isEditMode = true,
+                            editedTitle = "New Title",
+                        ),
                     onIntent = { receivedIntent = it },
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -425,13 +439,14 @@ class MemeDetailScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 MemeDetailScreen(
-                    uiState = MemeDetailUiState(
-                        meme = testMeme,
-                        isLoading = false,
-                        showDeleteDialog = true
-                    ),
+                    uiState =
+                        MemeDetailUiState(
+                            meme = testMeme,
+                            isLoading = false,
+                            showDeleteDialog = true,
+                        ),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -447,13 +462,14 @@ class MemeDetailScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 MemeDetailScreen(
-                    uiState = MemeDetailUiState(
-                        meme = testMeme,
-                        isLoading = false,
-                        showDeleteDialog = true
-                    ),
+                    uiState =
+                        MemeDetailUiState(
+                            meme = testMeme,
+                            isLoading = false,
+                            showDeleteDialog = true,
+                        ),
                     onIntent = { receivedIntent = it },
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -470,13 +486,14 @@ class MemeDetailScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 MemeDetailScreen(
-                    uiState = MemeDetailUiState(
-                        meme = testMeme,
-                        isLoading = false,
-                        showDeleteDialog = true
-                    ),
+                    uiState =
+                        MemeDetailUiState(
+                            meme = testMeme,
+                            isLoading = false,
+                            showDeleteDialog = true,
+                        ),
                     onIntent = { receivedIntent = it },
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -493,15 +510,16 @@ class MemeDetailScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 MemeDetailScreen(
-                    uiState = MemeDetailUiState(
-                        meme = testMeme,
-                        isLoading = false,
-                        isEditMode = true,
-                        showEmojiPicker = true,
-                        editedEmojis = listOf("😂", "🔥")
-                    ),
+                    uiState =
+                        MemeDetailUiState(
+                            meme = testMeme,
+                            isLoading = false,
+                            isEditMode = true,
+                            showEmojiPicker = true,
+                            editedEmojis = listOf("😂", "🔥"),
+                        ),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -514,14 +532,15 @@ class MemeDetailScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 MemeDetailScreen(
-                    uiState = MemeDetailUiState(
-                        meme = testMeme,
-                        isLoading = false,
-                        isEditMode = true,
-                        editedEmojis = listOf("😂")
-                    ),
+                    uiState =
+                        MemeDetailUiState(
+                            meme = testMeme,
+                            isLoading = false,
+                            isEditMode = true,
+                            editedEmojis = listOf("😂"),
+                        ),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -536,13 +555,14 @@ class MemeDetailScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 MemeDetailScreen(
-                    uiState = MemeDetailUiState(
-                        meme = null,
-                        isLoading = false,
-                        errorMessage = "Failed to load meme"
-                    ),
+                    uiState =
+                        MemeDetailUiState(
+                            meme = null,
+                            isLoading = false,
+                            errorMessage = "Failed to load meme",
+                        ),
                     onIntent = {},
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }
@@ -559,12 +579,13 @@ class MemeDetailScreenTest {
         composeTestRule.setContent {
             RiposteTheme {
                 MemeDetailScreen(
-                    uiState = MemeDetailUiState(
-                        meme = testMeme,
-                        isLoading = false
-                    ),
+                    uiState =
+                        MemeDetailUiState(
+                            meme = testMeme,
+                            isLoading = false,
+                        ),
                     onIntent = { receivedIntent = it },
-                    onNavigateBack = {}
+                    onNavigateBack = {},
                 )
             }
         }

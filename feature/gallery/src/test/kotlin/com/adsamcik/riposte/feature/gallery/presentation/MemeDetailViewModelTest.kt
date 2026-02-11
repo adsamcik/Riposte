@@ -3,10 +3,10 @@ package com.adsamcik.riposte.feature.gallery.presentation
 import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
-import com.google.common.truth.Truth.assertThat
 import com.adsamcik.riposte.core.model.EmojiTag
 import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.core.model.SharingPreferences
+import com.adsamcik.riposte.feature.gallery.R
 import com.adsamcik.riposte.feature.gallery.domain.usecase.DeleteMemesUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GetMemeByIdUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GetSimilarMemesUseCase
@@ -14,7 +14,7 @@ import com.adsamcik.riposte.feature.gallery.domain.usecase.RecordMemeViewUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.SimilarMemesStatus
 import com.adsamcik.riposte.feature.gallery.domain.usecase.ToggleFavoriteUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.UpdateMemeUseCase
-import com.adsamcik.riposte.feature.gallery.R
+import com.google.common.truth.Truth.assertThat
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -38,7 +38,6 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33], manifest = Config.NONE)
 class MemeDetailViewModelTest {
-
     private val testDispatcher = StandardTestDispatcher()
 
     private lateinit var savedStateHandle: SavedStateHandle
@@ -103,11 +102,13 @@ class MemeDetailViewModelTest {
             recordMemeViewUseCase = recordMemeViewUseCase,
             getSimilarMemesUseCase = getSimilarMemesUseCase,
             userActionTracker = mockk(relaxed = true),
-            preferencesDataStore = mockk(relaxed = true) {
-            every { sharingPreferences } returns flowOf(
-                SharingPreferences.DEFAULT.copy(useNativeShareDialog = true),
-            )
-        },
+            preferencesDataStore =
+                mockk(relaxed = true) {
+                    every { sharingPreferences } returns
+                        flowOf(
+                            SharingPreferences.DEFAULT.copy(useNativeShareDialog = true),
+                        )
+                },
             shareTargetRepository = mockk(relaxed = true),
         )
     }
@@ -115,486 +116,520 @@ class MemeDetailViewModelTest {
     // region Initialization Tests
 
     @Test
-    fun `initial state has isLoading true`() = runTest {
-        viewModel = createViewModel()
+    fun `initial state has isLoading true`() =
+        runTest {
+            viewModel = createViewModel()
 
-        assertThat(viewModel.uiState.value.isLoading).isTrue()
-    }
-
-    @Test
-    fun `loadMeme sets meme when found`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
-
-        val state = viewModel.uiState.value
-        assertThat(state.meme).isEqualTo(testMeme)
-        assertThat(state.isLoading).isFalse()
-        assertThat(state.errorMessage).isNull()
-    }
+            assertThat(viewModel.uiState.value.isLoading).isTrue()
+        }
 
     @Test
-    fun `loadMeme sets error when meme not found`() = runTest {
-        coEvery { getMemeByIdUseCase(any()) } returns null
+    fun `loadMeme sets meme when found`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
 
-        viewModel = createViewModel()
-        advanceUntilIdle()
-
-        val state = viewModel.uiState.value
-        assertThat(state.errorMessage).isEqualTo("Meme not found")
-        assertThat(state.isLoading).isFalse()
-    }
-
-    @Test
-    fun `loadMeme sets error for invalid meme ID`() = runTest {
-        savedStateHandle = SavedStateHandle(mapOf("memeId" to -1L))
-
-        viewModel = createViewModel()
-        advanceUntilIdle()
-
-        val state = viewModel.uiState.value
-        assertThat(state.errorMessage).isEqualTo("Invalid meme ID")
-    }
+            val state = viewModel.uiState.value
+            assertThat(state.meme).isEqualTo(testMeme)
+            assertThat(state.isLoading).isFalse()
+            assertThat(state.errorMessage).isNull()
+        }
 
     @Test
-    fun `loadMeme initializes edit fields from meme`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
+    fun `loadMeme sets error when meme not found`() =
+        runTest {
+            coEvery { getMemeByIdUseCase(any()) } returns null
 
-        val state = viewModel.uiState.value
-        assertThat(state.editedTitle).isEqualTo(testMeme.title)
-        assertThat(state.editedDescription).isEqualTo(testMeme.description)
-        assertThat(state.editedEmojis).containsExactly("😀")
-    }
+            viewModel = createViewModel()
+            advanceUntilIdle()
 
-    @Test
-    fun `loadMeme records view after successful load`() = runTest {
-        coEvery { getMemeByIdUseCase(1L) } returns testMeme
-
-        viewModel = createViewModel()
-        advanceUntilIdle()
-
-        coVerify { recordMemeViewUseCase(1L) }
-    }
+            val state = viewModel.uiState.value
+            assertThat(state.errorMessage).isEqualTo("Meme not found")
+            assertThat(state.isLoading).isFalse()
+        }
 
     @Test
-    fun `loadMeme does not record view when meme not found`() = runTest {
-        coEvery { getMemeByIdUseCase(1L) } returns null
+    fun `loadMeme sets error for invalid meme ID`() =
+        runTest {
+            savedStateHandle = SavedStateHandle(mapOf("memeId" to -1L))
 
-        viewModel = createViewModel()
-        advanceUntilIdle()
+            viewModel = createViewModel()
+            advanceUntilIdle()
 
-        coVerify(exactly = 0) { recordMemeViewUseCase(any()) }
-    }
+            val state = viewModel.uiState.value
+            assertThat(state.errorMessage).isEqualTo("Invalid meme ID")
+        }
+
+    @Test
+    fun `loadMeme initializes edit fields from meme`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertThat(state.editedTitle).isEqualTo(testMeme.title)
+            assertThat(state.editedDescription).isEqualTo(testMeme.description)
+            assertThat(state.editedEmojis).containsExactly("😀")
+        }
+
+    @Test
+    fun `loadMeme records view after successful load`() =
+        runTest {
+            coEvery { getMemeByIdUseCase(1L) } returns testMeme
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            coVerify { recordMemeViewUseCase(1L) }
+        }
+
+    @Test
+    fun `loadMeme does not record view when meme not found`() =
+        runTest {
+            coEvery { getMemeByIdUseCase(1L) } returns null
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            coVerify(exactly = 0) { recordMemeViewUseCase(any()) }
+        }
 
     // endregion
 
     // region Edit Mode Tests
 
     @Test
-    fun `ToggleEditMode enables edit mode`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
+    fun `ToggleEditMode enables edit mode`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
 
-        viewModel.onIntent(MemeDetailIntent.ToggleEditMode)
-        advanceUntilIdle()
-
-        assertThat(viewModel.uiState.value.isEditMode).isTrue()
-    }
-
-    @Test
-    fun `ToggleEditMode disables edit mode when no changes`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
-
-        viewModel.onIntent(MemeDetailIntent.ToggleEditMode)
-        viewModel.onIntent(MemeDetailIntent.ToggleEditMode)
-        advanceUntilIdle()
-
-        assertThat(viewModel.uiState.value.isEditMode).isFalse()
-    }
-
-    @Test
-    fun `ToggleEditMode with unsaved changes shows snackbar`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
-
-        viewModel.onIntent(MemeDetailIntent.ToggleEditMode)
-        viewModel.onIntent(MemeDetailIntent.UpdateTitle("New Title"))
-        advanceUntilIdle()
-
-        viewModel.effects.test {
             viewModel.onIntent(MemeDetailIntent.ToggleEditMode)
             advanceUntilIdle()
 
-            val effect = awaitItem()
-            assertThat(effect).isInstanceOf(MemeDetailEffect.ShowSnackbar::class.java)
+            assertThat(viewModel.uiState.value.isEditMode).isTrue()
         }
-    }
+
+    @Test
+    fun `ToggleEditMode disables edit mode when no changes`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onIntent(MemeDetailIntent.ToggleEditMode)
+            viewModel.onIntent(MemeDetailIntent.ToggleEditMode)
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.isEditMode).isFalse()
+        }
+
+    @Test
+    fun `ToggleEditMode with unsaved changes shows snackbar`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onIntent(MemeDetailIntent.ToggleEditMode)
+            viewModel.onIntent(MemeDetailIntent.UpdateTitle("New Title"))
+            advanceUntilIdle()
+
+            viewModel.effects.test {
+                viewModel.onIntent(MemeDetailIntent.ToggleEditMode)
+                advanceUntilIdle()
+
+                val effect = awaitItem()
+                assertThat(effect).isInstanceOf(MemeDetailEffect.ShowSnackbar::class.java)
+            }
+        }
 
     // endregion
 
     // region Edit Operations Tests
 
     @Test
-    fun `UpdateTitle updates editedTitle`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
+    fun `UpdateTitle updates editedTitle`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
 
-        viewModel.onIntent(MemeDetailIntent.UpdateTitle("New Title"))
-        advanceUntilIdle()
+            viewModel.onIntent(MemeDetailIntent.UpdateTitle("New Title"))
+            advanceUntilIdle()
 
-        assertThat(viewModel.uiState.value.editedTitle).isEqualTo("New Title")
-    }
-
-    @Test
-    fun `UpdateDescription updates editedDescription`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
-
-        viewModel.onIntent(MemeDetailIntent.UpdateDescription("New Description"))
-        advanceUntilIdle()
-
-        assertThat(viewModel.uiState.value.editedDescription).isEqualTo("New Description")
-    }
+            assertThat(viewModel.uiState.value.editedTitle).isEqualTo("New Title")
+        }
 
     @Test
-    fun `AddEmoji adds emoji to list`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
+    fun `UpdateDescription updates editedDescription`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
 
-        viewModel.onIntent(MemeDetailIntent.AddEmoji("🎉"))
-        advanceUntilIdle()
+            viewModel.onIntent(MemeDetailIntent.UpdateDescription("New Description"))
+            advanceUntilIdle()
 
-        assertThat(viewModel.uiState.value.editedEmojis).contains("🎉")
-    }
-
-    @Test
-    fun `AddEmoji does not add duplicate`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
-
-        val initialSize = viewModel.uiState.value.editedEmojis.size
-        viewModel.onIntent(MemeDetailIntent.AddEmoji("😀")) // Already exists
-        advanceUntilIdle()
-
-        assertThat(viewModel.uiState.value.editedEmojis.size).isEqualTo(initialSize)
-    }
+            assertThat(viewModel.uiState.value.editedDescription).isEqualTo("New Description")
+        }
 
     @Test
-    fun `RemoveEmoji removes emoji from list`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
+    fun `AddEmoji adds emoji to list`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
 
-        viewModel.onIntent(MemeDetailIntent.RemoveEmoji("😀"))
-        advanceUntilIdle()
+            viewModel.onIntent(MemeDetailIntent.AddEmoji("🎉"))
+            advanceUntilIdle()
 
-        assertThat(viewModel.uiState.value.editedEmojis).doesNotContain("😀")
-    }
+            assertThat(viewModel.uiState.value.editedEmojis).contains("🎉")
+        }
+
+    @Test
+    fun `AddEmoji does not add duplicate`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            val initialSize = viewModel.uiState.value.editedEmojis.size
+            viewModel.onIntent(MemeDetailIntent.AddEmoji("😀")) // Already exists
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.editedEmojis.size).isEqualTo(initialSize)
+        }
+
+    @Test
+    fun `RemoveEmoji removes emoji from list`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onIntent(MemeDetailIntent.RemoveEmoji("😀"))
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.editedEmojis).doesNotContain("😀")
+        }
 
     // endregion
 
     // region Favorite Tests
 
     @Test
-    fun `ToggleFavorite calls use case`() = runTest {
-        val updatedMeme = testMeme.copy(isFavorite = true)
-        coEvery { toggleFavoriteUseCase(1L) } returns Result.success(Unit)
-        coEvery { getMemeByIdUseCase(1L) } returns updatedMeme
+    fun `ToggleFavorite calls use case`() =
+        runTest {
+            val updatedMeme = testMeme.copy(isFavorite = true)
+            coEvery { toggleFavoriteUseCase(1L) } returns Result.success(Unit)
+            coEvery { getMemeByIdUseCase(1L) } returns updatedMeme
 
-        viewModel = createViewModel()
-        advanceUntilIdle()
+            viewModel = createViewModel()
+            advanceUntilIdle()
 
-        viewModel.onIntent(MemeDetailIntent.ToggleFavorite)
-        advanceUntilIdle()
-
-        coVerify { toggleFavoriteUseCase(1L) }
-    }
-
-    @Test
-    fun `ToggleFavorite success shows snackbar`() = runTest {
-        val updatedMeme = testMeme.copy(isFavorite = true)
-        coEvery { toggleFavoriteUseCase(1L) } returns Result.success(Unit)
-        coEvery { getMemeByIdUseCase(1L) } returns updatedMeme
-
-        viewModel = createViewModel()
-        advanceUntilIdle()
-
-        viewModel.effects.test {
             viewModel.onIntent(MemeDetailIntent.ToggleFavorite)
             advanceUntilIdle()
 
-            val effect = awaitItem()
-            assertThat(effect).isInstanceOf(MemeDetailEffect.ShowSnackbar::class.java)
-            assertThat((effect as MemeDetailEffect.ShowSnackbar).message).contains("Added to favorites")
+            coVerify { toggleFavoriteUseCase(1L) }
         }
-    }
+
+    @Test
+    fun `ToggleFavorite success shows snackbar`() =
+        runTest {
+            val updatedMeme = testMeme.copy(isFavorite = true)
+            coEvery { toggleFavoriteUseCase(1L) } returns Result.success(Unit)
+            coEvery { getMemeByIdUseCase(1L) } returns updatedMeme
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.effects.test {
+                viewModel.onIntent(MemeDetailIntent.ToggleFavorite)
+                advanceUntilIdle()
+
+                val effect = awaitItem()
+                assertThat(effect).isInstanceOf(MemeDetailEffect.ShowSnackbar::class.java)
+                assertThat((effect as MemeDetailEffect.ShowSnackbar).message).contains("Added to favorites")
+            }
+        }
 
     // endregion
 
     // region Delete Tests
 
     @Test
-    fun `ShowDeleteDialog sets showDeleteDialog true`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
+    fun `ShowDeleteDialog sets showDeleteDialog true`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
 
-        viewModel.onIntent(MemeDetailIntent.ShowDeleteDialog)
-        advanceUntilIdle()
+            viewModel.onIntent(MemeDetailIntent.ShowDeleteDialog)
+            advanceUntilIdle()
 
-        assertThat(viewModel.uiState.value.showDeleteDialog).isTrue()
-    }
-
-    @Test
-    fun `DismissDeleteDialog sets showDeleteDialog false`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
-
-        viewModel.onIntent(MemeDetailIntent.ShowDeleteDialog)
-        viewModel.onIntent(MemeDetailIntent.DismissDeleteDialog)
-        advanceUntilIdle()
-
-        assertThat(viewModel.uiState.value.showDeleteDialog).isFalse()
-    }
+            assertThat(viewModel.uiState.value.showDeleteDialog).isTrue()
+        }
 
     @Test
-    fun `ConfirmDelete calls delete use case`() = runTest {
-        coEvery { deleteMemeUseCase(1L) } returns Result.success(Unit)
+    fun `DismissDeleteDialog sets showDeleteDialog false`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
 
-        viewModel = createViewModel()
-        advanceUntilIdle()
+            viewModel.onIntent(MemeDetailIntent.ShowDeleteDialog)
+            viewModel.onIntent(MemeDetailIntent.DismissDeleteDialog)
+            advanceUntilIdle()
 
-        viewModel.onIntent(MemeDetailIntent.ConfirmDelete)
-        advanceUntilIdle()
-
-        coVerify { deleteMemeUseCase(1L) }
-    }
+            assertThat(viewModel.uiState.value.showDeleteDialog).isFalse()
+        }
 
     @Test
-    fun `ConfirmDelete success navigates back`() = runTest {
-        coEvery { deleteMemeUseCase(1L) } returns Result.success(Unit)
+    fun `ConfirmDelete calls delete use case`() =
+        runTest {
+            coEvery { deleteMemeUseCase(1L) } returns Result.success(Unit)
 
-        viewModel = createViewModel()
-        advanceUntilIdle()
+            viewModel = createViewModel()
+            advanceUntilIdle()
 
-        viewModel.effects.test {
             viewModel.onIntent(MemeDetailIntent.ConfirmDelete)
             advanceUntilIdle()
 
-            val snackbarEffect = awaitItem()
-            assertThat(snackbarEffect).isInstanceOf(MemeDetailEffect.ShowSnackbar::class.java)
-
-            val navEffect = awaitItem()
-            assertThat(navEffect).isEqualTo(MemeDetailEffect.NavigateBack)
+            coVerify { deleteMemeUseCase(1L) }
         }
-    }
+
+    @Test
+    fun `ConfirmDelete success navigates back`() =
+        runTest {
+            coEvery { deleteMemeUseCase(1L) } returns Result.success(Unit)
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.effects.test {
+                viewModel.onIntent(MemeDetailIntent.ConfirmDelete)
+                advanceUntilIdle()
+
+                val snackbarEffect = awaitItem()
+                assertThat(snackbarEffect).isInstanceOf(MemeDetailEffect.ShowSnackbar::class.java)
+
+                val navEffect = awaitItem()
+                assertThat(navEffect).isEqualTo(MemeDetailEffect.NavigateBack)
+            }
+        }
 
     // endregion
 
     // region Share Tests
 
     @Test
-    fun `Share navigates to share screen`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
-
-        viewModel.effects.test {
-            viewModel.onIntent(MemeDetailIntent.Share)
+    fun `Share navigates to share screen`() =
+        runTest {
+            viewModel = createViewModel()
             advanceUntilIdle()
 
-            val effect = awaitItem()
-            assertThat(effect).isInstanceOf(MemeDetailEffect.NavigateToShare::class.java)
-            assertThat((effect as MemeDetailEffect.NavigateToShare).memeId).isEqualTo(1L)
+            viewModel.effects.test {
+                viewModel.onIntent(MemeDetailIntent.Share)
+                advanceUntilIdle()
+
+                val effect = awaitItem()
+                assertThat(effect).isInstanceOf(MemeDetailEffect.NavigateToShare::class.java)
+                assertThat((effect as MemeDetailEffect.NavigateToShare).memeId).isEqualTo(1L)
+            }
         }
-    }
 
     @Test
-    fun `OpenShareScreen emits NavigateToShare effect`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
-
-        viewModel.effects.test {
-            viewModel.onIntent(MemeDetailIntent.OpenShareScreen)
+    fun `OpenShareScreen emits NavigateToShare effect`() =
+        runTest {
+            viewModel = createViewModel()
             advanceUntilIdle()
 
-            val effect = awaitItem()
-            assertThat(effect).isInstanceOf(MemeDetailEffect.NavigateToShare::class.java)
-            assertThat((effect as MemeDetailEffect.NavigateToShare).memeId).isEqualTo(1L)
+            viewModel.effects.test {
+                viewModel.onIntent(MemeDetailIntent.OpenShareScreen)
+                advanceUntilIdle()
+
+                val effect = awaitItem()
+                assertThat(effect).isInstanceOf(MemeDetailEffect.NavigateToShare::class.java)
+                assertThat((effect as MemeDetailEffect.NavigateToShare).memeId).isEqualTo(1L)
+            }
         }
-    }
 
     // endregion
 
     // region Save Changes Tests
 
     @Test
-    fun `SaveChanges calls update use case with modified meme`() = runTest {
-        coEvery { updateMemeUseCase(any()) } returns Result.success(Unit)
+    fun `SaveChanges calls update use case with modified meme`() =
+        runTest {
+            coEvery { updateMemeUseCase(any()) } returns Result.success(Unit)
 
-        viewModel = createViewModel()
-        advanceUntilIdle()
+            viewModel = createViewModel()
+            advanceUntilIdle()
 
-        viewModel.onIntent(MemeDetailIntent.ToggleEditMode)
-        viewModel.onIntent(MemeDetailIntent.UpdateTitle("Updated Title"))
-        viewModel.onIntent(MemeDetailIntent.SaveChanges)
-        advanceUntilIdle()
+            viewModel.onIntent(MemeDetailIntent.ToggleEditMode)
+            viewModel.onIntent(MemeDetailIntent.UpdateTitle("Updated Title"))
+            viewModel.onIntent(MemeDetailIntent.SaveChanges)
+            advanceUntilIdle()
 
-        coVerify { updateMemeUseCase(match { it.title == "Updated Title" }) }
-    }
+            coVerify { updateMemeUseCase(match { it.title == "Updated Title" }) }
+        }
 
     @Test
-    fun `SaveChanges success exits edit mode`() = runTest {
-        coEvery { updateMemeUseCase(any()) } returns Result.success(Unit)
+    fun `SaveChanges success exits edit mode`() =
+        runTest {
+            coEvery { updateMemeUseCase(any()) } returns Result.success(Unit)
 
-        viewModel = createViewModel()
-        advanceUntilIdle()
+            viewModel = createViewModel()
+            advanceUntilIdle()
 
-        viewModel.onIntent(MemeDetailIntent.ToggleEditMode)
-        viewModel.onIntent(MemeDetailIntent.SaveChanges)
-        advanceUntilIdle()
+            viewModel.onIntent(MemeDetailIntent.ToggleEditMode)
+            viewModel.onIntent(MemeDetailIntent.SaveChanges)
+            advanceUntilIdle()
 
-        assertThat(viewModel.uiState.value.isEditMode).isFalse()
-    }
+            assertThat(viewModel.uiState.value.isEditMode).isFalse()
+        }
 
     // endregion
 
     // region Discard Changes Tests
 
     @Test
-    fun `DiscardChanges resets edit fields`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
+    fun `DiscardChanges resets edit fields`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
 
-        viewModel.onIntent(MemeDetailIntent.ToggleEditMode)
-        viewModel.onIntent(MemeDetailIntent.UpdateTitle("New Title"))
-        viewModel.onIntent(MemeDetailIntent.DiscardChanges)
-        advanceUntilIdle()
+            viewModel.onIntent(MemeDetailIntent.ToggleEditMode)
+            viewModel.onIntent(MemeDetailIntent.UpdateTitle("New Title"))
+            viewModel.onIntent(MemeDetailIntent.DiscardChanges)
+            advanceUntilIdle()
 
-        assertThat(viewModel.uiState.value.editedTitle).isEqualTo(testMeme.title)
-        assertThat(viewModel.uiState.value.isEditMode).isFalse()
-    }
+            assertThat(viewModel.uiState.value.editedTitle).isEqualTo(testMeme.title)
+            assertThat(viewModel.uiState.value.isEditMode).isFalse()
+        }
 
     // endregion
 
     // region Emoji Picker Tests
 
     @Test
-    fun `ShowEmojiPicker sets showEmojiPicker true`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
+    fun `ShowEmojiPicker sets showEmojiPicker true`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
 
-        viewModel.onIntent(MemeDetailIntent.ShowEmojiPicker)
-        advanceUntilIdle()
+            viewModel.onIntent(MemeDetailIntent.ShowEmojiPicker)
+            advanceUntilIdle()
 
-        assertThat(viewModel.uiState.value.showEmojiPicker).isTrue()
-    }
-
-    @Test
-    fun `DismissEmojiPicker sets showEmojiPicker false`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
-
-        viewModel.onIntent(MemeDetailIntent.ShowEmojiPicker)
-        viewModel.onIntent(MemeDetailIntent.DismissEmojiPicker)
-        advanceUntilIdle()
-
-        assertThat(viewModel.uiState.value.showEmojiPicker).isFalse()
-    }
+            assertThat(viewModel.uiState.value.showEmojiPicker).isTrue()
+        }
 
     @Test
-    fun `AddEmoji dismisses emoji picker`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
+    fun `DismissEmojiPicker sets showEmojiPicker false`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
 
-        viewModel.onIntent(MemeDetailIntent.ShowEmojiPicker)
-        viewModel.onIntent(MemeDetailIntent.AddEmoji("🎉"))
-        advanceUntilIdle()
+            viewModel.onIntent(MemeDetailIntent.ShowEmojiPicker)
+            viewModel.onIntent(MemeDetailIntent.DismissEmojiPicker)
+            advanceUntilIdle()
 
-        assertThat(viewModel.uiState.value.showEmojiPicker).isFalse()
-    }
+            assertThat(viewModel.uiState.value.showEmojiPicker).isFalse()
+        }
+
+    @Test
+    fun `AddEmoji dismisses emoji picker`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onIntent(MemeDetailIntent.ShowEmojiPicker)
+            viewModel.onIntent(MemeDetailIntent.AddEmoji("🎉"))
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.showEmojiPicker).isFalse()
+        }
 
     // endregion
 
     // region Dismiss Tests
 
     @Test
-    fun `Dismiss navigates back when no changes`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
-
-        viewModel.effects.test {
-            viewModel.onIntent(MemeDetailIntent.Dismiss)
+    fun `Dismiss navigates back when no changes`() =
+        runTest {
+            viewModel = createViewModel()
             advanceUntilIdle()
 
-            val effect = awaitItem()
-            assertThat(effect).isEqualTo(MemeDetailEffect.NavigateBack)
+            viewModel.effects.test {
+                viewModel.onIntent(MemeDetailIntent.Dismiss)
+                advanceUntilIdle()
+
+                val effect = awaitItem()
+                assertThat(effect).isEqualTo(MemeDetailEffect.NavigateBack)
+            }
         }
-    }
 
     @Test
-    fun `Dismiss shows warning when unsaved changes`() = runTest {
-        viewModel = createViewModel()
-        advanceUntilIdle()
-
-        viewModel.onIntent(MemeDetailIntent.ToggleEditMode)
-        viewModel.onIntent(MemeDetailIntent.UpdateTitle("New Title"))
-        advanceUntilIdle()
-
-        viewModel.effects.test {
-            viewModel.onIntent(MemeDetailIntent.Dismiss)
+    fun `Dismiss shows warning when unsaved changes`() =
+        runTest {
+            viewModel = createViewModel()
             advanceUntilIdle()
 
-            val effect = awaitItem()
-            assertThat(effect).isInstanceOf(MemeDetailEffect.ShowSnackbar::class.java)
-            assertThat((effect as MemeDetailEffect.ShowSnackbar).message).contains("unsaved changes")
+            viewModel.onIntent(MemeDetailIntent.ToggleEditMode)
+            viewModel.onIntent(MemeDetailIntent.UpdateTitle("New Title"))
+            advanceUntilIdle()
+
+            viewModel.effects.test {
+                viewModel.onIntent(MemeDetailIntent.Dismiss)
+                advanceUntilIdle()
+
+                val effect = awaitItem()
+                assertThat(effect).isInstanceOf(MemeDetailEffect.ShowSnackbar::class.java)
+                assertThat((effect as MemeDetailEffect.ShowSnackbar).message).contains("unsaved changes")
+            }
         }
-    }
 
     // endregion
 
     // region hasUnsavedChanges Tests
 
     @Test
-    fun `hasUnsavedChanges is false when editedTitle equals empty string and original title is null`() = runTest {
-        val memeWithNullTitle = createTestMeme(1L).copy(title = null)
-        coEvery { getMemeByIdUseCase(1L) } returns memeWithNullTitle
+    fun `hasUnsavedChanges is false when editedTitle equals empty string and original title is null`() =
+        runTest {
+            val memeWithNullTitle = createTestMeme(1L).copy(title = null)
+            coEvery { getMemeByIdUseCase(1L) } returns memeWithNullTitle
 
-        viewModel = createViewModel()
-        advanceUntilIdle()
+            viewModel = createViewModel()
+            advanceUntilIdle()
 
-        viewModel.onIntent(MemeDetailIntent.ToggleEditMode)
-        advanceUntilIdle()
+            viewModel.onIntent(MemeDetailIntent.ToggleEditMode)
+            advanceUntilIdle()
 
-        assertThat(viewModel.uiState.value.editedTitle).isEqualTo("")
-        assertThat(viewModel.uiState.value.hasUnsavedChanges).isFalse()
-    }
+            assertThat(viewModel.uiState.value.editedTitle).isEqualTo("")
+            assertThat(viewModel.uiState.value.hasUnsavedChanges).isFalse()
+        }
 
     @Test
-    fun `hasUnsavedChanges is false when editedDescription equals empty string and original description is null`() = runTest {
-        val memeWithNullDescription = createTestMeme(1L).copy(description = null)
-        coEvery { getMemeByIdUseCase(1L) } returns memeWithNullDescription
+    fun `hasUnsavedChanges is false when editedDescription equals empty string and original description is null`() =
+        runTest {
+            val memeWithNullDescription = createTestMeme(1L).copy(description = null)
+            coEvery { getMemeByIdUseCase(1L) } returns memeWithNullDescription
 
-        viewModel = createViewModel()
-        advanceUntilIdle()
+            viewModel = createViewModel()
+            advanceUntilIdle()
 
-        viewModel.onIntent(MemeDetailIntent.ToggleEditMode)
-        advanceUntilIdle()
+            viewModel.onIntent(MemeDetailIntent.ToggleEditMode)
+            advanceUntilIdle()
 
-        assertThat(viewModel.uiState.value.editedDescription).isEqualTo("")
-        assertThat(viewModel.uiState.value.hasUnsavedChanges).isFalse()
-    }
+            assertThat(viewModel.uiState.value.editedDescription).isEqualTo("")
+            assertThat(viewModel.uiState.value.hasUnsavedChanges).isFalse()
+        }
 
     @Test
     fun `save button is disabled when isSaving`() {
         // Verify that isSaving prevents hasUnsavedChanges from enabling save
         val meme = createTestMeme(1L)
-        val state = MemeDetailUiState(
-            meme = meme,
-            isEditMode = true,
-            editedTitle = "New Title",
-            editedDescription = meme.description ?: "",
-            editedEmojis = meme.emojiTags.map { it.emoji },
-            isSaving = true,
-        )
+        val state =
+            MemeDetailUiState(
+                meme = meme,
+                isEditMode = true,
+                editedTitle = "New Title",
+                editedDescription = meme.description ?: "",
+                editedEmojis = meme.emojiTags.map { it.emoji },
+                isSaving = true,
+            )
 
         assertThat(state.hasUnsavedChanges).isTrue()
         assertThat(state.isSaving).isTrue()
@@ -643,56 +678,60 @@ class MemeDetailViewModelTest {
     // region Regression: Empty Emoji State and Favorite Toggle (p2-ux)
 
     @Test
-    fun `when meme has no emoji tags then empty state is exposed`() = runTest {
-        val memeWithNoEmojis = createTestMeme(1L).copy(emojiTags = emptyList())
-        coEvery { getMemeByIdUseCase(1L) } returns memeWithNoEmojis
+    fun `when meme has no emoji tags then empty state is exposed`() =
+        runTest {
+            val memeWithNoEmojis = createTestMeme(1L).copy(emojiTags = emptyList())
+            coEvery { getMemeByIdUseCase(1L) } returns memeWithNoEmojis
 
-        viewModel = createViewModel()
-        advanceUntilIdle()
+            viewModel = createViewModel()
+            advanceUntilIdle()
 
-        val state = viewModel.uiState.value
-        assertThat(state.meme).isNotNull()
-        assertThat(state.meme!!.emojiTags).isEmpty()
-        assertThat(state.editedEmojis).isEmpty()
-    }
+            val state = viewModel.uiState.value
+            assertThat(state.meme).isNotNull()
+            assertThat(state.meme!!.emojiTags).isEmpty()
+            assertThat(state.editedEmojis).isEmpty()
+        }
 
     @Test
-    fun `when toggle favorite then favorite state updates`() = runTest {
-        val updatedMeme = testMeme.copy(isFavorite = true)
-        coEvery { toggleFavoriteUseCase(1L) } returns Result.success(Unit)
-        coEvery { getMemeByIdUseCase(1L) } returnsMany listOf(testMeme, updatedMeme)
+    fun `when toggle favorite then favorite state updates`() =
+        runTest {
+            val updatedMeme = testMeme.copy(isFavorite = true)
+            coEvery { toggleFavoriteUseCase(1L) } returns Result.success(Unit)
+            coEvery { getMemeByIdUseCase(1L) } returnsMany listOf(testMeme, updatedMeme)
 
-        viewModel = createViewModel()
-        advanceUntilIdle()
+            viewModel = createViewModel()
+            advanceUntilIdle()
 
-        assertThat(viewModel.uiState.value.meme!!.isFavorite).isFalse()
+            assertThat(viewModel.uiState.value.meme!!.isFavorite).isFalse()
 
-        viewModel.onIntent(MemeDetailIntent.ToggleFavorite)
-        advanceUntilIdle()
+            viewModel.onIntent(MemeDetailIntent.ToggleFavorite)
+            advanceUntilIdle()
 
-        coVerify { toggleFavoriteUseCase(1L) }
-        assertThat(viewModel.uiState.value.meme!!.isFavorite).isTrue()
-    }
+            coVerify { toggleFavoriteUseCase(1L) }
+            assertThat(viewModel.uiState.value.meme!!.isFavorite).isTrue()
+        }
 
     // endregion
 
     companion object {
-        private fun createTestMeme(id: Long) = Meme(
-            id = id,
-            filePath = "/test/path/meme$id.jpg",
-            fileName = "meme$id.jpg",
-            mimeType = "image/jpeg",
-            width = 1080,
-            height = 1920,
-            fileSizeBytes = 1024L,
-            importedAt = System.currentTimeMillis(),
-            emojiTags = listOf(
-                EmojiTag(emoji = "😀", name = "grinning"),
-            ),
-            title = "Test Meme $id",
-            description = "Test description",
-            textContent = "test text",
-            isFavorite = false,
-        )
+        private fun createTestMeme(id: Long) =
+            Meme(
+                id = id,
+                filePath = "/test/path/meme$id.jpg",
+                fileName = "meme$id.jpg",
+                mimeType = "image/jpeg",
+                width = 1080,
+                height = 1920,
+                fileSizeBytes = 1024L,
+                importedAt = System.currentTimeMillis(),
+                emojiTags =
+                    listOf(
+                        EmojiTag(emoji = "😀", name = "grinning"),
+                    ),
+                title = "Test Meme $id",
+                description = "Test description",
+                textContent = "test text",
+                isFavorite = false,
+            )
     }
 }

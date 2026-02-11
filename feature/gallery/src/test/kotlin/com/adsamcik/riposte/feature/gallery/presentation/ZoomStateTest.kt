@@ -6,7 +6,6 @@ import org.junit.Before
 import org.junit.Test
 
 class ZoomStateTest {
-
     private lateinit var zoomState: ZoomState
 
     @Before

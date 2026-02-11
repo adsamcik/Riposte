@@ -1,12 +1,11 @@
 package com.adsamcik.riposte.feature.gallery.presentation
 
+import android.content.res.Configuration
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
-import android.content.res.Configuration
-import com.adsamcik.riposte.feature.gallery.domain.usecase.SimilarMemesStatus
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
@@ -41,19 +40,18 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
-
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHost
@@ -82,7 +80,6 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
@@ -90,6 +87,7 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -101,8 +99,8 @@ import com.adsamcik.riposte.core.ui.component.EmojiChip
 import com.adsamcik.riposte.core.ui.component.ErrorState
 import com.adsamcik.riposte.core.ui.component.LoadingScreen
 import com.adsamcik.riposte.feature.gallery.R
+import com.adsamcik.riposte.feature.gallery.domain.usecase.SimilarMemesStatus
 import com.adsamcik.riposte.feature.gallery.presentation.component.EditEmojiDialog
-import androidx.activity.compose.BackHandler
 import kotlinx.coroutines.flow.collectLatest
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -134,15 +132,26 @@ fun MemeDetailScreen(
                 is MemeDetailEffect.CopyToClipboard -> {
                     val meme = uiState.meme
                     if (meme != null) {
-                        val uri = androidx.core.content.FileProvider.getUriForFile(
-                            context,
-                            "${context.packageName}.fileprovider",
-                            java.io.File(meme.filePath),
-                        )
-                        val clip = android.content.ClipData.newUri(context.contentResolver, meme.title ?: meme.fileName, uri)
-                        val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                        val uri =
+                            androidx.core.content.FileProvider.getUriForFile(
+                                context,
+                                "${context.packageName}.fileprovider",
+                                java.io.File(meme.filePath),
+                            )
+                        val clip =
+                            android.content.ClipData.newUri(
+                                context.contentResolver,
+                                meme.title ?: meme.fileName,
+                                uri,
+                            )
+                        val clipboard =
+                            context.getSystemService(
+                                android.content.Context.CLIPBOARD_SERVICE,
+                            ) as android.content.ClipboardManager
                         clipboard.setPrimaryClip(clip)
-                        snackbarHostState.showSnackbar(context.getString(com.adsamcik.riposte.core.ui.R.string.quick_share_copy_clipboard))
+                        snackbarHostState.showSnackbar(
+                            context.getString(com.adsamcik.riposte.core.ui.R.string.quick_share_copy_clipboard),
+                        )
                     }
                 }
             }
@@ -275,9 +284,10 @@ private fun MemeDetailScreenContent(
         )
     }
 
-    val bottomSheetState = rememberStandardBottomSheetState(
-        initialValue = SheetValue.PartiallyExpanded,
-    )
+    val bottomSheetState =
+        rememberStandardBottomSheetState(
+            initialValue = SheetValue.PartiallyExpanded,
+        )
     val scaffoldState = rememberBottomSheetScaffoldState(bottomSheetState = bottomSheetState)
 
     when {
@@ -301,11 +311,12 @@ private fun MemeDetailScreenContent(
                 scaffoldState = scaffoldState,
                 sheetPeekHeight = adaptivePeekHeight,
                 snackbarHost = { SnackbarHost(snackbarHostState) },
-                sheetDragHandle = if (zoomState.isZoomed) {
-                    { /* empty — suppress drag handle when zoomed */ }
-                } else {
-                    null // default drag handle
-                },
+                sheetDragHandle =
+                    if (zoomState.isZoomed) {
+                        { /* empty — suppress drag handle when zoomed */ }
+                    } else {
+                        null // default drag handle
+                    },
                 sheetContent = {
                     MemeInfoSheet(
                         uiState = uiState,
@@ -318,54 +329,58 @@ private fun MemeDetailScreenContent(
                 var viewportSize by remember { mutableStateOf(IntSize.Zero) }
 
                 Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues)
-                        .background(MaterialTheme.colorScheme.scrim)
-                        .onSizeChanged { viewportSize = it }
-                        .pointerInput(zoomState) {
-                            detectTapGestures(
-                                onTap = { zoomState.toggleControls() },
-                                onDoubleTap = { zoomState.doubleTapToggle() },
-                            )
-                        }
-                        .pointerInput(zoomState) {
-                            detectTransformGestures { _, pan, zoom, _ ->
-                                zoomState.zoomBy(zoom)
-                                zoomState.panBy(
-                                    delta = pan,
-                                    viewportWidth = viewportSize.width.toFloat(),
-                                    viewportHeight = viewportSize.height.toFloat(),
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .padding(paddingValues)
+                            .background(MaterialTheme.colorScheme.scrim)
+                            .onSizeChanged { viewportSize = it }
+                            .pointerInput(zoomState) {
+                                detectTapGestures(
+                                    onTap = { zoomState.toggleControls() },
+                                    onDoubleTap = { zoomState.doubleTapToggle() },
                                 )
                             }
-                        },
+                            .pointerInput(zoomState) {
+                                detectTransformGestures { _, pan, zoom, _ ->
+                                    zoomState.zoomBy(zoom)
+                                    zoomState.panBy(
+                                        delta = pan,
+                                        viewportWidth = viewportSize.width.toFloat(),
+                                        viewportHeight = viewportSize.height.toFloat(),
+                                    )
+                                }
+                            },
                 ) {
                     // Zoomable image with placeholder/error background
                     var imageState by remember {
                         mutableStateOf<AsyncImagePainter.State>(AsyncImagePainter.State.Empty)
                     }
-                    val backgroundColor = when (imageState) {
-                        is AsyncImagePainter.State.Error -> MaterialTheme.colorScheme.errorContainer
-                        is AsyncImagePainter.State.Loading -> MaterialTheme.colorScheme.surfaceVariant
-                        else -> Color.Transparent
-                    }
+                    val backgroundColor =
+                        when (imageState) {
+                            is AsyncImagePainter.State.Error -> MaterialTheme.colorScheme.errorContainer
+                            is AsyncImagePainter.State.Loading -> MaterialTheme.colorScheme.surfaceVariant
+                            else -> Color.Transparent
+                        }
                     Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(backgroundColor)
-                            .graphicsLayer {
-                                scaleX = zoomState.scale
-                                scaleY = zoomState.scale
-                                translationX = zoomState.offset.x
-                                translationY = zoomState.offset.y
-                            },
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .background(backgroundColor)
+                                .graphicsLayer {
+                                    scaleX = zoomState.scale
+                                    scaleY = zoomState.scale
+                                    translationX = zoomState.offset.x
+                                    translationY = zoomState.offset.y
+                                },
                     ) {
                         AsyncImage(
                             model = meme.filePath,
-                            contentDescription = stringResource(
-                                R.string.gallery_cd_meme_image,
-                                meme.title ?: meme.fileName,
-                            ),
+                            contentDescription =
+                                stringResource(
+                                    R.string.gallery_cd_meme_image,
+                                    meme.title ?: meme.fileName,
+                                ),
                             // Crop fills the container but may clip edges on extreme aspect ratios;
                             // acceptable here since users can pinch-to-zoom to see the full image.
                             contentScale = ContentScale.Crop,
@@ -377,14 +392,15 @@ private fun MemeDetailScreenContent(
                     // Back button — always visible for navigation
                     IconButton(
                         onClick = onNavigateBack,
-                        modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .windowInsetsPadding(WindowInsets.statusBars)
-                            .padding(8.dp)
-                            .background(
-                                color = MaterialTheme.colorScheme.scrim.copy(alpha = 0.5f),
-                                shape = CircleShape,
-                            ),
+                        modifier =
+                            Modifier
+                                .align(Alignment.TopStart)
+                                .windowInsetsPadding(WindowInsets.statusBars)
+                                .padding(8.dp)
+                                .background(
+                                    color = MaterialTheme.colorScheme.scrim.copy(alpha = 0.5f),
+                                    shape = CircleShape,
+                                ),
                     ) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
@@ -411,10 +427,11 @@ private fun MemeInfoSheet(
     val notFavoritedText = stringResource(com.adsamcik.riposte.core.ui.R.string.ui_state_not_favorited)
 
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
     ) {
         // Action buttons row with labels
         Row(
@@ -427,11 +444,25 @@ private fun MemeInfoSheet(
                 ) {
                     Icon(
                         if (uiState.isEditMode) Icons.Default.Close else Icons.Default.Edit,
-                        contentDescription = if (uiState.isEditMode) stringResource(R.string.gallery_cd_cancel_edit) else stringResource(R.string.gallery_cd_edit),
+                        contentDescription =
+                            if (uiState.isEditMode) {
+                                stringResource(
+                                    R.string.gallery_cd_cancel_edit,
+                                )
+                            } else {
+                                stringResource(R.string.gallery_cd_edit)
+                            },
                     )
                 }
                 Text(
-                    text = if (uiState.isEditMode) stringResource(R.string.gallery_detail_action_cancel) else stringResource(R.string.gallery_detail_action_edit),
+                    text =
+                        if (uiState.isEditMode) {
+                            stringResource(
+                                R.string.gallery_detail_action_cancel,
+                            )
+                        } else {
+                            stringResource(R.string.gallery_detail_action_edit)
+                        },
                     style = MaterialTheme.typography.labelSmall,
                     textAlign = TextAlign.Center,
                 )
@@ -439,9 +470,10 @@ private fun MemeInfoSheet(
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 FilledIconButton(
                     onClick = { onIntent(MemeDetailIntent.Share) },
-                    colors = IconButtonDefaults.filledIconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    ),
+                    colors =
+                        IconButtonDefaults.filledIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        ),
                 ) {
                     Icon(Icons.Default.Share, contentDescription = stringResource(R.string.gallery_cd_share))
                 }
@@ -455,19 +487,21 @@ private fun MemeInfoSheet(
                 val haptic = LocalHapticFeedback.current
                 val favoriteScale by animateFloatAsState(
                     targetValue = if (meme.isFavorite) 1f else 1f,
-                    animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                        stiffness = Spring.StiffnessMedium,
-                    ),
+                    animationSpec =
+                        spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessMedium,
+                        ),
                     label = "favorite_scale",
                 )
                 var animateTrigger by remember { mutableStateOf(0) }
                 val animatedScale by animateFloatAsState(
                     targetValue = if (animateTrigger > 0) 1.3f else 1f,
-                    animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                        stiffness = Spring.StiffnessMedium,
-                    ),
+                    animationSpec =
+                        spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessMedium,
+                        ),
                     finishedListener = { animateTrigger = 0 },
                     label = "favorite_bounce",
                 )
@@ -477,22 +511,24 @@ private fun MemeInfoSheet(
                         haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
                         onIntent(MemeDetailIntent.ToggleFavorite)
                     },
-                    colors = if (meme.isFavorite) {
-                        IconButtonDefaults.filledTonalIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                        )
-                    } else {
-                        IconButtonDefaults.filledTonalIconButtonColors()
-                    },
-                    modifier = Modifier
-                        .graphicsLayer {
-                            scaleX = animatedScale
-                            scaleY = animatedScale
-                        }
-                        .semantics {
-                            role = Role.Button
-                            stateDescription = if (meme.isFavorite) favoritedText else notFavoritedText
+                    colors =
+                        if (meme.isFavorite) {
+                            IconButtonDefaults.filledTonalIconButtonColors(
+                                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                            )
+                        } else {
+                            IconButtonDefaults.filledTonalIconButtonColors()
                         },
+                    modifier =
+                        Modifier
+                            .graphicsLayer {
+                                scaleX = animatedScale
+                                scaleY = animatedScale
+                            }
+                            .semantics {
+                                role = Role.Button
+                                stateDescription = if (meme.isFavorite) favoritedText else notFavoritedText
+                            },
                 ) {
                     Icon(
                         if (meme.isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
@@ -508,9 +544,10 @@ private fun MemeInfoSheet(
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 OutlinedIconButton(
                     onClick = { onIntent(MemeDetailIntent.ShowDeleteDialog) },
-                    colors = IconButtonDefaults.outlinedIconButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error,
-                    ),
+                    colors =
+                        IconButtonDefaults.outlinedIconButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error,
+                        ),
                 ) {
                     Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.gallery_cd_delete))
                 }
@@ -647,7 +684,13 @@ private fun MemeInfoSheet(
 
             // Metadata section — always visible, no collapsible
             Text(
-                text = stringResource(R.string.gallery_detail_label_imported, java.time.Instant.ofEpochMilli(meme.importedAt).atZone(java.time.ZoneId.systemDefault()).format(dateFormatter)),
+                text =
+                    stringResource(
+                        R.string.gallery_detail_label_imported,
+                        java.time.Instant.ofEpochMilli(
+                            meme.importedAt,
+                        ).atZone(java.time.ZoneId.systemDefault()).format(dateFormatter),
+                    ),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -731,9 +774,10 @@ private fun SimilarMemesSection(
 
         if (isLoading) {
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(100.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(100.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 androidx.compose.material3.CircularProgressIndicator(
@@ -797,19 +841,21 @@ private fun SimilarMemeCard(
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier
-            .width(100.dp)
-            .clip(MaterialTheme.shapes.medium)
-            .clickable(onClick = onClick, role = Role.Button),
+        modifier =
+            modifier
+                .width(100.dp)
+                .clip(MaterialTheme.shapes.medium)
+                .clickable(onClick = onClick, role = Role.Button),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         AsyncImage(
             model = meme.filePath,
             contentDescription = stringResource(R.string.gallery_cd_similar_meme, meme.title ?: meme.fileName),
             contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .size(100.dp)
-                .clip(MaterialTheme.shapes.medium),
+            modifier =
+                Modifier
+                    .size(100.dp)
+                    .clip(MaterialTheme.shapes.medium),
         )
         meme.title?.let { title ->
             Text(
@@ -825,24 +871,26 @@ private fun SimilarMemeCard(
 
 // region Previews
 
-private val detailPreviewMeme = com.adsamcik.riposte.core.model.Meme(
-    id = 1L,
-    filePath = "/preview/meme.jpg",
-    fileName = "meme.jpg",
-    mimeType = "image/jpeg",
-    width = 1024,
-    height = 768,
-    fileSizeBytes = 256_000L,
-    importedAt = System.currentTimeMillis(),
-    emojiTags = listOf(
-        com.adsamcik.riposte.core.model.EmojiTag.fromEmoji("😂"),
-        com.adsamcik.riposte.core.model.EmojiTag.fromEmoji("🔥"),
-    ),
-    title = "Funny cat meme",
-    description = "A hilarious cat wearing a tiny hat",
-    textContent = "When you finally fix the bug but break two more",
-    isFavorite = true,
-)
+private val detailPreviewMeme =
+    com.adsamcik.riposte.core.model.Meme(
+        id = 1L,
+        filePath = "/preview/meme.jpg",
+        fileName = "meme.jpg",
+        mimeType = "image/jpeg",
+        width = 1024,
+        height = 768,
+        fileSizeBytes = 256_000L,
+        importedAt = System.currentTimeMillis(),
+        emojiTags =
+            listOf(
+                com.adsamcik.riposte.core.model.EmojiTag.fromEmoji("😂"),
+                com.adsamcik.riposte.core.model.EmojiTag.fromEmoji("🔥"),
+            ),
+        title = "Funny cat meme",
+        description = "A hilarious cat wearing a tiny hat",
+        textContent = "When you finally fix the bug but break two more",
+        isFavorite = true,
+    )
 
 @Preview(name = "Loading", showBackground = true)
 @Composable
@@ -862,10 +910,11 @@ private fun MemeDetailLoadingPreview() {
 private fun MemeDetailContentPreview() {
     com.adsamcik.riposte.core.ui.theme.RiposteTheme {
         MemeDetailScreen(
-            uiState = MemeDetailUiState(
-                meme = detailPreviewMeme,
-                isLoading = false,
-            ),
+            uiState =
+                MemeDetailUiState(
+                    meme = detailPreviewMeme,
+                    isLoading = false,
+                ),
             onIntent = {},
             onNavigateBack = {},
         )
@@ -877,14 +926,15 @@ private fun MemeDetailContentPreview() {
 private fun MemeDetailEditModePreview() {
     com.adsamcik.riposte.core.ui.theme.RiposteTheme {
         MemeDetailScreen(
-            uiState = MemeDetailUiState(
-                meme = detailPreviewMeme,
-                isLoading = false,
-                isEditMode = true,
-                editedTitle = "Funny cat meme",
-                editedDescription = "A hilarious cat wearing a tiny hat",
-                editedEmojis = listOf("😂", "🔥"),
-            ),
+            uiState =
+                MemeDetailUiState(
+                    meme = detailPreviewMeme,
+                    isLoading = false,
+                    isEditMode = true,
+                    editedTitle = "Funny cat meme",
+                    editedDescription = "A hilarious cat wearing a tiny hat",
+                    editedEmojis = listOf("😂", "🔥"),
+                ),
             onIntent = {},
             onNavigateBack = {},
         )

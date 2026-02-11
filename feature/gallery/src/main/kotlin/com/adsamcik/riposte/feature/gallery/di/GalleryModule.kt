@@ -11,10 +11,7 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class GalleryModule {
-
     @Binds
     @Singleton
-    abstract fun bindGalleryRepository(
-        impl: GalleryRepositoryImpl
-    ): GalleryRepository
+    abstract fun bindGalleryRepository(impl: GalleryRepositoryImpl): GalleryRepository
 }

@@ -14,7 +14,10 @@ fun NavController.navigateToGallery(navOptions: NavOptions? = null) {
     navigate(GalleryRoute, navOptions)
 }
 
-fun NavController.navigateToMemeDetail(memeId: Long, navOptions: NavOptions? = null) {
+fun NavController.navigateToMemeDetail(
+    memeId: Long,
+    navOptions: NavOptions? = null,
+) {
     navigate(MemeDetailRoute(memeId), navOptions)
 }
 

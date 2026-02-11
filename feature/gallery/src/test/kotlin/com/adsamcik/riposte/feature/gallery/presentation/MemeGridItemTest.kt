@@ -4,15 +4,15 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
-import androidx.compose.ui.test.longClick
 import androidx.compose.ui.unit.dp
-import com.google.common.truth.Truth.assertThat
 import com.adsamcik.riposte.core.model.EmojiTag
 import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.core.ui.theme.RiposteTheme
+import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -20,22 +20,22 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class MemeGridItemTest {
-
     @get:Rule
     val composeRule = createComposeRule()
 
-    private val testMeme = Meme(
-        id = 1L,
-        filePath = "/storage/emulated/0/Memes/test.jpg",
-        fileName = "test.jpg",
-        mimeType = "image/jpeg",
-        width = 500,
-        height = 500,
-        fileSizeBytes = 50_000L,
-        importedAt = System.currentTimeMillis(),
-        emojiTags = listOf(EmojiTag(emoji = "😂", name = "joy")),
-        title = "Test meme",
-    )
+    private val testMeme =
+        Meme(
+            id = 1L,
+            filePath = "/storage/emulated/0/Memes/test.jpg",
+            fileName = "test.jpg",
+            mimeType = "image/jpeg",
+            width = 500,
+            height = 500,
+            fileSizeBytes = 50_000L,
+            importedAt = System.currentTimeMillis(),
+            emojiTags = listOf(EmojiTag(emoji = "😂", name = "joy")),
+            title = "Test meme",
+        )
 
     @Test
     fun `tap on grid item opens meme and does not share`() {

@@ -19,11 +19,12 @@ data class MemeDetailUiState(
     val isLoadingSimilar: Boolean = false,
     val quickShareMeme: Meme? = null,
     val quickShareTargets: List<ShareTarget> = emptyList(),
-){
+) {
     val hasUnsavedChanges: Boolean
-        get() = meme?.let { original ->
-            editedTitle != (original.title ?: "") ||
-                editedDescription != (original.description ?: "") ||
-                editedEmojis != original.emojiTags.map { it.emoji }
-        } ?: false
+        get() =
+            meme?.let { original ->
+                editedTitle != (original.title ?: "") ||
+                    editedDescription != (original.description ?: "") ||
+                    editedEmojis != original.emojiTags.map { it.emoji }
+            } ?: false
 }
