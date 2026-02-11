@@ -13,7 +13,6 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class LoadingStatesTest {
-
     @get:Rule
     val composeTestRule = createComposeRule()
 
@@ -55,7 +54,7 @@ class LoadingStatesTest {
             EmptyState(
                 emoji = "📭",
                 title = "No memes",
-                message = "Start by importing some memes"
+                message = "Start by importing some memes",
             )
         }
 
@@ -68,7 +67,7 @@ class LoadingStatesTest {
             EmptyState(
                 emoji = "📭",
                 title = "No memes yet",
-                message = "Start by importing some memes"
+                message = "Start by importing some memes",
             )
         }
 
@@ -81,7 +80,7 @@ class LoadingStatesTest {
             EmptyState(
                 emoji = "📭",
                 title = "No memes",
-                message = "Start by importing some memes"
+                message = "Start by importing some memes",
             )
         }
 
@@ -96,7 +95,7 @@ class LoadingStatesTest {
                 title = "No memes",
                 message = "Start by importing",
                 actionLabel = "Import Memes",
-                onAction = {}
+                onAction = {},
             )
         }
 
@@ -106,19 +105,19 @@ class LoadingStatesTest {
     @Test
     fun emptyState_actionButtonClickable() {
         var clicked = false
-        
+
         composeTestRule.setContent {
             EmptyState(
                 emoji = "📭",
                 title = "No memes",
                 message = "Start by importing",
                 actionLabel = "Import Memes",
-                onAction = { clicked = true }
+                onAction = { clicked = true },
             )
         }
 
         composeTestRule.onNodeWithText("Import Memes").performClick()
-        
+
         assertThat(clicked).isTrue()
     }
 
@@ -130,7 +129,7 @@ class LoadingStatesTest {
                 title = "No memes",
                 message = "Start by importing",
                 actionLabel = null,
-                onAction = null
+                onAction = null,
             )
         }
 
@@ -144,7 +143,7 @@ class LoadingStatesTest {
         composeTestRule.setContent {
             ErrorState(
                 title = "Something went wrong",
-                message = "Failed to load memes"
+                message = "Failed to load memes",
             )
         }
 
@@ -156,7 +155,7 @@ class LoadingStatesTest {
         composeTestRule.setContent {
             ErrorState(
                 title = "Oops!",
-                message = "Something went wrong"
+                message = "Something went wrong",
             )
         }
 
@@ -168,7 +167,7 @@ class LoadingStatesTest {
         composeTestRule.setContent {
             ErrorState(
                 title = "Error",
-                message = "Failed to load memes"
+                message = "Failed to load memes",
             )
         }
 
@@ -182,7 +181,7 @@ class LoadingStatesTest {
                 title = "Error",
                 message = "Failed",
                 retryLabel = "Try Again",
-                onRetry = {}
+                onRetry = {},
             )
         }
 
@@ -192,18 +191,18 @@ class LoadingStatesTest {
     @Test
     fun errorState_retryButtonClickable() {
         var retried = false
-        
+
         composeTestRule.setContent {
             ErrorState(
                 title = "Error",
                 message = "Failed",
                 retryLabel = "Retry",
-                onRetry = { retried = true }
+                onRetry = { retried = true },
             )
         }
 
         composeTestRule.onNodeWithText("Retry").performClick()
-        
+
         assertThat(retried).isTrue()
     }
 }

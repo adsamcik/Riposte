@@ -2,13 +2,12 @@ package com.adsamcik.riposte.core.ui.component
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.google.common.truth.Truth.assertThat
 import com.adsamcik.riposte.core.ui.theme.RiposteTheme
+import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -26,7 +25,6 @@ import org.junit.runner.RunWith
  */
 @RunWith(AndroidJUnit4::class)
 class DialogComponentTest {
-
     @get:Rule
     val composeTestRule = createComposeRule()
 
@@ -40,7 +38,7 @@ class DialogComponentTest {
                     title = "Delete Meme",
                     message = "Are you sure?",
                     onConfirm = {},
-                    onDismiss = {}
+                    onDismiss = {},
                 )
             }
         }
@@ -56,7 +54,7 @@ class DialogComponentTest {
                     title = "Delete Meme",
                     message = "Are you sure?",
                     onConfirm = {},
-                    onDismiss = {}
+                    onDismiss = {},
                 )
             }
         }
@@ -72,7 +70,7 @@ class DialogComponentTest {
                     title = "Delete",
                     message = "This action cannot be undone.",
                     onConfirm = {},
-                    onDismiss = {}
+                    onDismiss = {},
                 )
             }
         }
@@ -89,7 +87,7 @@ class DialogComponentTest {
                     message = "Are you sure?",
                     confirmText = "Delete",
                     onConfirm = {},
-                    onDismiss = {}
+                    onDismiss = {},
                 )
             }
         }
@@ -106,7 +104,7 @@ class DialogComponentTest {
                     message = "Are you sure?",
                     dismissText = "Cancel",
                     onConfirm = {},
-                    onDismiss = {}
+                    onDismiss = {},
                 )
             }
         }
@@ -125,7 +123,7 @@ class DialogComponentTest {
                     message = "Are you sure?",
                     confirmText = "Confirm",
                     onConfirm = { confirmed = true },
-                    onDismiss = {}
+                    onDismiss = {},
                 )
             }
         }
@@ -146,7 +144,7 @@ class DialogComponentTest {
                     message = "Are you sure?",
                     dismissText = "Cancel",
                     onConfirm = {},
-                    onDismiss = { dismissed = true }
+                    onDismiss = { dismissed = true },
                 )
             }
         }
@@ -165,7 +163,7 @@ class DialogComponentTest {
                 AlertMessageDialog(
                     title = "Error",
                     message = "Something went wrong",
-                    onDismiss = {}
+                    onDismiss = {},
                 )
             }
         }
@@ -180,7 +178,7 @@ class DialogComponentTest {
                 AlertMessageDialog(
                     title = "Info",
                     message = "Information",
-                    onDismiss = {}
+                    onDismiss = {},
                 )
             }
         }
@@ -197,7 +195,7 @@ class DialogComponentTest {
                 AlertMessageDialog(
                     title = "Info",
                     message = "Information",
-                    onDismiss = { dismissed = true }
+                    onDismiss = { dismissed = true },
                 )
             }
         }
@@ -218,7 +216,7 @@ class DialogComponentTest {
                     options = listOf("Light", "Dark", "System"),
                     selectedOption = "System",
                     onSelect = {},
-                    onDismiss = {}
+                    onDismiss = {},
                 )
             }
         }
@@ -235,7 +233,7 @@ class DialogComponentTest {
                     options = listOf("Light", "Dark", "System"),
                     selectedOption = "System",
                     onSelect = {},
-                    onDismiss = {}
+                    onDismiss = {},
                 )
             }
         }
@@ -256,7 +254,7 @@ class DialogComponentTest {
                     options = listOf("Light", "Dark", "System"),
                     selectedOption = "System",
                     onSelect = { selected = it },
-                    onDismiss = {}
+                    onDismiss = {},
                 )
             }
         }
@@ -273,7 +271,7 @@ class DialogComponentTest {
         composeTestRule.setContent {
             RiposteTheme {
                 ActionBottomSheet(
-                    onDismiss = {}
+                    onDismiss = {},
                 ) {
                     // Content
                 }
@@ -289,7 +287,7 @@ class DialogComponentTest {
             RiposteTheme {
                 ActionBottomSheet(
                     onDismiss = {},
-                    showDragHandle = true
+                    showDragHandle = true,
                 ) {
                     // Content
                 }
@@ -310,7 +308,7 @@ class DialogComponentTest {
                     message = "This will delete all memes permanently.",
                     confirmText = "Delete All",
                     onConfirm = {},
-                    onDismiss = {}
+                    onDismiss = {},
                 )
             }
         }
@@ -329,7 +327,7 @@ class DialogComponentTest {
                     initialValue = "",
                     placeholder = "Enter name",
                     onConfirm = {},
-                    onDismiss = {}
+                    onDismiss = {},
                 )
             }
         }
@@ -346,7 +344,7 @@ class DialogComponentTest {
                     initialValue = "Current Name",
                     placeholder = "Enter name",
                     onConfirm = {},
-                    onDismiss = {}
+                    onDismiss = {},
                 )
             }
         }
@@ -363,7 +361,7 @@ class DialogComponentTest {
                     initialValue = "",
                     placeholder = "Enter name",
                     onConfirm = {},
-                    onDismiss = {}
+                    onDismiss = {},
                 )
             }
         }

@@ -2,39 +2,37 @@ package com.adsamcik.riposte.core.ui.component
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasClickAction
-import androidx.compose.ui.test.hasContentDescription
-import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.google.common.truth.Truth.assertThat
 import com.adsamcik.riposte.core.model.EmojiTag
 import com.adsamcik.riposte.core.model.Meme
+import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class MemeCardTest {
-
     @get:Rule
     val composeTestRule = createComposeRule()
 
-    private val testMeme = Meme(
-        id = 1L,
-        filePath = "/test/meme.jpg",
-        fileName = "meme.jpg",
-        title = "Test Meme",
-        emojis = listOf("😀", "😂"),
-        emojiTags = listOf(
-            EmojiTag("😀", "happy"),
-            EmojiTag("😂", "laughing")
-        ),
-        isFavorite = false
-    )
+    private val testMeme =
+        Meme(
+            id = 1L,
+            filePath = "/test/meme.jpg",
+            fileName = "meme.jpg",
+            title = "Test Meme",
+            emojis = listOf("😀", "😂"),
+            emojiTags =
+                listOf(
+                    EmojiTag("😀", "happy"),
+                    EmojiTag("😂", "laughing"),
+                ),
+            isFavorite = false,
+        )
 
     @Test
     fun memeCard_displaysEmojis() {
@@ -43,7 +41,7 @@ class MemeCardTest {
                 meme = testMeme,
                 onClick = {},
                 onFavoriteClick = {},
-                showEmojis = true
+                showEmojis = true,
             )
         }
 
@@ -59,7 +57,7 @@ class MemeCardTest {
                 meme = testMeme,
                 onClick = {},
                 onFavoriteClick = {},
-                showEmojis = false
+                showEmojis = false,
             )
         }
 
@@ -73,7 +71,7 @@ class MemeCardTest {
             MemeCard(
                 meme = testMeme,
                 onClick = {},
-                onFavoriteClick = {}
+                onFavoriteClick = {},
             )
         }
 
@@ -83,12 +81,12 @@ class MemeCardTest {
     @Test
     fun memeCard_showsFilledFavoriteWhenFavorite() {
         val favoriteMeme = testMeme.copy(isFavorite = true)
-        
+
         composeTestRule.setContent {
             MemeCard(
                 meme = favoriteMeme,
                 onClick = {},
-                onFavoriteClick = {}
+                onFavoriteClick = {},
             )
         }
 
@@ -98,34 +96,34 @@ class MemeCardTest {
     @Test
     fun memeCard_clickable() {
         var clicked = false
-        
+
         composeTestRule.setContent {
             MemeCard(
                 meme = testMeme,
                 onClick = { clicked = true },
-                onFavoriteClick = {}
+                onFavoriteClick = {},
             )
         }
 
         composeTestRule.onNode(hasClickAction()).performClick()
-        
+
         assertThat(clicked).isTrue()
     }
 
     @Test
     fun memeCard_favoriteButtonClickable() {
         var favoriteClicked = false
-        
+
         composeTestRule.setContent {
             MemeCard(
                 meme = testMeme,
                 onClick = {},
-                onFavoriteClick = { favoriteClicked = true }
+                onFavoriteClick = { favoriteClicked = true },
             )
         }
 
         composeTestRule.onNodeWithContentDescription("Add to favorites").performClick()
-        
+
         assertThat(favoriteClicked).isTrue()
     }
 }

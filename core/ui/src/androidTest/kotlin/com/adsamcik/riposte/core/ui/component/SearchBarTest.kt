@@ -7,7 +7,6 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
-import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
@@ -17,7 +16,6 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class SearchBarTest {
-
     @get:Rule
     val composeTestRule = createComposeRule()
 
@@ -28,7 +26,7 @@ class SearchBarTest {
                 query = "",
                 onQueryChange = {},
                 onSearch = {},
-                placeholder = "Search memes..."
+                placeholder = "Search memes...",
             )
         }
 
@@ -42,7 +40,7 @@ class SearchBarTest {
                 query = "",
                 onQueryChange = {},
                 onSearch = {},
-                placeholder = "Find your memes"
+                placeholder = "Find your memes",
             )
         }
 
@@ -55,7 +53,7 @@ class SearchBarTest {
             SearchBar(
                 query = "",
                 onQueryChange = {},
-                onSearch = {}
+                onSearch = {},
             )
         }
 
@@ -68,7 +66,7 @@ class SearchBarTest {
             SearchBar(
                 query = "test query",
                 onQueryChange = {},
-                onSearch = {}
+                onSearch = {},
             )
         }
 
@@ -81,7 +79,7 @@ class SearchBarTest {
             SearchBar(
                 query = "",
                 onQueryChange = {},
-                onSearch = {}
+                onSearch = {},
             )
         }
 
@@ -94,7 +92,7 @@ class SearchBarTest {
             SearchBar(
                 query = "funny cats",
                 onQueryChange = {},
-                onSearch = {}
+                onSearch = {},
             )
         }
 
@@ -104,51 +102,51 @@ class SearchBarTest {
     @Test
     fun searchBar_textInputCallsOnQueryChange() {
         var capturedQuery = ""
-        
+
         composeTestRule.setContent {
             SearchBar(
                 query = capturedQuery,
                 onQueryChange = { capturedQuery = it },
-                onSearch = {}
+                onSearch = {},
             )
         }
 
         composeTestRule.onNode(hasText("Search memes...")).performTextInput("test")
-        
+
         assertThat(capturedQuery).isEqualTo("test")
     }
 
     @Test
     fun searchBar_clearButtonClearsQuery() {
         var capturedQuery = "some text"
-        
+
         composeTestRule.setContent {
             SearchBar(
                 query = capturedQuery,
                 onQueryChange = { capturedQuery = it },
-                onSearch = {}
+                onSearch = {},
             )
         }
 
         composeTestRule.onNodeWithContentDescription("Clear search").performClick()
-        
+
         assertThat(capturedQuery).isEmpty()
     }
 
     @Test
     fun searchBar_imeActionCallsOnSearch() {
         var searchCalled = false
-        
+
         composeTestRule.setContent {
             SearchBar(
                 query = "test",
                 onQueryChange = {},
-                onSearch = { searchCalled = true }
+                onSearch = { searchCalled = true },
             )
         }
 
         composeTestRule.onNodeWithText("test").performImeAction()
-        
+
         assertThat(searchCalled).isTrue()
     }
 }

@@ -2,7 +2,6 @@ package com.adsamcik.riposte.core.ui.components
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
-import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onFirst
@@ -11,9 +10,9 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.google.common.truth.Truth.assertThat
 import com.adsamcik.riposte.core.model.EmojiTag
 import com.adsamcik.riposte.core.ui.theme.RiposteTheme
+import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -30,7 +29,6 @@ import org.junit.runner.RunWith
  */
 @RunWith(AndroidJUnit4::class)
 class EmojiChipComponentTest {
-
     @get:Rule
     val composeTestRule = createComposeRule()
 
@@ -44,7 +42,7 @@ class EmojiChipComponentTest {
             RiposteTheme {
                 EmojiChip(
                     emojiTag = testEmoji,
-                    onClick = {}
+                    onClick = {},
                 )
             }
         }
@@ -58,7 +56,7 @@ class EmojiChipComponentTest {
             RiposteTheme {
                 EmojiChip(
                     emojiTag = testEmoji,
-                    onClick = {}
+                    onClick = {},
                 )
             }
         }
@@ -73,7 +71,7 @@ class EmojiChipComponentTest {
                 EmojiChip(
                     emojiTag = testEmoji,
                     onClick = {},
-                    showName = true
+                    showName = true,
                 )
             }
         }
@@ -88,7 +86,7 @@ class EmojiChipComponentTest {
                 EmojiChip(
                     emojiTag = testEmoji,
                     onClick = {},
-                    showName = false
+                    showName = false,
                 )
             }
         }
@@ -105,7 +103,7 @@ class EmojiChipComponentTest {
                 EmojiChip(
                     emojiTag = testEmoji,
                     onClick = {},
-                    selected = true
+                    selected = true,
                 )
             }
         }
@@ -120,7 +118,7 @@ class EmojiChipComponentTest {
                 EmojiChip(
                     emojiTag = testEmoji,
                     onClick = {},
-                    selected = false
+                    selected = false,
                 )
             }
         }
@@ -139,7 +137,7 @@ class EmojiChipComponentTest {
             RiposteTheme {
                 EmojiChip(
                     emojiTag = testEmoji,
-                    onClick = { clicked = true }
+                    onClick = { clicked = true },
                 )
             }
         }
@@ -157,7 +155,7 @@ class EmojiChipComponentTest {
             RiposteTheme {
                 EmojiChip(
                     emojiTag = testEmoji,
-                    onClick = { receivedEmoji = testEmoji }
+                    onClick = { receivedEmoji = testEmoji },
                 )
             }
         }
@@ -177,7 +175,7 @@ class EmojiChipComponentTest {
                     emojiTag = testEmoji,
                     onClick = {},
                     removable = true,
-                    onRemove = {}
+                    onRemove = {},
                 )
             }
         }
@@ -192,7 +190,7 @@ class EmojiChipComponentTest {
                 EmojiChip(
                     emojiTag = testEmoji,
                     onClick = {},
-                    removable = false
+                    removable = false,
                 )
             }
         }
@@ -210,7 +208,7 @@ class EmojiChipComponentTest {
                     emojiTag = testEmoji,
                     onClick = {},
                     removable = true,
-                    onRemove = { removed = true }
+                    onRemove = { removed = true },
                 )
             }
         }
@@ -224,17 +222,18 @@ class EmojiChipComponentTest {
 
     @Test
     fun emojiRow_displaysMultipleChips() {
-        val emojis = listOf(
-            EmojiTag("😂", "laughing"),
-            EmojiTag("😢", "crying"),
-            EmojiTag("🎉", "party")
-        )
+        val emojis =
+            listOf(
+                EmojiTag("😂", "laughing"),
+                EmojiTag("😢", "crying"),
+                EmojiTag("🎉", "party"),
+            )
 
         composeTestRule.setContent {
             RiposteTheme {
                 EmojiRow(
                     emojis = emojis,
-                    onEmojiClick = {}
+                    onEmojiClick = {},
                 )
             }
         }
@@ -246,17 +245,18 @@ class EmojiChipComponentTest {
 
     @Test
     fun emojiRow_selectsCorrectEmoji_onClick() {
-        val emojis = listOf(
-            EmojiTag("😂", "laughing"),
-            EmojiTag("😢", "crying")
-        )
+        val emojis =
+            listOf(
+                EmojiTag("😂", "laughing"),
+                EmojiTag("😢", "crying"),
+            )
         var selectedEmoji: EmojiTag? = null
 
         composeTestRule.setContent {
             RiposteTheme {
                 EmojiRow(
                     emojis = emojis,
-                    onEmojiClick = { selectedEmoji = it }
+                    onEmojiClick = { selectedEmoji = it },
                 )
             }
         }
@@ -274,7 +274,7 @@ class EmojiChipComponentTest {
             RiposteTheme {
                 EmojiPicker(
                     onEmojiSelected = {},
-                    onDismiss = {}
+                    onDismiss = {},
                 )
             }
         }
@@ -291,7 +291,7 @@ class EmojiChipComponentTest {
             RiposteTheme {
                 EmojiPicker(
                     onEmojiSelected = { selectedEmoji = it },
-                    onDismiss = {}
+                    onDismiss = {},
                 )
             }
         }
@@ -312,7 +312,7 @@ class EmojiChipComponentTest {
             RiposteTheme {
                 EmojiPicker(
                     onEmojiSelected = {},
-                    onDismiss = { dismissed = true }
+                    onDismiss = { dismissed = true },
                 )
             }
         }

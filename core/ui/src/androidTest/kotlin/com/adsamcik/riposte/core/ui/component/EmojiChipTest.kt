@@ -6,15 +6,14 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.google.common.truth.Truth.assertThat
 import com.adsamcik.riposte.core.model.EmojiTag
+import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class EmojiChipTest {
-
     @get:Rule
     val composeTestRule = createComposeRule()
 
@@ -24,7 +23,7 @@ class EmojiChipTest {
     fun emojiChip_displaysEmoji() {
         composeTestRule.setContent {
             EmojiChip(
-                emojiTag = testEmojiTag
+                emojiTag = testEmojiTag,
             )
         }
 
@@ -36,7 +35,7 @@ class EmojiChipTest {
         composeTestRule.setContent {
             EmojiChip(
                 emojiTag = testEmojiTag,
-                showName = true
+                showName = true,
             )
         }
 
@@ -46,11 +45,11 @@ class EmojiChipTest {
     @Test
     fun emojiChip_replacesUnderscoresInName() {
         val underscoreTag = EmojiTag(emoji = "🎉", name = "party_popper")
-        
+
         composeTestRule.setContent {
             EmojiChip(
                 emojiTag = underscoreTag,
-                showName = true
+                showName = true,
             )
         }
 
@@ -60,29 +59,29 @@ class EmojiChipTest {
     @Test
     fun emojiChip_isClickableWhenOnClickProvided() {
         var clicked = false
-        
+
         composeTestRule.setContent {
             EmojiChip(
                 emojiTag = testEmojiTag,
-                onClick = { clicked = true }
+                onClick = { clicked = true },
             )
         }
 
         composeTestRule.onNode(hasClickAction()).performClick()
-        
+
         assertThat(clicked).isTrue()
     }
 
     @Test
     fun emojiChip_variousEmojisDisplay() {
         val emojis = listOf("😂", "🔥", "❤️", "👍", "🎉")
-        
+
         emojis.forEach { emoji ->
             val tag = EmojiTag(emoji = emoji, name = "test")
             composeTestRule.setContent {
                 EmojiChip(emojiTag = tag)
             }
-            
+
             composeTestRule.onNodeWithText(emoji).assertIsDisplayed()
         }
     }

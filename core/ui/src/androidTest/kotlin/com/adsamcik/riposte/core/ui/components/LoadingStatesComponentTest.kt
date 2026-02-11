@@ -23,7 +23,6 @@ import org.junit.runner.RunWith
  */
 @RunWith(AndroidJUnit4::class)
 class LoadingStatesComponentTest {
-
     @get:Rule
     val composeTestRule = createComposeRule()
 
@@ -45,7 +44,7 @@ class LoadingStatesComponentTest {
         composeTestRule.setContent {
             RiposteTheme {
                 CircularLoadingIndicator(
-                    message = "Loading memes..."
+                    message = "Loading memes...",
                 )
             }
         }
@@ -71,7 +70,7 @@ class LoadingStatesComponentTest {
         composeTestRule.setContent {
             RiposteTheme {
                 LinearLoadingIndicator(
-                    progress = 0.5f
+                    progress = 0.5f,
                 )
             }
         }
@@ -97,7 +96,7 @@ class LoadingStatesComponentTest {
         composeTestRule.setContent {
             RiposteTheme {
                 FullScreenLoading(
-                    message = "Please wait..."
+                    message = "Please wait...",
                 )
             }
         }
@@ -160,7 +159,7 @@ class LoadingStatesComponentTest {
                 LoadingButton(
                     onClick = {},
                     loading = true,
-                    text = "Submit"
+                    text = "Submit",
                 )
             }
         }
@@ -175,7 +174,7 @@ class LoadingStatesComponentTest {
                 LoadingButton(
                     onClick = {},
                     loading = false,
-                    text = "Submit"
+                    text = "Submit",
                 )
             }
         }
@@ -190,7 +189,7 @@ class LoadingStatesComponentTest {
                 LoadingButton(
                     onClick = {},
                     loading = true,
-                    text = "Submit"
+                    text = "Submit",
                 )
             }
         }
@@ -205,7 +204,7 @@ class LoadingStatesComponentTest {
         composeTestRule.setContent {
             RiposteTheme {
                 PullToRefreshIndicator(
-                    refreshing = true
+                    refreshing = true,
                 )
             }
         }
@@ -221,7 +220,7 @@ class LoadingStatesComponentTest {
             RiposteTheme {
                 ErrorWithRetry(
                     message = "Something went wrong",
-                    onRetry = {}
+                    onRetry = {},
                 )
             }
         }
@@ -235,7 +234,7 @@ class LoadingStatesComponentTest {
             RiposteTheme {
                 ErrorWithRetry(
                     message = "Error",
-                    onRetry = {}
+                    onRetry = {},
                 )
             }
         }
@@ -250,7 +249,7 @@ class LoadingStatesComponentTest {
                 ErrorWithRetry(
                     message = "Error",
                     onRetry = {},
-                    retrying = true
+                    retrying = true,
                 )
             }
         }
@@ -265,7 +264,7 @@ class LoadingStatesComponentTest {
         composeTestRule.setContent {
             RiposteTheme {
                 EmptyState(
-                    message = "No memes found"
+                    message = "No memes found",
                 )
             }
         }
@@ -279,7 +278,7 @@ class LoadingStatesComponentTest {
             RiposteTheme {
                 EmptyState(
                     message = "No memes",
-                    showIcon = true
+                    showIcon = true,
                 )
             }
         }
@@ -294,7 +293,7 @@ class LoadingStatesComponentTest {
                 EmptyState(
                     message = "No memes",
                     actionLabel = "Import",
-                    onAction = {}
+                    onAction = {},
                 )
             }
         }

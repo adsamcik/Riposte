@@ -1,7 +1,6 @@
 package com.adsamcik.riposte.core.ui.components
 
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -9,8 +8,8 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.google.common.truth.Truth.assertThat
 import com.adsamcik.riposte.core.ui.theme.RiposteTheme
+import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -28,7 +27,6 @@ import org.junit.runner.RunWith
  */
 @RunWith(AndroidJUnit4::class)
 class SearchBarComponentTest {
-
     @get:Rule
     val composeTestRule = createComposeRule()
 
@@ -41,7 +39,7 @@ class SearchBarComponentTest {
                 SearchBar(
                     query = "",
                     onQueryChange = {},
-                    onSearch = {}
+                    onSearch = {},
                 )
             }
         }
@@ -57,7 +55,7 @@ class SearchBarComponentTest {
                     query = "",
                     onQueryChange = {},
                     onSearch = {},
-                    placeholder = "Search memes..."
+                    placeholder = "Search memes...",
                 )
             }
         }
@@ -72,7 +70,7 @@ class SearchBarComponentTest {
                 SearchBar(
                     query = "funny cat",
                     onQueryChange = {},
-                    onSearch = {}
+                    onSearch = {},
                 )
             }
         }
@@ -91,7 +89,7 @@ class SearchBarComponentTest {
                 SearchBar(
                     query = "",
                     onQueryChange = { receivedQuery = it },
-                    onSearch = {}
+                    onSearch = {},
                 )
             }
         }
@@ -110,7 +108,7 @@ class SearchBarComponentTest {
                 SearchBar(
                     query = "test",
                     onQueryChange = {},
-                    onSearch = {}
+                    onSearch = {},
                 )
             }
         }
@@ -125,7 +123,7 @@ class SearchBarComponentTest {
                 SearchBar(
                     query = "",
                     onQueryChange = {},
-                    onSearch = {}
+                    onSearch = {},
                 )
             }
         }
@@ -142,7 +140,7 @@ class SearchBarComponentTest {
                 SearchBar(
                     query = currentQuery,
                     onQueryChange = { currentQuery = it },
-                    onSearch = {}
+                    onSearch = {},
                 )
             }
         }
@@ -161,7 +159,7 @@ class SearchBarComponentTest {
                 SearchBar(
                     query = "",
                     onQueryChange = {},
-                    onSearch = {}
+                    onSearch = {},
                 )
             }
         }
@@ -180,7 +178,7 @@ class SearchBarComponentTest {
                     onQueryChange = {},
                     onSearch = {},
                     showBackButton = true,
-                    onBackClick = {}
+                    onBackClick = {},
                 )
             }
         }
@@ -199,7 +197,7 @@ class SearchBarComponentTest {
                     onQueryChange = {},
                     onSearch = {},
                     showBackButton = true,
-                    onBackClick = { backClicked = true }
+                    onBackClick = { backClicked = true },
                 )
             }
         }
@@ -219,7 +217,7 @@ class SearchBarComponentTest {
                     query = "",
                     onQueryChange = {},
                     onSearch = {},
-                    enabled = false
+                    enabled = false,
                 )
             }
         }

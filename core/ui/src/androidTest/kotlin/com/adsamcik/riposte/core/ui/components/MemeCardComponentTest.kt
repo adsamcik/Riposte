@@ -10,10 +10,10 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performLongClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.google.common.truth.Truth.assertThat
 import com.adsamcik.riposte.core.model.EmojiTag
 import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.core.ui.theme.RiposteTheme
+import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -32,26 +32,27 @@ import org.junit.runner.RunWith
  */
 @RunWith(AndroidJUnit4::class)
 class MemeCardComponentTest {
-
     @get:Rule
     val composeTestRule = createComposeRule()
 
-    private val testMeme = Meme(
-        id = 1L,
-        filePath = "/test/meme.jpg",
-        fileName = "meme.jpg",
-        mimeType = "image/jpeg",
-        width = 500,
-        height = 500,
-        fileSizeBytes = 50000,
-        importedAt = System.currentTimeMillis(),
-        emojiTags = listOf(
-            EmojiTag("😂", "laughing"),
-            EmojiTag("🎉", "party")
-        ),
-        title = "Test Meme",
-        isFavorite = false
-    )
+    private val testMeme =
+        Meme(
+            id = 1L,
+            filePath = "/test/meme.jpg",
+            fileName = "meme.jpg",
+            mimeType = "image/jpeg",
+            width = 500,
+            height = 500,
+            fileSizeBytes = 50000,
+            importedAt = System.currentTimeMillis(),
+            emojiTags =
+                listOf(
+                    EmojiTag("😂", "laughing"),
+                    EmojiTag("🎉", "party"),
+                ),
+            title = "Test Meme",
+            isFavorite = false,
+        )
 
     private val favoriteMeme = testMeme.copy(isFavorite = true)
 
@@ -63,7 +64,7 @@ class MemeCardComponentTest {
             RiposteTheme {
                 MemeCard(
                     meme = testMeme,
-                    onClick = {}
+                    onClick = {},
                 )
             }
         }
@@ -77,7 +78,7 @@ class MemeCardComponentTest {
             RiposteTheme {
                 MemeCard(
                     meme = testMeme,
-                    onClick = {}
+                    onClick = {},
                 )
             }
         }
@@ -92,7 +93,7 @@ class MemeCardComponentTest {
                 MemeCard(
                     meme = testMeme,
                     onClick = {},
-                    showTitle = true
+                    showTitle = true,
                 )
             }
         }
@@ -107,7 +108,7 @@ class MemeCardComponentTest {
                 MemeCard(
                     meme = testMeme,
                     onClick = {},
-                    showTitle = false
+                    showTitle = false,
                 )
             }
         }
@@ -124,7 +125,7 @@ class MemeCardComponentTest {
                 MemeCard(
                     meme = testMeme,
                     onClick = {},
-                    showEmojis = true
+                    showEmojis = true,
                 )
             }
         }
@@ -140,7 +141,7 @@ class MemeCardComponentTest {
                 MemeCard(
                     meme = testMeme,
                     onClick = {},
-                    showEmojis = false
+                    showEmojis = false,
                 )
             }
         }
@@ -156,7 +157,7 @@ class MemeCardComponentTest {
             RiposteTheme {
                 MemeCard(
                     meme = favoriteMeme,
-                    onClick = {}
+                    onClick = {},
                 )
             }
         }
@@ -170,7 +171,7 @@ class MemeCardComponentTest {
             RiposteTheme {
                 MemeCard(
                     meme = testMeme,
-                    onClick = {}
+                    onClick = {},
                 )
             }
         }
@@ -188,7 +189,7 @@ class MemeCardComponentTest {
                     meme = testMeme,
                     onClick = {},
                     selected = true,
-                    selectionMode = true
+                    selectionMode = true,
                 )
             }
         }
@@ -204,7 +205,7 @@ class MemeCardComponentTest {
                     meme = testMeme,
                     onClick = {},
                     selected = false,
-                    selectionMode = true
+                    selectionMode = true,
                 )
             }
         }
@@ -221,7 +222,7 @@ class MemeCardComponentTest {
                     meme = testMeme,
                     onClick = {},
                     selected = false,
-                    selectionMode = false
+                    selectionMode = false,
                 )
             }
         }
@@ -239,7 +240,7 @@ class MemeCardComponentTest {
             RiposteTheme {
                 MemeCard(
                     meme = testMeme,
-                    onClick = { clicked = true }
+                    onClick = { clicked = true },
                 )
             }
         }
@@ -258,7 +259,7 @@ class MemeCardComponentTest {
                 MemeCard(
                     meme = testMeme,
                     onClick = {},
-                    onLongClick = { longClicked = true }
+                    onLongClick = { longClicked = true },
                 )
             }
         }
@@ -272,23 +273,25 @@ class MemeCardComponentTest {
 
     @Test
     fun memeGrid_displaysMultipleCards() {
-        val memes = listOf(
-            testMeme,
-            testMeme.copy(id = 2L, title = "Second Meme"),
-            testMeme.copy(id = 3L, title = "Third Meme")
-        )
+        val memes =
+            listOf(
+                testMeme,
+                testMeme.copy(id = 2L, title = "Second Meme"),
+                testMeme.copy(id = 3L, title = "Third Meme"),
+            )
 
         composeTestRule.setContent {
             RiposteTheme {
                 MemeGrid(
                     memes = memes,
-                    onMemeClick = {}
+                    onMemeClick = {},
                 )
             }
         }
 
-        val cards = composeTestRule.onAllNodesWithTag("MemeCard")
-            .fetchSemanticsNodes()
+        val cards =
+            composeTestRule.onAllNodesWithTag("MemeCard")
+                .fetchSemanticsNodes()
 
         assertThat(cards.size).isEqualTo(3)
     }
@@ -296,16 +299,17 @@ class MemeCardComponentTest {
     @Test
     fun memeGrid_callsOnMemeClick_withCorrectMeme() {
         var clickedMeme: Meme? = null
-        val memes = listOf(
-            testMeme,
-            testMeme.copy(id = 2L, title = "Second Meme")
-        )
+        val memes =
+            listOf(
+                testMeme,
+                testMeme.copy(id = 2L, title = "Second Meme"),
+            )
 
         composeTestRule.setContent {
             RiposteTheme {
                 MemeGrid(
                     memes = memes,
-                    onMemeClick = { clickedMeme = it }
+                    onMemeClick = { clickedMeme = it },
                 )
             }
         }
@@ -324,7 +328,7 @@ class MemeCardComponentTest {
                 MemeGrid(
                     memes = emptyList(),
                     onMemeClick = {},
-                    emptyContent = { Text("No memes") }
+                    emptyContent = { Text("No memes") },
                 )
             }
         }
@@ -341,7 +345,7 @@ class MemeCardComponentTest {
                 MemeCard(
                     meme = testMeme,
                     onClick = {},
-                    aspectRatio = 1f
+                    aspectRatio = 1f,
                 )
             }
         }
