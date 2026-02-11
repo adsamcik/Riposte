@@ -20,7 +20,6 @@ import org.junit.runner.RunWith
 @HiltAndroidTest
 @RunWith(AndroidJUnit4::class)
 class NavigationE2ETest {
-
     @get:Rule(order = 0)
     val hiltRule = HiltAndroidRule(this)
 
@@ -42,7 +41,7 @@ class NavigationE2ETest {
     fun navigateToSearch_fromGallery() {
         // Click on search icon/button
         composeTestRule.onNodeWithContentDescription("Search").performClick()
-        
+
         // Search screen should be displayed
         composeTestRule.onNodeWithText("Search memes").assertIsDisplayed()
     }
@@ -51,7 +50,7 @@ class NavigationE2ETest {
     fun navigateToSettings_fromGallery() {
         // Click on settings icon
         composeTestRule.onNodeWithContentDescription("Settings").performClick()
-        
+
         // Settings screen should be displayed
         composeTestRule.onNodeWithText("Settings").assertIsDisplayed()
     }
@@ -60,7 +59,7 @@ class NavigationE2ETest {
     fun navigateToImport_fromGallery() {
         // Click on import/add button
         composeTestRule.onNodeWithContentDescription("Import").performClick()
-        
+
         // Import screen should be displayed
         composeTestRule.onNodeWithText("Import Memes").assertIsDisplayed()
     }
@@ -70,10 +69,10 @@ class NavigationE2ETest {
         // Navigate to search
         composeTestRule.onNodeWithContentDescription("Search").performClick()
         composeTestRule.onNodeWithText("Search memes").assertIsDisplayed()
-        
+
         // Navigate back
         composeTestRule.onNodeWithContentDescription("Back").performClick()
-        
+
         // Gallery should be displayed
         composeTestRule.onNodeWithText("Gallery").assertIsDisplayed()
     }
@@ -83,10 +82,10 @@ class NavigationE2ETest {
         // Navigate to settings
         composeTestRule.onNodeWithContentDescription("Settings").performClick()
         composeTestRule.onNodeWithText("Settings").assertIsDisplayed()
-        
+
         // Navigate back
         composeTestRule.onNodeWithContentDescription("Back").performClick()
-        
+
         // Gallery should be displayed
         composeTestRule.onNodeWithText("Gallery").assertIsDisplayed()
     }
@@ -96,10 +95,10 @@ class NavigationE2ETest {
         // Navigate to import
         composeTestRule.onNodeWithContentDescription("Import").performClick()
         composeTestRule.onNodeWithText("Import Memes").assertIsDisplayed()
-        
+
         // Navigate back
         composeTestRule.onNodeWithContentDescription("Back").performClick()
-        
+
         // Gallery should be displayed
         composeTestRule.onNodeWithText("Gallery").assertIsDisplayed()
     }

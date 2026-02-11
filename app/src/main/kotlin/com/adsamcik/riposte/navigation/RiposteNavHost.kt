@@ -27,12 +27,12 @@ import com.adsamcik.riposte.feature.share.navigation.shareScreen
 fun RiposteNavHost(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
-    startDestination: Any = GalleryRoute
+    startDestination: Any = GalleryRoute,
 ) {
     NavHost(
         navController = navController,
         startDestination = startDestination,
-        modifier = modifier
+        modifier = modifier,
     ) {
         // Gallery screen - main screen (includes inline search)
         galleryScreen(
@@ -73,12 +73,15 @@ fun RiposteNavHost(
         shareScreen(
             onNavigateBack = {
                 navController.popBackStack()
-            }
+            },
         )
 
         // Import screen
         importScreen(
             onNavigateBack = {
+                navController.popBackStack()
+            },
+            onImportComplete = {
                 navController.popBackStack()
             },
         )
@@ -87,7 +90,7 @@ fun RiposteNavHost(
         settingsScreen(
             onNavigateBack = {
                 navController.popBackStack()
-            }
+            },
         )
     }
 }

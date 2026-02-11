@@ -19,26 +19,27 @@ import javax.inject.Singleton
  * Should be started once at app startup via [start].
  */
 @Singleton
-class SharingShortcutUpdater @Inject constructor(
-    private val memeDao: MemeDao,
-    private val getSuggestionsUseCase: GetSuggestionsUseCase,
-    private val sharingShortcutManager: SharingShortcutManager,
-) {
-
-    /**
-     * Start observing meme changes and updating sharing shortcuts.
-     *
-     * @param scope Application-scoped coroutine scope.
-     */
-    fun start(scope: CoroutineScope) {
-        scope.launch {
-            memeDao.getAllMemes()
-                .map { entities -> entities.map { it.toDomain() } }
-                .collectLatest { allMemes ->
-                    val context = SuggestionContext(surface = Surface.GALLERY)
-                    val suggestions = getSuggestionsUseCase(allMemes, context)
-                    sharingShortcutManager.updateShortcuts(suggestions)
-                }
+class SharingShortcutUpdater
+    @Inject
+    constructor(
+        private val memeDao: MemeDao,
+        private val getSuggestionsUseCase: GetSuggestionsUseCase,
+        private val sharingShortcutManager: SharingShortcutManager,
+    ) {
+        /**
+         * Start observing meme changes and updating sharing shortcuts.
+         *
+         * @param scope Application-scoped coroutine scope.
+         */
+        fun start(scope: CoroutineScope) {
+            scope.launch {
+                memeDao.getAllMemes()
+                    .map { entities -> entities.map { it.toDomain() } }
+                    .collectLatest { allMemes ->
+                        val context = SuggestionContext(surface = Surface.GALLERY)
+                        val suggestions = getSuggestionsUseCase(allMemes, context)
+                        sharingShortcutManager.updateShortcuts(suggestions)
+                    }
+            }
         }
     }
-}

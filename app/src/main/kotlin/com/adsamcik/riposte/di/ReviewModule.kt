@@ -11,10 +11,7 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class ReviewModule {
-
     @Binds
     @Singleton
-    abstract fun bindUserActionTracker(
-        impl: InAppReviewManager,
-    ): UserActionTracker
+    abstract fun bindUserActionTracker(impl: InAppReviewManager): UserActionTracker
 }

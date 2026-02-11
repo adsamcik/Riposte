@@ -20,7 +20,6 @@ import org.junit.runner.RunWith
 @HiltAndroidTest
 @RunWith(AndroidJUnit4::class)
 class SettingsFlowE2ETest {
-
     @get:Rule(order = 0)
     val hiltRule = HiltAndroidRule(this)
 
@@ -37,7 +36,7 @@ class SettingsFlowE2ETest {
         // Navigate to settings
         composeTestRule.onNodeWithContentDescription("Settings").performClick()
         composeTestRule.waitForIdle()
-        
+
         // Appearance section should be visible
         composeTestRule.onNodeWithText("Appearance").assertIsDisplayed()
     }
@@ -47,7 +46,7 @@ class SettingsFlowE2ETest {
         // Navigate to settings
         composeTestRule.onNodeWithContentDescription("Settings").performClick()
         composeTestRule.waitForIdle()
-        
+
         // Dark mode option should be visible
         composeTestRule.onNodeWithText("Dark Mode").assertIsDisplayed()
     }
@@ -57,7 +56,7 @@ class SettingsFlowE2ETest {
         // Navigate to settings
         composeTestRule.onNodeWithContentDescription("Settings").performClick()
         composeTestRule.waitForIdle()
-        
+
         // Sharing section should be visible
         composeTestRule.onNodeWithText("Sharing").assertIsDisplayed()
     }
@@ -67,7 +66,7 @@ class SettingsFlowE2ETest {
         // Navigate to settings
         composeTestRule.onNodeWithContentDescription("Settings").performClick()
         composeTestRule.waitForIdle()
-        
+
         // Search section should be visible
         composeTestRule.onNodeWithText("Search").assertIsDisplayed()
     }
@@ -77,7 +76,7 @@ class SettingsFlowE2ETest {
         // Navigate to settings
         composeTestRule.onNodeWithContentDescription("Settings").performClick()
         composeTestRule.waitForIdle()
-        
+
         // Storage section should be visible
         composeTestRule.onNodeWithText("Storage").assertIsDisplayed()
     }
@@ -87,7 +86,7 @@ class SettingsFlowE2ETest {
         // Navigate to settings
         composeTestRule.onNodeWithContentDescription("Settings").performClick()
         composeTestRule.waitForIdle()
-        
+
         // About section should be visible
         composeTestRule.onNodeWithText("About").assertIsDisplayed()
     }
@@ -97,10 +96,10 @@ class SettingsFlowE2ETest {
         // Navigate to settings
         composeTestRule.onNodeWithContentDescription("Settings").performClick()
         composeTestRule.waitForIdle()
-        
+
         // Find and click dynamic colors toggle
         val dynamicColors = composeTestRule.onNodeWithText("Dynamic Colors", useUnmergedTree = true)
-        
+
         try {
             dynamicColors.performClick()
             composeTestRule.waitForIdle()
@@ -114,10 +113,10 @@ class SettingsFlowE2ETest {
         // Navigate to settings
         composeTestRule.onNodeWithContentDescription("Settings").performClick()
         composeTestRule.waitForIdle()
-        
+
         // Find and click semantic search toggle
         val semanticSearch = composeTestRule.onNodeWithText("Semantic Search", useUnmergedTree = true)
-        
+
         try {
             semanticSearch.performClick()
             composeTestRule.waitForIdle()
@@ -131,7 +130,7 @@ class SettingsFlowE2ETest {
         // Navigate to settings
         composeTestRule.onNodeWithContentDescription("Settings").performClick()
         composeTestRule.waitForIdle()
-        
+
         // App version should be visible
         composeTestRule.onNodeWithText("Version").assertIsDisplayed()
     }
@@ -141,17 +140,17 @@ class SettingsFlowE2ETest {
         // Navigate to settings
         composeTestRule.onNodeWithContentDescription("Settings").performClick()
         composeTestRule.waitForIdle()
-        
+
         // Find and click clear cache
         val clearCache = composeTestRule.onNodeWithText("Clear Cache", useUnmergedTree = true)
-        
+
         try {
             clearCache.performClick()
             composeTestRule.waitForIdle()
-            
+
             // Dialog should appear
             composeTestRule.onNodeWithText("Clear Cache").assertIsDisplayed()
-            
+
             // Cancel the dialog
             composeTestRule.onNodeWithText("Cancel").performClick()
         } catch (e: AssertionError) {

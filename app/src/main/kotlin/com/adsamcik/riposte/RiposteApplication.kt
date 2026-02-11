@@ -22,7 +22,6 @@ import javax.inject.Inject
  */
 @HiltAndroidApp
 class RiposteApplication : Application(), Configuration.Provider {
-
     @Inject
     lateinit var workerFactory: HiltWorkerFactory
 
@@ -47,7 +46,8 @@ class RiposteApplication : Application(), Configuration.Provider {
     }
 
     override val workManagerConfiguration: Configuration
-        get() = Configuration.Builder()
-            .setWorkerFactory(workerFactory)
-            .build()
+        get() =
+            Configuration.Builder()
+                .setWorkerFactory(workerFactory)
+                .build()
 }

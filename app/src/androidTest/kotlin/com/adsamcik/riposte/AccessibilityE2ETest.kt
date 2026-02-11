@@ -1,14 +1,13 @@
 package com.adsamcik.riposte
 
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.junit4.accessibility.enableAccessibilityChecks
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.tryPerformAccessibilityChecks
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.adsamcik.riposte.core.testing.assertHasContentDescription
 import com.adsamcik.riposte.core.testing.assertHasRole
 import com.adsamcik.riposte.core.testing.assertIsFocusable
 import dagger.hilt.android.testing.HiltAndroidRule
@@ -33,7 +32,6 @@ import org.junit.runner.RunWith
 @HiltAndroidTest
 @RunWith(AndroidJUnit4::class)
 class AccessibilityE2ETest {
-
     @get:Rule(order = 0)
     val hiltRule = HiltAndroidRule(this)
 

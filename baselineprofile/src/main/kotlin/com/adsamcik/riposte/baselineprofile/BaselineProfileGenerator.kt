@@ -11,17 +11,16 @@ import org.junit.runner.RunWith
 
 /**
  * Baseline Profile generator for Riposte.
- * 
+ *
  * Run this test to generate baseline profiles that improve startup
  * and runtime performance by pre-compiling critical code paths.
- * 
+ *
  * Generate the baseline profile with:
  * ./gradlew :baselineprofile:connectedBenchmarkAndroidTest -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.enabledRules=BaselineProfile
  */
 @RunWith(AndroidJUnit4::class)
 @LargeTest
 class BaselineProfileGenerator {
-
     @get:Rule
     val rule = BaselineProfileRule()
 
@@ -29,7 +28,7 @@ class BaselineProfileGenerator {
     fun generateBaselineProfile() {
         rule.collect(
             packageName = "com.adsamcik.riposte",
-            includeInStartupProfile = true
+            includeInStartupProfile = true,
         ) {
             // App startup - critical path
             pressHome()

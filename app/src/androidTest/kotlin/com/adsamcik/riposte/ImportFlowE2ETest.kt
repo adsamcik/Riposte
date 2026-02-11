@@ -20,7 +20,6 @@ import org.junit.runner.RunWith
 @HiltAndroidTest
 @RunWith(AndroidJUnit4::class)
 class ImportFlowE2ETest {
-
     @get:Rule(order = 0)
     val hiltRule = HiltAndroidRule(this)
 
@@ -37,7 +36,7 @@ class ImportFlowE2ETest {
         // Navigate to import
         composeTestRule.onNodeWithContentDescription("Import").performClick()
         composeTestRule.waitForIdle()
-        
+
         // Import screen should be visible
         composeTestRule.onNodeWithText("Import Memes").assertIsDisplayed()
     }
@@ -47,7 +46,7 @@ class ImportFlowE2ETest {
         // Navigate to import
         composeTestRule.onNodeWithContentDescription("Import").performClick()
         composeTestRule.waitForIdle()
-        
+
         // Pick images button should be visible
         composeTestRule.onNodeWithText("Pick Images").assertIsDisplayed()
     }
@@ -57,7 +56,7 @@ class ImportFlowE2ETest {
         // Navigate to import
         composeTestRule.onNodeWithContentDescription("Import").performClick()
         composeTestRule.waitForIdle()
-        
+
         // Empty state message should be visible
         composeTestRule.onNodeWithText("No images selected").assertIsDisplayed()
     }
@@ -67,11 +66,11 @@ class ImportFlowE2ETest {
         // Navigate to import
         composeTestRule.onNodeWithContentDescription("Import").performClick()
         composeTestRule.waitForIdle()
-        
+
         // Navigate back
         composeTestRule.onNodeWithContentDescription("Back").performClick()
         composeTestRule.waitForIdle()
-        
+
         // Gallery should be displayed
         composeTestRule.onNodeWithText("Gallery").assertIsDisplayed()
     }

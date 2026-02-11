@@ -22,26 +22,25 @@ import javax.inject.Inject
  */
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
-
     @Inject
     lateinit var inAppReviewManager: InAppReviewManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // Install splash screen before super.onCreate()
         installSplashScreen()
-        
+
         super.onCreate(savedInstanceState)
 
         inAppReviewManager.trackAppOpen()
-        
+
         // Enable edge-to-edge display
         enableEdgeToEdge()
-        
+
         setContent {
             RiposteTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
+                    color = MaterialTheme.colorScheme.background,
                 ) {
                     RiposteNavHost()
                 }

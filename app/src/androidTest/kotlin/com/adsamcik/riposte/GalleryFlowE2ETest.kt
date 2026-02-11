@@ -23,7 +23,6 @@ import org.junit.runner.RunWith
 @HiltAndroidTest
 @RunWith(AndroidJUnit4::class)
 class GalleryFlowE2ETest {
-
     @get:Rule(order = 0)
     val hiltRule = HiltAndroidRule(this)
 
@@ -59,7 +58,7 @@ class GalleryFlowE2ETest {
     fun galleryFlow_showsEmptyStateWhenNoMemes() {
         // When gallery is empty, should show empty state
         composeTestRule.waitForIdle()
-        
+
         // Either shows memes or empty state
         try {
             composeTestRule.onNodeWithText("No memes yet").assertIsDisplayed()
@@ -71,7 +70,7 @@ class GalleryFlowE2ETest {
     @Test
     fun galleryFlow_filterTabs() {
         composeTestRule.waitForIdle()
-        
+
         // Check for filter tabs
         try {
             composeTestRule.onNodeWithText("All").assertIsDisplayed()
@@ -84,7 +83,7 @@ class GalleryFlowE2ETest {
     @Test
     fun galleryFlow_switchToFavorites() {
         composeTestRule.waitForIdle()
-        
+
         // Try clicking favorites tab
         try {
             composeTestRule.onNodeWithText("Favorites").performClick()
@@ -97,10 +96,10 @@ class GalleryFlowE2ETest {
     @Test
     fun galleryFlow_favoriteButton() {
         composeTestRule.waitForIdle()
-        
+
         // Check if there are any favorite buttons
         val favoriteButtons = composeTestRule.onAllNodesWithContentDescription("Add to favorites")
-        
+
         try {
             favoriteButtons.onFirst().assertIsDisplayed()
         } catch (e: AssertionError) {
@@ -111,7 +110,7 @@ class GalleryFlowE2ETest {
     @Test
     fun galleryFlow_gridLayout() {
         composeTestRule.waitForIdle()
-        
+
         // Check that grid layout is being used (multiple items visible)
         // This is a basic check - real validation would need custom assertions
         try {
