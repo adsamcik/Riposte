@@ -112,7 +112,6 @@ data class MemeEntity(
      * SHA-256 hash of the imported image file for duplicate detection.
      */
     val fileHash: String? = null,
-
     /**
      * Cultural source the meme is based on (e.g., meme template, franchise, game).
      * Examples: "Drake Hotline Bling", "The Witcher 3", "Star Wars"

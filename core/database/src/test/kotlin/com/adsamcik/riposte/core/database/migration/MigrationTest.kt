@@ -29,7 +29,6 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE)
 class MigrationTest {
-
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val openHelpers = mutableListOf<SupportSQLiteOpenHelper>()
 
@@ -79,15 +78,23 @@ class MigrationTest {
      */
     private fun createDatabaseAtVersion(version: Int): SupportSQLiteDatabase {
         val schema = loadSchema(version)
-        val helper = createOpenHelper(version, object : SupportSQLiteOpenHelper.Callback(version) {
-            override fun onCreate(db: SupportSQLiteDatabase) {
-                executeSchemaCreate(db, schema)
-            }
+        val helper =
+            createOpenHelper(
+                version,
+                object : SupportSQLiteOpenHelper.Callback(version) {
+                    override fun onCreate(db: SupportSQLiteDatabase) {
+                        executeSchemaCreate(db, schema)
+                    }
 
-            override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) {
-                error("Expected onCreate for version $version, got onUpgrade($oldVersion→$newVersion)")
-            }
-        })
+                    override fun onUpgrade(
+                        db: SupportSQLiteDatabase,
+                        oldVersion: Int,
+                        newVersion: Int,
+                    ) {
+                        error("Expected onCreate for version $version, got onUpgrade($oldVersion→$newVersion)")
+                    }
+                },
+            )
         return helper.writableDatabase
     }
 
@@ -98,21 +105,30 @@ class MigrationTest {
         targetVersion: Int,
         vararg migrations: androidx.room.migration.Migration,
     ): SupportSQLiteDatabase {
-        val helper = createOpenHelper(targetVersion, object : SupportSQLiteOpenHelper.Callback(targetVersion) {
-            override fun onCreate(db: SupportSQLiteDatabase) {
-                error("Expected onUpgrade to version $targetVersion, not onCreate")
-            }
+        val helper =
+            createOpenHelper(
+                targetVersion,
+                object : SupportSQLiteOpenHelper.Callback(targetVersion) {
+                    override fun onCreate(db: SupportSQLiteDatabase) {
+                        error("Expected onUpgrade to version $targetVersion, not onCreate")
+                    }
 
-            override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) {
-                var current = oldVersion
-                while (current < newVersion) {
-                    val migration = migrations.firstOrNull { it.startVersion == current }
-                        ?: error("No migration from version $current (target: $newVersion)")
-                    migration.migrate(db)
-                    current = migration.endVersion
-                }
-            }
-        })
+                    override fun onUpgrade(
+                        db: SupportSQLiteDatabase,
+                        oldVersion: Int,
+                        newVersion: Int,
+                    ) {
+                        var current = oldVersion
+                        while (current < newVersion) {
+                            val migration =
+                                migrations.firstOrNull { it.startVersion == current }
+                                    ?: error("No migration from version $current (target: $newVersion)")
+                            migration.migrate(db)
+                            current = migration.endVersion
+                        }
+                    }
+                },
+            )
         return helper.writableDatabase
     }
 
@@ -120,10 +136,11 @@ class MigrationTest {
         version: Int,
         callback: SupportSQLiteOpenHelper.Callback,
     ): SupportSQLiteOpenHelper {
-        val config = SupportSQLiteOpenHelper.Configuration.builder(context)
-            .name(TEST_DB)
-            .callback(callback)
-            .build()
+        val config =
+            SupportSQLiteOpenHelper.Configuration.builder(context)
+                .name(TEST_DB)
+                .callback(callback)
+                .build()
         return FrameworkSQLiteOpenHelperFactory().create(config).also {
             openHelpers.add(it)
         }
@@ -133,7 +150,10 @@ class MigrationTest {
      * Validates that the migrated database schema matches what Room expects for
      * the given version by comparing table names and column sets.
      */
-    private fun validateSchemaMatchesVersion(db: SupportSQLiteDatabase, version: Int) {
+    private fun validateSchemaMatchesVersion(
+        db: SupportSQLiteDatabase,
+        version: Int,
+    ) {
         val schema = loadSchema(version)
         val entities = schema.getJSONObject("database").getJSONArray("entities")
 
@@ -162,10 +182,11 @@ class MigrationTest {
     ): Set<String> {
         if (isFts) {
             // FTS tables don't support PRAGMA table_info; query the creation SQL instead
-            val cursor = db.query(
-                "SELECT sql FROM sqlite_master WHERE type='table' AND name=?",
-                arrayOf(tableName),
-            )
+            val cursor =
+                db.query(
+                    "SELECT sql FROM sqlite_master WHERE type='table' AND name=?",
+                    arrayOf(tableName),
+                )
             val columns = mutableSetOf<String>()
             if (cursor.moveToFirst()) {
                 val sql = cursor.getString(0)
@@ -187,28 +208,34 @@ class MigrationTest {
     }
 
     private fun loadSchema(version: Int): JSONObject {
-        val json = context.assets
-            .open("com.adsamcik.riposte.core.database.MemeDatabase/$version.json")
-            .bufferedReader()
-            .readText()
+        val json =
+            context.assets
+                .open("com.adsamcik.riposte.core.database.MemeDatabase/$version.json")
+                .bufferedReader()
+                .readText()
         return JSONObject(json)
     }
 
-    private fun executeSchemaCreate(db: SupportSQLiteDatabase, schema: JSONObject) {
+    private fun executeSchemaCreate(
+        db: SupportSQLiteDatabase,
+        schema: JSONObject,
+    ) {
         val entities = schema.getJSONObject("database").getJSONArray("entities")
         for (i in 0 until entities.length()) {
             val entity = entities.getJSONObject(i)
             val tableName = entity.getString("tableName")
-            val createSql = entity.getString("createSql")
-                .replace("\${TABLE_NAME}", tableName)
+            val createSql =
+                entity.getString("createSql")
+                    .replace("\${TABLE_NAME}", tableName)
             db.execSQL(createSql)
 
             // Create indices
             val indices = entity.optJSONArray("indices")
             if (indices != null) {
                 for (j in 0 until indices.length()) {
-                    val indexSql = indices.getJSONObject(j).getString("createSql")
-                        .replace("\${TABLE_NAME}", tableName)
+                    val indexSql =
+                        indices.getJSONObject(j).getString("createSql")
+                            .replace("\${TABLE_NAME}", tableName)
                     db.execSQL(indexSql)
                 }
             }

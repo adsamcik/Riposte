@@ -30,10 +30,9 @@ import com.adsamcik.riposte.core.database.entity.ShareTargetEntity
         ImportRequestItemEntity::class,
     ],
     version = 4,
-    exportSchema = true
+    exportSchema = true,
 )
 abstract class MemeDatabase : RoomDatabase() {
-
     companion object {
         /**
          * Current database version. Must match the version in the @Database annotation.

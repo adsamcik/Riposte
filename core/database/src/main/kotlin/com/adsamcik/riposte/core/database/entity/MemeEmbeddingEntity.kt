@@ -46,7 +46,6 @@ data class MemeEmbeddingEntity(
      * Each meme can have one embedding per type.
      */
     val embeddingType: String = "content",
-    
     /**
      * The embedding vector serialized as ByteArray.
      *

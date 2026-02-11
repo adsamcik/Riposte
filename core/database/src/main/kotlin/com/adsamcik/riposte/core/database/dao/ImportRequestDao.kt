@@ -14,7 +14,6 @@ import kotlinx.coroutines.flow.Flow
  */
 @Dao
 interface ImportRequestDao {
-
     @Query("SELECT * FROM import_requests WHERE id = :id")
     suspend fun getRequest(id: String): ImportRequestEntity?
 
@@ -34,7 +33,11 @@ interface ImportRequestDao {
     suspend fun insertItems(items: List<ImportRequestItemEntity>)
 
     @Query("UPDATE import_request_items SET status = :status, errorMessage = :errorMessage WHERE id = :itemId")
-    suspend fun updateItemStatus(itemId: String, status: String, errorMessage: String? = null)
+    suspend fun updateItemStatus(
+        itemId: String,
+        status: String,
+        errorMessage: String? = null,
+    )
 
     @Query(
         "UPDATE import_requests SET status = :status, completedCount = :completed, " +
@@ -51,6 +54,13 @@ interface ImportRequestDao {
     @Query("DELETE FROM import_requests WHERE status IN ('completed', 'failed') AND updatedAt < :before")
     suspend fun cleanupOldRequests(before: Long)
 
-    @Query("DELETE FROM import_request_items WHERE requestId IN (SELECT id FROM import_requests WHERE status IN ('completed', 'failed') AND updatedAt < :before)")
+    @Query(
+        """DELETE FROM import_request_items
+            WHERE requestId IN (
+                SELECT id FROM import_requests
+                WHERE status IN ('completed', 'failed')
+                AND updatedAt < :before
+            )""",
+    )
     suspend fun cleanupOldRequestItems(before: Long)
 }
