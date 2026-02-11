@@ -2,6 +2,46 @@
 
 **Riposte** is a multi-module Android app for organizing, searching, and sharing memes with emoji-based categorization and AI-powered semantic search.
 
+## Tech Stack
+
+| Component | Technology |
+|-----------|------------|
+| Language | Kotlin 2.3.0 |
+| UI | Jetpack Compose (BOM 2025.12.00) with Material 3 |
+| Architecture | Clean Architecture + MVI |
+| DI | Hilt 2.58 |
+| Database | Room 2.8.4 with FTS4 full-text search |
+| Async | Coroutines 1.10.1 & Flow |
+| AI/ML | ML Kit (text recognition/labeling) + MediaPipe (embeddings) + LiteRT |
+| Image Loading | Coil 3.3.0 |
+| Navigation | Type-safe Navigation Compose 2.9.6 |
+| Serialization | Kotlinx Serialization 1.8.0 |
+| Build | Gradle 8.13.2, Version Catalogs (`gradle/libs.versions.toml`) |
+
+## Project Structure
+
+```
+riposte/
+├── app/                    # Main application, wires all modules together
+├── core/
+│   ├── common/            # Shared utilities, navigation routes, extensions
+│   ├── database/          # Room database, DAOs, entities, migrations
+│   ├── datastore/         # DataStore preferences
+│   ├── ml/                # ML Kit, MediaPipe, semantic search, embeddings
+│   ├── model/             # Domain models (Meme, EmojiTag, ShareConfig, etc.)
+│   ├── search/            # Search coordination layer
+│   ├── testing/           # Test utilities, fakes, rules
+│   └── ui/                # Design system, theme, reusable components
+├── feature/
+│   ├── gallery/           # Meme grid view, detail view, favorites
+│   ├── import/            # Image import, ZIP bundle import
+│   ├── share/             # Sharing with format/quality/size options
+│   └── settings/          # App preferences
+├── baselineprofile/       # Startup performance optimization
+├── docs/                  # Technical documentation
+└── tools/riposte-cli/     # Python CLI for batch AI annotation
+```
+
 ## Build, Test & Lint Commands
 
 ```bash
