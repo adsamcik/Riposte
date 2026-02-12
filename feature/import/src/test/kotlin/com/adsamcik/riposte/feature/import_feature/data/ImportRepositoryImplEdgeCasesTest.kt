@@ -5,6 +5,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
 import com.adsamcik.riposte.core.database.dao.EmojiTagDao
+import com.adsamcik.riposte.core.database.dao.ImportRequestDao
 import com.adsamcik.riposte.core.database.dao.MemeDao
 import com.adsamcik.riposte.core.ml.EmbeddingManager
 import com.adsamcik.riposte.core.ml.TextRecognizer
@@ -44,6 +45,9 @@ class ImportRepositoryImplEdgeCasesTest {
 
     @MockK
     private lateinit var emojiTagDao: EmojiTagDao
+
+    @MockK
+    private lateinit var importRequestDao: ImportRequestDao
 
     @MockK
     private lateinit var textRecognizer: TextRecognizer
@@ -105,6 +109,7 @@ class ImportRepositoryImplEdgeCasesTest {
                 context = context,
                 memeDao = memeDao,
                 emojiTagDao = emojiTagDao,
+                importRequestDao = importRequestDao,
                 textRecognizer = textRecognizer,
                 embeddingManager = embeddingManager,
                 xmpMetadataHandler = xmpMetadataHandler,
@@ -130,6 +135,7 @@ class ImportRepositoryImplEdgeCasesTest {
                     context = mockContext,
                     memeDao = memeDao,
                     emojiTagDao = emojiTagDao,
+                    importRequestDao = importRequestDao,
                     textRecognizer = textRecognizer,
                     embeddingManager = embeddingManager,
                     xmpMetadataHandler = xmpMetadataHandler,
@@ -158,6 +164,7 @@ class ImportRepositoryImplEdgeCasesTest {
                     context = mockContext,
                     memeDao = memeDao,
                     emojiTagDao = emojiTagDao,
+                    importRequestDao = importRequestDao,
                     textRecognizer = textRecognizer,
                     embeddingManager = embeddingManager,
                     xmpMetadataHandler = xmpMetadataHandler,
@@ -187,6 +194,7 @@ class ImportRepositoryImplEdgeCasesTest {
                     context = mockContext,
                     memeDao = memeDao,
                     emojiTagDao = emojiTagDao,
+                    importRequestDao = importRequestDao,
                     textRecognizer = textRecognizer,
                     embeddingManager = embeddingManager,
                     xmpMetadataHandler = xmpMetadataHandler,
@@ -220,6 +228,7 @@ class ImportRepositoryImplEdgeCasesTest {
                     context = mockContext,
                     memeDao = memeDao,
                     emojiTagDao = emojiTagDao,
+                    importRequestDao = importRequestDao,
                     textRecognizer = textRecognizer,
                     embeddingManager = embeddingManager,
                     xmpMetadataHandler = xmpMetadataHandler,
@@ -251,6 +260,7 @@ class ImportRepositoryImplEdgeCasesTest {
                     context = mockContext,
                     memeDao = memeDao,
                     emojiTagDao = emojiTagDao,
+                    importRequestDao = importRequestDao,
                     textRecognizer = textRecognizer,
                     embeddingManager = embeddingManager,
                     xmpMetadataHandler = xmpMetadataHandler,
@@ -402,6 +412,7 @@ class ImportRepositoryImplEdgeCasesTest {
                     context = mockContext,
                     memeDao = memeDao,
                     emojiTagDao = emojiTagDao,
+                    importRequestDao = importRequestDao,
                     textRecognizer = textRecognizer,
                     embeddingManager = embeddingManager,
                     xmpMetadataHandler = xmpMetadataHandler,
@@ -441,6 +452,7 @@ class ImportRepositoryImplEdgeCasesTest {
                     context = mockContext,
                     memeDao = memeDao,
                     emojiTagDao = emojiTagDao,
+                    importRequestDao = importRequestDao,
                     textRecognizer = textRecognizer,
                     embeddingManager = embeddingManager,
                     xmpMetadataHandler = xmpMetadataHandler,

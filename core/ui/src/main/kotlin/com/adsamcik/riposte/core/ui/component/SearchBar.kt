@@ -28,7 +28,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.adsamcik.riposte.core.ui.R
-import com.adsamcik.riposte.core.ui.theme.MoodShapes
+import com.adsamcik.riposte.core.ui.theme.RiposteShapes
 
 /**
  * Search bar component for searching memes.
@@ -85,7 +85,7 @@ fun SearchBar(
             }
         },
         singleLine = true,
-        shape = MoodShapes.SearchBar,
+        shape = RiposteShapes.SearchBar,
         colors =
             OutlinedTextFieldDefaults.colors(
                 focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,

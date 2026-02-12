@@ -122,7 +122,13 @@ class MemeDetailViewModel
                             )
                         }
                         // Record view (fire-and-forget, don't block UI)
-                        launch { recordMemeViewUseCase(currentMemeId) }
+                        launch {
+                            try {
+                                recordMemeViewUseCase(currentMemeId)
+                            } catch (_: Exception) {
+                                // Non-critical, don't propagate
+                            }
+                        }
                         // Load similar memes in background
                         launch { loadSimilarMemes() }
                     } else {

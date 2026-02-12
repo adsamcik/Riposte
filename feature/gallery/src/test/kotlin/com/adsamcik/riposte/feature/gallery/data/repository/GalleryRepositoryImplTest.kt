@@ -3,6 +3,7 @@ package com.adsamcik.riposte.feature.gallery.data.repository
 import app.cash.turbine.test
 import com.adsamcik.riposte.core.database.dao.EmojiTagDao
 import com.adsamcik.riposte.core.database.dao.MemeDao
+import com.adsamcik.riposte.core.database.dao.MemeEmbeddingDao
 import com.adsamcik.riposte.core.database.entity.MemeEntity
 import com.google.common.truth.Truth.assertThat
 import io.mockk.Runs
@@ -22,6 +23,7 @@ class GalleryRepositoryImplTest {
 
     private lateinit var memeDao: MemeDao
     private lateinit var emojiTagDao: EmojiTagDao
+    private lateinit var memeEmbeddingDao: MemeEmbeddingDao
     private lateinit var repository: GalleryRepositoryImpl
 
     private val testMemeEntities =
@@ -35,10 +37,12 @@ class GalleryRepositoryImplTest {
     fun setup() {
         memeDao = mockk()
         emojiTagDao = mockk()
+        memeEmbeddingDao = mockk()
         repository =
             GalleryRepositoryImpl(
                 memeDao = memeDao,
                 emojiTagDao = emojiTagDao,
+                memeEmbeddingDao = memeEmbeddingDao,
                 ioDispatcher = testDispatcher,
             )
     }

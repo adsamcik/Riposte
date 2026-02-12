@@ -5,10 +5,10 @@ import android.net.Uri
 import androidx.work.Configuration
 import androidx.work.testing.WorkManagerTestInitHelper
 import app.cash.turbine.test
-import com.adsamcik.riposte.core.database.dao.ImportRequestDao
 import com.adsamcik.riposte.core.datastore.PreferencesDataStore
 import com.adsamcik.riposte.core.model.EmojiTag
 import com.adsamcik.riposte.feature.import_feature.data.worker.ImportStagingManager
+import com.adsamcik.riposte.feature.import_feature.domain.repository.ImportRepository
 import com.adsamcik.riposte.feature.import_feature.domain.usecase.CheckDuplicateUseCase
 import com.adsamcik.riposte.feature.import_feature.domain.usecase.CleanupExtractedFilesUseCase
 import com.adsamcik.riposte.feature.import_feature.domain.usecase.ExtractTextUseCase
@@ -55,7 +55,7 @@ class ImportViewModelTest {
     private lateinit var cleanupExtractedFilesUseCase: CleanupExtractedFilesUseCase
     private lateinit var preferencesDataStore: PreferencesDataStore
     private lateinit var importStagingManager: ImportStagingManager
-    private lateinit var importRequestDao: ImportRequestDao
+    private lateinit var importRepository: ImportRepository
     private lateinit var viewModel: ImportViewModel
 
     @Before
@@ -95,7 +95,7 @@ class ImportViewModelTest {
             mockk(relaxed = true) {
                 coEvery { stageImages(any()) } returns java.io.File(System.getProperty("java.io.tmpdir"), "staging")
             }
-        importRequestDao = mockk(relaxed = true)
+        importRepository = mockk(relaxed = true)
         viewModel =
             ImportViewModel(
                 context = context,
@@ -110,7 +110,7 @@ class ImportViewModelTest {
                 userActionTracker = mockk(relaxed = true),
                 preferencesDataStore = preferencesDataStore,
                 importStagingManager = importStagingManager,
-                importRequestDao = importRequestDao,
+                importRepository = importRepository,
             )
     }
 
@@ -513,8 +513,8 @@ class ImportViewModelTest {
 
             // Import now stages images and enqueues a worker instead of importing directly
             coVerify { importStagingManager.stageImages(any()) }
-            coVerify { importRequestDao.insertRequest(any()) }
-            coVerify { importRequestDao.insertItems(any()) }
+            coVerify { importRepository.createImportRequest(any(), any(), any()) }
+            coVerify { importRepository.createImportRequestItems(any(), any()) }
         }
 
     @Test

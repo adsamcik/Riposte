@@ -13,6 +13,7 @@ import com.google.mlkit.vision.label.ImageLabeling
 import com.google.mlkit.vision.label.defaults.ImageLabelerOptions
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -168,11 +169,15 @@ class MediaPipeEmbeddingGenerator
         }
 
         override fun close() {
-            textEmbedder?.close()
-            textEmbedder = null
-            initializationAttempted = false
-            _imageLabeler?.close()
-            _imageLabeler = null
+            runBlocking {
+                mutex.withLock {
+                    textEmbedder?.close()
+                    textEmbedder = null
+                    initializationAttempted = false
+                    _imageLabeler?.close()
+                    _imageLabeler = null
+                }
+            }
         }
 
         /**
@@ -335,7 +340,7 @@ class MediaPipeEmbeddingGenerator
                 }
 
                 val magnitude = kotlin.math.sqrt(norm1) * kotlin.math.sqrt(norm2)
-                return if (magnitude > 0f) dotProduct / magnitude else 0f
+                return if (magnitude.isFinite() && magnitude > 0f) dotProduct / magnitude else 0f
             }
         }
     }

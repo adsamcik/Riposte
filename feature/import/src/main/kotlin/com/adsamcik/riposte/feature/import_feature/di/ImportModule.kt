@@ -18,5 +18,6 @@ abstract class ImportModule {
     abstract fun bindImportRepository(impl: ImportRepositoryImpl): ImportRepository
 
     @Binds
+    @Singleton
     abstract fun bindZipImporter(impl: DefaultZipImporter): ZipImporter
 }

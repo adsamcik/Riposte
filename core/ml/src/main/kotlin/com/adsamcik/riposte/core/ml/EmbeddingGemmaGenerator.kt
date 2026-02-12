@@ -84,7 +84,7 @@ class EmbeddingGemmaGenerator
         private var useGpu = true
 
         /** Executor for handling ListenableFuture callbacks. */
-        private val callbackExecutor = Executors.newSingleThreadExecutor()
+        private var callbackExecutor = Executors.newSingleThreadExecutor()
 
         override val embeddingDimension: Int = DEFAULT_EMBEDDING_DIMENSION
 
@@ -246,6 +246,7 @@ class EmbeddingGemmaGenerator
             _imageLabeler?.close()
             _imageLabeler = null
             callbackExecutor.shutdown()
+            callbackExecutor = Executors.newSingleThreadExecutor()
         }
 
         /**
@@ -592,7 +593,7 @@ class EmbeddingGemmaGenerator
                 }
 
                 val magnitude = sqrt(norm1) * sqrt(norm2)
-                return if (magnitude > 0f) dotProduct / magnitude else 0f
+                return if (magnitude.isFinite() && magnitude > 0f) dotProduct / magnitude else 0f
             }
 
             /**

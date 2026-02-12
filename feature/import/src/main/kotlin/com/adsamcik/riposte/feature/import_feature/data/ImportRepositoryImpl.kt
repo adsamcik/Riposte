@@ -7,8 +7,11 @@ import android.net.Uri
 import android.provider.OpenableColumns
 import com.adsamcik.riposte.core.common.AppConstants
 import com.adsamcik.riposte.core.database.dao.EmojiTagDao
+import com.adsamcik.riposte.core.database.dao.ImportRequestDao
 import com.adsamcik.riposte.core.database.dao.MemeDao
 import com.adsamcik.riposte.core.database.entity.EmojiTagEntity
+import com.adsamcik.riposte.core.database.entity.ImportRequestEntity
+import com.adsamcik.riposte.core.database.entity.ImportRequestItemEntity
 import com.adsamcik.riposte.core.database.entity.MemeEntity
 import com.adsamcik.riposte.core.ml.EmbeddingManager
 import com.adsamcik.riposte.core.ml.TextRecognizer
@@ -16,6 +19,7 @@ import com.adsamcik.riposte.core.ml.XmpMetadataHandler
 import com.adsamcik.riposte.core.model.EmojiTag
 import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.core.model.MemeMetadata
+import com.adsamcik.riposte.feature.import_feature.domain.model.ImportRequestItemData
 import com.adsamcik.riposte.feature.import_feature.domain.repository.ImportRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -35,6 +39,7 @@ class ImportRepositoryImpl
         @param:ApplicationContext private val context: Context,
         private val memeDao: MemeDao,
         private val emojiTagDao: EmojiTagDao,
+        private val importRequestDao: ImportRequestDao,
         private val textRecognizer: TextRecognizer,
         private val embeddingManager: EmbeddingManager,
         private val xmpMetadataHandler: XmpMetadataHandler,
@@ -519,5 +524,44 @@ class ImportRepositoryImpl
                     null
                 }
             }
+        }
+
+        override suspend fun createImportRequest(
+            id: String,
+            imageCount: Int,
+            stagingDir: String,
+        ) {
+            val now = System.currentTimeMillis()
+            val request =
+                ImportRequestEntity(
+                    id = id,
+                    status = ImportRequestEntity.STATUS_PENDING,
+                    imageCount = imageCount,
+                    stagingDir = stagingDir,
+                    createdAt = now,
+                    updatedAt = now,
+                )
+            importRequestDao.insertRequest(request)
+        }
+
+        override suspend fun createImportRequestItems(
+            requestId: String,
+            items: List<ImportRequestItemData>,
+        ) {
+            val entities =
+                items.map { item ->
+                    ImportRequestItemEntity(
+                        id = item.id,
+                        requestId = requestId,
+                        stagedFilePath = item.stagedFilePath,
+                        originalFileName = item.originalFileName,
+                        emojis = item.emojis,
+                        title = item.title,
+                        description = item.description,
+                        extractedText = item.extractedText,
+                        metadataJson = item.metadataJson,
+                    )
+                }
+            importRequestDao.insertItems(entities)
         }
     }

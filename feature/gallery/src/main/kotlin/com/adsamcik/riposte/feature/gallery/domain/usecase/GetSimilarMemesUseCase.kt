@@ -1,12 +1,10 @@
 package com.adsamcik.riposte.feature.gallery.domain.usecase
 
-import android.util.Log
-import com.adsamcik.riposte.core.database.dao.MemeDao
-import com.adsamcik.riposte.core.database.dao.MemeEmbeddingDao
-import com.adsamcik.riposte.core.database.mapper.MemeMapper.toDomain
+import com.adsamcik.riposte.core.common.di.DefaultDispatcher
 import com.adsamcik.riposte.core.ml.EmbeddingManager
 import com.adsamcik.riposte.core.ml.SemanticSearchEngine
-import kotlinx.coroutines.Dispatchers
+import com.adsamcik.riposte.feature.gallery.domain.repository.GalleryRepository
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -19,9 +17,9 @@ class GetSimilarMemesUseCase
     @Inject
     constructor(
         private val embeddingManager: EmbeddingManager,
-        private val memeEmbeddingDao: MemeEmbeddingDao,
-        private val memeDao: MemeDao,
+        private val galleryRepository: GalleryRepository,
         private val semanticSearchEngine: SemanticSearchEngine,
+        @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
     ) {
         /**
          * @param memeId The meme to find similar memes for.
@@ -32,20 +30,14 @@ class GetSimilarMemesUseCase
             memeId: Long,
             limit: Int = 10,
         ): SimilarMemesStatus =
-            withContext(Dispatchers.Default) {
+            withContext(defaultDispatcher) {
                 try {
                     val currentEmbedding = embeddingManager.getEmbedding(memeId)
-                    if (currentEmbedding == null) {
-                        Log.d(TAG, "No embedding for meme $memeId")
-                        return@withContext SimilarMemesStatus.NoEmbeddingForMeme
-                    }
+                        ?: return@withContext SimilarMemesStatus.NoEmbeddingForMeme
 
-                    val candidates =
-                        memeEmbeddingDao.getMemesWithEmbeddings()
-                            .filter { it.memeId != memeId }
+                    val candidates = galleryRepository.getEmbeddingsExcluding(memeId)
 
                     if (candidates.isEmpty()) {
-                        Log.d(TAG, "No candidate embeddings available")
                         return@withContext SimilarMemesStatus.NoCandidates
                     }
 
@@ -54,11 +46,6 @@ class GetSimilarMemesUseCase
                             val embedding = candidate.embedding ?: return@mapNotNull null
                             val floats = decodeEmbedding(embedding)
                             if (floats.size != currentEmbedding.size) {
-                                Log.d(
-                                    TAG,
-                                    "Dimension mismatch for meme ${candidate.memeId}: " +
-                                        "${floats.size} vs ${currentEmbedding.size}",
-                                )
                                 return@mapNotNull null
                             }
                             val score = semanticSearchEngine.cosineSimilarity(currentEmbedding, floats)
@@ -74,12 +61,11 @@ class GetSimilarMemesUseCase
 
                     val memes =
                         scored.mapNotNull { (id, _) ->
-                            memeDao.getMemeById(id)?.toDomain()
+                            galleryRepository.getMemeById(id)
                         }
 
                     SimilarMemesStatus.Found(memes)
                 } catch (e: Exception) {
-                    Log.e(TAG, "Failed to compute similar memes", e)
                     SimilarMemesStatus.Error(e.message ?: "Unknown error")
                 }
             }
@@ -96,7 +82,6 @@ class GetSimilarMemesUseCase
         }
 
         private companion object {
-            const val TAG = "GetSimilarMemesUseCase"
             const val SIMILARITY_THRESHOLD = 0.3f
         }
     }

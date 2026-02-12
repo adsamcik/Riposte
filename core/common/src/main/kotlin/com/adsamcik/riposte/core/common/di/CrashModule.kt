@@ -18,6 +18,7 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 abstract class CrashModule {
     @Binds
+    @Singleton
     abstract fun bindCrashLogManager(impl: DefaultCrashLogManager): CrashLogManager
 
     companion object {

@@ -5,6 +5,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
 import com.adsamcik.riposte.core.database.dao.EmojiTagDao
+import com.adsamcik.riposte.core.database.dao.ImportRequestDao
 import com.adsamcik.riposte.core.database.dao.MemeDao
 import com.adsamcik.riposte.core.database.entity.MemeEntity
 import com.adsamcik.riposte.core.ml.EmbeddingManager
@@ -41,6 +42,9 @@ class ImportRepositoryImplTest {
 
     @MockK
     private lateinit var emojiTagDao: EmojiTagDao
+
+    @MockK
+    private lateinit var importRequestDao: ImportRequestDao
 
     @MockK
     private lateinit var textRecognizer: TextRecognizer
@@ -102,6 +106,7 @@ class ImportRepositoryImplTest {
                 context = context,
                 memeDao = memeDao,
                 emojiTagDao = emojiTagDao,
+                importRequestDao = importRequestDao,
                 textRecognizer = textRecognizer,
                 embeddingManager = embeddingManager,
                 xmpMetadataHandler = xmpMetadataHandler,

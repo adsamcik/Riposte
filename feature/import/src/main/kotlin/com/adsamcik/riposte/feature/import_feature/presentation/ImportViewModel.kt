@@ -7,14 +7,13 @@ import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.adsamcik.riposte.core.common.AppConstants
 import com.adsamcik.riposte.core.common.review.UserActionTracker
-import com.adsamcik.riposte.core.database.dao.ImportRequestDao
-import com.adsamcik.riposte.core.database.entity.ImportRequestEntity
-import com.adsamcik.riposte.core.database.entity.ImportRequestItemEntity
 import com.adsamcik.riposte.core.datastore.PreferencesDataStore
 import com.adsamcik.riposte.core.model.MemeMetadata
 import com.adsamcik.riposte.feature.import_feature.R
 import com.adsamcik.riposte.feature.import_feature.data.worker.ImportStagingManager
 import com.adsamcik.riposte.feature.import_feature.data.worker.ImportWorker
+import com.adsamcik.riposte.feature.import_feature.domain.model.ImportRequestItemData
+import com.adsamcik.riposte.feature.import_feature.domain.repository.ImportRepository
 import com.adsamcik.riposte.feature.import_feature.domain.usecase.CheckDuplicateUseCase
 import com.adsamcik.riposte.feature.import_feature.domain.usecase.CleanupExtractedFilesUseCase
 import com.adsamcik.riposte.feature.import_feature.domain.usecase.ExtractTextUseCase
@@ -53,7 +52,7 @@ class ImportViewModel
         private val userActionTracker: UserActionTracker,
         private val preferencesDataStore: PreferencesDataStore,
         private val importStagingManager: ImportStagingManager,
-        private val importRequestDao: ImportRequestDao,
+        private val importRepository: ImportRepository,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(ImportUiState())
         val uiState: StateFlow<ImportUiState> = _uiState.asStateFlow()
@@ -606,9 +605,8 @@ class ImportViewModel
                             } else {
                                 null
                             }
-                        ImportRequestItemEntity(
+                        ImportRequestItemData(
                             id = "${requestId}_$index",
-                            requestId = requestId,
                             stagedFilePath = java.io.File(stagingDir, "${requestId}_$index").absolutePath,
                             originalFileName = image.fileName,
                             emojis = image.emojis.joinToString(",") { it.emoji },
@@ -619,18 +617,9 @@ class ImportViewModel
                         )
                     }
 
-                // Persist import request to Room
-                val request =
-                    ImportRequestEntity(
-                        id = requestId,
-                        status = ImportRequestEntity.STATUS_PENDING,
-                        imageCount = images.size,
-                        stagingDir = stagingDir.absolutePath,
-                        createdAt = System.currentTimeMillis(),
-                        updatedAt = System.currentTimeMillis(),
-                    )
-                importRequestDao.insertRequest(request)
-                importRequestDao.insertItems(items)
+                // Persist import request via repository
+                importRepository.createImportRequest(requestId, images.size, stagingDir.absolutePath)
+                importRepository.createImportRequestItems(requestId, items)
 
                 // Enqueue the worker — progress is observed via observeImportWork()
                 ImportWorker.enqueue(context, requestId)

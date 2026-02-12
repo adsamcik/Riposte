@@ -7,10 +7,12 @@ import androidx.paging.map
 import com.adsamcik.riposte.core.common.di.IoDispatcher
 import com.adsamcik.riposte.core.database.dao.EmojiTagDao
 import com.adsamcik.riposte.core.database.dao.MemeDao
+import com.adsamcik.riposte.core.database.dao.MemeEmbeddingDao
 import com.adsamcik.riposte.core.database.entity.EmojiTagEntity
 import com.adsamcik.riposte.core.database.mapper.MemeMapper.toDomain
 import com.adsamcik.riposte.core.database.mapper.MemeMapper.toEntity
 import com.adsamcik.riposte.core.model.Meme
+import com.adsamcik.riposte.feature.gallery.domain.model.MemeEmbeddingData
 import com.adsamcik.riposte.feature.gallery.domain.repository.GalleryRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
@@ -28,6 +30,7 @@ class GalleryRepositoryImpl
     constructor(
         private val memeDao: MemeDao,
         private val emojiTagDao: EmojiTagDao,
+        private val memeEmbeddingDao: MemeEmbeddingDao,
         @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     ) : GalleryRepository {
         companion object {
@@ -191,4 +194,11 @@ class GalleryRepositoryImpl
                 .map { stats -> stats.map { it.emoji to it.count } }
                 .flowOn(ioDispatcher)
         }
+
+        override suspend fun getEmbeddingsExcluding(memeId: Long): List<MemeEmbeddingData> =
+            withContext(ioDispatcher) {
+                memeEmbeddingDao.getMemesWithEmbeddings()
+                    .filter { it.memeId != memeId }
+                    .map { MemeEmbeddingData(memeId = it.memeId, embedding = it.embedding) }
+            }
     }

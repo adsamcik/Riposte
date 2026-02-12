@@ -4,6 +4,7 @@ import android.net.Uri
 import com.adsamcik.riposte.core.model.EmojiTag
 import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.core.model.MemeMetadata
+import com.adsamcik.riposte.feature.import_feature.domain.model.ImportRequestItemData
 
 /**
  * Repository interface for importing memes.
@@ -70,4 +71,28 @@ interface ImportRepository {
         memeId: Long,
         metadata: MemeMetadata,
     ): Result<Unit>
+
+    /**
+     * Create an import request record for WorkManager-based background import.
+     *
+     * @param id Unique request identifier.
+     * @param imageCount Number of images in this request.
+     * @param stagingDir Absolute path to the staging directory.
+     */
+    suspend fun createImportRequest(
+        id: String,
+        imageCount: Int,
+        stagingDir: String,
+    )
+
+    /**
+     * Create import request items for a previously created request.
+     *
+     * @param requestId The import request ID these items belong to.
+     * @param items Domain-level representations of each item.
+     */
+    suspend fun createImportRequestItems(
+        requestId: String,
+        items: List<ImportRequestItemData>,
+    )
 }

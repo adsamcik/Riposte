@@ -5,11 +5,11 @@ import android.net.Uri
 import androidx.work.Configuration
 import androidx.work.testing.WorkManagerTestInitHelper
 import app.cash.turbine.test
-import com.adsamcik.riposte.core.database.dao.ImportRequestDao
 import com.adsamcik.riposte.core.datastore.PreferencesDataStore
 import com.adsamcik.riposte.core.model.EmojiTag
 import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.feature.import_feature.data.worker.ImportStagingManager
+import com.adsamcik.riposte.feature.import_feature.domain.repository.ImportRepository
 import com.adsamcik.riposte.feature.import_feature.domain.usecase.CheckDuplicateUseCase
 import com.adsamcik.riposte.feature.import_feature.domain.usecase.CleanupExtractedFilesUseCase
 import com.adsamcik.riposte.feature.import_feature.domain.usecase.ExtractTextUseCase
@@ -60,7 +60,7 @@ class ImportViewModelEdgeCasesTest {
     private lateinit var cleanupExtractedFilesUseCase: CleanupExtractedFilesUseCase
     private lateinit var preferencesDataStore: PreferencesDataStore
     private lateinit var importStagingManager: ImportStagingManager
-    private lateinit var importRequestDao: ImportRequestDao
+    private lateinit var importRepository: ImportRepository
     private lateinit var viewModel: ImportViewModel
 
     @Before
@@ -100,7 +100,7 @@ class ImportViewModelEdgeCasesTest {
             mockk(relaxed = true) {
                 coEvery { stageImages(any()) } returns java.io.File(System.getProperty("java.io.tmpdir"), "staging")
             }
-        importRequestDao = mockk(relaxed = true)
+        importRepository = mockk(relaxed = true)
         viewModel =
             ImportViewModel(
                 context = context,
@@ -115,7 +115,7 @@ class ImportViewModelEdgeCasesTest {
                 userActionTracker = mockk(relaxed = true),
                 preferencesDataStore = preferencesDataStore,
                 importStagingManager = importStagingManager,
-                importRequestDao = importRequestDao,
+                importRepository = importRepository,
             )
     }
 
@@ -180,7 +180,7 @@ class ImportViewModelEdgeCasesTest {
 
             // Should only stage once (one import request)
             coVerify(exactly = 1) { importStagingManager.stageImages(any()) }
-            coVerify(exactly = 1) { importRequestDao.insertRequest(any()) }
+            coVerify(exactly = 1) { importRepository.createImportRequest(any(), any(), any()) }
         }
 
     // ==================== Concurrent State Modification Tests ====================
@@ -394,7 +394,7 @@ class ImportViewModelEdgeCasesTest {
 
             // Both images should be staged (worker handles per-image failures)
             coVerify { importStagingManager.stageImages(match { it.size == 2 }) }
-            coVerify { importRequestDao.insertItems(match { it.size == 2 }) }
+            coVerify { importRepository.createImportRequestItems(any(), match { it.size == 2 }) }
         }
 
     // ==================== Duplicate URI Tests ====================
@@ -520,7 +520,7 @@ class ImportViewModelEdgeCasesTest {
             advanceUntilIdle()
 
             coVerify { importStagingManager.stageImages(any()) }
-            coVerify { importRequestDao.insertRequest(any()) }
+            coVerify { importRepository.createImportRequest(any(), any(), any()) }
         }
 
     // ==================== Duplicate Detection Tests ====================
@@ -567,7 +567,7 @@ class ImportViewModelEdgeCasesTest {
             advanceUntilIdle()
 
             coVerify { importStagingManager.stageImages(any()) }
-            coVerify { importRequestDao.insertRequest(any()) }
+            coVerify { importRepository.createImportRequest(any(), any(), any()) }
             viewModel.uiState.test {
                 val state = awaitItem()
                 assertThat(state.showDuplicateDialog).isFalse()
@@ -598,7 +598,7 @@ class ImportViewModelEdgeCasesTest {
 
             // Only non-duplicate should be staged and submitted
             coVerify { importStagingManager.stageImages(match { it.size == 1 }) }
-            coVerify { importRequestDao.insertItems(match { it.size == 1 }) }
+            coVerify { importRepository.createImportRequestItems(any(), match { it.size == 1 }) }
         }
 
     // ==================== Progress Reporting Tests ====================
@@ -728,8 +728,8 @@ class ImportViewModelEdgeCasesTest {
 
             // Verify all images were staged for import (worker handles success/failure reporting)
             coVerify { importStagingManager.stageImages(match { it.size == 2 }) }
-            coVerify { importRequestDao.insertRequest(any()) }
-            coVerify { importRequestDao.insertItems(match { it.size == 2 }) }
+            coVerify { importRepository.createImportRequest(any(), any(), any()) }
+            coVerify { importRepository.createImportRequestItems(any(), match { it.size == 2 }) }
         }
 
     @Test

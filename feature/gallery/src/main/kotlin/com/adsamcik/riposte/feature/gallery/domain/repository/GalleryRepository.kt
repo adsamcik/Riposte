@@ -2,6 +2,7 @@ package com.adsamcik.riposte.feature.gallery.domain.repository
 
 import androidx.paging.PagingData
 import com.adsamcik.riposte.core.model.Meme
+import com.adsamcik.riposte.feature.gallery.domain.model.MemeEmbeddingData
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -83,4 +84,9 @@ interface GalleryRepository {
      * Get all unique emojis with their usage counts, sorted by count descending.
      */
     fun getAllEmojisWithCounts(): Flow<List<Pair<String, Int>>>
+
+    /**
+     * Get embedding data for all memes except the given one, for similarity computation.
+     */
+    suspend fun getEmbeddingsExcluding(memeId: Long): List<MemeEmbeddingData>
 }

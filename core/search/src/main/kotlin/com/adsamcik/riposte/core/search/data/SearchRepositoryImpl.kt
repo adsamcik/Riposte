@@ -5,6 +5,7 @@ import com.adsamcik.riposte.core.database.dao.MemeDao
 import com.adsamcik.riposte.core.database.dao.MemeEmbeddingDao
 import com.adsamcik.riposte.core.database.dao.MemeSearchDao
 import com.adsamcik.riposte.core.database.mapper.MemeMapper
+import com.adsamcik.riposte.core.database.util.FtsQuerySanitizer
 import com.adsamcik.riposte.core.datastore.PreferencesDataStore
 import com.adsamcik.riposte.core.ml.MemeWithEmbeddings
 import com.adsamcik.riposte.core.ml.SemanticSearchEngine
@@ -15,6 +16,7 @@ import com.adsamcik.riposte.core.model.SearchResult
 import com.adsamcik.riposte.core.search.domain.repository.SearchRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
@@ -125,7 +127,8 @@ class SearchRepositoryImpl
         }
 
         override fun searchByEmoji(emoji: String): Flow<List<SearchResult>> {
-            val emojiQuery = "emojiTagsJson:$emoji"
+            val emojiQuery = FtsQuerySanitizer.prepareEmojiQuery(emoji)
+            if (emojiQuery.isBlank()) return flowOf(emptyList())
             return memeSearchDao.searchByEmoji(emojiQuery).map { entities ->
                 entities.mapIndexed { index, entity ->
                     val relevanceScore = 1.0f - (index * 0.01f).coerceAtMost(0.5f)
@@ -165,17 +168,7 @@ class SearchRepositoryImpl
          * Removes special characters and operators to prevent injection.
          */
         private fun prepareFtsQuery(query: String): String {
-            val sanitized =
-                query
-                    .replace(Regex("[\"*():]"), "")
-                    .replace(Regex("\\b(OR|AND|NOT|NEAR)\\b", RegexOption.IGNORE_CASE), "")
-                    .split(Regex("\\s+"))
-                    .filter { it.isNotBlank() && it.length >= 2 }
-                    .take(10)
-
-            if (sanitized.isEmpty()) return ""
-
-            return sanitized.joinToString(" OR ") { "\"$it\"*" }
+            return FtsQuerySanitizer.prepareForMatch(query)
         }
 
         private fun determineMatchType(
