@@ -52,7 +52,7 @@ class GalleryViewModelTest {
     private lateinit var getAllMemeIdsUseCase: GetAllMemeIdsUseCase
     private lateinit var getAllEmojisWithCountsUseCase: GetAllEmojisWithCountsUseCase
     private lateinit var getSuggestionsUseCase: GetSuggestionsUseCase
-    private lateinit var shareTargetRepository: com.adsamcik.riposte.core.database.repository.ShareTargetRepository
+    private lateinit var shareTargetRepository: com.adsamcik.riposte.core.common.repository.ShareTargetRepository
     private lateinit var preferencesDataStore: PreferencesDataStore
     private lateinit var searchDelegate: SearchDelegate
     private lateinit var context: Context
