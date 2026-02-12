@@ -7,8 +7,10 @@ import com.adsamcik.riposte.core.database.entity.MemeEmbeddingEntity
 import com.adsamcik.riposte.core.ml.worker.EmbeddingGenerationWorker
 import com.adsamcik.riposte.core.model.EmbeddingType
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.security.MessageDigest
@@ -45,6 +47,23 @@ class EmbeddingManager
         private val memeEmbeddingDao: MemeEmbeddingDao,
         private val versionManager: EmbeddingModelVersionManager,
     ) {
+        /**
+         * Proactively initializes the embedding model in the background so
+         * the first search is not blocked by model loading (~119ms+).
+         *
+         * Safe to call on any flavor — lite/simple generators treat this as a no-op.
+         */
+        fun warmUp(scope: CoroutineScope) {
+            scope.launch {
+                try {
+                    embeddingGenerator.initialize()
+                    Log.d(TAG, "Embedding model warm-up completed")
+                } catch (e: Exception) {
+                    Log.w(TAG, "Embedding model warm-up failed (non-fatal)", e)
+                }
+            }
+        }
+
         /**
          * Generate and store an embedding for a meme.
          *
