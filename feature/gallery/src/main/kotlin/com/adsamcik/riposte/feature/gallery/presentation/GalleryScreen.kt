@@ -838,6 +838,7 @@ private fun GalleryContent(
  * with a circular progress overlay. In selection mode, tap toggles selection
  * with a circular check indicator and animated overlay.
  */
+@Suppress("LongMethod")
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun MemeGridItem(

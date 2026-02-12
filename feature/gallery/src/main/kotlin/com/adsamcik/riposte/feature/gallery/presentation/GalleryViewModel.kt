@@ -40,6 +40,7 @@ import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
+@Suppress("LongParameterList")
 class GalleryViewModel
     @Inject
     constructor(

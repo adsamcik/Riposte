@@ -184,6 +184,7 @@ fun MemeCard(
  * @param onClick Click handler. When null, no click modifier is applied —
  *   useful when a parent composable provides its own [combinedClickable].
  */
+@Suppress("LongMethod")
 @Composable
 fun MemeCardCompact(
     meme: Meme,

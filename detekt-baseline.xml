@@ -8,7 +8,6 @@
     <ID>CyclomaticComplexMethod:MemeDetailScreen.kt$@OptIn(ExperimentalLayoutApi::class) @Composable private fun MemeInfoSheet( uiState: MemeDetailUiState, onIntent: (MemeDetailIntent) -&gt; Unit, modifier: Modifier = Modifier, )</ID>
     <ID>CyclomaticComplexMethod:MemeEntity.kt$MemeEntity$override fun equals(other: Any?): Boolean</ID>
     <ID>CyclomaticComplexMethod:QuickShareBottomSheet.kt$private fun resolveShareTargets( context: Context, frequentTargets: List&lt;ShareTarget&gt;, maxItems: Int = 8, ): List&lt;ResolvedTarget&gt;</ID>
-    <ID>CyclomaticComplexMethod:SettingsScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun SettingsScreen( uiState: SettingsUiState, onIntent: (SettingsIntent) -&gt; Unit, onNavigateBack: () -&gt; Unit, snackbarHostState: SnackbarHostState = remember { SnackbarHostState() }, )</ID>
     <ID>CyclomaticComplexMethod:ZipImporter.kt$DefaultZipImporter$override fun extractBundleStream(zipUri: Uri): Flow&lt;ZipExtractionEvent&gt;</ID>
     <ID>CyclomaticComplexMethod:ZipImporter.kt$DefaultZipImporter$override suspend fun extractBundle(zipUri: Uri): ZipExtractionResult</ID>
     <ID>ImplicitDefaultLocale:MemeDetailScreen.kt$String.format("%.1f KB", bytes / 1024.0)</ID>
@@ -46,6 +45,7 @@
     <ID>Indentation:GalleryRepositoryImpl.kt$GalleryRepositoryImpl.Companion$ </ID>
     <ID>Indentation:GalleryScreen.kt$ </ID>
     <ID>Indentation:GalleryUseCases.kt$DeleteMemesUseCase$ </ID>
+    <ID>Indentation:GalleryUseCases.kt$GetAllEmojisWithCountsUseCase$ </ID>
     <ID>Indentation:GalleryUseCases.kt$GetAllMemeIdsUseCase$ </ID>
     <ID>Indentation:GalleryUseCases.kt$GetFavoritesUseCase$ </ID>
     <ID>Indentation:GalleryUseCases.kt$GetLibraryStatsUseCase$ </ID>
@@ -164,7 +164,6 @@
     <ID>LongMethod:EmbeddingGenerationWorker.kt$EmbeddingGenerationWorker$override suspend fun doWork(): Result</ID>
     <ID>LongMethod:EmojiChip.kt$@Composable fun EmojiChip( emojiTag: EmojiTag, modifier: Modifier = Modifier, onClick: (() -&gt; Unit)? = null, isSelected: Boolean = false, showName: Boolean = false, backgroundColor: Color? = null, )</ID>
     <ID>LongMethod:GalleryScreen.kt$@Composable private fun ImportStatusBanner( status: ImportWorkStatus, onDismiss: () -&gt; Unit, modifier: Modifier = Modifier, )</ID>
-    <ID>LongMethod:GalleryScreen.kt$@OptIn(ExperimentalFoundationApi::class) @Composable internal fun MemeGridItem( meme: Meme, isSelected: Boolean, isSelectionMode: Boolean, memeDescription: String, onIntent: (GalleryIntent) -&gt; Unit, )</ID>
     <ID>LongMethod:GalleryScreen.kt$@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class) @Composable fun GalleryScreen( onNavigateToMeme: (Long) -&gt; Unit, onNavigateToImport: () -&gt; Unit, onNavigateToSettings: () -&gt; Unit, onNavigateToShare: (Long) -&gt; Unit = {}, viewModel: GalleryViewModel = hiltViewModel(), )</ID>
     <ID>LongMethod:GalleryScreen.kt$@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class) @Composable private fun GalleryScreenContent( uiState: GalleryUiState, pagedMemes: LazyPagingItems&lt;Meme&gt;? = null, onIntent: (GalleryIntent) -&gt; Unit, onNavigateToMeme: (Long) -&gt; Unit, onNavigateToImport: () -&gt; Unit, onNavigateToSettings: () -&gt; Unit, snackbarHostState: SnackbarHostState, showDeleteDialog: Boolean, deleteCount: Int, showMenu: Boolean, onShowDeleteDialogChange: (Boolean) -&gt; Unit, onDeleteCountChange: (Int) -&gt; Unit, onShowMenuChange: (Boolean) -&gt; Unit, )</ID>
     <ID>LongMethod:HoldToShareContainer.kt$@Composable fun HoldToShareContainer( onTap: () -&gt; Unit, onHoldComplete: () -&gt; Unit, modifier: Modifier = Modifier, onLongPress: (() -&gt; Unit)? = null, content: @Composable BoxScope.() -&gt; Unit, )</ID>
@@ -178,26 +177,20 @@
     <ID>LongMethod:ImportViewModel.kt$ImportViewModel$private suspend fun performImport(images: List&lt;ImportImage&gt;)</ID>
     <ID>LongMethod:ImportWorker.kt$ImportWorker$override suspend fun doWork(): Result</ID>
     <ID>LongMethod:MemeCard.kt$@Composable fun MemeCard( meme: Meme, onClick: () -&gt; Unit, onFavoriteClick: () -&gt; Unit, modifier: Modifier = Modifier, showTitle: Boolean = true, showEmojis: Boolean = true, )</ID>
-    <ID>LongMethod:MemeCard.kt$@Composable fun MemeCardCompact( meme: Meme, modifier: Modifier = Modifier, onClick: (() -&gt; Unit)? = null, interactionSource: MutableInteractionSource? = null, )</ID>
     <ID>LongMethod:MemeDetailScreen.kt$@OptIn(ExperimentalLayoutApi::class) @Composable private fun MemeInfoSheet( uiState: MemeDetailUiState, onIntent: (MemeDetailIntent) -&gt; Unit, modifier: Modifier = Modifier, )</ID>
     <ID>LongMethod:MemeDetailScreen.kt$@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class) @Composable fun MemeDetailScreen( onNavigateBack: () -&gt; Unit, onNavigateToShare: (Long) -&gt; Unit = {}, onNavigateToMeme: (Long) -&gt; Unit = {}, viewModel: MemeDetailViewModel = hiltViewModel(), )</ID>
-    <ID>LongMethod:MemeDetailScreen.kt$@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class) @Composable private fun MemeDetailScreenContent( uiState: MemeDetailUiState, onIntent: (MemeDetailIntent) -&gt; Unit, onNavigateBack: () -&gt; Unit, snackbarHostState: SnackbarHostState, zoomState: ZoomState, )</ID>
     <ID>LongMethod:Migrations.kt$&lt;no name provided&gt;$override fun migrate(db: SupportSQLiteDatabase)</ID>
     <ID>LongMethod:QuickShareBottomSheet.kt$@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class) @Composable fun QuickShareBottomSheet( meme: Meme, frequentTargets: List&lt;ShareTarget&gt;, onTargetSelected: (ShareTarget) -&gt; Unit, onMoreClick: () -&gt; Unit, onCopyToClipboard: () -&gt; Unit, onDismiss: () -&gt; Unit, modifier: Modifier = Modifier, )</ID>
     <ID>LongMethod:SearchBar.kt$@Composable fun SearchBar( query: String, onQueryChange: (String) -&gt; Unit, onSearch: () -&gt; Unit, modifier: Modifier = Modifier, placeholder: String? = null, autoFocus: Boolean = false, )</ID>
     <ID>LongMethod:SettingsScreen.kt$@Composable fun SettingsScreen( onNavigateBack: () -&gt; Unit, viewModel: SettingsViewModel = hiltViewModel(), )</ID>
-    <ID>LongMethod:SettingsScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun SettingsScreen( uiState: SettingsUiState, onIntent: (SettingsIntent) -&gt; Unit, onNavigateBack: () -&gt; Unit, snackbarHostState: SnackbarHostState = remember { SnackbarHostState() }, )</ID>
     <ID>LongMethod:ShareScreen.kt$@Composable private fun ShareContent( uiState: ShareUiState, onIntent: (ShareIntent) -&gt; Unit, modifier: Modifier = Modifier, )</ID>
     <ID>LongMethod:ShareScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun ShareScreen( onNavigateBack: () -&gt; Unit, viewModel: ShareViewModel = hiltViewModel(), )</ID>
     <ID>LongMethod:XmpMetadataHandler.kt$XmpMetadataHandler$private fun generateXmpPacket(metadata: MemeMetadata): String</ID>
     <ID>LongMethod:ZipImporter.kt$DefaultZipImporter$override fun extractBundleStream(zipUri: Uri): Flow&lt;ZipExtractionEvent&gt;</ID>
     <ID>LongMethod:ZipImporter.kt$DefaultZipImporter$override suspend fun extractBundle(zipUri: Uri): ZipExtractionResult</ID>
     <ID>LongParameterList:GalleryScreen.kt$( uiState: GalleryUiState, pagedMemes: LazyPagingItems&lt;Meme&gt;? = null, onIntent: (GalleryIntent) -&gt; Unit, onNavigateToMeme: (Long) -&gt; Unit, onNavigateToImport: () -&gt; Unit, onNavigateToSettings: () -&gt; Unit, snackbarHostState: SnackbarHostState, showDeleteDialog: Boolean, deleteCount: Int, showMenu: Boolean, onShowDeleteDialogChange: (Boolean) -&gt; Unit, onDeleteCountChange: (Int) -&gt; Unit, onShowMenuChange: (Boolean) -&gt; Unit, )</ID>
-    <ID>LongParameterList:GalleryViewModel.kt$GalleryViewModel$( @ApplicationContext private val context: Context, private val getMemesUseCase: GetMemesUseCase, private val getPagedMemesUseCase: GetPagedMemesUseCase, private val getFavoritesUseCase: GetFavoritesUseCase, private val getMemesByEmojiUseCase: GetMemesByEmojiUseCase, private val getMemeByIdUseCase: GetMemeByIdUseCase, private val deleteMemeUseCase: DeleteMemesUseCase, private val toggleFavoriteUseCase: ToggleFavoriteUseCase, private val getAllMemeIdsUseCase: GetAllMemeIdsUseCase, private val getSuggestionsUseCase: GetSuggestionsUseCase, private val shareTargetRepository: com.adsamcik.riposte.core.database.repository.ShareTargetRepository, @DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher, private val preferencesDataStore: PreferencesDataStore, val searchDelegate: SearchDelegate, )</ID>
     <ID>LongParameterList:ImportScreen.kt$( imageUri: Uri, currentEmojis: List&lt;EmojiTag&gt;, suggestedEmojis: List&lt;EmojiTag&gt;, title: String, description: String, onEmojiToggle: (EmojiTag) -&gt; Unit, onTitleChange: (String) -&gt; Unit, onDescriptionChange: (String) -&gt; Unit, onApplySuggestions: () -&gt; Unit, onDone: () -&gt; Unit, modifier: Modifier = Modifier, )</ID>
     <ID>LongParameterList:ImportScreen.kt$( uri: Uri, emojis: List&lt;String&gt;, isSelected: Boolean, hasError: Boolean, isProcessing: Boolean, onClick: () -&gt; Unit, onRemove: () -&gt; Unit, modifier: Modifier = Modifier, )</ID>
-    <ID>LongParameterList:ImportViewModel.kt$ImportViewModel$( @param:ApplicationContext private val context: Context, private val importImageUseCase: ImportImageUseCase, private val suggestEmojisUseCase: SuggestEmojisUseCase, private val extractTextUseCase: ExtractTextUseCase, private val extractZipForPreviewUseCase: ExtractZipForPreviewUseCase, private val checkDuplicateUseCase: CheckDuplicateUseCase, private val findDuplicateMemeIdUseCase: FindDuplicateMemeIdUseCase, private val updateMemeMetadataUseCase: UpdateMemeMetadataUseCase, private val cleanupExtractedFilesUseCase: CleanupExtractedFilesUseCase, private val userActionTracker: UserActionTracker, private val preferencesDataStore: PreferencesDataStore, private val importStagingManager: ImportStagingManager, private val importRequestDao: ImportRequestDao, )</ID>
-    <ID>LongParameterList:MemeDetailViewModel.kt$MemeDetailViewModel$( @ApplicationContext private val context: Context, savedStateHandle: SavedStateHandle, private val getMemeByIdUseCase: GetMemeByIdUseCase, private val updateMemeUseCase: UpdateMemeUseCase, private val deleteMemeUseCase: DeleteMemesUseCase, private val toggleFavoriteUseCase: ToggleFavoriteUseCase, private val recordMemeViewUseCase: RecordMemeViewUseCase, private val getSimilarMemesUseCase: GetSimilarMemesUseCase, private val userActionTracker: UserActionTracker, private val preferencesDataStore: PreferencesDataStore, private val shareTargetRepository: ShareTargetRepository, )</ID>
     <ID>LongParameterList:QuickShareBottomSheet.kt$( meme: Meme, frequentTargets: List&lt;ShareTarget&gt;, onTargetSelected: (ShareTarget) -&gt; Unit, onMoreClick: () -&gt; Unit, onCopyToClipboard: () -&gt; Unit, onDismiss: () -&gt; Unit, modifier: Modifier = Modifier, )</ID>
     <ID>LongParameterList:SettingsViewModel.kt$SettingsViewModel$( @param:ApplicationContext private val context: Context, private val getAppPreferencesUseCase: GetAppPreferencesUseCase, private val getSharingPreferencesUseCase: GetSharingPreferencesUseCase, private val setDarkModeUseCase: SetDarkModeUseCase, private val setDynamicColorsUseCase: SetDynamicColorsUseCase, private val setEnableSemanticSearchUseCase: SetEnableSemanticSearchUseCase, private val setSaveSearchHistoryUseCase: SetSaveSearchHistoryUseCase, private val setUseNativeShareDialogUseCase: SetUseNativeShareDialogUseCase, private val setDefaultFormatUseCase: SetDefaultFormatUseCase, private val setDefaultQualityUseCase: SetDefaultQualityUseCase, private val setDefaultMaxDimensionUseCase: SetDefaultMaxDimensionUseCase, private val setStripMetadataUseCase: SetStripMetadataUseCase, private val setGridDensityUseCase: SetGridDensityUseCase, private val exportPreferencesUseCase: ExportPreferencesUseCase, private val importPreferencesUseCase: ImportPreferencesUseCase, private val observeEmbeddingStatisticsUseCase: ObserveEmbeddingStatisticsUseCase, private val crashLogManager: CrashLogManager, @IoDispatcher private val ioDispatcher: CoroutineDispatcher, )</ID>
     <ID>LoopWithTooManyJumpStatements:ImportViewModel.kt$ImportViewModel$for</ID>
@@ -208,34 +201,6 @@
     <ID>MagicNumber:BaselineProfileGenerator.kt$BaselineProfileGenerator$3_000</ID>
     <ID>MagicNumber:BaselineProfileGenerator.kt$BaselineProfileGenerator$5_000</ID>
     <ID>MagicNumber:BitmapExtensions.kt$100</ID>
-    <ID>MagicNumber:Color.kt$0xFF1C1B1F</ID>
-    <ID>MagicNumber:Color.kt$0xFF22C55E</ID>
-    <ID>MagicNumber:Color.kt$0xFF2B2930</ID>
-    <ID>MagicNumber:Color.kt$0xFF3B82F6</ID>
-    <ID>MagicNumber:Color.kt$0xFF625b71</ID>
-    <ID>MagicNumber:Color.kt$0xFF6366F1</ID>
-    <ID>MagicNumber:Color.kt$0xFF6650a4</ID>
-    <ID>MagicNumber:Color.kt$0xFF7D5260</ID>
-    <ID>MagicNumber:Color.kt$0xFF818CF8</ID>
-    <ID>MagicNumber:Color.kt$0xFFA855F7</ID>
-    <ID>MagicNumber:Color.kt$0xFFC084FC</ID>
-    <ID>MagicNumber:Color.kt$0xFFCCC2DC</ID>
-    <ID>MagicNumber:Color.kt$0xFFCFFAFE</ID>
-    <ID>MagicNumber:Color.kt$0xFFD0BCFF</ID>
-    <ID>MagicNumber:Color.kt$0xFFDBEAFE</ID>
-    <ID>MagicNumber:Color.kt$0xFFDCFCE7</ID>
-    <ID>MagicNumber:Color.kt$0xFFE0E7FF</ID>
-    <ID>MagicNumber:Color.kt$0xFFEC4899</ID>
-    <ID>MagicNumber:Color.kt$0xFFEF4444</ID>
-    <ID>MagicNumber:Color.kt$0xFFEFB8C8</ID>
-    <ID>MagicNumber:Color.kt$0xFFF3E8FF</ID>
-    <ID>MagicNumber:Color.kt$0xFFF3F3F7</ID>
-    <ID>MagicNumber:Color.kt$0xFFF472B6</ID>
-    <ID>MagicNumber:Color.kt$0xFFF59E0B</ID>
-    <ID>MagicNumber:Color.kt$0xFFFCE7F3</ID>
-    <ID>MagicNumber:Color.kt$0xFFFEF3C7</ID>
-    <ID>MagicNumber:Color.kt$0xFFFFEDD5</ID>
-    <ID>MagicNumber:Color.kt$0xFFFFFBFE</ID>
     <ID>MagicNumber:DefaultSemanticSearchEngine.kt$DefaultSemanticSearchEngine.&lt;no name provided&gt;$0.75f</ID>
     <ID>MagicNumber:EmbeddingGemmaGenerator.kt$EmbeddingGemmaGenerator$1024</ID>
     <ID>MagicNumber:EmbeddingGemmaGenerator.kt$EmbeddingGemmaGenerator.Companion$128</ID>
@@ -274,14 +239,11 @@
     <ID>MagicNumber:EmojiGridOverlay.kt$42</ID>
     <ID>MagicNumber:EmojiGridOverlay.kt$5</ID>
     <ID>MagicNumber:EmojiGridOverlay.kt$8</ID>
-    <ID>MagicNumber:EmptyState.kt$0.6f</ID>
     <ID>MagicNumber:FakePreferencesDataStore.kt$FakePreferencesDataStore$10</ID>
     <ID>MagicNumber:FakePreferencesDataStore.kt$FakePreferencesDataStore$4</ID>
     <ID>MagicNumber:FtsQuerySanitizer.kt$FtsQuerySanitizer$127</ID>
     <ID>MagicNumber:GalleryScreen.kt$0.9f</ID>
     <ID>MagicNumber:GalleryScreen.kt$3</ID>
-    <ID>MagicNumber:GalleryScreen.kt$50</ID>
-    <ID>MagicNumber:GalleryScreen.kt$800L</ID>
     <ID>MagicNumber:GalleryViewModel.kt$GalleryViewModel$5000L</ID>
     <ID>MagicNumber:GalleryViewModel.kt$GalleryViewModel.Companion$0.5</ID>
     <ID>MagicNumber:GalleryViewModel.kt$GalleryViewModel.Companion$3.0</ID>
@@ -321,7 +283,6 @@
     <ID>MagicNumber:RelevanceOpacity.kt$0.9f</ID>
     <ID>MagicNumber:SearchRepositoryImpl.kt$SearchRepositoryImpl$0.01f</ID>
     <ID>MagicNumber:SearchRepositoryImpl.kt$SearchRepositoryImpl$0.5f</ID>
-    <ID>MagicNumber:SearchRepositoryImpl.kt$SearchRepositoryImpl$10</ID>
     <ID>MagicNumber:SearchRepositoryImpl.kt$SearchRepositoryImpl$4</ID>
     <ID>MagicNumber:SettingsScreen.kt$1080</ID>
     <ID>MagicNumber:SettingsScreen.kt$2048</ID>
@@ -372,6 +333,7 @@
     <ID>PackageName:ImportNotificationManager.kt$package com.adsamcik.riposte.feature.import_feature.data.worker</ID>
     <ID>PackageName:ImportRepository.kt$package com.adsamcik.riposte.feature.import_feature.domain.repository</ID>
     <ID>PackageName:ImportRepositoryImpl.kt$package com.adsamcik.riposte.feature.import_feature.data</ID>
+    <ID>PackageName:ImportRequestItemData.kt$package com.adsamcik.riposte.feature.import_feature.domain.model</ID>
     <ID>PackageName:ImportScreen.kt$package com.adsamcik.riposte.feature.import_feature.presentation</ID>
     <ID>PackageName:ImportStagingManager.kt$package com.adsamcik.riposte.feature.import_feature.data.worker</ID>
     <ID>PackageName:ImportUiState.kt$package com.adsamcik.riposte.feature.import_feature.presentation</ID>
@@ -535,7 +497,6 @@
     <ID>UnusedPrivateProperty:ImageProcessor.kt$ImageProcessor$@param:ApplicationContext private val context: Context</ID>
     <ID>UnusedPrivateProperty:ImportViewModel.kt$ImportViewModel$private val checkDuplicateUseCase: CheckDuplicateUseCase</ID>
     <ID>UnusedPrivateProperty:ImportViewModel.kt$ImportViewModel$private val importImageUseCase: ImportImageUseCase</ID>
-    <ID>UnusedPrivateProperty:MemeDetailScreen.kt$val favoriteScale by animateFloatAsState( targetValue = if (meme.isFavorite) 1f else 1f, animationSpec = spring( dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium, ), label = "favorite_scale", )</ID>
     <ID>UnusedPrivateProperty:MlKitTextRecognizer.kt$MlKitTextRecognizer$val task = recognizer.process(image) .addOnSuccessListener { result -&gt; val text = result.text.takeIf { it.isNotBlank() } continuation.resume(text) } .addOnFailureListener { exception -&gt; continuation.resumeWithException(exception) }</ID>
     <ID>UnusedPrivateProperty:ShareNavigation.kt$val route = backStackEntry.toRoute&lt;ShareRoute&gt;()</ID>
     <ID>UnusedPrivateProperty:SimpleEmbeddingGenerator.kt$SimpleEmbeddingGenerator$val task = imageLabeler.process(image) .addOnSuccessListener { labels -&gt; val labelTexts = labels.map { it.text.lowercase() } continuation.resume(labelTexts) } .addOnFailureListener { exception -&gt; continuation.resumeWithException(exception) }</ID>

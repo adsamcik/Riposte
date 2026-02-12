@@ -37,6 +37,7 @@ import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
+@Suppress("LongParameterList")
 class ImportViewModel
     @Inject
     constructor(

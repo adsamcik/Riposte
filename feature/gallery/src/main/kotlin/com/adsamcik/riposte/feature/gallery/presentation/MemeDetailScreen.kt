@@ -210,6 +210,7 @@ fun MemeDetailScreen(
     )
 }
 
+@Suppress("LongMethod", "CyclomaticComplexMethod")
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 private fun MemeDetailScreenContent(
@@ -762,6 +763,7 @@ private fun formatFileSize(bytes: Long): String {
     }
 }
 
+@Suppress("LongMethod")
 @Composable
 private fun MemeImage(
     filePath: String?,

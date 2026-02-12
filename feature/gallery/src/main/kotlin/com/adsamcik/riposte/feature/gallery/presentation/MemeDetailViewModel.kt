@@ -30,6 +30,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
+@Suppress("LongParameterList")
 class MemeDetailViewModel
     @Inject
     constructor(
