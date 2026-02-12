@@ -51,11 +51,11 @@
     <string name="gallery_button_import_memes">Import Memes</string>
 
     <!-- Empty State -->
-    <string name="gallery_empty_title">No memes yet</string>
-    <string name="gallery_empty_message">Import some memes to get started!</string>
+    <string name="gallery_empty_title">Your meme vault is empty! 📂</string>
+    <string name="gallery_empty_message">Time to stock up on digital comedy gold ✨</string>
 
     <!-- Loading State -->
-    <string name="gallery_loading_message">Loading memes…</string>
+    <string name="gallery_loading_message">Finding your memes…</string>
     <string name="gallery_cd_searching">Searching memes</string>
 
     <!-- Error State -->
@@ -99,17 +99,17 @@
     <!-- Error Messages -->
     <string name="gallery_error_invalid_meme_id">Invalid meme ID</string>
     <string name="gallery_error_meme_not_found">Meme not found</string>
-    <string name="gallery_error_load_failed">Failed to load memes</string>
+    <string name="gallery_error_load_failed">Memes are hiding 🙈</string>
 
     <!-- Snackbar Messages -->
     <string name="gallery_snackbar_deleted">%d meme(s) deleted</string>
     <string name="gallery_snackbar_save_or_discard">Save or discard changes first</string>
     <string name="gallery_snackbar_favorite_failed">Failed to update favorite</string>
-    <string name="gallery_snackbar_added_to_favorites">Added to favorites</string>
-    <string name="gallery_snackbar_removed_from_favorites">Removed from favorites</string>
-    <string name="gallery_snackbar_meme_deleted">Meme deleted</string>
+    <string name="gallery_snackbar_added_to_favorites">Favorited! ⭐</string>
+    <string name="gallery_snackbar_removed_from_favorites">Unfavorited</string>
+    <string name="gallery_snackbar_meme_deleted">Gone forever! 💨</string>
     <string name="gallery_snackbar_delete_failed">Failed to delete meme</string>
-    <string name="gallery_snackbar_changes_saved">Changes saved</string>
+    <string name="gallery_snackbar_changes_saved">Saved! ✓</string>
     <string name="gallery_snackbar_save_failed">Failed to save changes</string>
     <string name="gallery_snackbar_unsaved_changes">You have unsaved changes</string>
 
@@ -117,7 +117,7 @@
     <string name="gallery_detail_action_cancel">Cancel</string>
 
     <!-- Empty Emoji Tags -->
-    <string name="gallery_detail_empty_emoji_tags">No emoji tags — tap Edit to add</string>
+    <string name="gallery_detail_empty_emoji_tags">No emoji tags yet — tap Edit to add some personality ✨</string>
 
     <!-- Discard Changes Dialog -->
     <string name="gallery_discard_changes_title">Discard changes?</string>
@@ -126,8 +126,8 @@
 
     <!-- Import Status Banner -->
     <string name="gallery_import_in_progress">Importing memes… %1$d of %2$d</string>
-    <string name="gallery_import_completed">Imported %1$d memes</string>
+    <string name="gallery_import_completed">Welcome to the collection! %1$d memes added 🎉</string>
     <string name="gallery_import_completed_with_errors">Imported %1$d memes, %2$d failed</string>
-    <string name="gallery_import_failed">Import failed</string>
+    <string name="gallery_import_failed">Import hit a snag 😅</string>
     <string name="gallery_cd_dismiss_import_status">Dismiss import status</string>
 </resources>

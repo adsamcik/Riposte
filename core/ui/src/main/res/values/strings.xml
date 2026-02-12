@@ -5,10 +5,10 @@
     <string name="ui_meme_card_add_to_favorites">Add to favorites</string>
 
     <!-- LoadingStates Component -->
-    <string name="ui_loading_error_title">Oops!</string>
+    <string name="ui_loading_error_title">Oops! 😵</string>
     <string name="ui_loading_error_retry">Try Again</string>
-    <string name="ui_loading_no_results_title">No results found</string>
-    <string name="ui_loading_no_results_message">We couldn\'t find any memes matching \"%1$s\"</string>
+    <string name="ui_loading_no_results_title">No matches found 🕵️‍♀️</string>
+    <string name="ui_loading_no_results_message">Try different emoji or keywords for \"%1$s\"</string>
     <string name="ui_loading_no_results_clear">Clear Search</string>
 
     <!-- SearchBar Component -->

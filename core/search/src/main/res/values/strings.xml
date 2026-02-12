@@ -45,7 +45,7 @@
 
     <!-- Empty State -->
     <string name="search_empty_icon">🔍</string>
-    <string name="search_empty_title">Search Your Memes</string>
+    <string name="search_empty_title">Find the perfect meme 🎯</string>
     <string name="search_empty_description">Find memes by text, description, or use AI-powered semantic search</string>
 
     <!-- Search Tips -->
@@ -56,8 +56,8 @@
     <string name="search_tip_emoji_filter">Filter by emoji to narrow results</string>
 
     <!-- No Results State -->
-    <string name="search_no_results_title">No Results Found</string>
-    <string name="search_no_results_description">No memes found for \"%1$s\". Try different keywords or browse by emoji tags.</string>
+    <string name="search_no_results_title">No matches found 🕵️‍♀️</string>
+    <string name="search_no_results_description">No memes match \"%1$s\" — try different keywords or browse by emoji 🔮</string>
 
     <!-- No Results Suggestions -->
     <string name="search_no_results_clear_filters">Clear All Filters</string>
