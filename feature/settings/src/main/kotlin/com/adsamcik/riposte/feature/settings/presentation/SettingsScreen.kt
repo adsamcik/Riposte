@@ -166,6 +166,7 @@ fun SettingsScreen(
  * Stateless SettingsScreen for testing and previews.
  */
 @OptIn(ExperimentalMaterial3Api::class)
+@Suppress("LongMethod", "CyclomaticComplexMethod")
 @Composable
 fun SettingsScreen(
     uiState: SettingsUiState,
@@ -183,9 +184,10 @@ fun SettingsScreen(
             confirmButton = {
                 TextButton(
                     onClick = { onIntent(SettingsIntent.ConfirmClearCache) },
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error,
-                    ),
+                    colors =
+                        ButtonDefaults.textButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error,
+                        ),
                 ) {
                     Text(text = stringResource(R.string.settings_clear_cache_dialog_confirm))
                 }

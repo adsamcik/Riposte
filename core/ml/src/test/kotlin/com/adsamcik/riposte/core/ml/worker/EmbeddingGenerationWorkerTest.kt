@@ -81,8 +81,7 @@ class EmbeddingGenerationWorkerTest {
         searchPhrases = searchPhrases,
     )
 
-    private fun createTestEmbedding(size: Int = 128): FloatArray =
-        FloatArray(size) { it.toFloat() / size }
+    private fun createTestEmbedding(size: Int = 128): FloatArray = FloatArray(size) { it.toFloat() / size }
 
     // endregion
 
@@ -154,12 +153,13 @@ class EmbeddingGenerationWorkerTest {
     @Test
     fun `doWork generates intent embedding from search phrases`() =
         runTest {
-            val meme = createMemeData(
-                id = 1,
-                title = "Cat",
-                description = null,
-                searchPhrases = """["funny cat","laughing"]""",
-            )
+            val meme =
+                createMemeData(
+                    id = 1,
+                    title = "Cat",
+                    description = null,
+                    searchPhrases = """["funny cat","laughing"]""",
+                )
             val embedding = createTestEmbedding()
 
             coEvery { embeddingRepository.getMemesNeedingEmbeddings(any()) } returns listOf(meme)
@@ -188,13 +188,14 @@ class EmbeddingGenerationWorkerTest {
     @Test
     fun `doWork skips content embedding when title and description are null`() =
         runTest {
-            val meme = createMemeData(
-                id = 1,
-                title = null,
-                description = null,
-                textContent = null,
-                searchPhrases = """["search phrase"]""",
-            )
+            val meme =
+                createMemeData(
+                    id = 1,
+                    title = null,
+                    description = null,
+                    textContent = null,
+                    searchPhrases = """["search phrase"]""",
+                )
             val embedding = createTestEmbedding()
 
             coEvery { embeddingRepository.getMemesNeedingEmbeddings(any()) } returns listOf(meme)
@@ -230,11 +231,12 @@ class EmbeddingGenerationWorkerTest {
     @Test
     fun `doWork skips intent embedding when searchPhrases is null`() =
         runTest {
-            val meme = createMemeData(
-                id = 1,
-                title = "Title",
-                searchPhrases = null,
-            )
+            val meme =
+                createMemeData(
+                    id = 1,
+                    title = "Title",
+                    searchPhrases = null,
+                )
             val embedding = createTestEmbedding()
 
             coEvery { embeddingRepository.getMemesNeedingEmbeddings(any()) } returns listOf(meme)
@@ -271,8 +273,12 @@ class EmbeddingGenerationWorkerTest {
 
             coEvery { embeddingRepository.getMemesNeedingEmbeddings(any()) } returns memes
             // First meme succeeds, second fails
-            coEvery { embeddingGenerator.generateFromText(match { it.contains("Good") }) } returns createTestEmbedding()
-            coEvery { embeddingGenerator.generateFromText(match { it.contains("Bad") }) } throws RuntimeException("Model error")
+            coEvery {
+                embeddingGenerator.generateFromText(match { it.contains("Good") })
+            } returns createTestEmbedding()
+            coEvery {
+                embeddingGenerator.generateFromText(match { it.contains("Bad") })
+            } throws RuntimeException("Model error")
             coEvery { embeddingRepository.countMemesNeedingEmbeddings() } returns 0
 
             val worker = createWorker()

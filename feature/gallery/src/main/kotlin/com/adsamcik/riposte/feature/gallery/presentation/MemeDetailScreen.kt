@@ -131,7 +131,7 @@ fun MemeDetailScreen(
                 is MemeDetailEffect.LaunchQuickShare -> {
                     try {
                         context.startActivity(effect.intent)
-                    } catch (e: android.content.ActivityNotFoundException) {
+                    } catch (_: android.content.ActivityNotFoundException) {
                         snackbarHostState.showSnackbar("Unable to share — app not found")
                     }
                 }
@@ -347,10 +347,11 @@ private fun MemeDetailScreenContent(
                     val allMemeIds = uiState.allMemeIds
                     if (allMemeIds.size > 1) {
                         val initialPage = allMemeIds.indexOf(meme.id).coerceAtLeast(0)
-                        val pagerState = rememberPagerState(
-                            initialPage = initialPage,
-                            pageCount = { allMemeIds.size },
-                        )
+                        val pagerState =
+                            rememberPagerState(
+                                initialPage = initialPage,
+                                pageCount = { allMemeIds.size },
+                            )
 
                         // Dispatch ChangeMeme when user settles on a new page
                         LaunchedEffect(pagerState) {
@@ -373,14 +374,15 @@ private fun MemeDetailScreenContent(
                             val pageMemeId = allMemeIds[page]
                             MemeImage(
                                 filePath = if (pageMemeId == meme.id) meme.filePath else null,
-                                contentDescription = if (pageMemeId == meme.id) {
-                                    stringResource(
-                                        R.string.gallery_cd_meme_image,
-                                        meme.title ?: meme.fileName,
-                                    )
-                                } else {
-                                    null
-                                },
+                                contentDescription =
+                                    if (pageMemeId == meme.id) {
+                                        stringResource(
+                                            R.string.gallery_cd_meme_image,
+                                            meme.title ?: meme.fileName,
+                                        )
+                                    } else {
+                                        null
+                                    },
                                 zoomState = if (pageMemeId == meme.id) zoomState else null,
                             )
                         }
@@ -388,10 +390,11 @@ private fun MemeDetailScreenContent(
                         // Single meme or allMemeIds not loaded yet
                         MemeImage(
                             filePath = meme.filePath,
-                            contentDescription = stringResource(
-                                R.string.gallery_cd_meme_image,
-                                meme.title ?: meme.fileName,
-                            ),
+                            contentDescription =
+                                stringResource(
+                                    R.string.gallery_cd_meme_image,
+                                    meme.title ?: meme.fileName,
+                                ),
                             zoomState = zoomState,
                         )
                     }
@@ -769,57 +772,60 @@ private fun MemeImage(
     var viewportSize by remember { mutableStateOf(IntSize.Zero) }
 
     Box(
-        modifier = modifier
-            .fillMaxSize()
-            .onSizeChanged { viewportSize = it }
-            .then(
-                if (zoomState != null) {
-                    Modifier
-                        .pointerInput(zoomState) {
-                            detectTapGestures(
-                                onTap = { zoomState.toggleControls() },
-                                onDoubleTap = { zoomState.doubleTapToggle() },
-                            )
-                        }
-                        .pointerInput(zoomState, zoomState.isZoomed) {
-                            // Only handle pan/zoom gestures when zoomed to avoid
-                            // consuming horizontal swipes needed by HorizontalPager
-                            if (zoomState.isZoomed) {
-                                detectTransformGestures { _, pan, zoom, _ ->
-                                    zoomState.zoomBy(zoom)
-                                    zoomState.panBy(
-                                        delta = pan,
-                                        viewportWidth = viewportSize.width.toFloat(),
-                                        viewportHeight = viewportSize.height.toFloat(),
-                                    )
+        modifier =
+            modifier
+                .fillMaxSize()
+                .onSizeChanged { viewportSize = it }
+                .then(
+                    if (zoomState != null) {
+                        Modifier
+                            .pointerInput(zoomState) {
+                                detectTapGestures(
+                                    onTap = { zoomState.toggleControls() },
+                                    onDoubleTap = { zoomState.doubleTapToggle() },
+                                )
+                            }
+                            .pointerInput(zoomState, zoomState.isZoomed) {
+                                // Only handle pan/zoom gestures when zoomed to avoid
+                                // consuming horizontal swipes needed by HorizontalPager
+                                if (zoomState.isZoomed) {
+                                    detectTransformGestures { _, pan, zoom, _ ->
+                                        zoomState.zoomBy(zoom)
+                                        zoomState.panBy(
+                                            delta = pan,
+                                            viewportWidth = viewportSize.width.toFloat(),
+                                            viewportHeight = viewportSize.height.toFloat(),
+                                        )
+                                    }
                                 }
                             }
-                        }
-                } else {
-                    Modifier
-                },
-            ),
+                    } else {
+                        Modifier
+                    },
+                ),
     ) {
         if (filePath != null) {
             var imageState by remember {
                 mutableStateOf<AsyncImagePainter.State>(AsyncImagePainter.State.Empty)
             }
-            val backgroundColor = when (imageState) {
-                is AsyncImagePainter.State.Error -> MaterialTheme.colorScheme.errorContainer
-                is AsyncImagePainter.State.Loading -> MaterialTheme.colorScheme.surfaceVariant
-                else -> Color.Transparent
-            }
+            val backgroundColor =
+                when (imageState) {
+                    is AsyncImagePainter.State.Error -> MaterialTheme.colorScheme.errorContainer
+                    is AsyncImagePainter.State.Loading -> MaterialTheme.colorScheme.surfaceVariant
+                    else -> Color.Transparent
+                }
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(backgroundColor)
-                    .graphicsLayer {
-                        val scale = zoomState?.scale ?: 1f
-                        scaleX = scale
-                        scaleY = scale
-                        translationX = zoomState?.offset?.x ?: 0f
-                        translationY = zoomState?.offset?.y ?: 0f
-                    },
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .background(backgroundColor)
+                        .graphicsLayer {
+                            val scale = zoomState?.scale ?: 1f
+                            scaleX = scale
+                            scaleY = scale
+                            translationX = zoomState?.offset?.x ?: 0f
+                            translationY = zoomState?.offset?.y ?: 0f
+                        },
             ) {
                 AsyncImage(
                     model = filePath,
@@ -832,9 +838,10 @@ private fun MemeImage(
         } else {
             // Placeholder for adjacent pages during swipe
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.scrim),
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.scrim),
                 contentAlignment = Alignment.Center,
             ) {
                 androidx.compose.material3.CircularProgressIndicator(

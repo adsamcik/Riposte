@@ -426,7 +426,7 @@ class MemeDetailViewModel
                 try {
                     val ids = getAllMemeIdsUseCase()
                     _uiState.update { it.copy(allMemeIds = ids) }
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     // Failed to load meme IDs
                     // Non-critical — pager won't show but single view works
                 }

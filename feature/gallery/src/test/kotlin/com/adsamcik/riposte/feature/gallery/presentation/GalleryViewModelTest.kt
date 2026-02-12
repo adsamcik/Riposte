@@ -10,8 +10,8 @@ import com.adsamcik.riposte.core.model.EmojiTag
 import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.core.model.UserDensityPreference
 import com.adsamcik.riposte.feature.gallery.domain.usecase.DeleteMemesUseCase
-import com.adsamcik.riposte.feature.gallery.domain.usecase.GetAllMemeIdsUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GetAllEmojisWithCountsUseCase
+import com.adsamcik.riposte.feature.gallery.domain.usecase.GetAllMemeIdsUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GetFavoritesUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GetMemeByIdUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GetMemesByEmojiUseCase
@@ -756,9 +756,10 @@ class GalleryViewModelTest {
                 )
             every { getMemesUseCase() } returns flowOf(memesWithEmojis)
             every { getFavoritesUseCase() } returns flowOf(memesWithEmojis)
-            every { getAllEmojisWithCountsUseCase() } returns flowOf(
-                listOf("😂" to 2, "🔥" to 2, "💀" to 1),
-            )
+            every { getAllEmojisWithCountsUseCase() } returns
+                flowOf(
+                    listOf("😂" to 2, "🔥" to 2, "💀" to 1),
+                )
             viewModel = createViewModel()
             advanceUntilIdle()
 

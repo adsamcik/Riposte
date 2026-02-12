@@ -1,3 +1,5 @@
+@file:Suppress("PackageNaming")
+
 package com.adsamcik.riposte.feature.import_feature.domain.model
 
 /**

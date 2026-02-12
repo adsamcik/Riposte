@@ -9,7 +9,6 @@ import com.adsamcik.riposte.core.database.util.FtsQuerySanitizer
 import com.adsamcik.riposte.core.datastore.PreferencesDataStore
 import com.adsamcik.riposte.core.ml.MemeWithEmbeddings
 import com.adsamcik.riposte.core.ml.SemanticSearchEngine
-import com.adsamcik.riposte.core.model.EmojiTag
 import com.adsamcik.riposte.core.model.MatchType
 import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.core.model.SearchResult

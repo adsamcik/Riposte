@@ -32,8 +32,9 @@ class GetSimilarMemesUseCase
         ): SimilarMemesStatus =
             withContext(defaultDispatcher) {
                 try {
-                    val currentEmbedding = embeddingManager.getEmbedding(memeId)
-                        ?: return@withContext SimilarMemesStatus.NoEmbeddingForMeme
+                    val currentEmbedding =
+                        embeddingManager.getEmbedding(memeId)
+                            ?: return@withContext SimilarMemesStatus.NoEmbeddingForMeme
 
                     val candidates = galleryRepository.getEmbeddingsExcluding(memeId)
 

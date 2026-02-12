@@ -1,3 +1,5 @@
+@file:Suppress("MagicNumber")
+
 package com.adsamcik.riposte.core.ui.theme
 
 import androidx.compose.foundation.shape.CircleShape
@@ -11,7 +13,6 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import kotlin.math.min
-import kotlin.math.sin
 
 // ── M3 Standard Shape Scale ───────────────────────────────
 val Shapes =

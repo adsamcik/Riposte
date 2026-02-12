@@ -843,12 +843,14 @@ class MemeDetailViewModelTest {
     @Test
     fun `loading meme with different emojis updates editedEmojis`() =
         runTest {
-            val memeWithEmojis = createTestMeme(1L).copy(
-                emojiTags = listOf(
-                    EmojiTag(emoji = "🔥", name = "fire"),
-                    EmojiTag(emoji = "💀", name = "skull"),
-                ),
-            )
+            val memeWithEmojis =
+                createTestMeme(1L).copy(
+                    emojiTags =
+                        listOf(
+                            EmojiTag(emoji = "🔥", name = "fire"),
+                            EmojiTag(emoji = "💀", name = "skull"),
+                        ),
+                )
             coEvery { getMemeByIdUseCase(1L) } returns memeWithEmojis
 
             viewModel = createViewModel()

@@ -189,10 +189,11 @@ class ImportRepositoryImplTest {
                     primaryLanguage = "en",
                     localizations =
                         mapOf(
-                            "cs" to com.adsamcik.riposte.core.model.LocalizedContent(
-                                title = "Test CZ",
-                                tags = listOf("vtipné"),
-                            ),
+                            "cs" to
+                                com.adsamcik.riposte.core.model.LocalizedContent(
+                                    title = "Test CZ",
+                                    tags = listOf("vtipné"),
+                                ),
                         ),
                 )
             val memeEntitySlot = slot<MemeEntity>()

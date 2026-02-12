@@ -172,6 +172,7 @@ class EmbeddingGenerationWorker
             val digest = MessageDigest.getInstance("SHA-256")
             val hash = digest.digest(text.toByteArray(Charsets.UTF_8))
             // Truncate to 32 chars (128 bits) to match EmbeddingManager.generateHash
+            @Suppress("MagicNumber")
             return hash.take(16).joinToString("") { "%02x".format(it) }
         }
 

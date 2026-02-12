@@ -228,6 +228,7 @@ val MIGRATION_3_4 =
  * Migration from version 4 to 5:
  * - Adds metadataJson column to import_request_items for preserving full metadata through staging
  */
+@Suppress("MagicNumber")
 val MIGRATION_4_5 =
     object : Migration(4, 5) {
         override fun migrate(db: SupportSQLiteDatabase) {
