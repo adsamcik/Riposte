@@ -630,25 +630,6 @@ private fun GalleryScreenContent(
                                     uiState.suggestions.map { it.id }.toSet()
                                 }
 
-                            val filteredMemeIndices =
-                                remember(pagedMemes.itemCount, uiState.activeEmojiFilters, suggestionIds) {
-                                    val indices =
-                                        if (uiState.activeEmojiFilters.isEmpty()) {
-                                            (0 until pagedMemes.itemCount).toList()
-                                        } else {
-                                            (0 until pagedMemes.itemCount).filter { index ->
-                                                val meme = pagedMemes.peek(index)
-                                                meme != null &&
-                                                    meme.emojiTags.any { it.emoji in uiState.activeEmojiFilters }
-                                            }
-                                        }
-                                    // Exclude suggestions — they are shown first
-                                    indices.filter { index ->
-                                        val meme = pagedMemes.peek(index)
-                                        meme == null || meme.id !in suggestionIds
-                                    }
-                                }
-
                             GalleryContent(
                                 uiState = uiState,
                                 uniqueEmojis = uiState.uniqueEmojis,
@@ -672,12 +653,17 @@ private fun GalleryScreenContent(
                                     )
                                 }
 
-                                // Remaining paged items
-                                filteredMemeIndices.forEachIndexed { filteredIndex, originalIndex ->
+                                // Remaining paged items (emoji filtering now happens at SQL level)
+                                val pagedItemCount = pagedMemes.itemCount
+                                for (index in 0 until pagedItemCount) {
+                                    val peeked = pagedMemes.peek(index)
+                                    // Skip suggestions — they are already shown above
+                                    if (peeked != null && peeked.id in suggestionIds) continue
+
                                     item(
-                                        key = pagedMemes.peek(originalIndex)?.id ?: originalIndex,
+                                        key = peeked?.id ?: "paged_$index",
                                     ) {
-                                        val meme = pagedMemes[originalIndex]
+                                        val meme = pagedMemes[index]
                                         if (meme != null) {
                                             val isSelected = meme.id in uiState.selectedMemeIds
                                             val memeDescription = meme.title ?: meme.fileName

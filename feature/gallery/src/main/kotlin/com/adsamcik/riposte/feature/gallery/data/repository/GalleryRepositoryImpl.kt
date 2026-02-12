@@ -64,6 +64,22 @@ class GalleryRepositoryImpl
             }.flowOn(ioDispatcher)
         }
 
+        override fun getPagedMemesByEmojis(emojis: Set<String>): Flow<PagingData<Meme>> {
+            return Pager(
+                config =
+                    PagingConfig(
+                        pageSize = PAGE_SIZE,
+                        prefetchDistance = PREFETCH_DISTANCE,
+                        enablePlaceholders = false,
+                    ),
+                pagingSourceFactory = {
+                    memeDao.getMemesByEmojisPaged(emojis.toList())
+                },
+            ).flow.map { pagingData ->
+                pagingData.map { it.toDomain() }
+            }.flowOn(ioDispatcher)
+        }
+
         override fun getFavorites(): Flow<List<Meme>> {
             return memeDao.getFavoriteMemes()
                 .map { entities -> entities.map { it.toDomain() } }

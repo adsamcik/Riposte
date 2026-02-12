@@ -174,6 +174,20 @@ interface MemeDao {
     fun getAllMemesPaged(): PagingSource<Int, MemeEntity>
 
     /**
+     * Get memes filtered by any of the given emojis as a PagingSource.
+     * Uses an INNER JOIN on the emoji_tags table so filtering happens at the SQL level.
+     */
+    @Query(
+        """
+        SELECT DISTINCT m.* FROM memes m
+        INNER JOIN emoji_tags e ON m.id = e.memeId
+        WHERE e.emoji IN (:emojis)
+        ORDER BY m.importedAt DESC
+        """,
+    )
+    fun getMemesByEmojisPaged(emojis: List<String>): PagingSource<Int, MemeEntity>
+
+    /**
      * Get all memes as a PagingSource sorted by most used first.
      */
     @Query("SELECT * FROM memes ORDER BY useCount DESC, importedAt DESC")
