@@ -52,6 +52,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
+import com.adsamcik.riposte.core.ui.theme.RiposteShapes
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -104,7 +105,6 @@ import com.adsamcik.riposte.core.ui.modifier.animatedPressScale
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import kotlinx.coroutines.flow.collectLatest
-import com.adsamcik.riposte.core.ui.theme.MoodShapes
 import com.adsamcik.riposte.core.ui.theme.rememberGridColumns
 import com.adsamcik.riposte.feature.gallery.R
 
@@ -456,6 +456,9 @@ private fun GalleryScreenContent(
             ) {
                 FloatingActionButton(
                     onClick = { onIntent(GalleryIntent.NavigateToImport) },
+                    shape = RiposteShapes.FABDefault,
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
                 ) {
                     Icon(Icons.Default.Add, contentDescription = stringResource(R.string.gallery_cd_import_memes))
                 }
@@ -821,8 +824,8 @@ private fun GalleryContent(
                 state = gridState,
                 columns = GridCells.Fixed(columns),
                 contentPadding = PaddingValues(start = 4.dp, end = 4.dp, top = 4.dp, bottom = 80.dp),
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
                 content = gridContent,
             )
         }
@@ -909,7 +912,7 @@ internal fun MemeGridItem(
                 modifier =
                     Modifier
                         .matchParentSize()
-                        .clip(MoodShapes.MemeCard)
+                        .clip(RiposteShapes.MemeCard)
                         .background(MaterialTheme.colorScheme.scrim.copy(alpha = overlayAlpha)),
             )
 
@@ -922,7 +925,7 @@ internal fun MemeGridItem(
                             .border(
                                 width = borderWidth,
                                 color = primaryColor,
-                                shape = MoodShapes.MemeCard,
+                                shape = RiposteShapes.MemeCard,
                             ),
                 )
             }

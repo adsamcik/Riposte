@@ -1,7 +1,6 @@
 package com.adsamcik.riposte.core.ui.component
 
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -12,7 +11,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -32,10 +30,11 @@ import androidx.compose.ui.unit.sp
 import com.adsamcik.riposte.core.model.EmojiTag
 import com.adsamcik.riposte.core.ui.R
 import com.adsamcik.riposte.core.ui.theme.EmojiCardBackgrounds
-import com.adsamcik.riposte.core.ui.theme.MoodShapes
+import com.adsamcik.riposte.core.ui.theme.RiposteMotionScheme
+import com.adsamcik.riposte.core.ui.theme.RiposteShapes
 import com.adsamcik.riposte.core.ui.theme.RiposteTheme
 
-private val EmojiChipShape = RoundedCornerShape(18.dp)
+private val EmojiChipShape = RiposteShapes.EmojiChipDefault
 
 /**
  * Chip component for displaying an emoji tag.
@@ -67,8 +66,8 @@ fun EmojiChip(
     val isPressed by interactionSource.collectIsPressedAsState()
 
     val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.95f else 1.0f,
-        animationSpec = tween(durationMillis = 150),
+        targetValue = if (isPressed) 0.92f else if (isSelected) 1.05f else 1.0f,
+        animationSpec = RiposteMotionScheme.FastSpatial,
         label = "EmojiChipScale",
     )
 
@@ -84,7 +83,7 @@ fun EmojiChip(
             Modifier.border(
                 width = 2.dp,
                 color = MaterialTheme.colorScheme.primary,
-                shape = EmojiChipShape,
+                shape = RiposteShapes.EmojiChipSelected,
             )
         } else {
             Modifier
@@ -111,7 +110,7 @@ fun EmojiChip(
                 )
                 .sizeIn(minWidth = 36.dp)
                 .scale(scale),
-        shape = EmojiChipShape,
+        shape = if (isSelected) RiposteShapes.EmojiChipSelected else EmojiChipShape,
         color = bgColor,
     ) {
         if (showName) {
@@ -194,7 +193,7 @@ fun EmojiLarge(
                 .size(size.dp)
                 .background(
                     color = getEmojiBackgroundColor(emoji),
-                    shape = MoodShapes.EmojiChip,
+                    shape = RiposteShapes.EmojiChipDefault,
                 ),
         contentAlignment = Alignment.Center,
     ) {

@@ -42,7 +42,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.core.ui.R
-import com.adsamcik.riposte.core.ui.theme.MoodShapes
+import com.adsamcik.riposte.core.ui.theme.RiposteShapes
 import java.io.File
 
 /**
@@ -79,7 +79,7 @@ fun MemeCard(
                 .semantics(mergeDescendants = true) {
                     contentDescription = memeDescription
                 },
-        shape = MoodShapes.MemeCard,
+        shape = RiposteShapes.MemeCard,
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
         Column {
@@ -220,7 +220,7 @@ fun MemeCardCompact(
         modifier =
             modifier
                 .aspectRatio(1f)
-                .clip(MoodShapes.MemeCard)
+                .clip(RiposteShapes.MemeCard)
                 .then(clickModifier)
                 .semantics(mergeDescendants = true) {
                     contentDescription = memeDescription
@@ -244,7 +244,7 @@ fun MemeCardCompact(
                         .padding(8.dp)
                         .background(
                             color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
-                            shape = MoodShapes.EmojiChip,
+                            shape = RiposteShapes.EmojiChipDefault,
                         )
                         .padding(horizontal = 8.dp, vertical = 4.dp),
             ) {
