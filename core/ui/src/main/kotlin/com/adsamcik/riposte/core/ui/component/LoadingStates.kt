@@ -37,8 +37,9 @@ fun LoadingScreen(
             verticalArrangement = Arrangement.Center,
         ) {
             CircularProgressIndicator(
-                modifier = Modifier.size(48.dp),
+                modifier = Modifier.size(56.dp),
                 color = MaterialTheme.colorScheme.primary,
+                strokeWidth = 5.dp,
             )
             if (message != null) {
                 Spacer(modifier = Modifier.height(16.dp))
