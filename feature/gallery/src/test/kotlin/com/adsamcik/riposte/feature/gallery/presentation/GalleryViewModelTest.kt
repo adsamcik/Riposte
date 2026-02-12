@@ -10,6 +10,7 @@ import com.adsamcik.riposte.core.model.EmojiTag
 import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.core.model.UserDensityPreference
 import com.adsamcik.riposte.feature.gallery.domain.usecase.DeleteMemesUseCase
+import com.adsamcik.riposte.feature.gallery.domain.usecase.GalleryViewModelUseCases
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GetAllEmojisWithCountsUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GetAllMemeIdsUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GetFavoritesUseCase
@@ -117,17 +118,21 @@ class GalleryViewModelTest {
     }
 
     private fun createViewModel(): GalleryViewModel {
+        val useCases =
+            GalleryViewModelUseCases(
+                getMemes = getMemesUseCase,
+                getPagedMemes = getPagedMemesUseCase,
+                getFavorites = getFavoritesUseCase,
+                getMemesByEmoji = getMemesByEmojiUseCase,
+                getMemeById = getMemeByIdUseCase,
+                deleteMemes = deleteMemesUseCase,
+                toggleFavorite = toggleFavoriteUseCase,
+                getAllMemeIds = getAllMemeIdsUseCase,
+                getAllEmojisWithCounts = getAllEmojisWithCountsUseCase,
+            )
         return GalleryViewModel(
             context = context,
-            getMemesUseCase = getMemesUseCase,
-            getPagedMemesUseCase = getPagedMemesUseCase,
-            getFavoritesUseCase = getFavoritesUseCase,
-            getMemesByEmojiUseCase = getMemesByEmojiUseCase,
-            getMemeByIdUseCase = getMemeByIdUseCase,
-            deleteMemeUseCase = deleteMemesUseCase,
-            toggleFavoriteUseCase = toggleFavoriteUseCase,
-            getAllMemeIdsUseCase = getAllMemeIdsUseCase,
-            getAllEmojisWithCountsUseCase = getAllEmojisWithCountsUseCase,
+            useCases = useCases,
             getSuggestionsUseCase = getSuggestionsUseCase,
             shareTargetRepository = shareTargetRepository,
             defaultDispatcher = testDispatcher,

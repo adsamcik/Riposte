@@ -33,7 +33,17 @@ import java.time.Instant
 import java.util.UUID
 import javax.inject.Inject
 
-@Suppress("LongParameterList")
+/**
+ * Bundle of ML service dependencies used by [ImportRepositoryImpl].
+ */
+data class ImportMlServices
+    @Inject
+    constructor(
+        val textRecognizer: TextRecognizer,
+        val embeddingManager: EmbeddingManager,
+        val xmpMetadataHandler: XmpMetadataHandler,
+    )
+
 class ImportRepositoryImpl
     @Inject
     constructor(
@@ -41,9 +51,7 @@ class ImportRepositoryImpl
         private val memeDao: MemeDao,
         private val emojiTagDao: EmojiTagDao,
         private val importRequestDao: ImportRequestDao,
-        private val textRecognizer: TextRecognizer,
-        private val embeddingManager: EmbeddingManager,
-        private val xmpMetadataHandler: XmpMetadataHandler,
+        private val mlServices: ImportMlServices,
     ) : ImportRepository {
         private val memesDir: File by lazy {
             File(context.filesDir, "memes").also { it.mkdirs() }
@@ -109,7 +117,7 @@ class ImportRepositoryImpl
                         } else {
                             null
                         }
-                    xmpMetadata?.let { xmpMetadataHandler.writeMetadata(imageFile.absolutePath, it) }
+                    xmpMetadata?.let { mlServices.xmpMetadataHandler.writeMetadata(imageFile.absolutePath, it) }
 
                     // Calculate file hash for duplicate detection
                     val fileHash = calculateFileHash(imageFile)
@@ -152,7 +160,7 @@ class ImportRepositoryImpl
                     val memeId = memeDao.insertMeme(memeEntity)
 
                     // Schedule background embedding generation
-                    embeddingManager.scheduleBackgroundGeneration()
+                    mlServices.embeddingManager.scheduleBackgroundGeneration()
 
                     // Insert emoji tags
                     val emojiTagEntities =
@@ -264,7 +272,7 @@ class ImportRepositoryImpl
         )
 
         override suspend fun extractMetadata(uri: Uri): MemeMetadata? {
-            return xmpMetadataHandler.readMetadata(uri)
+            return mlServices.xmpMetadataHandler.readMetadata(uri)
         }
 
         override suspend fun extractText(uri: Uri): String? =
@@ -414,8 +422,8 @@ class ImportRepositoryImpl
                     }
 
                     // Mark embeddings for regeneration in background
-                    embeddingManager.markForRegeneration(memeId)
-                    embeddingManager.scheduleBackgroundGeneration()
+                    mlServices.embeddingManager.markForRegeneration(memeId)
+                    mlServices.embeddingManager.scheduleBackgroundGeneration()
 
                     // Update XMP metadata in image file
                     val xmpMetadata =
@@ -426,7 +434,7 @@ class ImportRepositoryImpl
                             description = metadata.description,
                             appVersion = AppConstants.APP_VERSION,
                         )
-                    xmpMetadataHandler.writeMetadata(existing.filePath, xmpMetadata)
+                    mlServices.xmpMetadataHandler.writeMetadata(existing.filePath, xmpMetadata)
 
                     Result.success(Unit)
                 } catch (e: Exception) {
@@ -497,7 +505,7 @@ class ImportRepositoryImpl
         }
 
         private suspend fun extractTextFromBitmap(bitmap: Bitmap): String? {
-            return textRecognizer.recognizeText(bitmap)
+            return mlServices.textRecognizer.recognizeText(bitmap)
         }
 
         private fun calculateFileHash(file: File): String {

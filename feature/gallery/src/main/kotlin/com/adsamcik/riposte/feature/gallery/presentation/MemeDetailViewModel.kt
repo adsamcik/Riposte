@@ -9,14 +9,8 @@ import com.adsamcik.riposte.core.database.repository.ShareTargetRepository
 import com.adsamcik.riposte.core.datastore.PreferencesDataStore
 import com.adsamcik.riposte.core.model.EmojiTag
 import com.adsamcik.riposte.feature.gallery.R
-import com.adsamcik.riposte.feature.gallery.domain.usecase.DeleteMemesUseCase
-import com.adsamcik.riposte.feature.gallery.domain.usecase.GetAllMemeIdsUseCase
-import com.adsamcik.riposte.feature.gallery.domain.usecase.GetMemeByIdUseCase
-import com.adsamcik.riposte.feature.gallery.domain.usecase.GetSimilarMemesUseCase
-import com.adsamcik.riposte.feature.gallery.domain.usecase.RecordMemeViewUseCase
+import com.adsamcik.riposte.feature.gallery.domain.usecase.MemeDetailUseCases
 import com.adsamcik.riposte.feature.gallery.domain.usecase.SimilarMemesStatus
-import com.adsamcik.riposte.feature.gallery.domain.usecase.ToggleFavoriteUseCase
-import com.adsamcik.riposte.feature.gallery.domain.usecase.UpdateMemeUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.Channel
@@ -30,19 +24,12 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-@Suppress("LongParameterList")
 class MemeDetailViewModel
     @Inject
     constructor(
         @ApplicationContext private val context: Context,
         savedStateHandle: SavedStateHandle,
-        private val getMemeByIdUseCase: GetMemeByIdUseCase,
-        private val updateMemeUseCase: UpdateMemeUseCase,
-        private val deleteMemeUseCase: DeleteMemesUseCase,
-        private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
-        private val recordMemeViewUseCase: RecordMemeViewUseCase,
-        private val getSimilarMemesUseCase: GetSimilarMemesUseCase,
-        private val getAllMemeIdsUseCase: GetAllMemeIdsUseCase,
+        private val useCases: MemeDetailUseCases,
         private val userActionTracker: UserActionTracker,
         private val preferencesDataStore: PreferencesDataStore,
         private val shareTargetRepository: ShareTargetRepository,
@@ -110,7 +97,7 @@ class MemeDetailViewModel
                 _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
                 try {
-                    val meme = getMemeByIdUseCase(currentMemeId)
+                    val meme = useCases.getMemeById(currentMemeId)
                     if (meme != null) {
                         _uiState.update {
                             it.copy(
@@ -125,7 +112,7 @@ class MemeDetailViewModel
                         // Record view (fire-and-forget, don't block UI)
                         launch {
                             try {
-                                recordMemeViewUseCase(currentMemeId)
+                                useCases.recordMemeView(currentMemeId)
                             } catch (_: Exception) {
                                 // Non-critical, don't propagate
                             }
@@ -195,10 +182,10 @@ class MemeDetailViewModel
 
         private fun toggleFavorite() {
             viewModelScope.launch {
-                toggleFavoriteUseCase(currentMemeId)
+                useCases.toggleFavorite(currentMemeId)
                     .onSuccess {
                         // Reload to get updated state
-                        val meme = getMemeByIdUseCase(currentMemeId)
+                        val meme = useCases.getMemeById(currentMemeId)
                         if (meme != null) {
                             _uiState.update { it.copy(meme = meme) }
                             if (meme.isFavorite) userActionTracker.trackPositiveAction()
@@ -233,7 +220,7 @@ class MemeDetailViewModel
             viewModelScope.launch {
                 _uiState.update { it.copy(showDeleteDialog = false, isLoading = true) }
 
-                deleteMemeUseCase(currentMemeId)
+                useCases.deleteMemes(currentMemeId)
                     .onSuccess {
                         _effects.send(
                             MemeDetailEffect.ShowSnackbar(context.getString(R.string.gallery_snackbar_meme_deleted)),
@@ -289,7 +276,7 @@ class MemeDetailViewModel
                         emojiTags = emojiTags,
                     )
 
-                updateMemeUseCase(updatedMeme)
+                useCases.updateMeme(updatedMeme)
                     .onSuccess {
                         _uiState.update {
                             it.copy(
@@ -347,7 +334,7 @@ class MemeDetailViewModel
             viewModelScope.launch {
                 _uiState.update { it.copy(isLoadingSimilar = true) }
                 try {
-                    val status = getSimilarMemesUseCase(currentMemeId)
+                    val status = useCases.getSimilarMemes(currentMemeId)
                     _uiState.update { it.copy(similarMemesStatus = status, isLoadingSimilar = false) }
                 } catch (e: Exception) {
                     android.util.Log.e("MemeDetailViewModel", "Failed to load similar memes", e)
@@ -425,7 +412,7 @@ class MemeDetailViewModel
         private fun loadAllMemeIds() {
             viewModelScope.launch {
                 try {
-                    val ids = getAllMemeIdsUseCase()
+                    val ids = useCases.getAllMemeIds()
                     _uiState.update { it.copy(allMemeIds = ids) }
                 } catch (_: Exception) {
                     // Failed to load meme IDs

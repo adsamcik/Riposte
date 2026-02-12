@@ -110,9 +110,12 @@ class ImportRepositoryImplEdgeCasesTest {
                 memeDao = memeDao,
                 emojiTagDao = emojiTagDao,
                 importRequestDao = importRequestDao,
-                textRecognizer = textRecognizer,
-                embeddingManager = embeddingManager,
-                xmpMetadataHandler = xmpMetadataHandler,
+                mlServices =
+                    ImportMlServices(
+                        textRecognizer = textRecognizer,
+                        embeddingManager = embeddingManager,
+                        xmpMetadataHandler = xmpMetadataHandler,
+                    ),
             )
     }
 
@@ -136,9 +139,12 @@ class ImportRepositoryImplEdgeCasesTest {
                     memeDao = memeDao,
                     emojiTagDao = emojiTagDao,
                     importRequestDao = importRequestDao,
-                    textRecognizer = textRecognizer,
-                    embeddingManager = embeddingManager,
-                    xmpMetadataHandler = xmpMetadataHandler,
+                    mlServices =
+                        ImportMlServices(
+                            textRecognizer = textRecognizer,
+                            embeddingManager = embeddingManager,
+                            xmpMetadataHandler = xmpMetadataHandler,
+                        ),
                 )
 
             val uri = mockk<Uri>()
@@ -165,9 +171,12 @@ class ImportRepositoryImplEdgeCasesTest {
                     memeDao = memeDao,
                     emojiTagDao = emojiTagDao,
                     importRequestDao = importRequestDao,
-                    textRecognizer = textRecognizer,
-                    embeddingManager = embeddingManager,
-                    xmpMetadataHandler = xmpMetadataHandler,
+                    mlServices =
+                        ImportMlServices(
+                            textRecognizer = textRecognizer,
+                            embeddingManager = embeddingManager,
+                            xmpMetadataHandler = xmpMetadataHandler,
+                        ),
                 )
 
             val uri = mockk<Uri>()
@@ -195,9 +204,12 @@ class ImportRepositoryImplEdgeCasesTest {
                     memeDao = memeDao,
                     emojiTagDao = emojiTagDao,
                     importRequestDao = importRequestDao,
-                    textRecognizer = textRecognizer,
-                    embeddingManager = embeddingManager,
-                    xmpMetadataHandler = xmpMetadataHandler,
+                    mlServices =
+                        ImportMlServices(
+                            textRecognizer = textRecognizer,
+                            embeddingManager = embeddingManager,
+                            xmpMetadataHandler = xmpMetadataHandler,
+                        ),
                 )
 
             val uri = mockk<Uri>()
@@ -229,9 +241,12 @@ class ImportRepositoryImplEdgeCasesTest {
                     memeDao = memeDao,
                     emojiTagDao = emojiTagDao,
                     importRequestDao = importRequestDao,
-                    textRecognizer = textRecognizer,
-                    embeddingManager = embeddingManager,
-                    xmpMetadataHandler = xmpMetadataHandler,
+                    mlServices =
+                        ImportMlServices(
+                            textRecognizer = textRecognizer,
+                            embeddingManager = embeddingManager,
+                            xmpMetadataHandler = xmpMetadataHandler,
+                        ),
                 )
 
             val uri = mockk<Uri>()
@@ -261,9 +276,12 @@ class ImportRepositoryImplEdgeCasesTest {
                     memeDao = memeDao,
                     emojiTagDao = emojiTagDao,
                     importRequestDao = importRequestDao,
-                    textRecognizer = textRecognizer,
-                    embeddingManager = embeddingManager,
-                    xmpMetadataHandler = xmpMetadataHandler,
+                    mlServices =
+                        ImportMlServices(
+                            textRecognizer = textRecognizer,
+                            embeddingManager = embeddingManager,
+                            xmpMetadataHandler = xmpMetadataHandler,
+                        ),
                 )
 
             val uri = mockk<Uri>()
@@ -413,9 +431,12 @@ class ImportRepositoryImplEdgeCasesTest {
                     memeDao = memeDao,
                     emojiTagDao = emojiTagDao,
                     importRequestDao = importRequestDao,
-                    textRecognizer = textRecognizer,
-                    embeddingManager = embeddingManager,
-                    xmpMetadataHandler = xmpMetadataHandler,
+                    mlServices =
+                        ImportMlServices(
+                            textRecognizer = textRecognizer,
+                            embeddingManager = embeddingManager,
+                            xmpMetadataHandler = xmpMetadataHandler,
+                        ),
                 )
 
             val uri = mockk<Uri>()
@@ -453,9 +474,12 @@ class ImportRepositoryImplEdgeCasesTest {
                     memeDao = memeDao,
                     emojiTagDao = emojiTagDao,
                     importRequestDao = importRequestDao,
-                    textRecognizer = textRecognizer,
-                    embeddingManager = embeddingManager,
-                    xmpMetadataHandler = xmpMetadataHandler,
+                    mlServices =
+                        ImportMlServices(
+                            textRecognizer = textRecognizer,
+                            embeddingManager = embeddingManager,
+                            xmpMetadataHandler = xmpMetadataHandler,
+                        ),
                 )
 
             val uri = mockk<Uri>()

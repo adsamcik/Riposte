@@ -107,9 +107,12 @@ class ImportRepositoryImplTest {
                 memeDao = memeDao,
                 emojiTagDao = emojiTagDao,
                 importRequestDao = importRequestDao,
-                textRecognizer = textRecognizer,
-                embeddingManager = embeddingManager,
-                xmpMetadataHandler = xmpMetadataHandler,
+                mlServices =
+                    ImportMlServices(
+                        textRecognizer = textRecognizer,
+                        embeddingManager = embeddingManager,
+                        xmpMetadataHandler = xmpMetadataHandler,
+                    ),
             )
     }
 

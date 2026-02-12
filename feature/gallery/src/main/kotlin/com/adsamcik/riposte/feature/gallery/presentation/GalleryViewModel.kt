@@ -11,15 +11,7 @@ import com.adsamcik.riposte.core.common.suggestion.Surface
 import com.adsamcik.riposte.core.datastore.PreferencesDataStore
 import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.feature.gallery.R
-import com.adsamcik.riposte.feature.gallery.domain.usecase.DeleteMemesUseCase
-import com.adsamcik.riposte.feature.gallery.domain.usecase.GetAllEmojisWithCountsUseCase
-import com.adsamcik.riposte.feature.gallery.domain.usecase.GetAllMemeIdsUseCase
-import com.adsamcik.riposte.feature.gallery.domain.usecase.GetFavoritesUseCase
-import com.adsamcik.riposte.feature.gallery.domain.usecase.GetMemeByIdUseCase
-import com.adsamcik.riposte.feature.gallery.domain.usecase.GetMemesByEmojiUseCase
-import com.adsamcik.riposte.feature.gallery.domain.usecase.GetMemesUseCase
-import com.adsamcik.riposte.feature.gallery.domain.usecase.GetPagedMemesUseCase
-import com.adsamcik.riposte.feature.gallery.domain.usecase.ToggleFavoriteUseCase
+import com.adsamcik.riposte.feature.gallery.domain.usecase.GalleryViewModelUseCases
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
@@ -40,20 +32,11 @@ import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
-@Suppress("LongParameterList")
 class GalleryViewModel
     @Inject
     constructor(
         @ApplicationContext private val context: Context,
-        private val getMemesUseCase: GetMemesUseCase,
-        private val getPagedMemesUseCase: GetPagedMemesUseCase,
-        private val getFavoritesUseCase: GetFavoritesUseCase,
-        private val getMemesByEmojiUseCase: GetMemesByEmojiUseCase,
-        private val getMemeByIdUseCase: GetMemeByIdUseCase,
-        private val deleteMemeUseCase: DeleteMemesUseCase,
-        private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
-        private val getAllMemeIdsUseCase: GetAllMemeIdsUseCase,
-        private val getAllEmojisWithCountsUseCase: GetAllEmojisWithCountsUseCase,
+        private val useCases: GalleryViewModelUseCases,
         private val getSuggestionsUseCase: GetSuggestionsUseCase,
         private val shareTargetRepository: com.adsamcik.riposte.core.database.repository.ShareTargetRepository,
         @DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
@@ -68,7 +51,7 @@ class GalleryViewModel
          * Sorted by primary emoji tag for emoji-based grouping.
          */
         val pagedMemes: Flow<PagingData<Meme>> =
-            getPagedMemesUseCase(viewModelScope, "emoji")
+            useCases.getPagedMemes(viewModelScope, "emoji")
 
         private val _effects = Channel<GalleryEffect>(Channel.BUFFERED)
         val effects = merge(_effects.receiveAsFlow(), searchDelegate.effects)
@@ -147,7 +130,7 @@ class GalleryViewModel
         /** Observe unique emojis from the database for the emoji filter rail. */
         private fun observeUniqueEmojis() {
             viewModelScope.launch {
-                getAllEmojisWithCountsUseCase().collectLatest { emojiCounts ->
+                useCases.getAllEmojisWithCounts().collectLatest { emojiCounts ->
                     _uiState.update { it.copy(uniqueEmojis = emojiCounts) }
                 }
             }
@@ -210,7 +193,7 @@ class GalleryViewModel
                 }
             }
             viewModelScope.launch {
-                getMemesUseCase().collectLatest { allMemes ->
+                useCases.getMemes().collectLatest { allMemes ->
                     val suggestions =
                         withContext(defaultDispatcher) {
                             val ctx =
@@ -230,7 +213,7 @@ class GalleryViewModel
         private fun checkShareTip() {
             viewModelScope.launch {
                 // Wait for memes to be available, then show share tip once
-                getMemesUseCase().collectLatest { allMemes ->
+                useCases.getMemes().collectLatest { allMemes ->
                     if (allMemes.isNotEmpty() && !preferencesDataStore.hasShownShareTip.first()) {
                         preferencesDataStore.setShareTipShown()
                         _effects.send(
@@ -270,8 +253,8 @@ class GalleryViewModel
 
                             val flow =
                                 when (filter) {
-                                    is GalleryFilter.Favorites -> getFavoritesUseCase()
-                                    is GalleryFilter.ByEmoji -> getMemesByEmojiUseCase(filter.emoji)
+                                    is GalleryFilter.Favorites -> useCases.getFavorites()
+                                    is GalleryFilter.ByEmoji -> useCases.getMemesByEmoji(filter.emoji)
                                     else -> return@launch // Should not happen
                                 }
 
@@ -344,7 +327,7 @@ class GalleryViewModel
                 val allIds =
                     if (_uiState.value.usePaging) {
                         // For paged data, fetch all IDs from database
-                        getAllMemeIdsUseCase().toSet()
+                        useCases.getAllMemeIds().toSet()
                     } else {
                         // For list data, use the in-memory list
                         _uiState.value.memes.map { it.id }.toSet()
@@ -360,7 +343,7 @@ class GalleryViewModel
 
         private fun toggleFavorite(memeId: Long) {
             viewModelScope.launch {
-                toggleFavoriteUseCase(memeId).onFailure { error ->
+                useCases.toggleFavorite(memeId).onFailure { error ->
                     _effects.send(
                         GalleryEffect.ShowError(
                             error.message ?: context.getString(R.string.gallery_snackbar_favorite_failed),
@@ -379,7 +362,7 @@ class GalleryViewModel
 
         private fun confirmDelete() {
             viewModelScope.launch {
-                deleteMemeUseCase(pendingDeleteIds)
+                useCases.deleteMemes(pendingDeleteIds)
                     .onSuccess {
                         _effects.send(
                             GalleryEffect.ShowSnackbar(
@@ -430,7 +413,7 @@ class GalleryViewModel
                 val memes =
                     selectedIds.mapNotNull { id ->
                         _uiState.value.memes.find { it.id == id }
-                            ?: getMemeByIdUseCase(id)
+                            ?: useCases.getMemeById(id)
                     }
                 if (memes.isEmpty()) return@launch
 
@@ -476,7 +459,7 @@ class GalleryViewModel
                     _uiState.value.memes.find { it.id == memeId }
                         ?: _uiState.value.suggestions.find { it.id == memeId }
                         ?: _uiState.value.searchState.results.find { it.meme.id == memeId }?.meme
-                        ?: getMemeByIdUseCase(memeId)
+                        ?: useCases.getMemeById(memeId)
                 if (meme == null) {
                     _effects.send(GalleryEffect.NavigateToShare(memeId))
                     return@launch

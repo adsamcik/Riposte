@@ -14,14 +14,7 @@ import com.adsamcik.riposte.feature.import_feature.data.worker.ImportStagingMana
 import com.adsamcik.riposte.feature.import_feature.data.worker.ImportWorker
 import com.adsamcik.riposte.feature.import_feature.domain.model.ImportRequestItemData
 import com.adsamcik.riposte.feature.import_feature.domain.repository.ImportRepository
-import com.adsamcik.riposte.feature.import_feature.domain.usecase.CheckDuplicateUseCase
-import com.adsamcik.riposte.feature.import_feature.domain.usecase.CleanupExtractedFilesUseCase
-import com.adsamcik.riposte.feature.import_feature.domain.usecase.ExtractTextUseCase
-import com.adsamcik.riposte.feature.import_feature.domain.usecase.ExtractZipForPreviewUseCase
-import com.adsamcik.riposte.feature.import_feature.domain.usecase.FindDuplicateMemeIdUseCase
-import com.adsamcik.riposte.feature.import_feature.domain.usecase.ImportImageUseCase
-import com.adsamcik.riposte.feature.import_feature.domain.usecase.SuggestEmojisUseCase
-import com.adsamcik.riposte.feature.import_feature.domain.usecase.UpdateMemeMetadataUseCase
+import com.adsamcik.riposte.feature.import_feature.domain.usecase.ImportViewModelUseCases
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
@@ -37,19 +30,11 @@ import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
-@Suppress("LongParameterList")
 class ImportViewModel
     @Inject
     constructor(
         @param:ApplicationContext private val context: Context,
-        private val importImageUseCase: ImportImageUseCase,
-        private val suggestEmojisUseCase: SuggestEmojisUseCase,
-        private val extractTextUseCase: ExtractTextUseCase,
-        private val extractZipForPreviewUseCase: ExtractZipForPreviewUseCase,
-        private val checkDuplicateUseCase: CheckDuplicateUseCase,
-        private val findDuplicateMemeIdUseCase: FindDuplicateMemeIdUseCase,
-        private val updateMemeMetadataUseCase: UpdateMemeMetadataUseCase,
-        private val cleanupExtractedFilesUseCase: CleanupExtractedFilesUseCase,
+        private val useCases: ImportViewModelUseCases,
         private val userActionTracker: UserActionTracker,
         private val preferencesDataStore: PreferencesDataStore,
         private val importStagingManager: ImportStagingManager,
@@ -139,7 +124,7 @@ class ImportViewModel
             successCount: Int,
             failedCount: Int,
         ) {
-            cleanupExtractedFilesUseCase()
+            useCases.cleanupExtractedFiles()
 
             _uiState.update {
                 it.copy(
@@ -178,7 +163,7 @@ class ImportViewModel
 
         override fun onCleared() {
             super.onCleared()
-            cleanupExtractedFilesUseCase()
+            useCases.cleanupExtractedFiles()
         }
 
         fun onIntent(intent: ImportIntent) {
@@ -243,7 +228,7 @@ class ImportViewModel
                     )
                 }
 
-                val result = extractZipForPreviewUseCase(intent.uri)
+                val result = useCases.extractZipForPreview(intent.uri)
 
                 if (result.extractedMemes.isEmpty()) {
                     _uiState.update { it.copy(isImporting = false, statusMessage = null) }
@@ -302,10 +287,10 @@ class ImportViewModel
         ) {
             try {
                 // Suggest emojis
-                val suggestedEmojis = suggestEmojisUseCase(image.uri)
+                val suggestedEmojis = useCases.suggestEmojis(image.uri)
 
                 // Extract text
-                val extractedText = extractTextUseCase(image.uri)
+                val extractedText = useCases.extractText(image.uri)
 
                 _uiState.update { state ->
                     val updatedImages = state.selectedImages.toMutableList()
@@ -425,7 +410,7 @@ class ImportViewModel
 
                     images.forEachIndexed { index, image ->
                         try {
-                            val existingMemeId = findDuplicateMemeIdUseCase(image.uri)
+                            val existingMemeId = useCases.findDuplicateMemeId(image.uri)
                             if (existingMemeId != null) {
                                 duplicateIndices.add(index)
                                 duplicateMemeIds[index] = existingMemeId
@@ -522,7 +507,7 @@ class ImportViewModel
                                 localizations = image.localizations,
                             )
 
-                        val result = updateMemeMetadataUseCase(memeId, metadata)
+                        val result = useCases.updateMemeMetadata(memeId, metadata)
                         if (result.isSuccess) updatedCount++
                     }
 
@@ -653,7 +638,7 @@ class ImportViewModel
         }
 
         private fun clearAll() {
-            cleanupExtractedFilesUseCase()
+            useCases.cleanupExtractedFiles()
             _uiState.update { ImportUiState() }
         }
 

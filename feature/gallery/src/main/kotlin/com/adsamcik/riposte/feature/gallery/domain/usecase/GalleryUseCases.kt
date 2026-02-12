@@ -162,3 +162,21 @@ class GetAllEmojisWithCountsUseCase
     ) {
         operator fun invoke(): Flow<List<Pair<String, Int>>> = repository.getAllEmojisWithCounts()
     }
+
+/**
+ * Bundle of use cases consumed by
+ * [GalleryViewModel][com.adsamcik.riposte.feature.gallery.presentation.GalleryViewModel].
+ */
+data class GalleryViewModelUseCases
+    @Inject
+    constructor(
+        val getMemes: GetMemesUseCase,
+        val getPagedMemes: GetPagedMemesUseCase,
+        val getFavorites: GetFavoritesUseCase,
+        val getMemesByEmoji: GetMemesByEmojiUseCase,
+        val getMemeById: GetMemeByIdUseCase,
+        val deleteMemes: DeleteMemesUseCase,
+        val toggleFavorite: ToggleFavoriteUseCase,
+        val getAllMemeIds: GetAllMemeIdsUseCase,
+        val getAllEmojisWithCounts: GetAllEmojisWithCountsUseCase,
+    )

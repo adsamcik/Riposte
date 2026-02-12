@@ -257,12 +257,22 @@ sealed interface ZipImportEvent {
 }
 
 /**
- * Streaming use case for importing a .meme.zip bundle.
- *
- * Unlike [ImportZipBundleUseCase], this processes and imports each meme
- * as it's extracted, providing real-time progress updates and reducing
- * memory usage for large bundles.
+ * Bundle of use cases consumed by
+ * [ImportViewModel][com.adsamcik.riposte.feature.import_feature.presentation.ImportViewModel].
  */
+data class ImportViewModelUseCases
+    @Inject
+    constructor(
+        val importImage: ImportImageUseCase,
+        val suggestEmojis: SuggestEmojisUseCase,
+        val extractText: ExtractTextUseCase,
+        val extractZipForPreview: ExtractZipForPreviewUseCase,
+        val checkDuplicate: CheckDuplicateUseCase,
+        val findDuplicateMemeId: FindDuplicateMemeIdUseCase,
+        val updateMemeMetadata: UpdateMemeMetadataUseCase,
+        val cleanupExtractedFiles: CleanupExtractedFilesUseCase,
+    )
+
 class ImportZipBundleStreamingUseCase
     @Inject
     constructor(

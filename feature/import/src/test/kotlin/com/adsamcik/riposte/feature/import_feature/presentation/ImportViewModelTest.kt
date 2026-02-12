@@ -15,6 +15,7 @@ import com.adsamcik.riposte.feature.import_feature.domain.usecase.ExtractTextUse
 import com.adsamcik.riposte.feature.import_feature.domain.usecase.ExtractZipForPreviewUseCase
 import com.adsamcik.riposte.feature.import_feature.domain.usecase.FindDuplicateMemeIdUseCase
 import com.adsamcik.riposte.feature.import_feature.domain.usecase.ImportImageUseCase
+import com.adsamcik.riposte.feature.import_feature.domain.usecase.ImportViewModelUseCases
 import com.adsamcik.riposte.feature.import_feature.domain.usecase.SuggestEmojisUseCase
 import com.adsamcik.riposte.feature.import_feature.domain.usecase.UpdateMemeMetadataUseCase
 import com.google.common.truth.Truth.assertThat
@@ -99,14 +100,17 @@ class ImportViewModelTest {
         viewModel =
             ImportViewModel(
                 context = context,
-                importImageUseCase = importImageUseCase,
-                suggestEmojisUseCase = suggestEmojisUseCase,
-                extractTextUseCase = extractTextUseCase,
-                extractZipForPreviewUseCase = extractZipForPreviewUseCase,
-                checkDuplicateUseCase = checkDuplicateUseCase,
-                findDuplicateMemeIdUseCase = findDuplicateMemeIdUseCase,
-                updateMemeMetadataUseCase = updateMemeMetadataUseCase,
-                cleanupExtractedFilesUseCase = cleanupExtractedFilesUseCase,
+                useCases =
+                    ImportViewModelUseCases(
+                        importImage = importImageUseCase,
+                        suggestEmojis = suggestEmojisUseCase,
+                        extractText = extractTextUseCase,
+                        extractZipForPreview = extractZipForPreviewUseCase,
+                        checkDuplicate = checkDuplicateUseCase,
+                        findDuplicateMemeId = findDuplicateMemeIdUseCase,
+                        updateMemeMetadata = updateMemeMetadataUseCase,
+                        cleanupExtractedFiles = cleanupExtractedFilesUseCase,
+                    ),
                 userActionTracker = mockk(relaxed = true),
                 preferencesDataStore = preferencesDataStore,
                 importStagingManager = importStagingManager,

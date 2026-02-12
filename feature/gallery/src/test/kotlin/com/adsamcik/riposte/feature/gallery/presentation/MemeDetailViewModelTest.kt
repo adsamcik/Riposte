@@ -11,6 +11,7 @@ import com.adsamcik.riposte.feature.gallery.domain.usecase.DeleteMemesUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GetAllMemeIdsUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GetMemeByIdUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GetSimilarMemesUseCase
+import com.adsamcik.riposte.feature.gallery.domain.usecase.MemeDetailUseCases
 import com.adsamcik.riposte.feature.gallery.domain.usecase.RecordMemeViewUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.SimilarMemesStatus
 import com.adsamcik.riposte.feature.gallery.domain.usecase.ToggleFavoriteUseCase
@@ -96,16 +97,20 @@ class MemeDetailViewModelTest {
     }
 
     private fun createViewModel(): MemeDetailViewModel {
+        val useCases =
+            MemeDetailUseCases(
+                getMemeById = getMemeByIdUseCase,
+                updateMeme = updateMemeUseCase,
+                deleteMemes = deleteMemeUseCase,
+                toggleFavorite = toggleFavoriteUseCase,
+                recordMemeView = recordMemeViewUseCase,
+                getSimilarMemes = getSimilarMemesUseCase,
+                getAllMemeIds = getAllMemeIdsUseCase,
+            )
         return MemeDetailViewModel(
             context = context,
             savedStateHandle = savedStateHandle,
-            getMemeByIdUseCase = getMemeByIdUseCase,
-            updateMemeUseCase = updateMemeUseCase,
-            deleteMemeUseCase = deleteMemeUseCase,
-            toggleFavoriteUseCase = toggleFavoriteUseCase,
-            recordMemeViewUseCase = recordMemeViewUseCase,
-            getSimilarMemesUseCase = getSimilarMemesUseCase,
-            getAllMemeIdsUseCase = getAllMemeIdsUseCase,
+            useCases = useCases,
             userActionTracker = mockk(relaxed = true),
             preferencesDataStore =
                 mockk(relaxed = true) {
