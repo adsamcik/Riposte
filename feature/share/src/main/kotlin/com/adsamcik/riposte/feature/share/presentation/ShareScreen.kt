@@ -57,6 +57,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.adsamcik.riposte.core.ui.component.EmptyState
 import com.adsamcik.riposte.core.ui.component.LoadingScreen
 import com.adsamcik.riposte.core.ui.modifier.animatedPressScale
+import com.adsamcik.riposte.core.ui.theme.RiposteShapes
 import com.adsamcik.riposte.feature.share.R
 import kotlinx.coroutines.flow.collectLatest
 
@@ -250,6 +251,7 @@ private fun ShareContent(
             onClick = { onIntent(ShareIntent.Share) },
             enabled = !uiState.isProcessing,
             interactionSource = shareInteractionSource,
+            shape = RiposteShapes.ShareButton,
             colors =
                 ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
@@ -312,7 +314,7 @@ private fun PreviewSection(
             modifier
                 .fillMaxWidth()
                 .heightIn(max = maxPreviewHeight)
-                .clip(MaterialTheme.shapes.medium)
+                .clip(RiposteShapes.Card)
                 .background(MaterialTheme.colorScheme.surfaceVariant),
         contentAlignment = Alignment.Center,
     ) {
