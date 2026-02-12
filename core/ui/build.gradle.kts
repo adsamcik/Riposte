@@ -35,6 +35,7 @@ dependencies {
     // Compose
     implementation(platform(libs.compose.bom))
     implementation(libs.bundles.compose)
+    implementation(libs.compose.ui.text.google.fonts)
     debugImplementation(libs.bundles.compose.debug)
 
     // Image Loading (Coil 3)
