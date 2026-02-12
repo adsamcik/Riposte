@@ -10,6 +10,7 @@ import com.adsamcik.riposte.core.model.DarkMode
 import com.adsamcik.riposte.core.model.ImageFormat
 import com.adsamcik.riposte.core.model.SharingPreferences
 import com.adsamcik.riposte.core.model.UserDensityPreference
+import com.adsamcik.riposte.core.testing.MainDispatcherRule
 import com.adsamcik.riposte.feature.settings.R
 import com.adsamcik.riposte.feature.settings.domain.usecase.ExportPreferencesUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.GetAppPreferencesUseCase
@@ -32,16 +33,14 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.unmockkAll
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -52,7 +51,8 @@ import java.io.File
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33], manifest = Config.NONE)
 class SettingsViewModelTest {
-    private val testDispatcher = StandardTestDispatcher()
+    @get:Rule
+    val mainDispatcherRule = MainDispatcherRule(StandardTestDispatcher())
 
     private lateinit var context: Context
     private lateinit var viewModel: SettingsViewModel
@@ -80,8 +80,6 @@ class SettingsViewModelTest {
 
     @Before
     fun setup() {
-        Dispatchers.setMain(testDispatcher)
-
         context = mockk(relaxed = true)
 
         // Mock package info for app version
@@ -125,7 +123,6 @@ class SettingsViewModelTest {
 
     @After
     fun tearDown() {
-        Dispatchers.resetMain()
         unmockkAll()
     }
 
@@ -148,7 +145,7 @@ class SettingsViewModelTest {
             importPreferencesUseCase = importPreferencesUseCase,
             observeEmbeddingStatisticsUseCase = observeEmbeddingStatisticsUseCase,
             crashLogManager = crashLogManager,
-            ioDispatcher = testDispatcher,
+            ioDispatcher = mainDispatcherRule.testDispatcher,
         )
     }
 

@@ -6,6 +6,7 @@ import app.cash.turbine.test
 import com.adsamcik.riposte.core.model.EmojiTag
 import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.core.model.SharingPreferences
+import com.adsamcik.riposte.core.testing.MainDispatcherRule
 import com.adsamcik.riposte.feature.gallery.R
 import com.adsamcik.riposte.feature.gallery.domain.usecase.DeleteMemesUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GetAllMemeIdsUseCase
@@ -21,16 +22,13 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.After
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -40,7 +38,8 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33], manifest = Config.NONE)
 class MemeDetailViewModelTest {
-    private val testDispatcher = StandardTestDispatcher()
+    @get:Rule
+    val mainDispatcherRule = MainDispatcherRule(StandardTestDispatcher())
 
     private lateinit var savedStateHandle: SavedStateHandle
     private lateinit var getMemeByIdUseCase: GetMemeByIdUseCase
@@ -57,8 +56,6 @@ class MemeDetailViewModelTest {
 
     @Before
     fun setup() {
-        Dispatchers.setMain(testDispatcher)
-
         savedStateHandle = SavedStateHandle(mapOf("memeId" to 1L))
         context = mockk(relaxed = true)
         // Mock string resources - generic fallbacks first, then specific overrides
@@ -89,11 +86,6 @@ class MemeDetailViewModelTest {
         coEvery { getMemeByIdUseCase(1L) } returns testMeme
         coEvery { getSimilarMemesUseCase(any(), any()) } returns SimilarMemesStatus.NoCandidates
         coEvery { getAllMemeIdsUseCase() } returns listOf(1L, 2L, 3L)
-    }
-
-    @After
-    fun tearDown() {
-        Dispatchers.resetMain()
     }
 
     private fun createViewModel(): MemeDetailViewModel {
