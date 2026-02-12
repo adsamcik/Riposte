@@ -20,6 +20,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -71,6 +72,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -87,6 +89,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -838,7 +841,6 @@ private fun GalleryContent(
  * with a circular progress overlay. In selection mode, tap toggles selection
  * with a circular check indicator and animated overlay.
  */
-@Suppress("LongMethod")
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun MemeGridItem(
@@ -849,151 +851,199 @@ internal fun MemeGridItem(
     onIntent: (GalleryIntent) -> Unit,
     showEmojis: Boolean = false,
 ) {
+    if (isSelectionMode) {
+        SelectionModeGridItem(
+            meme = meme,
+            isSelected = isSelected,
+            memeDescription = memeDescription,
+            onIntent = onIntent,
+            showEmojis = showEmojis,
+        )
+    } else {
+        NormalModeGridItem(
+            meme = meme,
+            memeDescription = memeDescription,
+            onIntent = onIntent,
+            showEmojis = showEmojis,
+        )
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun SelectionModeGridItem(
+    meme: Meme,
+    isSelected: Boolean,
+    memeDescription: String,
+    onIntent: (GalleryIntent) -> Unit,
+    showEmojis: Boolean = false,
+) {
     val selectedText = stringResource(com.adsamcik.riposte.core.ui.R.string.ui_state_selected)
     val notSelectedText = stringResource(com.adsamcik.riposte.core.ui.R.string.ui_state_not_selected)
+    val interactionSource = remember { MutableInteractionSource() }
+    val primaryColor = MaterialTheme.colorScheme.primary
 
-    if (isSelectionMode) {
-        val interactionSource = remember { MutableInteractionSource() }
-        val primaryColor = MaterialTheme.colorScheme.primary
+    val overlayAlpha by animateFloatAsState(
+        targetValue = if (isSelected) 0.25f else 0f,
+        animationSpec = tween(durationMillis = 150),
+        label = "overlayAlpha",
+    )
+    val borderWidth by animateDpAsState(
+        targetValue = if (isSelected) 3.dp else 0.dp,
+        animationSpec =
+            spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessMedium,
+            ),
+        label = "borderWidth",
+    )
 
-        // Animated selection states
-        val overlayAlpha by animateFloatAsState(
-            targetValue = if (isSelected) 0.25f else 0f,
-            animationSpec = tween(durationMillis = 150),
-            label = "overlayAlpha",
-        )
-        val borderWidth by animateDpAsState(
-            targetValue = if (isSelected) 3.dp else 0.dp,
-            animationSpec =
-                spring(
-                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                    stiffness = Spring.StiffnessMedium,
-                ),
-            label = "borderWidth",
-        )
-        val checkScale by animateFloatAsState(
-            targetValue = if (isSelected) 1f else 0.6f,
-            animationSpec =
-                spring(
-                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                    stiffness = Spring.StiffnessMedium,
-                ),
-            label = "checkScale",
-        )
-        val checkBgColor by animateColorAsState(
-            targetValue = if (isSelected) primaryColor else MaterialTheme.colorScheme.scrim.copy(alpha = 0.35f),
-            animationSpec = tween(durationMillis = 150),
-            label = "checkBgColor",
+    Box(
+        modifier =
+            Modifier
+                .animatedPressScale(interactionSource)
+                .combinedClickable(
+                    interactionSource = interactionSource,
+                    indication = ripple(),
+                    onClick = { onIntent(GalleryIntent.ToggleSelection(meme.id)) },
+                    onLongClick = { /* No long click in selection mode */ },
+                )
+                .semantics(mergeDescendants = true) {
+                    contentDescription = memeDescription
+                    stateDescription = if (isSelected) selectedText else notSelectedText
+                    role = Role.Checkbox
+                },
+    ) {
+        MemeCardCompact(
+            meme = meme,
+            showEmojis = showEmojis,
         )
 
+        SelectionOverlay(
+            isSelected = isSelected,
+            overlayAlpha = overlayAlpha,
+            borderWidth = borderWidth,
+            primaryColor = primaryColor,
+        )
+    }
+}
+
+@Composable
+private fun BoxScope.SelectionOverlay(
+    isSelected: Boolean,
+    overlayAlpha: Float,
+    borderWidth: Dp,
+    primaryColor: Color,
+) {
+    val checkScale by animateFloatAsState(
+        targetValue = if (isSelected) 1f else 0.6f,
+        animationSpec =
+            spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessMedium,
+            ),
+        label = "checkScale",
+    )
+    val checkBgColor by animateColorAsState(
+        targetValue = if (isSelected) primaryColor else MaterialTheme.colorScheme.scrim.copy(alpha = 0.35f),
+        animationSpec = tween(durationMillis = 150),
+        label = "checkBgColor",
+    )
+
+    // Animated scrim overlay (respects card shape)
+    Box(
+        modifier =
+            Modifier
+                .matchParentSize()
+                .clip(RiposteShapes.MemeCard)
+                .background(MaterialTheme.colorScheme.scrim.copy(alpha = overlayAlpha)),
+    )
+
+    // Primary color border for selected items
+    if (borderWidth > 0.dp) {
         Box(
             modifier =
                 Modifier
-                    .animatedPressScale(interactionSource)
-                    .combinedClickable(
-                        interactionSource = interactionSource,
-                        indication = ripple(),
-                        onClick = { onIntent(GalleryIntent.ToggleSelection(meme.id)) },
-                        onLongClick = { /* No long click in selection mode */ },
-                    )
-                    .semantics(mergeDescendants = true) {
-                        contentDescription = memeDescription
-                        stateDescription = if (isSelected) selectedText else notSelectedText
-                        role = Role.Checkbox
-                    },
-        ) {
-            MemeCardCompact(
-                meme = meme,
-                showEmojis = showEmojis,
-            )
+                    .matchParentSize()
+                    .border(
+                        width = borderWidth,
+                        color = primaryColor,
+                        shape = RiposteShapes.MemeCard,
+                    ),
+        )
+    }
 
-            // Animated scrim overlay (respects card shape)
-            Box(
-                modifier =
-                    Modifier
-                        .matchParentSize()
-                        .clip(RiposteShapes.MemeCard)
-                        .background(MaterialTheme.colorScheme.scrim.copy(alpha = overlayAlpha)),
-            )
-
-            // Primary color border for selected items
-            if (borderWidth > 0.dp) {
-                Box(
-                    modifier =
-                        Modifier
-                            .matchParentSize()
-                            .border(
-                                width = borderWidth,
-                                color = primaryColor,
-                                shape = RiposteShapes.MemeCard,
-                            ),
+    // Circular check indicator
+    Box(
+        modifier =
+            Modifier
+                .align(Alignment.TopStart)
+                .padding(6.dp)
+                .size(24.dp)
+                .graphicsLayer {
+                    scaleX = checkScale
+                    scaleY = checkScale
+                }
+                .background(
+                    color = checkBgColor,
+                    shape = CircleShape,
                 )
-            }
-
-            // Circular check indicator
-            Box(
-                modifier =
-                    Modifier
-                        .align(Alignment.TopStart)
-                        .padding(6.dp)
-                        .size(24.dp)
-                        .graphicsLayer {
-                            scaleX = checkScale
-                            scaleY = checkScale
-                        }
-                        .background(
-                            color = checkBgColor,
+                .then(
+                    if (!isSelected) {
+                        Modifier.border(
+                            width = 1.5.dp,
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
                             shape = CircleShape,
                         )
-                        .then(
-                            if (!isSelected) {
-                                Modifier.border(
-                                    width = 1.5.dp,
-                                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
-                                    shape = CircleShape,
-                                )
-                            } else {
-                                Modifier
-                            },
-                        ),
-                contentAlignment = Alignment.Center,
-            ) {
-                if (isSelected) {
-                    Icon(
-                        imageVector = Icons.Default.Check,
-                        contentDescription = stringResource(R.string.gallery_cd_selected),
-                        tint = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.size(16.dp),
-                    )
-                }
-            }
-        }
-    } else {
-        val interactionSource = remember { MutableInteractionSource() }
-        val haptic = LocalHapticFeedback.current
-        Box(
-            modifier =
-                Modifier
-                    .animatedPressScale(interactionSource)
-                    .combinedClickable(
-                        interactionSource = interactionSource,
-                        indication = ripple(),
-                        onClick = { onIntent(GalleryIntent.OpenMeme(meme.id)) },
-                        onLongClick = {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            onIntent(GalleryIntent.QuickShare(meme.id))
-                        },
-                    )
-                    .semantics(mergeDescendants = true) {
-                        contentDescription = memeDescription
-                        role = Role.Button
+                    } else {
+                        Modifier
                     },
-        ) {
-            MemeCardCompact(
-                meme = meme,
-                showEmojis = showEmojis,
+                ),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (isSelected) {
+            Icon(
+                imageVector = Icons.Default.Check,
+                contentDescription = stringResource(R.string.gallery_cd_selected),
+                tint = MaterialTheme.colorScheme.onPrimary,
+                modifier = Modifier.size(16.dp),
             )
         }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun NormalModeGridItem(
+    meme: Meme,
+    memeDescription: String,
+    onIntent: (GalleryIntent) -> Unit,
+    showEmojis: Boolean = false,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val haptic = LocalHapticFeedback.current
+    Box(
+        modifier =
+            Modifier
+                .animatedPressScale(interactionSource)
+                .combinedClickable(
+                    interactionSource = interactionSource,
+                    indication = ripple(),
+                    onClick = { onIntent(GalleryIntent.OpenMeme(meme.id)) },
+                    onLongClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onIntent(GalleryIntent.QuickShare(meme.id))
+                    },
+                )
+                .semantics(mergeDescendants = true) {
+                    contentDescription = memeDescription
+                    role = Role.Button
+                },
+    ) {
+        MemeCardCompact(
+            meme = meme,
+            showEmojis = showEmojis,
+        )
     }
 }
 

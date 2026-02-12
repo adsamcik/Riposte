@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -184,7 +185,6 @@ fun MemeCard(
  * @param onClick Click handler. When null, no click modifier is applied —
  *   useful when a parent composable provides its own [combinedClickable].
  */
-@Suppress("LongMethod")
 @Composable
 fun MemeCardCompact(
     meme: Meme,
@@ -237,37 +237,44 @@ fun MemeCardCompact(
                     .clearAndSetSemantics { },
             contentScale = ContentScale.Crop,
         )
-        if (showEmojis && meme.emojiTags.isNotEmpty()) {
-            Row(
-                modifier =
-                    Modifier
-                        .align(Alignment.BottomStart)
-                        .padding(8.dp)
-                        .background(
-                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
-                            shape = RiposteShapes.EmojiChipDefault,
-                        )
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
-            ) {
-                Text(
-                    text = meme.emojiTags.take(3).joinToString("") { it.emoji },
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-            }
-        }
+        MemeCardCompactOverlays(meme = meme, showEmojis = showEmojis)
+    }
+}
 
-        // Favorite indicator
-        if (meme.isFavorite) {
-            Icon(
-                imageVector = Icons.Filled.Favorite,
-                contentDescription = stringResource(R.string.ui_state_favorited),
-                tint = MaterialTheme.colorScheme.error,
-                modifier =
-                    Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(8.dp)
-                        .size(20.dp),
+@Composable
+private fun BoxScope.MemeCardCompactOverlays(
+    meme: Meme,
+    showEmojis: Boolean,
+) {
+    if (showEmojis && meme.emojiTags.isNotEmpty()) {
+        Row(
+            modifier =
+                Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(8.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
+                        shape = RiposteShapes.EmojiChipDefault,
+                    )
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+        ) {
+            Text(
+                text = meme.emojiTags.take(3).joinToString("") { it.emoji },
+                style = MaterialTheme.typography.bodyMedium,
             )
         }
+    }
+
+    if (meme.isFavorite) {
+        Icon(
+            imageVector = Icons.Filled.Favorite,
+            contentDescription = stringResource(R.string.ui_state_favorited),
+            tint = MaterialTheme.colorScheme.error,
+            modifier =
+                Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(8.dp)
+                    .size(20.dp),
+        )
     }
 }

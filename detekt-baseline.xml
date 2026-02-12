@@ -127,8 +127,11 @@
     <ID>Indentation:SearchUseCases.kt$SemanticSearchUseCase$ </ID>
     <ID>Indentation:SearchUseCases.kt$TextSearchUseCase$ </ID>
     <ID>Indentation:SectionHeader.kt$ </ID>
+    <ID>Indentation:SettingsDataSections.kt$ </ID>
+    <ID>Indentation:SettingsDialogsContent.kt$ </ID>
     <ID>Indentation:SettingsScreen.kt$ </ID>
     <ID>Indentation:SettingsSection.kt$ </ID>
+    <ID>Indentation:SettingsSections.kt$ </ID>
     <ID>Indentation:SettingsUseCases.kt$ExportPreferencesUseCase$ </ID>
     <ID>Indentation:SettingsUseCases.kt$GetAppPreferencesUseCase$ </ID>
     <ID>Indentation:SettingsUseCases.kt$GetSharingPreferencesUseCase$ </ID>
@@ -290,10 +293,6 @@
     <ID>MagicNumber:SearchRepositoryImpl.kt$SearchRepositoryImpl$0.01f</ID>
     <ID>MagicNumber:SearchRepositoryImpl.kt$SearchRepositoryImpl$0.5f</ID>
     <ID>MagicNumber:SearchRepositoryImpl.kt$SearchRepositoryImpl$4</ID>
-    <ID>MagicNumber:SettingsScreen.kt$1080</ID>
-    <ID>MagicNumber:SettingsScreen.kt$2048</ID>
-    <ID>MagicNumber:SettingsScreen.kt$480</ID>
-    <ID>MagicNumber:SettingsScreen.kt$720</ID>
     <ID>MagicNumber:SettingsViewModel.kt$SettingsViewModel$1024</ID>
     <ID>MagicNumber:SettingsViewModel.kt$SettingsViewModel$1024.0</ID>
     <ID>MagicNumber:SettingsViewModel.kt$SettingsViewModel$1_048_576</ID>

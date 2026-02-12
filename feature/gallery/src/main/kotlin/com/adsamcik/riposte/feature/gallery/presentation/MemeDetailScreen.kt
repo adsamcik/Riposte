@@ -210,7 +210,6 @@ fun MemeDetailScreen(
     )
 }
 
-@Suppress("LongMethod", "CyclomaticComplexMethod")
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 private fun MemeDetailScreenContent(
@@ -222,7 +221,6 @@ private fun MemeDetailScreenContent(
 ) {
     var showDiscardDialog by remember { mutableStateOf(false) }
 
-    // BackHandler for unsaved changes guard
     BackHandler(enabled = true) {
         when {
             uiState.isEditMode && uiState.hasUnsavedChanges -> showDiscardDialog = true
@@ -231,30 +229,69 @@ private fun MemeDetailScreenContent(
         }
     }
 
-    // Discard changes confirmation dialog
+    MemeDetailDialogs(
+        uiState = uiState,
+        showDiscardDialog = showDiscardDialog,
+        onDismissDiscardDialog = { showDiscardDialog = false },
+        onConfirmDiscard = {
+            showDiscardDialog = false
+            onIntent(MemeDetailIntent.DiscardChanges)
+            onNavigateBack()
+        },
+        onIntent = onIntent,
+    )
+
+    when {
+        uiState.isLoading -> {
+            LoadingScreen(modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
+        }
+
+        uiState.errorMessage != null -> {
+            ErrorState(
+                message = uiState.errorMessage.orEmpty().ifEmpty { stringResource(R.string.gallery_error_default) },
+                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Assertive },
+                onRetry = { onIntent(MemeDetailIntent.LoadMeme) },
+            )
+        }
+
+        uiState.meme != null -> {
+            MemeDetailContent(
+                uiState = uiState,
+                onIntent = onIntent,
+                onNavigateBack = onNavigateBack,
+                snackbarHostState = snackbarHostState,
+                zoomState = zoomState,
+            )
+        }
+    }
+}
+
+@Composable
+private fun MemeDetailDialogs(
+    uiState: MemeDetailUiState,
+    showDiscardDialog: Boolean,
+    onDismissDiscardDialog: () -> Unit,
+    onConfirmDiscard: () -> Unit,
+    onIntent: (MemeDetailIntent) -> Unit,
+) {
     if (showDiscardDialog) {
         AlertDialog(
-            onDismissRequest = { showDiscardDialog = false },
+            onDismissRequest = onDismissDiscardDialog,
             title = { Text(stringResource(R.string.gallery_discard_changes_title)) },
             text = { Text(stringResource(R.string.gallery_discard_changes_message)) },
             confirmButton = {
-                TextButton(onClick = {
-                    showDiscardDialog = false
-                    onIntent(MemeDetailIntent.DiscardChanges)
-                    onNavigateBack()
-                }) {
+                TextButton(onClick = onConfirmDiscard) {
                     Text(stringResource(R.string.gallery_button_discard))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDiscardDialog = false }) {
+                TextButton(onClick = onDismissDiscardDialog) {
                     Text(stringResource(R.string.gallery_button_keep_editing))
                 }
             },
         )
     }
 
-    // Delete confirmation dialog
     if (uiState.showDeleteDialog) {
         val memeName = uiState.meme?.title ?: uiState.meme?.fileName
         AlertDialog(
@@ -282,146 +319,137 @@ private fun MemeDetailScreenContent(
         )
     }
 
-    // Emoji picker dialog
     if (uiState.showEmojiPicker) {
         EditEmojiDialog(
             selectedEmojis = uiState.editedEmojis,
-            onAddEmoji = { emoji ->
-                onIntent(MemeDetailIntent.AddEmoji(emoji))
-            },
-            onRemoveEmoji = { emoji ->
-                onIntent(MemeDetailIntent.RemoveEmoji(emoji))
-            },
+            onAddEmoji = { emoji -> onIntent(MemeDetailIntent.AddEmoji(emoji)) },
+            onRemoveEmoji = { emoji -> onIntent(MemeDetailIntent.RemoveEmoji(emoji)) },
             onDismiss = { onIntent(MemeDetailIntent.DismissEmojiPicker) },
         )
     }
+}
 
-    val bottomSheetState =
-        rememberStandardBottomSheetState(
-            initialValue = SheetValue.PartiallyExpanded,
-        )
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+private fun MemeDetailContent(
+    uiState: MemeDetailUiState,
+    onIntent: (MemeDetailIntent) -> Unit,
+    onNavigateBack: () -> Unit,
+    snackbarHostState: SnackbarHostState,
+    zoomState: ZoomState,
+) {
+    val meme = uiState.meme ?: return
+    val bottomSheetState = rememberStandardBottomSheetState(initialValue = SheetValue.PartiallyExpanded)
     val scaffoldState = rememberBottomSheetScaffoldState(bottomSheetState = bottomSheetState)
+    val screenHeightDp = LocalConfiguration.current.screenHeightDp.dp
+    val adaptivePeekHeight = (screenHeightDp * 0.25f).coerceIn(120.dp, 280.dp)
 
-    when {
-        uiState.isLoading -> {
-            LoadingScreen(modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
-        }
-
-        uiState.errorMessage != null -> {
-            ErrorState(
-                message = uiState.errorMessage.orEmpty().ifEmpty { stringResource(R.string.gallery_error_default) },
-                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Assertive },
-                onRetry = { onIntent(MemeDetailIntent.LoadMeme) },
+    BottomSheetScaffold(
+        scaffoldState = scaffoldState,
+        sheetPeekHeight = adaptivePeekHeight,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        sheetDragHandle =
+            if (zoomState.isZoomed) {
+                { /* empty — suppress drag handle when zoomed */ }
+            } else {
+                null // default drag handle
+            },
+        sheetContent = {
+            MemeInfoSheet(
+                uiState = uiState,
+                onIntent = onIntent,
+                modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars),
             )
-        }
+        },
+        containerColor = Color.Black,
+    ) { paddingValues ->
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .background(Color.Black),
+        ) {
+            MemeImagePager(
+                uiState = uiState,
+                meme = meme,
+                zoomState = zoomState,
+                onIntent = onIntent,
+            )
 
-        uiState.meme != null -> {
-            val meme = uiState.meme
-            val screenHeightDp = LocalConfiguration.current.screenHeightDp.dp
-            val adaptivePeekHeight = (screenHeightDp * 0.25f).coerceIn(120.dp, 280.dp)
-            BottomSheetScaffold(
-                scaffoldState = scaffoldState,
-                sheetPeekHeight = adaptivePeekHeight,
-                snackbarHost = { SnackbarHost(snackbarHostState) },
-                sheetDragHandle =
-                    if (zoomState.isZoomed) {
-                        { /* empty — suppress drag handle when zoomed */ }
-                    } else {
-                        null // default drag handle
-                    },
-                sheetContent = {
-                    MemeInfoSheet(
-                        uiState = uiState,
-                        onIntent = onIntent,
-                        modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars),
-                    )
-                },
-                containerColor = Color.Black,
-            ) { paddingValues ->
-                Box(
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .padding(paddingValues)
-                            .background(Color.Black),
-                ) {
-                    val allMemeIds = uiState.allMemeIds
-                    if (allMemeIds.size > 1) {
-                        val initialPage = allMemeIds.indexOf(meme.id).coerceAtLeast(0)
-                        val pagerState =
-                            rememberPagerState(
-                                initialPage = initialPage,
-                                pageCount = { allMemeIds.size },
-                            )
-
-                        // Dispatch ChangeMeme when user settles on a new page
-                        LaunchedEffect(pagerState) {
-                            snapshotFlow { pagerState.settledPage }
-                                .distinctUntilChanged()
-                                .collect { page ->
-                                    val newMemeId = allMemeIds[page]
-                                    if (newMemeId != uiState.meme?.id) {
-                                        zoomState.reset()
-                                        onIntent(MemeDetailIntent.ChangeMeme(newMemeId))
-                                    }
-                                }
-                        }
-
-                        HorizontalPager(
-                            state = pagerState,
-                            userScrollEnabled = !uiState.isEditMode && !zoomState.isZoomed,
-                            key = { allMemeIds[it] },
-                        ) { page ->
-                            val pageMemeId = allMemeIds[page]
-                            MemeImage(
-                                filePath = if (pageMemeId == meme.id) meme.filePath else null,
-                                contentDescription =
-                                    if (pageMemeId == meme.id) {
-                                        stringResource(
-                                            R.string.gallery_cd_meme_image,
-                                            meme.title ?: meme.fileName,
-                                        )
-                                    } else {
-                                        null
-                                    },
-                                zoomState = if (pageMemeId == meme.id) zoomState else null,
-                            )
-                        }
-                    } else {
-                        // Single meme or allMemeIds not loaded yet
-                        MemeImage(
-                            filePath = meme.filePath,
-                            contentDescription =
-                                stringResource(
-                                    R.string.gallery_cd_meme_image,
-                                    meme.title ?: meme.fileName,
-                                ),
-                            zoomState = zoomState,
-                        )
-                    }
-
-                    // Back button — always visible for navigation
-                    IconButton(
-                        onClick = onNavigateBack,
-                        modifier =
-                            Modifier
-                                .align(Alignment.TopStart)
-                                .windowInsetsPadding(WindowInsets.statusBars)
-                                .padding(8.dp)
-                                .background(
-                                    color = MaterialTheme.colorScheme.scrim.copy(alpha = 0.7f),
-                                    shape = CircleShape,
-                                ),
-                    ) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.gallery_cd_navigate_back),
-                            tint = Color.White,
-                        )
-                    }
-                }
+            IconButton(
+                onClick = onNavigateBack,
+                modifier =
+                    Modifier
+                        .align(Alignment.TopStart)
+                        .windowInsetsPadding(WindowInsets.statusBars)
+                        .padding(8.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.scrim.copy(alpha = 0.7f),
+                            shape = CircleShape,
+                        ),
+            ) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringResource(R.string.gallery_cd_navigate_back),
+                    tint = Color.White,
+                )
             }
         }
+    }
+}
+
+@Composable
+private fun MemeImagePager(
+    uiState: MemeDetailUiState,
+    meme: com.adsamcik.riposte.core.model.Meme,
+    zoomState: ZoomState,
+    onIntent: (MemeDetailIntent) -> Unit,
+) {
+    val allMemeIds = uiState.allMemeIds
+    if (allMemeIds.size > 1) {
+        val initialPage = allMemeIds.indexOf(meme.id).coerceAtLeast(0)
+        val pagerState =
+            rememberPagerState(
+                initialPage = initialPage,
+                pageCount = { allMemeIds.size },
+            )
+
+        LaunchedEffect(pagerState) {
+            snapshotFlow { pagerState.settledPage }
+                .distinctUntilChanged()
+                .collect { page ->
+                    val newMemeId = allMemeIds[page]
+                    if (newMemeId != uiState.meme?.id) {
+                        zoomState.reset()
+                        onIntent(MemeDetailIntent.ChangeMeme(newMemeId))
+                    }
+                }
+        }
+
+        HorizontalPager(
+            state = pagerState,
+            userScrollEnabled = !uiState.isEditMode && !zoomState.isZoomed,
+            key = { allMemeIds[it] },
+        ) { page ->
+            val pageMemeId = allMemeIds[page]
+            MemeImage(
+                filePath = if (pageMemeId == meme.id) meme.filePath else null,
+                contentDescription =
+                    if (pageMemeId == meme.id) {
+                        stringResource(R.string.gallery_cd_meme_image, meme.title ?: meme.fileName)
+                    } else {
+                        null
+                    },
+                zoomState = if (pageMemeId == meme.id) zoomState else null,
+            )
+        }
+    } else {
+        MemeImage(
+            filePath = meme.filePath,
+            contentDescription = stringResource(R.string.gallery_cd_meme_image, meme.title ?: meme.fileName),
+            zoomState = zoomState,
+        )
     }
 }
 
@@ -763,7 +791,30 @@ private fun formatFileSize(bytes: Long): String {
     }
 }
 
-@Suppress("LongMethod")
+private fun Modifier.zoomGestures(
+    zoomState: ZoomState,
+    viewportSize: () -> IntSize,
+): Modifier =
+    this
+        .pointerInput(zoomState) {
+            detectTapGestures(
+                onTap = { zoomState.toggleControls() },
+                onDoubleTap = { zoomState.doubleTapToggle() },
+            )
+        }
+        .pointerInput(zoomState, zoomState.isZoomed) {
+            if (zoomState.isZoomed) {
+                detectTransformGestures { _, pan, zoom, _ ->
+                    zoomState.zoomBy(zoom)
+                    zoomState.panBy(
+                        delta = pan,
+                        viewportWidth = viewportSize().width.toFloat(),
+                        viewportHeight = viewportSize().height.toFloat(),
+                    )
+                }
+            }
+        }
+
 @Composable
 private fun MemeImage(
     filePath: String?,
@@ -780,79 +831,75 @@ private fun MemeImage(
                 .onSizeChanged { viewportSize = it }
                 .then(
                     if (zoomState != null) {
-                        Modifier
-                            .pointerInput(zoomState) {
-                                detectTapGestures(
-                                    onTap = { zoomState.toggleControls() },
-                                    onDoubleTap = { zoomState.doubleTapToggle() },
-                                )
-                            }
-                            .pointerInput(zoomState, zoomState.isZoomed) {
-                                // Only handle pan/zoom gestures when zoomed to avoid
-                                // consuming horizontal swipes needed by HorizontalPager
-                                if (zoomState.isZoomed) {
-                                    detectTransformGestures { _, pan, zoom, _ ->
-                                        zoomState.zoomBy(zoom)
-                                        zoomState.panBy(
-                                            delta = pan,
-                                            viewportWidth = viewportSize.width.toFloat(),
-                                            viewportHeight = viewportSize.height.toFloat(),
-                                        )
-                                    }
-                                }
-                            }
+                        Modifier.zoomGestures(zoomState) { viewportSize }
                     } else {
                         Modifier
                     },
                 ),
     ) {
         if (filePath != null) {
-            var imageState by remember {
-                mutableStateOf<AsyncImagePainter.State>(AsyncImagePainter.State.Empty)
-            }
-            val backgroundColor =
-                when (imageState) {
-                    is AsyncImagePainter.State.Error -> MaterialTheme.colorScheme.errorContainer
-                    is AsyncImagePainter.State.Loading -> MaterialTheme.colorScheme.surfaceVariant
-                    else -> Color.Transparent
-                }
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .background(backgroundColor)
-                        .graphicsLayer {
-                            val scale = zoomState?.scale ?: 1f
-                            scaleX = scale
-                            scaleY = scale
-                            translationX = zoomState?.offset?.x ?: 0f
-                            translationY = zoomState?.offset?.y ?: 0f
-                        },
-            ) {
-                AsyncImage(
-                    model = filePath,
-                    contentDescription = contentDescription,
-                    contentScale = ContentScale.Crop,
-                    onState = { imageState = it },
-                    modifier = Modifier.fillMaxSize(),
-                )
-            }
+            ZoomableImage(
+                filePath = filePath,
+                contentDescription = contentDescription,
+                zoomState = zoomState,
+            )
         } else {
-            // Placeholder for adjacent pages during swipe
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.scrim),
-                contentAlignment = Alignment.Center,
-            ) {
-                androidx.compose.material3.CircularProgressIndicator(
-                    modifier = Modifier.size(24.dp),
-                    strokeWidth = 2.dp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                )
-            }
+            MemeImagePlaceholder()
         }
+    }
+}
+
+@Composable
+private fun ZoomableImage(
+    filePath: String,
+    contentDescription: String?,
+    zoomState: ZoomState?,
+    modifier: Modifier = Modifier,
+) {
+    var imageState by remember { mutableStateOf<AsyncImagePainter.State>(AsyncImagePainter.State.Empty) }
+    val backgroundColor =
+        when (imageState) {
+            is AsyncImagePainter.State.Error -> MaterialTheme.colorScheme.errorContainer
+            is AsyncImagePainter.State.Loading -> MaterialTheme.colorScheme.surfaceVariant
+            else -> Color.Transparent
+        }
+    Box(
+        modifier =
+            modifier
+                .fillMaxSize()
+                .background(backgroundColor)
+                .graphicsLayer {
+                    val scale = zoomState?.scale ?: 1f
+                    scaleX = scale
+                    scaleY = scale
+                    translationX = zoomState?.offset?.x ?: 0f
+                    translationY = zoomState?.offset?.y ?: 0f
+                },
+    ) {
+        AsyncImage(
+            model = filePath,
+            contentDescription = contentDescription,
+            contentScale = ContentScale.Crop,
+            onState = { imageState = it },
+            modifier = Modifier.fillMaxSize(),
+        )
+    }
+}
+
+@Composable
+private fun MemeImagePlaceholder(modifier: Modifier = Modifier) {
+    Box(
+        modifier =
+            modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.scrim),
+        contentAlignment = Alignment.Center,
+    ) {
+        androidx.compose.material3.CircularProgressIndicator(
+            modifier = Modifier.size(24.dp),
+            strokeWidth = 2.dp,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+        )
     }
 }
 

@@ -1,0 +1,203 @@
+package com.adsamcik.riposte.feature.settings.presentation
+
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Brightness4
+import androidx.compose.material.icons.filled.ColorLens
+import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Hub
+import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Psychology
+import androidx.compose.material.icons.filled.Storage
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import com.adsamcik.riposte.core.model.DarkMode
+import com.adsamcik.riposte.core.model.UserDensityPreference
+import com.adsamcik.riposte.feature.settings.R
+import com.adsamcik.riposte.feature.settings.presentation.component.ClickableSettingItem
+import com.adsamcik.riposte.feature.settings.presentation.component.DialogSettingItem
+import com.adsamcik.riposte.feature.settings.presentation.component.SettingsSection
+import com.adsamcik.riposte.feature.settings.presentation.component.SwitchSettingItem
+
+internal fun LazyListScope.appearanceSection(
+    uiState: SettingsUiState,
+    onIntent: (SettingsIntent) -> Unit,
+) {
+    item(key = "appearance") {
+        SettingsSection(title = stringResource(R.string.settings_section_appearance)) {
+            ThemeSettingItem(uiState = uiState, onIntent = onIntent)
+            LanguageSettingItem(uiState = uiState, onIntent = onIntent)
+            SwitchSettingItem(
+                title = stringResource(R.string.settings_dynamic_colors_title),
+                subtitle = stringResource(R.string.settings_dynamic_colors_subtitle),
+                checked = uiState.dynamicColorsEnabled,
+                onCheckedChange = { onIntent(SettingsIntent.SetDynamicColors(it)) },
+                icon = Icons.Default.ColorLens,
+            )
+            GridDensitySettingItem(uiState = uiState, onIntent = onIntent)
+        }
+    }
+}
+
+@Composable
+private fun ThemeSettingItem(
+    uiState: SettingsUiState,
+    onIntent: (SettingsIntent) -> Unit,
+) {
+    DialogSettingItem(
+        title = stringResource(R.string.settings_theme_title),
+        selectedValue = uiState.darkMode,
+        values = DarkMode.entries,
+        onValueChange = { onIntent(SettingsIntent.SetDarkMode(it)) },
+        icon = Icons.Default.Brightness4,
+        valueLabel = { mode ->
+            when (mode) {
+                DarkMode.SYSTEM -> stringResource(R.string.settings_theme_system)
+                DarkMode.LIGHT -> stringResource(R.string.settings_theme_light)
+                DarkMode.DARK -> stringResource(R.string.settings_theme_dark)
+            }
+        },
+    )
+}
+
+@Composable
+private fun LanguageSettingItem(
+    uiState: SettingsUiState,
+    onIntent: (SettingsIntent) -> Unit,
+) {
+    if (uiState.availableLanguages.isNotEmpty()) {
+        val defaultLanguage = uiState.availableLanguages.first()
+        DialogSettingItem(
+            title = stringResource(R.string.settings_language_title),
+            subtitle = stringResource(R.string.settings_language_subtitle),
+            selectedValue =
+                uiState.availableLanguages.find { it.code == uiState.currentLanguage }
+                    ?: defaultLanguage,
+            values = uiState.availableLanguages,
+            onValueChange = { onIntent(SettingsIntent.SetLanguage(it.code)) },
+            icon = Icons.Default.Language,
+            valueLabel = { language ->
+                when (language.code) {
+                    null -> stringResource(R.string.settings_language_system)
+                    "en" -> stringResource(R.string.settings_language_en)
+                    "cs" -> stringResource(R.string.settings_language_cs)
+                    "de" -> stringResource(R.string.settings_language_de)
+                    "es" -> stringResource(R.string.settings_language_es)
+                    "pt" -> stringResource(R.string.settings_language_pt)
+                    else -> language.nativeName
+                }
+            },
+        )
+    }
+}
+
+@Composable
+private fun GridDensitySettingItem(
+    uiState: SettingsUiState,
+    onIntent: (SettingsIntent) -> Unit,
+) {
+    DialogSettingItem(
+        title = stringResource(R.string.settings_grid_density_title),
+        subtitle = stringResource(R.string.settings_grid_density_subtitle),
+        selectedValue = uiState.gridDensityPreference,
+        values = UserDensityPreference.entries,
+        onValueChange = { onIntent(SettingsIntent.SetGridDensity(it)) },
+        icon = Icons.Default.GridView,
+        valueLabel = { preference ->
+            when (preference) {
+                UserDensityPreference.AUTO -> stringResource(R.string.settings_grid_density_auto)
+                UserDensityPreference.COMPACT -> stringResource(R.string.settings_grid_density_compact)
+                UserDensityPreference.STANDARD -> stringResource(R.string.settings_grid_density_standard)
+                UserDensityPreference.DENSE -> stringResource(R.string.settings_grid_density_dense)
+            }
+        },
+    )
+}
+
+internal fun LazyListScope.searchSection(
+    uiState: SettingsUiState,
+    onIntent: (SettingsIntent) -> Unit,
+) {
+    item(key = "search") {
+        SettingsSection(title = stringResource(R.string.settings_section_search)) {
+            SwitchSettingItem(
+                title = stringResource(R.string.settings_semantic_search_title),
+                subtitle = stringResource(R.string.settings_semantic_search_subtitle),
+                checked = uiState.enableSemanticSearch,
+                onCheckedChange = { onIntent(SettingsIntent.SetEnableSemanticSearch(it)) },
+                icon = Icons.Default.Psychology,
+            )
+
+            if (uiState.enableSemanticSearch) {
+                EmbeddingSearchSettings(uiState = uiState)
+            }
+
+            SwitchSettingItem(
+                title = stringResource(R.string.settings_search_history_title),
+                subtitle = stringResource(R.string.settings_search_history_subtitle),
+                checked = uiState.saveSearchHistory,
+                onCheckedChange = { onIntent(SettingsIntent.SetSaveSearchHistory(it)) },
+                icon = Icons.Default.History,
+            )
+        }
+    }
+}
+
+@Composable
+private fun EmbeddingSearchSettings(uiState: SettingsUiState) {
+    val embeddingState = uiState.embeddingSearchState ?: return
+    ClickableSettingItem(
+        title = stringResource(R.string.settings_embedding_model_title),
+        subtitle =
+            stringResource(
+                R.string.settings_embedding_model_subtitle,
+                embeddingState.dimension,
+            ),
+        onClick = { },
+        icon = Icons.Default.Hub,
+        showChevron = false,
+        trailingText =
+            stringResource(
+                R.string.settings_embedding_model_version,
+                embeddingState.modelName,
+                embeddingState.modelVersion,
+            ),
+    )
+
+    ClickableSettingItem(
+        title = stringResource(R.string.settings_search_index_title),
+        subtitle = embeddingIndexSubtitle(embeddingState),
+        onClick = { },
+        icon = Icons.Default.Storage,
+        showChevron = false,
+    )
+}
+
+@Composable
+private fun embeddingIndexSubtitle(embeddingState: EmbeddingSearchState): String =
+    when {
+        embeddingState.modelError != null ->
+            stringResource(
+                R.string.settings_search_index_error,
+                embeddingState.modelError,
+            )
+        embeddingState.isFullyIndexed ->
+            stringResource(
+                R.string.settings_search_index_complete,
+                embeddingState.indexedCount,
+            )
+        embeddingState.regenerationCount > 0 ->
+            stringResource(
+                R.string.settings_search_index_regenerating,
+                embeddingState.indexedCount,
+                embeddingState.totalCount,
+                embeddingState.regenerationCount,
+            )
+        else ->
+            stringResource(
+                R.string.settings_search_index_progress,
+                embeddingState.indexedCount,
+                embeddingState.totalCount,
+            )
+    }
