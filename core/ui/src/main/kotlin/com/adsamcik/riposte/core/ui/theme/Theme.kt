@@ -21,20 +21,26 @@ import com.adsamcik.riposte.core.ui.util.rememberReducedMotion
 private val DarkColorScheme =
     darkColorScheme(
         primary = MoodPrimaryDark,
+        onPrimary = OnMoodPrimaryDark,
         secondary = MoodSecondaryDark,
+        onSecondary = OnMoodSecondaryDark,
         tertiary = MoodTertiaryDark,
         surface = SurfaceDark,
         surfaceContainer = SurfaceContainerDark,
-        error = Error,
+        surfaceContainerHigh = SurfaceContainerHighDark,
+        error = ErrorDark,
     )
 
 private val LightColorScheme =
     lightColorScheme(
         primary = MoodPrimary,
+        onPrimary = OnMoodPrimary,
         secondary = MoodSecondary,
+        onSecondary = OnMoodSecondary,
         tertiary = MoodTertiary,
         surface = SurfaceLight,
         surfaceContainer = SurfaceContainerLight,
+        surfaceContainerHigh = SurfaceContainerHighLight,
         error = Error,
     )
 
@@ -49,7 +55,15 @@ fun RiposteTheme(
         when {
             dynamicColor -> {
                 val context = LocalContext.current
-                if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+                val dynamic =
+                    if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+                // Hybrid: keep brand primary/secondary/tertiary, adapt surfaces
+                dynamic.copy(
+                    primary = if (darkTheme) MoodPrimaryDark else MoodPrimary,
+                    onPrimary = if (darkTheme) OnMoodPrimaryDark else OnMoodPrimary,
+                    secondary = if (darkTheme) MoodSecondaryDark else MoodSecondary,
+                    tertiary = if (darkTheme) MoodTertiaryDark else MoodTertiary,
+                )
             }
             darkTheme -> DarkColorScheme
             else -> LightColorScheme
