@@ -18,6 +18,7 @@ import com.adsamcik.riposte.feature.settings.domain.usecase.GetAppPreferencesUse
 import com.adsamcik.riposte.feature.settings.domain.usecase.GetSharingPreferencesUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.ImportPreferencesUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.ObserveEmbeddingStatisticsUseCase
+import com.adsamcik.riposte.feature.settings.domain.usecase.ObserveLibraryStatsUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetDarkModeUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetDefaultFormatUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetDefaultMaxDimensionUseCase
@@ -68,6 +69,7 @@ class SettingsViewModel
         private val exportPreferencesUseCase: ExportPreferencesUseCase,
         private val importPreferencesUseCase: ImportPreferencesUseCase,
         private val observeEmbeddingStatisticsUseCase: ObserveEmbeddingStatisticsUseCase,
+        private val observeLibraryStatsUseCase: ObserveLibraryStatsUseCase,
         private val crashLogManager: CrashLogManager,
         @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     ) : ViewModel() {
@@ -92,6 +94,7 @@ class SettingsViewModel
             calculateCacheSize()
             loadCurrentLanguage()
             observeEmbeddingStatistics()
+            observeLibraryStats()
             refreshCrashLogCount()
         }
 
@@ -125,6 +128,20 @@ class SettingsViewModel
                                         regenerationCount = stats.regenerationNeededCount,
                                         modelError = stats.modelError,
                                     ),
+                            )
+                        }
+                    }
+            }
+        }
+
+        private fun observeLibraryStats() {
+            viewModelScope.launch {
+                observeLibraryStatsUseCase()
+                    .collect { stats ->
+                        _uiState.update {
+                            it.copy(
+                                totalMemeCount = stats.totalMemes,
+                                favoriteMemeCount = stats.favoriteMemes,
                             )
                         }
                     }
