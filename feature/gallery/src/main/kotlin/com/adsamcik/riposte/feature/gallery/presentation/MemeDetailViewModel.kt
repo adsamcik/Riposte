@@ -5,6 +5,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.adsamcik.riposte.core.common.review.UserActionTracker
+import com.adsamcik.riposte.core.common.share.ShareMemeUseCase
 import com.adsamcik.riposte.core.model.EmojiTag
 import com.adsamcik.riposte.feature.gallery.R
 import com.adsamcik.riposte.feature.gallery.domain.usecase.MemeDetailUseCases
@@ -27,6 +28,7 @@ class MemeDetailViewModel
         @ApplicationContext private val context: Context,
         savedStateHandle: SavedStateHandle,
         private val useCases: MemeDetailUseCases,
+        private val shareMemeUseCase: ShareMemeUseCase,
         private val userActionTracker: UserActionTracker,
     ) : ViewModel() {
         private var currentMemeId: Long = savedStateHandle.get<Long>("memeId") ?: -1L
@@ -55,7 +57,6 @@ class MemeDetailViewModel
                 is MemeDetailIntent.DismissDeleteDialog -> dismissDeleteDialog()
                 is MemeDetailIntent.ConfirmDelete -> confirmDelete()
                 is MemeDetailIntent.Share -> share()
-                is MemeDetailIntent.OpenShareScreen -> openShareScreen()
                 is MemeDetailIntent.SaveChanges -> saveChanges()
                 is MemeDetailIntent.DiscardChanges -> discardChanges()
                 is MemeDetailIntent.ShowEmojiPicker -> showEmojiPicker()
@@ -68,9 +69,19 @@ class MemeDetailViewModel
             }
         }
 
-        private fun openShareScreen() {
+        private fun share() {
             viewModelScope.launch {
-                _effects.send(MemeDetailEffect.NavigateToShare(currentMemeId))
+                shareMemeUseCase(currentMemeId)
+                    .onSuccess { intent ->
+                        _effects.send(MemeDetailEffect.LaunchShareIntent(intent))
+                    }
+                    .onFailure { error ->
+                        _effects.send(
+                            MemeDetailEffect.ShowError(
+                                error.message ?: context.getString(R.string.gallery_error_default),
+                            ),
+                        )
+                    }
             }
         }
 
@@ -232,10 +243,6 @@ class MemeDetailViewModel
                         )
                     }
             }
-        }
-
-        private fun share() {
-            openShareScreen()
         }
 
         private fun saveChanges() {

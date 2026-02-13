@@ -1,7 +1,9 @@
 package com.adsamcik.riposte.feature.gallery.presentation
 
 import android.content.Context
+import android.content.Intent
 import app.cash.turbine.turbineScope
+import com.adsamcik.riposte.core.common.share.ShareMemeUseCase
 import com.adsamcik.riposte.core.common.suggestion.GetSuggestionsUseCase
 import com.adsamcik.riposte.core.datastore.PreferencesDataStore
 import com.adsamcik.riposte.core.model.AppPreferences
@@ -51,6 +53,7 @@ class GalleryViewModelTest {
     private lateinit var getAllMemeIdsUseCase: GetAllMemeIdsUseCase
     private lateinit var getAllEmojisWithCountsUseCase: GetAllEmojisWithCountsUseCase
     private lateinit var getSuggestionsUseCase: GetSuggestionsUseCase
+    private lateinit var shareMemeUseCase: ShareMemeUseCase
     private lateinit var galleryRepository: com.adsamcik.riposte.feature.gallery.domain.repository.GalleryRepository
     private lateinit var preferencesDataStore: PreferencesDataStore
     private lateinit var searchDelegate: SearchDelegate
@@ -91,6 +94,8 @@ class GalleryViewModelTest {
         getAllMemeIdsUseCase = mockk()
         getAllEmojisWithCountsUseCase = mockk()
         getSuggestionsUseCase = GetSuggestionsUseCase()
+        shareMemeUseCase = mockk()
+        coEvery { shareMemeUseCase(any()) } returns Result.success(Intent())
         galleryRepository = mockk(relaxed = true)
         every { galleryRepository.getPagedMemes(any()) } returns kotlinx.coroutines.flow.emptyFlow()
         every { galleryRepository.getPagedMemesByEmojis(any()) } returns kotlinx.coroutines.flow.emptyFlow()
@@ -128,6 +133,7 @@ class GalleryViewModelTest {
             context = context,
             useCases = useCases,
             getSuggestionsUseCase = getSuggestionsUseCase,
+            shareMemeUseCase = shareMemeUseCase,
             galleryRepository = galleryRepository,
             defaultDispatcher = mainDispatcherRule.testDispatcher,
             preferencesDataStore = preferencesDataStore,
@@ -559,7 +565,7 @@ class GalleryViewModelTest {
     // region Share Intent Tests
 
     @Test
-    fun `ShareSelected with single meme navigates to share screen`() =
+    fun `ShareSelected with single meme launches share intent`() =
         runTest {
             viewModel = createViewModel()
             advanceUntilIdle()
@@ -572,8 +578,7 @@ class GalleryViewModelTest {
                 advanceUntilIdle()
 
                 val effect = effects.awaitItem()
-                assertThat(effect).isInstanceOf(GalleryEffect.NavigateToShare::class.java)
-                assertThat((effect as GalleryEffect.NavigateToShare).memeId).isEqualTo(1L)
+                assertThat(effect).isInstanceOf(GalleryEffect.LaunchShareIntent::class.java)
 
                 effects.cancel()
             }

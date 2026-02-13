@@ -16,8 +16,6 @@ import com.adsamcik.riposte.feature.import_feature.navigation.importScreen
 import com.adsamcik.riposte.feature.import_feature.navigation.navigateToImport
 import com.adsamcik.riposte.feature.settings.navigation.navigateToSettings
 import com.adsamcik.riposte.feature.settings.navigation.settingsScreen
-import com.adsamcik.riposte.feature.share.navigation.navigateToShare
-import com.adsamcik.riposte.feature.share.navigation.shareScreen
 
 /**
  * Main navigation host for Riposte.
@@ -46,18 +44,12 @@ fun RiposteNavHost(
             onNavigateToSettings = {
                 navController.navigateToSettings()
             },
-            onNavigateToShare = { memeId ->
-                navController.navigateToShare(memeId)
-            },
         )
 
         // Meme detail screen
         memeDetailScreen(
             onNavigateBack = {
                 navController.popBackStack()
-            },
-            onNavigateToShare = { memeId ->
-                navController.navigateToShare(memeId)
             },
             onNavigateToMeme = { memeId ->
                 navController.navigateToMemeDetail(
@@ -72,13 +64,6 @@ fun RiposteNavHost(
                 navController.getBackStackEntry(GalleryRoute)
                     .savedStateHandle[EMOJI_FILTER_KEY] = emoji
                 navController.popBackStack(GalleryRoute, inclusive = false)
-            },
-        )
-
-        // Share screen
-        shareScreen(
-            onNavigateBack = {
-                navController.popBackStack()
             },
         )
 

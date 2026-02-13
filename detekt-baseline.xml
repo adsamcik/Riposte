@@ -16,7 +16,6 @@
     <ID>Indentation:AppLifecycleTracker.kt$AppLifecycleTracker$ </ID>
     <ID>Indentation:ClickableSettingItem.kt$ </ID>
     <ID>Indentation:DatabaseMaintenanceHelper.kt$DatabaseMaintenanceHelper$ </ID>
-    <ID>Indentation:DefaultBitmapLoader.kt$DefaultBitmapLoader$ </ID>
     <ID>Indentation:DefaultCrashLogManager.kt$DefaultCrashLogManager$ </ID>
     <ID>Indentation:DefaultCrashLogManager.kt$DefaultCrashLogManager.Companion$ </ID>
     <ID>Indentation:DefaultEmbeddingWorkRepository.kt$DefaultEmbeddingWorkRepository$ </ID>
@@ -147,10 +146,7 @@
     <ID>Indentation:SettingsViewModel.kt$SettingsViewModel$ </ID>
     <ID>Indentation:ShareRepositoryImpl.kt$ShareRepositoryImpl$ </ID>
     <ID>Indentation:ShareRepositoryImpl.kt$ShareRepositoryImpl.Companion$ </ID>
-    <ID>Indentation:ShareScreen.kt$ </ID>
     <ID>Indentation:ShareTargetRepositoryImpl.kt$ShareTargetRepositoryImpl$ </ID>
-    <ID>Indentation:ShareUseCases.kt$ShareUseCases$ </ID>
-    <ID>Indentation:ShareViewModel.kt$ShareViewModel$ </ID>
     <ID>Indentation:SharingShortcutManager.kt$SharingShortcutManager$ </ID>
     <ID>Indentation:SharingShortcutManager.kt$SharingShortcutManager.Companion$ </ID>
     <ID>Indentation:SharingShortcutUpdater.kt$SharingShortcutUpdater$ </ID>
@@ -169,7 +165,7 @@
     <ID>LongMethod:EmojiChip.kt$@Composable fun EmojiChip( emojiTag: EmojiTag, modifier: Modifier = Modifier, onClick: (() -&gt; Unit)? = null, isSelected: Boolean = false, showName: Boolean = false, backgroundColor: Color? = null, )</ID>
     <ID>LongMethod:GalleryScreen.kt$@Composable private fun BoxScope.SelectionOverlay( isSelected: Boolean, overlayAlpha: Float, borderWidth: Dp, primaryColor: Color, )</ID>
     <ID>LongMethod:GalleryScreen.kt$@Composable private fun ImportStatusBanner( status: ImportWorkStatus, onDismiss: () -&gt; Unit, modifier: Modifier = Modifier, )</ID>
-    <ID>LongMethod:GalleryScreen.kt$@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class) @Composable fun GalleryScreen( onNavigateToMeme: (Long) -&gt; Unit, onNavigateToImport: () -&gt; Unit, onNavigateToSettings: () -&gt; Unit, onNavigateToShare: (Long) -&gt; Unit = {}, viewModel: GalleryViewModel = hiltViewModel(), )</ID>
+    <ID>LongMethod:GalleryScreen.kt$@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class) @Composable fun GalleryScreen( onNavigateToMeme: (Long) -&gt; Unit, onNavigateToImport: () -&gt; Unit, onNavigateToSettings: () -&gt; Unit, viewModel: GalleryViewModel = hiltViewModel(), )</ID>
     <ID>LongMethod:GalleryScreen.kt$@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class) @Composable private fun GalleryScreenContent( uiState: GalleryUiState, pagedMemes: LazyPagingItems&lt;Meme&gt;? = null, onIntent: (GalleryIntent) -&gt; Unit, onNavigateToMeme: (Long) -&gt; Unit, onNavigateToImport: () -&gt; Unit, onNavigateToSettings: () -&gt; Unit, snackbarHostState: SnackbarHostState, showDeleteDialog: Boolean, deleteCount: Int, showMenu: Boolean, onShowDeleteDialogChange: (Boolean) -&gt; Unit, onDeleteCountChange: (Int) -&gt; Unit, onShowMenuChange: (Boolean) -&gt; Unit, )</ID>
     <ID>LongMethod:HoldToShareContainer.kt$@Composable fun HoldToShareContainer( onTap: () -&gt; Unit, onHoldComplete: () -&gt; Unit, modifier: Modifier = Modifier, onLongPress: (() -&gt; Unit)? = null, content: @Composable BoxScope.() -&gt; Unit, )</ID>
     <ID>LongMethod:ImportRepositoryImpl.kt$ImportRepositoryImpl$override suspend fun importImage( uri: Uri, metadata: MemeMetadata?, ): Result&lt;Meme&gt;</ID>
@@ -183,17 +179,15 @@
     <ID>LongMethod:ImportWorker.kt$ImportWorker$override suspend fun doWork(): Result</ID>
     <ID>LongMethod:MemeCard.kt$@Composable fun MemeCard( meme: Meme, onClick: () -&gt; Unit, onFavoriteClick: () -&gt; Unit, modifier: Modifier = Modifier, showTitle: Boolean = true, showEmojis: Boolean = true, )</ID>
     <ID>LongMethod:MemeDetailScreen.kt$@OptIn(ExperimentalLayoutApi::class) @Composable private fun MemeInfoSheet( uiState: MemeDetailUiState, onIntent: (MemeDetailIntent) -&gt; Unit, modifier: Modifier = Modifier, )</ID>
-    <ID>LongMethod:MemeDetailScreen.kt$@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class) @Composable fun MemeDetailScreen( onNavigateBack: () -&gt; Unit, onNavigateToShare: (Long) -&gt; Unit = {}, onNavigateToMeme: (Long) -&gt; Unit = {}, viewModel: MemeDetailViewModel = hiltViewModel(), )</ID>
+    <ID>LongMethod:MemeDetailScreen.kt$@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class) @Composable fun MemeDetailScreen( onNavigateBack: () -&gt; Unit, onNavigateToMeme: (Long) -&gt; Unit = {}, onNavigateToGalleryWithEmoji: (String) -&gt; Unit = {}, viewModel: MemeDetailViewModel = hiltViewModel(), )</ID>
     <ID>LongMethod:Migrations.kt$&lt;no name provided&gt;$override fun migrate(db: SupportSQLiteDatabase)</ID>
     <ID>LongMethod:SearchBar.kt$@Composable fun SearchBar( query: String, onQueryChange: (String) -&gt; Unit, onSearch: () -&gt; Unit, modifier: Modifier = Modifier, placeholder: String? = null, autoFocus: Boolean = false, )</ID>
     <ID>LongMethod:SettingsScreen.kt$@Composable fun SettingsScreen( onNavigateBack: () -&gt; Unit, viewModel: SettingsViewModel = hiltViewModel(), )</ID>
-    <ID>LongMethod:ShareScreen.kt$@Composable private fun ShareContent( uiState: ShareUiState, onIntent: (ShareIntent) -&gt; Unit, modifier: Modifier = Modifier, )</ID>
-    <ID>LongMethod:ShareScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun ShareScreen( onNavigateBack: () -&gt; Unit, viewModel: ShareViewModel = hiltViewModel(), )</ID>
     <ID>LongMethod:XmpMetadataHandler.kt$XmpMetadataHandler$private fun generateXmpPacket(metadata: MemeMetadata): String</ID>
     <ID>LongMethod:ZipImporter.kt$DefaultZipImporter$override fun extractBundleStream(zipUri: Uri): Flow&lt;ZipExtractionEvent&gt;</ID>
     <ID>LongMethod:ZipImporter.kt$DefaultZipImporter$override suspend fun extractBundle(zipUri: Uri): ZipExtractionResult</ID>
     <ID>LongParameterList:GalleryScreen.kt$( uiState: GalleryUiState, pagedMemes: LazyPagingItems&lt;Meme&gt;? = null, onIntent: (GalleryIntent) -&gt; Unit, onNavigateToMeme: (Long) -&gt; Unit, onNavigateToImport: () -&gt; Unit, onNavigateToSettings: () -&gt; Unit, snackbarHostState: SnackbarHostState, showDeleteDialog: Boolean, deleteCount: Int, showMenu: Boolean, onShowDeleteDialogChange: (Boolean) -&gt; Unit, onDeleteCountChange: (Int) -&gt; Unit, onShowMenuChange: (Boolean) -&gt; Unit, )</ID>
-    <ID>LongParameterList:GalleryViewModel.kt$GalleryViewModel$( @ApplicationContext private val context: Context, private val useCases: GalleryViewModelUseCases, private val getSuggestionsUseCase: GetSuggestionsUseCase, private val galleryRepository: GalleryRepository, @DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher, private val preferencesDataStore: PreferencesDataStore, val searchDelegate: SearchDelegate, )</ID>
+    <ID>LongParameterList:GalleryViewModel.kt$GalleryViewModel$( @ApplicationContext private val context: Context, private val useCases: GalleryViewModelUseCases, private val getSuggestionsUseCase: GetSuggestionsUseCase, private val shareMemeUseCase: ShareMemeUseCase, private val galleryRepository: GalleryRepository, @DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher, private val preferencesDataStore: PreferencesDataStore, val searchDelegate: SearchDelegate, )</ID>
     <ID>LongParameterList:ImportScreen.kt$( imageUri: Uri, currentEmojis: List&lt;EmojiTag&gt;, suggestedEmojis: List&lt;EmojiTag&gt;, title: String, description: String, onEmojiToggle: (EmojiTag) -&gt; Unit, onTitleChange: (String) -&gt; Unit, onDescriptionChange: (String) -&gt; Unit, onApplySuggestions: () -&gt; Unit, onDone: () -&gt; Unit, modifier: Modifier = Modifier, )</ID>
     <ID>LongParameterList:ImportScreen.kt$( uri: Uri, emojis: List&lt;String&gt;, isSelected: Boolean, hasError: Boolean, isProcessing: Boolean, onClick: () -&gt; Unit, onRemove: () -&gt; Unit, modifier: Modifier = Modifier, )</ID>
     <ID>LongParameterList:SettingsViewModel.kt$SettingsViewModel$( @param:ApplicationContext private val context: Context, private val getAppPreferencesUseCase: GetAppPreferencesUseCase, private val getSharingPreferencesUseCase: GetSharingPreferencesUseCase, private val setDarkModeUseCase: SetDarkModeUseCase, private val setDynamicColorsUseCase: SetDynamicColorsUseCase, private val setEnableSemanticSearchUseCase: SetEnableSemanticSearchUseCase, private val setSaveSearchHistoryUseCase: SetSaveSearchHistoryUseCase, private val setDefaultFormatUseCase: SetDefaultFormatUseCase, private val setDefaultQualityUseCase: SetDefaultQualityUseCase, private val setDefaultMaxDimensionUseCase: SetDefaultMaxDimensionUseCase, private val setStripMetadataUseCase: SetStripMetadataUseCase, private val setGridDensityUseCase: SetGridDensityUseCase, private val exportPreferencesUseCase: ExportPreferencesUseCase, private val importPreferencesUseCase: ImportPreferencesUseCase, private val observeEmbeddingStatisticsUseCase: ObserveEmbeddingStatisticsUseCase, private val crashLogManager: CrashLogManager, @IoDispatcher private val ioDispatcher: CoroutineDispatcher, )</ID>
@@ -292,10 +286,6 @@
     <ID>MagicNumber:SettingsViewModel.kt$SettingsViewModel$1_048_576.0</ID>
     <ID>MagicNumber:SettingsViewModel.kt$SettingsViewModel$1_073_741_824</ID>
     <ID>MagicNumber:SettingsViewModel.kt$SettingsViewModel$1_073_741_824.0</ID>
-    <ID>MagicNumber:ShareScreen.kt$0.4f</ID>
-    <ID>MagicNumber:ShareScreen.kt$100</ID>
-    <ID>MagicNumber:ShareScreen.kt$1024f</ID>
-    <ID>MagicNumber:ShareScreen.kt$500</ID>
     <ID>MagicNumber:ShareUiState.kt$ShareUiState$1024</ID>
     <ID>MagicNumber:ShareUiState.kt$ShareUiState$1024.0</ID>
     <ID>MagicNumber:SimpleEmbeddingGenerator.kt$SimpleEmbeddingGenerator$0.5f</ID>
@@ -381,8 +371,6 @@
     <ID>SwallowedException:PreferencesDataStore.kt$PreferencesDataStore$e: Exception</ID>
     <ID>SwallowedException:SettingsViewModel.kt$SettingsViewModel$e: Exception</ID>
     <ID>SwallowedException:ShareRepositoryImpl.kt$ShareRepositoryImpl$e: Exception</ID>
-    <ID>SwallowedException:ShareScreen.kt$e: android.content.ActivityNotFoundException</ID>
-    <ID>SwallowedException:ShareViewModel.kt$ShareViewModel$e: Exception</ID>
     <ID>SwallowedException:UriExtensions.kt$e: Exception</ID>
     <ID>SwallowedException:XmpMetadataHandler.kt$XmpMetadataHandler$e: Exception</ID>
     <ID>SwallowedException:ZipImporter.kt$DefaultZipImporter$e: Exception</ID>
@@ -407,7 +395,6 @@
     <ID>TooGenericExceptionCaught:SearchDelegate.kt$SearchDelegate$e: Exception</ID>
     <ID>TooGenericExceptionCaught:SettingsViewModel.kt$SettingsViewModel$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ShareRepositoryImpl.kt$ShareRepositoryImpl$e: Exception</ID>
-    <ID>TooGenericExceptionCaught:ShareViewModel.kt$ShareViewModel$e: Exception</ID>
     <ID>TooGenericExceptionCaught:UriExtensions.kt$e: Exception</ID>
     <ID>TooGenericExceptionCaught:XmpMetadataHandler.kt$XmpMetadataHandler$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ZipImporter.kt$DefaultZipImporter$e: Exception</ID>
@@ -487,14 +474,9 @@
     <ID>UnusedPrivateMember:SectionHeader.kt$@Preview(showBackground = true) @Composable private fun SectionHeaderWithIconPreview()</ID>
     <ID>UnusedPrivateMember:SectionHeader.kt$@Preview(showBackground = true) @Composable private fun SectionHeaderWithTrailingActionPreview()</ID>
     <ID>UnusedPrivateMember:SettingsScreen.kt$@Preview(name = "Settings", showBackground = true) @Preview(name = "Settings Dark", showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES) @Composable private fun SettingsScreenPreview()</ID>
-    <ID>UnusedPrivateMember:ShareScreen.kt$@Preview(name = "Content - Large File", showBackground = true) @Composable private fun ShareScreenLargeFilePreview()</ID>
-    <ID>UnusedPrivateMember:ShareScreen.kt$@Preview(name = "Content", showBackground = true) @Preview(name = "Content Dark", showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES) @Composable private fun ShareScreenContentPreview()</ID>
-    <ID>UnusedPrivateMember:ShareScreen.kt$@Preview(name = "Error", showBackground = true) @Composable private fun ShareScreenErrorPreview()</ID>
-    <ID>UnusedPrivateMember:ShareScreen.kt$@Preview(name = "Loading", showBackground = true) @Composable private fun ShareScreenLoadingPreview()</ID>
     <ID>UnusedPrivateProperty:GalleryNavigation.kt$val route = backStackEntry.toRoute&lt;MemeDetailRoute&gt;()</ID>
     <ID>UnusedPrivateProperty:ImageProcessor.kt$ImageProcessor$@param:ApplicationContext private val context: Context</ID>
     <ID>UnusedPrivateProperty:MlKitTextRecognizer.kt$MlKitTextRecognizer$val task = recognizer.process(image) .addOnSuccessListener { result -&gt; val text = result.text.takeIf { it.isNotBlank() } continuation.resume(text) } .addOnFailureListener { exception -&gt; continuation.resumeWithException(exception) }</ID>
-    <ID>UnusedPrivateProperty:ShareNavigation.kt$val route = backStackEntry.toRoute&lt;ShareRoute&gt;()</ID>
     <ID>UnusedPrivateProperty:SimpleEmbeddingGenerator.kt$SimpleEmbeddingGenerator$val task = imageLabeler.process(image) .addOnSuccessListener { labels -&gt; val labelTexts = labels.map { it.text.lowercase() } continuation.resume(labelTexts) } .addOnFailureListener { exception -&gt; continuation.resumeWithException(exception) }</ID>
     <ID>UseRequire:DefaultSettingsRepository.kt$DefaultSettingsRepository$throw IllegalArgumentException("Invalid backup format: expected JSON object")</ID>
     <ID>Wrapping:ClickableSettingItem.kt${ Icon(imageVector = it, contentDescription = null) }</ID>

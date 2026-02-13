@@ -23,8 +23,6 @@ sealed interface MemeDetailIntent {
 
     data object Share : MemeDetailIntent
 
-    data object OpenShareScreen : MemeDetailIntent
-
     data object SaveChanges : MemeDetailIntent
 
     data object DiscardChanges : MemeDetailIntent

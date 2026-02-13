@@ -113,7 +113,6 @@ import java.time.format.FormatStyle
 @Composable
 fun MemeDetailScreen(
     onNavigateBack: () -> Unit,
-    onNavigateToShare: (Long) -> Unit = {},
     onNavigateToMeme: (Long) -> Unit = {},
     onNavigateToGalleryWithEmoji: (String) -> Unit = {},
     viewModel: MemeDetailViewModel = hiltViewModel(),
@@ -127,7 +126,13 @@ fun MemeDetailScreen(
         viewModel.effects.collectLatest { effect ->
             when (effect) {
                 is MemeDetailEffect.NavigateBack -> onNavigateBack()
-                is MemeDetailEffect.NavigateToShare -> onNavigateToShare(effect.memeId)
+                is MemeDetailEffect.LaunchShareIntent -> {
+                    try {
+                        context.startActivity(effect.intent)
+                    } catch (_: android.content.ActivityNotFoundException) {
+                        snackbarHostState.showSnackbar("Unable to share — app not found")
+                    }
+                }
                 is MemeDetailEffect.NavigateToMeme -> onNavigateToMeme(effect.memeId)
                 is MemeDetailEffect.ShowSnackbar -> snackbarHostState.showSnackbar(effect.message)
                 is MemeDetailEffect.ShowError -> snackbarHostState.showSnackbar(effect.message)

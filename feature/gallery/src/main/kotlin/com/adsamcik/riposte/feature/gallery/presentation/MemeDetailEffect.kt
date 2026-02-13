@@ -3,7 +3,7 @@ package com.adsamcik.riposte.feature.gallery.presentation
 sealed interface MemeDetailEffect {
     data object NavigateBack : MemeDetailEffect
 
-    data class NavigateToShare(val memeId: Long) : MemeDetailEffect
+    data class LaunchShareIntent(val intent: android.content.Intent) : MemeDetailEffect
 
     data class ShowSnackbar(val message: String) : MemeDetailEffect
 

@@ -1,11 +1,13 @@
 package com.adsamcik.riposte.feature.gallery.presentation
 
 import android.content.Context
+import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.adsamcik.riposte.core.common.di.DefaultDispatcher
+import com.adsamcik.riposte.core.common.share.ShareMemeUseCase
 import com.adsamcik.riposte.core.common.suggestion.GetSuggestionsUseCase
 import com.adsamcik.riposte.core.common.suggestion.SuggestionContext
 import com.adsamcik.riposte.core.common.suggestion.Surface
@@ -43,6 +45,7 @@ class GalleryViewModel
         @ApplicationContext private val context: Context,
         private val useCases: GalleryViewModelUseCases,
         private val getSuggestionsUseCase: GetSuggestionsUseCase,
+        private val shareMemeUseCase: ShareMemeUseCase,
         private val galleryRepository: GalleryRepository,
         @DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
         private val preferencesDataStore: PreferencesDataStore,
@@ -416,7 +419,7 @@ class GalleryViewModel
             if (selectedIds.isEmpty()) return
 
             if (selectedIds.size == 1) {
-                // Single meme: use preference-aware quick share path
+                // Single meme: use preference-aware share path
                 clearSelection()
                 quickShare(selectedIds.first())
                 return
@@ -442,14 +445,14 @@ class GalleryViewModel
                         },
                     )
                 val intent =
-                    android.content.Intent(android.content.Intent.ACTION_SEND_MULTIPLE).apply {
+                    Intent(Intent.ACTION_SEND_MULTIPLE).apply {
                         type = "image/*"
-                        putParcelableArrayListExtra(android.content.Intent.EXTRA_STREAM, uris)
-                        addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     }
                 clearSelection()
                 _effects.send(
-                    GalleryEffect.LaunchShareIntent(android.content.Intent.createChooser(intent, null)),
+                    GalleryEffect.LaunchShareIntent(Intent.createChooser(intent, null)),
                 )
             }
         }
@@ -462,7 +465,17 @@ class GalleryViewModel
 
         private fun quickShare(memeId: Long) {
             viewModelScope.launch {
-                _effects.send(GalleryEffect.NavigateToShare(memeId))
+                shareMemeUseCase(memeId)
+                    .onSuccess { intent ->
+                        _effects.send(GalleryEffect.LaunchShareIntent(intent))
+                    }
+                    .onFailure { error ->
+                        _effects.send(
+                            GalleryEffect.ShowError(
+                                error.message ?: context.getString(R.string.gallery_error_default),
+                            ),
+                        )
+                    }
             }
         }
 

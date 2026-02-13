@@ -1,8 +1,10 @@
 package com.adsamcik.riposte.feature.gallery.presentation
 
 import android.content.Context
+import android.content.Intent
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
+import com.adsamcik.riposte.core.common.share.ShareMemeUseCase
 import com.adsamcik.riposte.core.model.EmojiTag
 import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.core.testing.MainDispatcherRule
@@ -48,6 +50,7 @@ class MemeDetailViewModelTest {
     private lateinit var recordMemeViewUseCase: RecordMemeViewUseCase
     private lateinit var getSimilarMemesUseCase: GetSimilarMemesUseCase
     private lateinit var getAllMemeIdsUseCase: GetAllMemeIdsUseCase
+    private lateinit var shareMemeUseCase: ShareMemeUseCase
     private lateinit var context: Context
     private lateinit var viewModel: MemeDetailViewModel
 
@@ -80,11 +83,13 @@ class MemeDetailViewModelTest {
         recordMemeViewUseCase = mockk(relaxUnitFun = true)
         getSimilarMemesUseCase = mockk()
         getAllMemeIdsUseCase = mockk()
+        shareMemeUseCase = mockk()
 
         // Default mock setup
         coEvery { getMemeByIdUseCase(1L) } returns testMeme
         coEvery { getSimilarMemesUseCase(any(), any()) } returns SimilarMemesStatus.NoCandidates
         coEvery { getAllMemeIdsUseCase() } returns listOf(1L, 2L, 3L)
+        coEvery { shareMemeUseCase(any()) } returns Result.success(Intent())
     }
 
     private fun createViewModel(): MemeDetailViewModel {
@@ -102,6 +107,7 @@ class MemeDetailViewModelTest {
             context = context,
             savedStateHandle = savedStateHandle,
             useCases = useCases,
+            shareMemeUseCase = shareMemeUseCase,
             userActionTracker = mockk(relaxed = true),
         )
     }
@@ -408,7 +414,7 @@ class MemeDetailViewModelTest {
     // region Share Tests
 
     @Test
-    fun `Share navigates to share screen`() =
+    fun `Share emits LaunchShareIntent effect`() =
         runTest {
             viewModel = createViewModel()
             advanceUntilIdle()
@@ -418,24 +424,7 @@ class MemeDetailViewModelTest {
                 advanceUntilIdle()
 
                 val effect = awaitItem()
-                assertThat(effect).isInstanceOf(MemeDetailEffect.NavigateToShare::class.java)
-                assertThat((effect as MemeDetailEffect.NavigateToShare).memeId).isEqualTo(1L)
-            }
-        }
-
-    @Test
-    fun `OpenShareScreen emits NavigateToShare effect`() =
-        runTest {
-            viewModel = createViewModel()
-            advanceUntilIdle()
-
-            viewModel.effects.test {
-                viewModel.onIntent(MemeDetailIntent.OpenShareScreen)
-                advanceUntilIdle()
-
-                val effect = awaitItem()
-                assertThat(effect).isInstanceOf(MemeDetailEffect.NavigateToShare::class.java)
-                assertThat((effect as MemeDetailEffect.NavigateToShare).memeId).isEqualTo(1L)
+                assertThat(effect).isInstanceOf(MemeDetailEffect.LaunchShareIntent::class.java)
             }
         }
 
@@ -748,8 +737,7 @@ class MemeDetailViewModelTest {
                 advanceUntilIdle()
 
                 val effect = awaitItem()
-                assertThat(effect).isInstanceOf(MemeDetailEffect.NavigateToShare::class.java)
-                assertThat((effect as MemeDetailEffect.NavigateToShare).memeId).isEqualTo(1L)
+                assertThat(effect).isInstanceOf(MemeDetailEffect.LaunchShareIntent::class.java)
             }
         }
 
@@ -1027,10 +1015,10 @@ class MemeDetailViewModelTest {
 
     // endregion
 
-    // region Quick Share Regression Tests
+    // region Share Regression Tests
 
     @Test
-    fun `Share with native dialog preference navigates to share screen`() =
+    fun `Share emits LaunchShareIntent`() =
         runTest {
             viewModel = createViewModel()
             advanceUntilIdle()
@@ -1040,7 +1028,7 @@ class MemeDetailViewModelTest {
                 advanceUntilIdle()
 
                 val effect = awaitItem()
-                assertThat(effect).isInstanceOf(MemeDetailEffect.NavigateToShare::class.java)
+                assertThat(effect).isInstanceOf(MemeDetailEffect.LaunchShareIntent::class.java)
             }
         }
 
