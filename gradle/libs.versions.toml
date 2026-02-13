@@ -2,7 +2,7 @@
 # Core
 agp = "8.13.2"
 kotlin = "2.3.0"
-ksp = "2.3.0"
+ksp = "2.3.5"
 
 # Compose
 compose-bom = "2025.12.00"
@@ -10,7 +10,7 @@ compose-material3 = "1.5.0-alpha13"
 
 # AndroidX
 core-ktx = "1.17.0"
-activity-compose = "1.12.2"
+activity-compose = "1.12.4"
 lifecycle = "2.10.0"
 navigation = "2.9.6"
 room = "2.8.4"
@@ -22,7 +22,7 @@ hilt = "2.58"
 hilt-navigation-compose = "1.3.0"
 
 # Coroutines
-coroutines = "1.10.1"
+coroutines = "1.10.2"
 
 # Image Loading (Coil 3)
 coil = "3.3.0"
@@ -45,21 +45,21 @@ djl = "0.36.0"
 
 # WorkManager
 workmanager = "2.10.0"
-hilt-work = "1.2.0"
+hilt-work = "1.3.0"
 
 # ExifInterface
-exifinterface = "1.3.7"
+exifinterface = "1.4.2"
 
 # Serialization
-kotlinx-serialization = "1.8.0"
+kotlinx-serialization = "1.10.0"
 
 # Testing
 junit = "4.13.2"
 androidx-test-ext = "1.2.1"
 espresso = "3.6.1"
-mockk = "1.14.7"
+mockk = "1.14.9"
 turbine = "1.2.1"
-robolectric = "4.16"
+robolectric = "4.16.1"
 truth = "1.4.5"
 androidx-test-core = "1.6.1"
 androidx-test-runner = "1.6.2"
@@ -82,7 +82,7 @@ accessibility-test-framework = "4.1.1"
 appcompat = "1.7.0"
 
 # Code Quality Tools
-detekt = "1.23.7"
+detekt = "1.23.8"
 ktlint = "1.5.0"
 
 [libraries]
@@ -240,4 +240,4 @@ hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 room = { id = "androidx.room", version.ref = "room" }
 baselineprofile = { id = "androidx.baselineprofile", version = "1.3.4" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
-ktlint = { id = "org.jlleitschuh.gradle.ktlint", version = "12.1.2" }
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version = "14.0.1" }
