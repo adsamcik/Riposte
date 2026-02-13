@@ -1,6 +1,6 @@
 package com.adsamcik.riposte.core.database.di
 
-import com.adsamcik.riposte.core.database.repository.ShareTargetRepository
+import com.adsamcik.riposte.core.common.repository.ShareTargetRepository
 import com.adsamcik.riposte.core.database.repository.ShareTargetRepositoryImpl
 import dagger.Binds
 import dagger.Module

@@ -9,6 +9,7 @@ import com.adsamcik.riposte.core.model.DarkMode
 import com.adsamcik.riposte.core.model.EmojiTag
 import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.core.model.UserDensityPreference
+import com.adsamcik.riposte.core.testing.MainDispatcherRule
 import com.adsamcik.riposte.feature.gallery.domain.usecase.DeleteMemesUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GalleryViewModelUseCases
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GetAllEmojisWithCountsUseCase
@@ -25,22 +26,20 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.After
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class GalleryViewModelTest {
-    private val testDispatcher = StandardTestDispatcher()
+    @get:Rule
+    val mainDispatcherRule = MainDispatcherRule(StandardTestDispatcher())
 
     private lateinit var getMemesUseCase: GetMemesUseCase
     private lateinit var getPagedMemesUseCase: GetPagedMemesUseCase
@@ -52,7 +51,7 @@ class GalleryViewModelTest {
     private lateinit var getAllMemeIdsUseCase: GetAllMemeIdsUseCase
     private lateinit var getAllEmojisWithCountsUseCase: GetAllEmojisWithCountsUseCase
     private lateinit var getSuggestionsUseCase: GetSuggestionsUseCase
-    private lateinit var shareTargetRepository: com.adsamcik.riposte.core.database.repository.ShareTargetRepository
+    private lateinit var shareTargetRepository: com.adsamcik.riposte.core.common.repository.ShareTargetRepository
     private lateinit var galleryRepository: com.adsamcik.riposte.feature.gallery.domain.repository.GalleryRepository
     private lateinit var preferencesDataStore: PreferencesDataStore
     private lateinit var searchDelegate: SearchDelegate
@@ -80,8 +79,6 @@ class GalleryViewModelTest {
 
     @Before
     fun setup() {
-        Dispatchers.setMain(testDispatcher)
-
         context = mockk(relaxed = true)
         every { context.getString(any(), any()) } returns "1 meme deleted"
         every { context.getString(any()) } returns "Error"
@@ -116,11 +113,6 @@ class GalleryViewModelTest {
         every { getAllEmojisWithCountsUseCase() } returns flowOf(emptyList())
     }
 
-    @After
-    fun tearDown() {
-        Dispatchers.resetMain()
-    }
-
     private fun createViewModel(): GalleryViewModel {
         val useCases =
             GalleryViewModelUseCases(
@@ -140,7 +132,7 @@ class GalleryViewModelTest {
             getSuggestionsUseCase = getSuggestionsUseCase,
             shareTargetRepository = shareTargetRepository,
             galleryRepository = galleryRepository,
-            defaultDispatcher = testDispatcher,
+            defaultDispatcher = mainDispatcherRule.testDispatcher,
             preferencesDataStore = preferencesDataStore,
             searchDelegate = searchDelegate,
         )

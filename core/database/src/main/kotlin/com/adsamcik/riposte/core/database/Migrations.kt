@@ -239,7 +239,43 @@ val MIGRATION_4_5 =
     }
 
 /**
+ * Migration from version 5 to 6:
+ * - Recreates import_request_items table with a foreign key constraint
+ *   referencing import_requests(id) ON DELETE CASCADE
+ */
+@Suppress("MagicNumber")
+val MIGRATION_5_6 =
+    object : Migration(5, 6) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """CREATE TABLE IF NOT EXISTS import_request_items_new (
+                id TEXT NOT NULL PRIMARY KEY,
+                requestId TEXT NOT NULL,
+                stagedFilePath TEXT NOT NULL,
+                originalFileName TEXT NOT NULL,
+                emojis TEXT NOT NULL,
+                title TEXT,
+                description TEXT,
+                extractedText TEXT,
+                status TEXT NOT NULL DEFAULT 'pending',
+                errorMessage TEXT,
+                metadataJson TEXT,
+                FOREIGN KEY(requestId) REFERENCES import_requests(id) ON DELETE CASCADE
+            )""",
+            )
+            db.execSQL(
+                "INSERT INTO import_request_items_new SELECT * FROM import_request_items",
+            )
+            db.execSQL("DROP TABLE import_request_items")
+            db.execSQL("ALTER TABLE import_request_items_new RENAME TO import_request_items")
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS index_import_request_items_requestId ON import_request_items (requestId)",
+            )
+        }
+    }
+
+/**
  * All migrations in order. Used by [DatabaseModule] and migration tests
  * to ensure the full chain is registered and validated.
  */
-val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)

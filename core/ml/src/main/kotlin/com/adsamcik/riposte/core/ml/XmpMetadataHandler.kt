@@ -22,7 +22,7 @@ class XmpMetadataHandler
         @param:ApplicationContext private val context: Context,
     ) {
         companion object {
-            private const val XMP_NAMESPACE = "http://riposte.app/1.1/"
+            private const val XMP_NAMESPACE = "http://riposte.app/1.3/"
             private const val XMP_PREFIX = "mmm"
             private const val DC_NAMESPACE = "http://purl.org/dc/elements/1.1/"
             private const val SIDECAR_EXTENSION = ".xmp"
@@ -77,7 +77,7 @@ class XmpMetadataHandler
                 return null
             }
 
-            val schemaVersion = extractValue(xmpData, "$XMP_PREFIX:schemaVersion") ?: "1.0"
+            val schemaVersion = extractValue(xmpData, "$XMP_PREFIX:schemaVersion") ?: "1.3"
             val emojis = extractEmojis(xmpData)
 
             if (emojis.isEmpty()) {

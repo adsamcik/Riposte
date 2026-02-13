@@ -1,6 +1,7 @@
 package com.adsamcik.riposte.core.database.repository
 
 import com.adsamcik.riposte.core.common.di.IoDispatcher
+import com.adsamcik.riposte.core.common.repository.ShareTargetRepository
 import com.adsamcik.riposte.core.database.dao.ShareTargetDao
 import com.adsamcik.riposte.core.database.entity.ShareTargetEntity
 import com.adsamcik.riposte.core.model.ShareTarget
