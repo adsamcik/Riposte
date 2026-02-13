@@ -24,8 +24,10 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -77,7 +79,9 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -116,7 +120,6 @@ fun GalleryScreen(
     onNavigateToMeme: (Long) -> Unit,
     onNavigateToImport: () -> Unit,
     onNavigateToSettings: () -> Unit,
-    onNavigateToShare: (Long) -> Unit = {},
     initialEmojiFilter: String? = null,
     onEmojiFilterConsumed: () -> Unit = {},
     viewModel: GalleryViewModel = hiltViewModel(),
@@ -142,7 +145,6 @@ fun GalleryScreen(
                     showDeleteDialog = true
                 }
                 is GalleryEffect.ShowError -> snackbarHostState.showSnackbar(effect.message)
-                is GalleryEffect.NavigateToShare -> onNavigateToShare(effect.memeId)
                 is GalleryEffect.LaunchShareIntent -> {
                     try {
                         context.startActivity(effect.intent)
@@ -268,8 +270,16 @@ private fun GalleryScreenContent(
         )
     }
 
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val density = LocalDensity.current
+    val imeBottom = WindowInsets.ime.getBottom(density)
+
     BackHandler(enabled = uiState.screenMode == ScreenMode.Searching) {
-        onIntent(GalleryIntent.ClearSearch)
+        if (imeBottom > 0) {
+            keyboardController?.hide()
+        } else {
+            onIntent(GalleryIntent.ClearSearch)
+        }
     }
 
     Scaffold(
