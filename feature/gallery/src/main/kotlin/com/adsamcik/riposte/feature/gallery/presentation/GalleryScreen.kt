@@ -784,10 +784,15 @@ private fun GalleryContent(
             )
         }
 
-        // Import progress/status banner
-        ImportStatusBanner(
+        // Import progress banner
+        ImportProgressBanner(
             status = uiState.importStatus,
-            onDismiss = { onIntent(GalleryIntent.DismissImportStatus) },
+        )
+
+        // Notification banner for one-shot events
+        NotificationBanner(
+            notification = uiState.notification,
+            onDismiss = { onIntent(GalleryIntent.DismissNotification) },
         )
 
         Box {
@@ -1089,33 +1094,95 @@ private fun RecentSearchItem(
 }
 
 /**
- * Banner showing background import status: progress, completion, or failure.
- * Slides in/out with animation and can be dismissed for completed/failed states.
+ * Banner showing active import progress with an animated progress indicator.
  */
 @Composable
-private fun ImportStatusBanner(
+private fun ImportProgressBanner(
     status: ImportWorkStatus,
+    modifier: Modifier = Modifier,
+) {
+    AnimatedVisibility(
+        visible = status is ImportWorkStatus.InProgress,
+        enter = slideInVertically() + fadeIn(),
+        exit = slideOutVertically() + fadeOut(),
+    ) {
+        val inProgress = status as? ImportWorkStatus.InProgress
+        Row(
+            modifier =
+                modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.primaryContainer)
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(20.dp),
+                strokeWidth = 2.dp,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+            )
+            Text(
+                text =
+                    if (inProgress != null) {
+                        stringResource(R.string.gallery_import_in_progress, inProgress.completed, inProgress.total)
+                    } else {
+                        ""
+                    },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+/**
+ * Banner for one-shot notifications (import complete, indexing complete, etc.).
+ * Slides in from the top with animation and can be dismissed by the user.
+ */
+@Composable
+private fun NotificationBanner(
+    notification: GalleryNotification?,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     AnimatedVisibility(
-        visible = status !is ImportWorkStatus.Idle,
+        visible = notification != null,
         enter = slideInVertically() + fadeIn(),
         exit = slideOutVertically() + fadeOut(),
     ) {
         val containerColor =
-            when (status) {
-                is ImportWorkStatus.InProgress -> MaterialTheme.colorScheme.primaryContainer
-                is ImportWorkStatus.Completed -> MaterialTheme.colorScheme.secondaryContainer
-                is ImportWorkStatus.Failed -> MaterialTheme.colorScheme.errorContainer
-                is ImportWorkStatus.Idle -> MaterialTheme.colorScheme.surface
+            when (notification) {
+                is GalleryNotification.ImportComplete -> MaterialTheme.colorScheme.secondaryContainer
+                is GalleryNotification.ImportFailed -> MaterialTheme.colorScheme.errorContainer
+                is GalleryNotification.IndexingComplete -> MaterialTheme.colorScheme.tertiaryContainer
+                null -> MaterialTheme.colorScheme.surface
             }
         val contentColor =
-            when (status) {
-                is ImportWorkStatus.InProgress -> MaterialTheme.colorScheme.onPrimaryContainer
-                is ImportWorkStatus.Completed -> MaterialTheme.colorScheme.onSecondaryContainer
-                is ImportWorkStatus.Failed -> MaterialTheme.colorScheme.onErrorContainer
-                is ImportWorkStatus.Idle -> MaterialTheme.colorScheme.onSurface
+            when (notification) {
+                is GalleryNotification.ImportComplete -> MaterialTheme.colorScheme.onSecondaryContainer
+                is GalleryNotification.ImportFailed -> MaterialTheme.colorScheme.onErrorContainer
+                is GalleryNotification.IndexingComplete -> MaterialTheme.colorScheme.onTertiaryContainer
+                null -> MaterialTheme.colorScheme.onSurface
+            }
+
+        val text =
+            when (notification) {
+                is GalleryNotification.ImportComplete ->
+                    if (notification.failed > 0) {
+                        stringResource(
+                            R.string.gallery_import_completed_with_errors,
+                            notification.count,
+                            notification.failed,
+                        )
+                    } else {
+                        stringResource(R.string.gallery_import_completed, notification.count)
+                    }
+                is GalleryNotification.ImportFailed ->
+                    stringResource(R.string.gallery_import_failed)
+                is GalleryNotification.IndexingComplete ->
+                    stringResource(R.string.gallery_indexing_complete, notification.count)
+                null -> ""
             }
 
         Row(
@@ -1127,63 +1194,19 @@ private fun ImportStatusBanner(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            when (status) {
-                is ImportWorkStatus.InProgress -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        strokeWidth = 2.dp,
-                        color = contentColor,
-                    )
-                    Text(
-                        text = stringResource(R.string.gallery_import_in_progress, status.completed, status.total),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = contentColor,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-                is ImportWorkStatus.Completed -> {
-                    val text =
-                        if (status.failed > 0) {
-                            stringResource(
-                                R.string.gallery_import_completed_with_errors,
-                                status.completed,
-                                status.failed,
-                            )
-                        } else {
-                            stringResource(R.string.gallery_import_completed, status.completed)
-                        }
-                    Text(
-                        text = text,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = contentColor,
-                        modifier = Modifier.weight(1f),
-                    )
-                    IconButton(onClick = onDismiss) {
-                        Icon(
-                            Icons.Default.Close,
-                            contentDescription = stringResource(R.string.gallery_cd_dismiss_import_status),
-                            tint = contentColor,
-                            modifier = Modifier.size(16.dp),
-                        )
-                    }
-                }
-                is ImportWorkStatus.Failed -> {
-                    Text(
-                        text = stringResource(R.string.gallery_import_failed),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = contentColor,
-                        modifier = Modifier.weight(1f),
-                    )
-                    IconButton(onClick = onDismiss) {
-                        Icon(
-                            Icons.Default.Close,
-                            contentDescription = stringResource(R.string.gallery_cd_dismiss_import_status),
-                            tint = contentColor,
-                            modifier = Modifier.size(16.dp),
-                        )
-                    }
-                }
-                is ImportWorkStatus.Idle -> { /* Nothing to show */ }
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodySmall,
+                color = contentColor,
+                modifier = Modifier.weight(1f),
+            )
+            IconButton(onClick = onDismiss) {
+                Icon(
+                    Icons.Default.Close,
+                    contentDescription = stringResource(R.string.gallery_cd_dismiss_notification),
+                    tint = contentColor,
+                    modifier = Modifier.size(16.dp),
+                )
             }
         }
     }

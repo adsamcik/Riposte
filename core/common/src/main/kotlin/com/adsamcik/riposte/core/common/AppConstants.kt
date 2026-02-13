@@ -25,4 +25,11 @@ object AppConstants {
      * without depending on the import feature.
      */
     const val IMPORT_WORK_NAME = "meme_import_work"
+
+    /**
+     * Unique work name for the embedding generation WorkManager worker.
+     * Shared across modules so Gallery can observe indexing status
+     * without importing the worker class directly.
+     */
+    const val EMBEDDING_WORK_NAME = "embedding_generation_work"
 }

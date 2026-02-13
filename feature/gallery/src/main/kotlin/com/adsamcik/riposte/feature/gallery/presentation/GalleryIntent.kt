@@ -122,7 +122,7 @@ sealed interface GalleryIntent {
     data object ClearRecentSearches : GalleryIntent
 
     /**
-     * Dismiss the import completion/failure banner.
+     * Dismiss the active notification banner.
      */
-    data object DismissImportStatus : GalleryIntent
+    data object DismissNotification : GalleryIntent
 }

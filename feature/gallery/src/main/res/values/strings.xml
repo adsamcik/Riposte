@@ -126,8 +126,11 @@
 
     <!-- Import Status Banner -->
     <string name="gallery_import_in_progress">Importing memes… %1$d of %2$d</string>
-    <string name="gallery_import_completed">Welcome to the collection! %1$d memes added 🎉</string>
-    <string name="gallery_import_completed_with_errors">Imported %1$d memes, %2$d failed</string>
+    <string name="gallery_import_completed">%1$d memes imported ✓</string>
+    <string name="gallery_import_completed_with_errors">%1$d memes imported, %2$d failed</string>
     <string name="gallery_import_failed">Import hit a snag 😅</string>
-    <string name="gallery_cd_dismiss_import_status">Dismiss import status</string>
+
+    <!-- Notification Banner -->
+    <string name="gallery_indexing_complete">Search index updated — %1$d memes ready 🔍</string>
+    <string name="gallery_cd_dismiss_notification">Dismiss notification</string>
 </resources>

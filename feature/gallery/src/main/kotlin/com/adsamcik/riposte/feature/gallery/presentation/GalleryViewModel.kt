@@ -93,6 +93,7 @@ class GalleryViewModel
             searchDelegate.init(viewModelScope)
             observeSearchState()
             observeImportWork()
+            observeEmbeddingWork()
             observeUniqueEmojis()
         }
 
@@ -116,7 +117,7 @@ class GalleryViewModel
                 is GalleryIntent.QuickShare -> quickShare(intent.memeId)
                 is GalleryIntent.ToggleEmojiFilter -> toggleEmojiFilter(intent.emoji)
                 is GalleryIntent.ClearEmojiFilters -> clearEmojiFilters()
-                is GalleryIntent.DismissImportStatus -> dismissImportStatus()
+                is GalleryIntent.DismissNotification -> dismissNotification()
                 // Search intents — delegate
                 is GalleryIntent.UpdateSearchQuery,
                 is GalleryIntent.ClearSearch,
@@ -161,31 +162,70 @@ class GalleryViewModel
                         .getWorkInfosForUniqueWorkFlow(com.adsamcik.riposte.core.common.AppConstants.IMPORT_WORK_NAME)
                         .collectLatest { workInfos ->
                             val workInfo = workInfos.firstOrNull()
-                            val status =
-                                when (workInfo?.state) {
-                                    androidx.work.WorkInfo.State.RUNNING -> {
-                                        val completed = workInfo.progress.getInt("completed", 0)
-                                        val total = workInfo.progress.getInt("total", 0)
-                                        if (total > 0) {
-                                            ImportWorkStatus.InProgress(completed, total)
-                                        } else {
-                                            ImportWorkStatus.InProgress(0, 0)
-                                        }
+                            when (workInfo?.state) {
+                                androidx.work.WorkInfo.State.RUNNING -> {
+                                    val completed = workInfo.progress.getInt("completed", 0)
+                                    val total = workInfo.progress.getInt("total", 0)
+                                    _uiState.update {
+                                        it.copy(
+                                            importStatus = if (total > 0) {
+                                                ImportWorkStatus.InProgress(completed, total)
+                                            } else {
+                                                ImportWorkStatus.InProgress(0, 0)
+                                            },
+                                        )
                                     }
-                                    androidx.work.WorkInfo.State.SUCCEEDED -> {
-                                        val completed = workInfo.outputData.getInt("completed", 0)
-                                        val failed = workInfo.outputData.getInt("failed", 0)
-                                        ImportWorkStatus.Completed(completed, failed)
-                                    }
-                                    androidx.work.WorkInfo.State.FAILED -> {
-                                        ImportWorkStatus.Failed()
-                                    }
-                                    else -> ImportWorkStatus.Idle
                                 }
-                            _uiState.update { it.copy(importStatus = status) }
-                            if (status is ImportWorkStatus.Completed) {
-                                delay(5000L)
-                                dismissImportStatus()
+                                androidx.work.WorkInfo.State.SUCCEEDED -> {
+                                    val completed = workInfo.outputData.getInt("completed", 0)
+                                    val failed = workInfo.outputData.getInt("failed", 0)
+                                    _uiState.update {
+                                        it.copy(
+                                            importStatus = ImportWorkStatus.Idle,
+                                            notification = GalleryNotification.ImportComplete(completed, failed),
+                                        )
+                                    }
+                                    delay(NOTIFICATION_AUTO_DISMISS_MS)
+                                    dismissNotification()
+                                }
+                                androidx.work.WorkInfo.State.FAILED -> {
+                                    _uiState.update {
+                                        it.copy(
+                                            importStatus = ImportWorkStatus.Idle,
+                                            notification = GalleryNotification.ImportFailed(),
+                                        )
+                                    }
+                                    delay(NOTIFICATION_AUTO_DISMISS_MS)
+                                    dismissNotification()
+                                }
+                                else -> {
+                                    _uiState.update { it.copy(importStatus = ImportWorkStatus.Idle) }
+                                }
+                            }
+                        }
+                } catch (_: IllegalStateException) {
+                    // WorkManager not initialized — safe to ignore in tests
+                }
+            }
+        }
+
+        /** Observe WorkManager for embedding generation work completion. */
+        private fun observeEmbeddingWork() {
+            viewModelScope.launch {
+                try {
+                    androidx.work.WorkManager.getInstance(context)
+                        .getWorkInfosForUniqueWorkFlow(com.adsamcik.riposte.core.common.AppConstants.EMBEDDING_WORK_NAME)
+                        .collectLatest { workInfos ->
+                            val workInfo = workInfos.firstOrNull()
+                            if (workInfo?.state == androidx.work.WorkInfo.State.SUCCEEDED) {
+                                val processedCount = workInfo.outputData.getInt("processed_count", 0)
+                                if (processedCount > 0) {
+                                    _uiState.update {
+                                        it.copy(notification = GalleryNotification.IndexingComplete(processedCount))
+                                    }
+                                    delay(NOTIFICATION_AUTO_DISMISS_MS)
+                                    dismissNotification()
+                                }
                             }
                         }
                 } catch (_: IllegalStateException) {
@@ -479,8 +519,8 @@ class GalleryViewModel
             }
         }
 
-        private fun dismissImportStatus() {
-            _uiState.update { it.copy(importStatus = ImportWorkStatus.Idle) }
+        private fun dismissNotification() {
+            _uiState.update { it.copy(notification = null) }
         }
 
         private fun toggleEmojiFilter(emoji: String) {
@@ -556,6 +596,7 @@ class GalleryViewModel
 
         companion object {
             private const val UNCATEGORIZED_GROUP = "❓"
+            private const val NOTIFICATION_AUTO_DISMISS_MS = 5000L
 
             /** Lightweight engagement score matching TriSignalScorer formula. */
             private fun memeEngagementScore(meme: Meme): Double =

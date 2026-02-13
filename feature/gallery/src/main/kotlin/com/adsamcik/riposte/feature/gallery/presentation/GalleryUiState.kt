@@ -98,6 +98,10 @@ data class GalleryUiState(
      * depending on the import feature module.
      */
     val importStatus: ImportWorkStatus = ImportWorkStatus.Idle,
+    /**
+     * Active one-shot notification to display in the notification banner.
+     */
+    val notification: GalleryNotification? = null,
 ) {
     /**
      * Whether any memes are selected.
@@ -129,13 +133,23 @@ sealed interface GalleryFilter {
 
 /**
  * Status of background import work observed via WorkManager.
+ * Only tracks active import progress; completion/failure are promoted
+ * to [GalleryNotification] for the unified notification banner.
  */
 sealed interface ImportWorkStatus {
     data object Idle : ImportWorkStatus
 
     data class InProgress(val completed: Int, val total: Int) : ImportWorkStatus
+}
 
-    data class Completed(val completed: Int, val failed: Int) : ImportWorkStatus
+/**
+ * One-shot notification displayed in the banner below the search bar.
+ * Dismissed automatically after a timeout or by user interaction.
+ */
+sealed interface GalleryNotification {
+    data class ImportComplete(val count: Int, val failed: Int = 0) : GalleryNotification
 
-    data class Failed(val message: String? = null) : ImportWorkStatus
+    data class ImportFailed(val message: String? = null) : GalleryNotification
+
+    data class IndexingComplete(val count: Int) : GalleryNotification
 }
