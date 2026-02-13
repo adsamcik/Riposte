@@ -37,3 +37,7 @@ include(":feature:gallery")
 include(":feature:import")
 include(":feature:share")
 include(":feature:settings")
+
+// AI Pack modules
+include(":aipacks:generic_embedding")
+include(":aipacks:soc_optimized")
