@@ -136,7 +136,7 @@ class PreferencesDataStoreTest {
             preferencesDataStore.sharingPreferences.test {
                 val prefs = awaitItem()
 
-                assertThat(prefs.defaultFormat).isEqualTo(ImageFormat.WEBP)
+                assertThat(prefs.defaultFormat).isEqualTo(ImageFormat.JPEG)
                 assertThat(prefs.defaultQuality).isEqualTo(85)
                 assertThat(prefs.maxWidth).isEqualTo(1080)
                 assertThat(prefs.maxHeight).isEqualTo(1080)

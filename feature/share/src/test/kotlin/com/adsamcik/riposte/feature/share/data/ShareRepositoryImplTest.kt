@@ -120,7 +120,7 @@ class ShareRepositoryImplTest {
 
             val result = repository.getDefaultShareConfig()
 
-            assertThat(result.format).isEqualTo(ImageFormat.WEBP)
+            assertThat(result.format).isEqualTo(ImageFormat.JPEG)
             assertThat(result.quality).isEqualTo(85)
         }
 

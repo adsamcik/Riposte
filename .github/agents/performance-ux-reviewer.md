@@ -99,7 +99,6 @@ You are an expert Android performance and UX reviewer for the Riposte codebase. 
 - `core/ui/component/LoadingStates.kt` — Shimmer/skeleton
 - `core/ui/component/EmojiFilterRail.kt` — Filter navigation
 - `feature/gallery/presentation/GalleryScreen.kt` — Main grid + paging
-- `feature/share/presentation/ShareScreen.kt` — Share flow
 - `core/ml/EmbeddingManager.kt` — Model lifecycle
 - `compose_stability_config.conf` — Recomposition control
 - `docs/VISUAL_DESIGN_SPEC.md` — Design specification

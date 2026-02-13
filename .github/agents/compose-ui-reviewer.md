@@ -59,7 +59,6 @@ You are an expert Jetpack Compose reviewer for the Riposte codebase. Your scope 
 - `feature/gallery/presentation/GalleryScreen.kt` — Main screen with Paging3
 - `feature/gallery/presentation/MemeDetailScreen.kt` — Detail view
 - `feature/import/presentation/ImportScreen.kt` — Import UI
-- `feature/share/presentation/ShareScreen.kt` — Share options UI
 - `feature/settings/presentation/SettingsScreen.kt` — Settings UI
 - `compose_stability_config.conf` — Stability configuration
 

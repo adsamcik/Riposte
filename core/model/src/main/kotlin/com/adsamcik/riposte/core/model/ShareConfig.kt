@@ -10,7 +10,7 @@ data class ShareConfig(
     /**
      * Target image format for sharing.
      */
-    val format: ImageFormat = ImageFormat.WEBP,
+    val format: ImageFormat = ImageFormat.JPEG,
     /**
      * Compression quality (0-100). Only applies to lossy formats.
      */

@@ -235,10 +235,9 @@ core:testing
 
 **Key Files**:
 
-- `presentation/ShareScreen.kt` - Share options UI
-- `presentation/ShareViewModel.kt` - Sharing state
-- `domain/usecase/ShareUseCases.kt` - Image processing and sharing
+- `data/ShareRepositoryImpl.kt` - Image processing, intent creation
 - `data/ImageProcessor.kt` - Format conversion, resizing
+- `domain/usecase/ShareMemeUseCase.kt` (in core/common) - Orchestrates share flow
 
 ---
 

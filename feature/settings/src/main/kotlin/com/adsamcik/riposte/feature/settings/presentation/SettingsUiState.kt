@@ -46,7 +46,7 @@ data class SettingsUiState(
     // Display
     val gridDensityPreference: UserDensityPreference = UserDensityPreference.AUTO,
     // Sharing defaults
-    val defaultFormat: ImageFormat = ImageFormat.WEBP,
+    val defaultFormat: ImageFormat = ImageFormat.JPEG,
     val defaultQuality: Int = 85,
     val defaultMaxDimension: Int = 1080,
     val stripMetadata: Boolean = true,

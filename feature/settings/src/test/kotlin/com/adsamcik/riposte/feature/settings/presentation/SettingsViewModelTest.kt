@@ -17,6 +17,7 @@ import com.adsamcik.riposte.feature.settings.domain.usecase.GetAppPreferencesUse
 import com.adsamcik.riposte.feature.settings.domain.usecase.GetSharingPreferencesUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.ImportPreferencesUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.ObserveEmbeddingStatisticsUseCase
+import com.adsamcik.riposte.feature.settings.domain.usecase.ObserveLibraryStatsUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetDarkModeUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetDefaultFormatUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetDefaultMaxDimensionUseCase
@@ -71,6 +72,7 @@ class SettingsViewModelTest {
     private lateinit var exportPreferencesUseCase: ExportPreferencesUseCase
     private lateinit var importPreferencesUseCase: ImportPreferencesUseCase
     private lateinit var observeEmbeddingStatisticsUseCase: ObserveEmbeddingStatisticsUseCase
+    private lateinit var observeLibraryStatsUseCase: ObserveLibraryStatsUseCase
     private lateinit var crashLogManager: CrashLogManager
 
     private val appPreferencesFlow = MutableStateFlow(createDefaultAppPreferences())
@@ -111,11 +113,13 @@ class SettingsViewModelTest {
         exportPreferencesUseCase = mockk(relaxed = true)
         importPreferencesUseCase = mockk(relaxed = true)
         observeEmbeddingStatisticsUseCase = mockk(relaxed = true)
+        observeLibraryStatsUseCase = mockk(relaxed = true)
         crashLogManager = mockk(relaxed = true)
 
         every { getAppPreferencesUseCase() } returns appPreferencesFlow
         every { getSharingPreferencesUseCase() } returns sharingPreferencesFlow
         every { observeEmbeddingStatisticsUseCase() } returns kotlinx.coroutines.flow.emptyFlow()
+        every { observeLibraryStatsUseCase() } returns kotlinx.coroutines.flow.emptyFlow()
     }
 
     @After
@@ -140,6 +144,7 @@ class SettingsViewModelTest {
             exportPreferencesUseCase = exportPreferencesUseCase,
             importPreferencesUseCase = importPreferencesUseCase,
             observeEmbeddingStatisticsUseCase = observeEmbeddingStatisticsUseCase,
+            observeLibraryStatsUseCase = observeLibraryStatsUseCase,
             crashLogManager = crashLogManager,
             ioDispatcher = mainDispatcherRule.testDispatcher,
         )
@@ -158,7 +163,7 @@ class SettingsViewModelTest {
     )
 
     private fun createDefaultSharingPreferences(
-        defaultFormat: ImageFormat = ImageFormat.WEBP,
+        defaultFormat: ImageFormat = ImageFormat.JPEG,
         defaultQuality: Int = 85,
         maxWidth: Int = 1080,
         maxHeight: Int = 1080,
@@ -415,12 +420,12 @@ class SettingsViewModelTest {
 
     // endregion
 
-    // region Regression: Default format is WEBP (p3-38)
+    // region Regression: Default format is JPEG
 
     @Test
-    fun `UiState default format is WEBP`() {
+    fun `UiState default format is JPEG`() {
         val state = SettingsUiState()
-        assertThat(state.defaultFormat).isEqualTo(ImageFormat.WEBP)
+        assertThat(state.defaultFormat).isEqualTo(ImageFormat.JPEG)
     }
 
     // endregion
@@ -878,7 +883,7 @@ class SettingsViewModelTest {
             advanceUntilIdle()
 
             // Verify initial state
-            assertThat(viewModel.uiState.value.defaultFormat).isEqualTo(ImageFormat.WEBP)
+            assertThat(viewModel.uiState.value.defaultFormat).isEqualTo(ImageFormat.JPEG)
 
             // Update use case flow
             sharingPreferencesFlow.value =
@@ -917,7 +922,7 @@ class SettingsViewModelTest {
         // that the state can be constructed without it.
         val state = SettingsUiState()
         // These sharing-related fields exist for preferences but not as a UI section
-        assertThat(state.defaultFormat).isEqualTo(ImageFormat.WEBP)
+        assertThat(state.defaultFormat).isEqualTo(ImageFormat.JPEG)
         assertThat(state.defaultQuality).isEqualTo(85)
         assertThat(state.defaultMaxDimension).isEqualTo(1080)
         // No showSharingSection, no sharingSection — just direct fields.

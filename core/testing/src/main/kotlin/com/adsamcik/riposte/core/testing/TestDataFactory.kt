@@ -245,7 +245,7 @@ object TestDataFactory {
      * @param stripMetadata Whether to strip metadata.
      */
     fun createShareConfig(
-        format: ImageFormat = ImageFormat.WEBP,
+        format: ImageFormat = ImageFormat.JPEG,
         quality: Int = 85,
         maxWidth: Int? = 1080,
         maxHeight: Int? = 1080,
@@ -277,7 +277,7 @@ object TestDataFactory {
      * Creates [SharingPreferences] with sensible defaults.
      */
     fun createSharingPreferences(
-        defaultFormat: ImageFormat = ImageFormat.WEBP,
+        defaultFormat: ImageFormat = ImageFormat.JPEG,
         defaultQuality: Int = 85,
         maxWidth: Int = 1080,
         maxHeight: Int = 1080,

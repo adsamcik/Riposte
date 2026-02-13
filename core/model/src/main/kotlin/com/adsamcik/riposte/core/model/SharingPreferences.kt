@@ -10,7 +10,7 @@ data class SharingPreferences(
     /**
      * Default image format for sharing.
      */
-    val defaultFormat: ImageFormat = ImageFormat.WEBP,
+    val defaultFormat: ImageFormat = ImageFormat.JPEG,
     /**
      * Default compression quality (0-100).
      */

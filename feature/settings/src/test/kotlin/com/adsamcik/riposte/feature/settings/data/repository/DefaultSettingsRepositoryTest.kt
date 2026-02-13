@@ -57,7 +57,7 @@ class DefaultSettingsRepositoryTest {
     )
 
     private fun createDefaultSharingPreferences(
-        defaultFormat: ImageFormat = ImageFormat.WEBP,
+        defaultFormat: ImageFormat = ImageFormat.JPEG,
         defaultQuality: Int = 85,
         maxWidth: Int = 1080,
         maxHeight: Int = 1080,
@@ -97,7 +97,7 @@ class DefaultSettingsRepositoryTest {
         runTest {
             repository.sharingPreferences.test {
                 val initial = awaitItem()
-                assertThat(initial.defaultFormat).isEqualTo(ImageFormat.WEBP)
+                assertThat(initial.defaultFormat).isEqualTo(ImageFormat.JPEG)
                 assertThat(initial.defaultQuality).isEqualTo(85)
 
                 sharingPreferencesFlow.value =
@@ -237,7 +237,7 @@ class DefaultSettingsRepositoryTest {
             assertThat(json).contains("\"sharingPreferences\"")
             assertThat(json).contains("\"appPreferences\"")
             assertThat(json).contains("\"darkMode\":\"SYSTEM\"")
-            assertThat(json).contains("\"defaultFormat\":\"WEBP\"")
+            assertThat(json).contains("\"defaultFormat\":\"JPEG\"")
         }
 
     @Test
