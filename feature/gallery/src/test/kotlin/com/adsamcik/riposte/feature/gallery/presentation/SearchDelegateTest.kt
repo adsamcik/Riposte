@@ -6,13 +6,13 @@ import com.adsamcik.riposte.core.model.MatchType
 import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.core.model.SearchResult
 import com.adsamcik.riposte.core.search.domain.usecase.SearchUseCases
+import com.adsamcik.riposte.core.testing.MainDispatcherRule
 import com.google.common.truth.Truth.assertThat
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
@@ -20,16 +20,15 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.After
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SearchDelegateTest {
-    private val testDispatcher = StandardTestDispatcher()
+    @get:Rule
+    val mainDispatcherRule = MainDispatcherRule(StandardTestDispatcher())
 
     private lateinit var searchUseCases: SearchUseCases
     private lateinit var delegate: SearchDelegate
@@ -57,7 +56,6 @@ class SearchDelegateTest {
 
     @Before
     fun setup() {
-        Dispatchers.setMain(testDispatcher)
         searchUseCases = mockk()
 
         every { searchUseCases.getRecentSearches() } returns flowOf(listOf("cat", "dog", "funny"))
@@ -69,16 +67,11 @@ class SearchDelegateTest {
         delegate = SearchDelegate(searchUseCases)
     }
 
-    @After
-    fun tearDown() {
-        Dispatchers.resetMain()
-    }
-
-    private fun createDelegateScope() = CoroutineScope(testDispatcher + SupervisorJob())
+    private fun createDelegateScope() = CoroutineScope(mainDispatcherRule.testDispatcher + SupervisorJob())
 
     @Test
     fun `initial state has empty query and no results`() =
-        runTest(testDispatcher) {
+        runTest(mainDispatcherRule.testDispatcher) {
             delegate.state.test {
                 val initial = awaitItem()
                 assertThat(initial.query).isEmpty()
@@ -90,7 +83,7 @@ class SearchDelegateTest {
 
     @Test
     fun `init loads recent searches`() =
-        runTest(testDispatcher) {
+        runTest(mainDispatcherRule.testDispatcher) {
             val scope = createDelegateScope()
             delegate.init(scope)
             advanceUntilIdle()
@@ -102,7 +95,7 @@ class SearchDelegateTest {
 
     @Test
     fun `init filters out internal query syntax from recent searches`() =
-        runTest(testDispatcher) {
+        runTest(mainDispatcherRule.testDispatcher) {
             every { searchUseCases.getRecentSearches() } returns
                 flowOf(
                     listOf("cat", "is:favorite", "type:reaction", "funny"),
@@ -120,7 +113,7 @@ class SearchDelegateTest {
 
     @Test
     fun `updateQuery updates query in state`() =
-        runTest(testDispatcher) {
+        runTest(mainDispatcherRule.testDispatcher) {
             val scope = createDelegateScope()
             delegate.init(scope)
             advanceUntilIdle()
@@ -137,7 +130,7 @@ class SearchDelegateTest {
 
     @Test
     fun `search is debounced and performs hybrid search`() =
-        runTest(testDispatcher) {
+        runTest(mainDispatcherRule.testDispatcher) {
             val scope = createDelegateScope()
             delegate.init(scope)
             advanceUntilIdle()
@@ -166,7 +159,7 @@ class SearchDelegateTest {
 
     @Test
     fun `clearSearch resets state`() =
-        runTest(testDispatcher) {
+        runTest(mainDispatcherRule.testDispatcher) {
             val scope = createDelegateScope()
             delegate.init(scope)
             advanceUntilIdle()
@@ -189,7 +182,7 @@ class SearchDelegateTest {
 
     @Test
     fun `selectRecentSearch performs immediate search`() =
-        runTest(testDispatcher) {
+        runTest(mainDispatcherRule.testDispatcher) {
             val scope = createDelegateScope()
             delegate.init(scope)
             advanceUntilIdle()
@@ -210,7 +203,7 @@ class SearchDelegateTest {
 
     @Test
     fun `deleteRecentSearch removes from state`() =
-        runTest(testDispatcher) {
+        runTest(mainDispatcherRule.testDispatcher) {
             val scope = createDelegateScope()
             delegate.init(scope)
             advanceUntilIdle()
@@ -230,7 +223,7 @@ class SearchDelegateTest {
 
     @Test
     fun `clearRecentSearches empties the list`() =
-        runTest(testDispatcher) {
+        runTest(mainDispatcherRule.testDispatcher) {
             val scope = createDelegateScope()
             delegate.init(scope)
             advanceUntilIdle()
@@ -246,7 +239,7 @@ class SearchDelegateTest {
 
     @Test
     fun `refilter applies emoji filters to existing results`() =
-        runTest(testDispatcher) {
+        runTest(mainDispatcherRule.testDispatcher) {
             val scope = createDelegateScope()
             delegate.init(scope)
             advanceUntilIdle()
@@ -268,7 +261,7 @@ class SearchDelegateTest {
 
     @Test
     fun `search error sets errorMessage`() =
-        runTest(testDispatcher) {
+        runTest(mainDispatcherRule.testDispatcher) {
             coEvery { searchUseCases.hybridSearch(any(), any()) } throws RuntimeException("Network error")
 
             val scope = createDelegateScope()
@@ -288,7 +281,7 @@ class SearchDelegateTest {
 
     @Test
     fun `falls back to text search on UnsatisfiedLinkError`() =
-        runTest(testDispatcher) {
+        runTest(mainDispatcherRule.testDispatcher) {
             coEvery { searchUseCases.hybridSearch(any(), any()) } throws UnsatisfiedLinkError("ML not available")
             every { searchUseCases.search("cat") } returns flowOf(testSearchResults.take(1))
 
@@ -308,7 +301,7 @@ class SearchDelegateTest {
 
     @Test
     fun `blank query clears results`() =
-        runTest(testDispatcher) {
+        runTest(mainDispatcherRule.testDispatcher) {
             val scope = createDelegateScope()
             delegate.init(scope)
             advanceUntilIdle()

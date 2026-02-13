@@ -7,6 +7,7 @@ import androidx.work.testing.WorkManagerTestInitHelper
 import app.cash.turbine.test
 import com.adsamcik.riposte.core.datastore.PreferencesDataStore
 import com.adsamcik.riposte.core.model.EmojiTag
+import com.adsamcik.riposte.core.testing.MainDispatcherRule
 import com.adsamcik.riposte.feature.import_feature.data.worker.ImportStagingManager
 import com.adsamcik.riposte.feature.import_feature.domain.repository.ImportRepository
 import com.adsamcik.riposte.feature.import_feature.domain.usecase.CheckDuplicateUseCase
@@ -23,16 +24,13 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.After
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -43,7 +41,8 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE)
 class ImportViewModelTest {
-    private val testDispatcher = StandardTestDispatcher()
+    @get:Rule
+    val mainDispatcherRule = MainDispatcherRule(StandardTestDispatcher())
 
     private lateinit var context: Context
     private lateinit var importImageUseCase: ImportImageUseCase
@@ -61,8 +60,6 @@ class ImportViewModelTest {
 
     @Before
     fun setup() {
-        Dispatchers.setMain(testDispatcher)
-
         // Initialize WorkManager with real Robolectric context
         val realContext = RuntimeEnvironment.getApplication()
         val config =
@@ -116,11 +113,6 @@ class ImportViewModelTest {
                 importStagingManager = importStagingManager,
                 importRepository = importRepository,
             )
-    }
-
-    @After
-    fun tearDown() {
-        Dispatchers.resetMain()
     }
 
     @Test

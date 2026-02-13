@@ -9,6 +9,7 @@ import app.cash.turbine.test
 import com.adsamcik.riposte.core.model.EmojiTag
 import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.core.model.ShareConfig
+import com.adsamcik.riposte.core.testing.MainDispatcherRule
 import com.adsamcik.riposte.feature.share.R
 import com.adsamcik.riposte.feature.share.data.ImageProcessor
 import com.adsamcik.riposte.feature.share.domain.BitmapLoader
@@ -17,15 +18,12 @@ import com.google.common.truth.Truth.assertThat
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.After
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -35,7 +33,8 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33], manifest = Config.NONE)
 class ShareViewModelTest {
-    private val testDispatcher = StandardTestDispatcher()
+    @get:Rule
+    val mainDispatcherRule = MainDispatcherRule(StandardTestDispatcher())
 
     private lateinit var context: Context
     private lateinit var savedStateHandle: SavedStateHandle
@@ -52,8 +51,6 @@ class ShareViewModelTest {
 
     @Before
     fun setup() {
-        Dispatchers.setMain(testDispatcher)
-
         context = mockk(relaxed = true)
         savedStateHandle = SavedStateHandle(mapOf("memeId" to 1L))
         shareUseCases = mockk(relaxed = true)
@@ -80,11 +77,6 @@ class ShareViewModelTest {
 
         // Mock image processor to return the same bitmap (no resize needed)
         every { imageProcessor.resizeBitmap(any(), any(), any()) } returns mockBitmap
-    }
-
-    @After
-    fun tearDown() {
-        Dispatchers.resetMain()
     }
 
     private fun createViewModel(): ShareViewModel {
