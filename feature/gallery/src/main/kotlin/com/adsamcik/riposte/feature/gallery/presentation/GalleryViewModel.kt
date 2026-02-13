@@ -214,7 +214,9 @@ class GalleryViewModel
             viewModelScope.launch {
                 try {
                     androidx.work.WorkManager.getInstance(context)
-                        .getWorkInfosForUniqueWorkFlow(com.adsamcik.riposte.core.common.AppConstants.EMBEDDING_WORK_NAME)
+                        .getWorkInfosForUniqueWorkFlow(
+                            com.adsamcik.riposte.core.common.AppConstants.EMBEDDING_WORK_NAME,
+                        )
                         .collectLatest { workInfos ->
                             val workInfo = workInfos.firstOrNull()
                             if (workInfo?.state == androidx.work.WorkInfo.State.SUCCEEDED) {

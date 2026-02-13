@@ -869,6 +869,68 @@ class GalleryViewModelTest {
 
     // endregion
 
+    // region Notification Tests
+
+    @Test
+    fun `DismissNotification clears active notification`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            // Simulate a notification being set (e.g., from import completion)
+            viewModel.onIntent(GalleryIntent.DismissNotification)
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.notification).isNull()
+        }
+
+    @Test
+    fun `notification defaults to null`() =
+        runTest {
+            viewModel = createViewModel()
+            assertThat(viewModel.uiState.value.notification).isNull()
+        }
+
+    @Test
+    fun `import status defaults to Idle`() =
+        runTest {
+            viewModel = createViewModel()
+            assertThat(viewModel.uiState.value.importStatus).isEqualTo(ImportWorkStatus.Idle)
+        }
+
+    @Test
+    fun `GalleryNotification ImportComplete stores count and failed`() {
+        val notification = GalleryNotification.ImportComplete(count = 10, failed = 3)
+        assertThat(notification.count).isEqualTo(10)
+        assertThat(notification.failed).isEqualTo(3)
+    }
+
+    @Test
+    fun `GalleryNotification ImportComplete defaults failed to zero`() {
+        val notification = GalleryNotification.ImportComplete(count = 5)
+        assertThat(notification.failed).isEqualTo(0)
+    }
+
+    @Test
+    fun `GalleryNotification ImportFailed stores message`() {
+        val notification = GalleryNotification.ImportFailed(message = "Disk full")
+        assertThat(notification.message).isEqualTo("Disk full")
+    }
+
+    @Test
+    fun `GalleryNotification ImportFailed defaults message to null`() {
+        val notification = GalleryNotification.ImportFailed()
+        assertThat(notification.message).isNull()
+    }
+
+    @Test
+    fun `GalleryNotification IndexingComplete stores count`() {
+        val notification = GalleryNotification.IndexingComplete(count = 42)
+        assertThat(notification.count).isEqualTo(42)
+    }
+
+    // endregion
+
     // region Helper Functions
 
     private fun createTestMeme(
