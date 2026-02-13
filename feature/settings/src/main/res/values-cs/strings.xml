@@ -44,8 +44,6 @@
     
     <!-- Sharing Section -->
     <string name="settings_section_sharing">Sdílení</string>
-    <string name="settings_use_native_share_title">Systémový dialog sdílení</string>
-    <string name="settings_use_native_share_subtitle">Použít systémový dialog pro sdílení místo rychlého sdílení v aplikaci</string>
     <string name="settings_share_format_title">Formát obrázku</string>
     <string name="settings_share_format_subtitle">Formát použitý při sdílení memů</string>
     <string name="settings_share_format_jpeg">Standardní (JPEG)</string>

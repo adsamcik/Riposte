@@ -45,12 +45,6 @@ internal fun LazyListScope.sharingSection(
                 onCheckedChange = { onIntent(SettingsIntent.SetStripMetadata(!it)) },
             )
 
-            SwitchSettingItem(
-                title = stringResource(R.string.settings_use_native_share_title),
-                subtitle = stringResource(R.string.settings_use_native_share_subtitle),
-                checked = uiState.useNativeShareDialog,
-                onCheckedChange = { onIntent(SettingsIntent.SetUseNativeShareDialog(it)) },
-            )
         }
     }
 }

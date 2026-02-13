@@ -55,11 +55,6 @@ class DefaultSettingsRepository
             preferencesDataStore.updateAppPreferences(current.copy(holdToShareDelayMs = delayMs))
         }
 
-        override suspend fun setUseNativeShareDialog(enabled: Boolean) {
-            val current = preferencesDataStore.sharingPreferences.first()
-            preferencesDataStore.updateSharingPreferences(current.copy(useNativeShareDialog = enabled))
-        }
-
         override suspend fun setDefaultFormat(format: ImageFormat) {
             val current = preferencesDataStore.sharingPreferences.first()
             preferencesDataStore.updateSharingPreferences(current.copy(defaultFormat = format))

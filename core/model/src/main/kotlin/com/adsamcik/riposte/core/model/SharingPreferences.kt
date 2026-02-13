@@ -39,7 +39,6 @@ data class SharingPreferences(
      * Favorite apps for sharing (package names).
      */
     val favoriteShareTargets: List<String> = emptyList(),
-    val useNativeShareDialog: Boolean = false,
 ) {
     /**
      * Converts preferences to a ShareConfig.

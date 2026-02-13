@@ -48,7 +48,6 @@ class PreferencesDataStore
             val STRIP_METADATA = booleanPreferencesKey("strip_metadata")
             val RECENT_SHARE_TARGETS = stringSetPreferencesKey("recent_share_targets")
             val FAVORITE_SHARE_TARGETS = stringSetPreferencesKey("favorite_share_targets")
-            val USE_NATIVE_SHARE_DIALOG = booleanPreferencesKey("use_native_share_dialog")
 
             // App preferences
             val DARK_MODE = stringPreferencesKey("dark_mode")
@@ -97,7 +96,6 @@ class PreferencesDataStore
                         stripMetadata = prefs[PreferencesKeys.STRIP_METADATA] ?: true,
                         recentShareTargets = prefs[PreferencesKeys.RECENT_SHARE_TARGETS]?.toList() ?: emptyList(),
                         favoriteShareTargets = prefs[PreferencesKeys.FAVORITE_SHARE_TARGETS]?.toList() ?: emptyList(),
-                        useNativeShareDialog = prefs[PreferencesKeys.USE_NATIVE_SHARE_DIALOG] ?: false,
                     )
                 }
 
@@ -113,7 +111,6 @@ class PreferencesDataStore
                 prefs[PreferencesKeys.STRIP_METADATA] = preferences.stripMetadata
                 prefs[PreferencesKeys.RECENT_SHARE_TARGETS] = preferences.recentShareTargets.toSet()
                 prefs[PreferencesKeys.FAVORITE_SHARE_TARGETS] = preferences.favoriteShareTargets.toSet()
-                prefs[PreferencesKeys.USE_NATIVE_SHARE_DIALOG] = preferences.useNativeShareDialog
             }
         }
 

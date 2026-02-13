@@ -27,7 +27,6 @@ import com.adsamcik.riposte.feature.settings.domain.usecase.SetEnableSemanticSea
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetGridDensityUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetSaveSearchHistoryUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetStripMetadataUseCase
-import com.adsamcik.riposte.feature.settings.domain.usecase.SetUseNativeShareDialogUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
@@ -61,7 +60,6 @@ class SettingsViewModel
         private val setDynamicColorsUseCase: SetDynamicColorsUseCase,
         private val setEnableSemanticSearchUseCase: SetEnableSemanticSearchUseCase,
         private val setSaveSearchHistoryUseCase: SetSaveSearchHistoryUseCase,
-        private val setUseNativeShareDialogUseCase: SetUseNativeShareDialogUseCase,
         private val setDefaultFormatUseCase: SetDefaultFormatUseCase,
         private val setDefaultQualityUseCase: SetDefaultQualityUseCase,
         private val setDefaultMaxDimensionUseCase: SetDefaultMaxDimensionUseCase,
@@ -122,7 +120,7 @@ class SettingsViewModel
                                         modelVersion = modelInfo.version.substringAfter(":"),
                                         dimension = modelInfo.dimension,
                                         indexedCount = stats.validEmbeddingCount,
-                                        totalCount = stats.validEmbeddingCount + stats.pendingEmbeddingCount,
+                                        totalCount = stats.validEmbeddingCount + stats.pendingEmbeddingCount + stats.regenerationNeededCount,
                                         pendingCount = stats.pendingEmbeddingCount,
                                         regenerationCount = stats.regenerationNeededCount,
                                         modelError = stats.modelError,
@@ -143,7 +141,6 @@ class SettingsViewModel
                         darkMode = appPrefs.darkMode,
                         dynamicColorsEnabled = appPrefs.dynamicColors,
                         gridDensityPreference = appPrefs.userDensityPreference,
-                        useNativeShareDialog = sharingPrefs.useNativeShareDialog,
                         defaultFormat = sharingPrefs.defaultFormat,
                         defaultQuality = sharingPrefs.defaultQuality,
                         defaultMaxDimension = sharingPrefs.maxWidth,
@@ -180,7 +177,6 @@ class SettingsViewModel
                 is SettingsIntent.SetGridDensity -> setGridDensity(intent.preference)
 
                 // Sharing
-                is SettingsIntent.SetUseNativeShareDialog -> setUseNativeShareDialog(intent.enabled)
                 is SettingsIntent.SetDefaultFormat -> setDefaultFormat(intent.format)
                 is SettingsIntent.SetDefaultQuality -> setDefaultQuality(intent.quality)
                 is SettingsIntent.SetDefaultMaxDimension -> setDefaultMaxDimension(intent.dimension)
@@ -259,12 +255,6 @@ class SettingsViewModel
         private fun setSaveSearchHistory(save: Boolean) {
             viewModelScope.launch {
                 setSaveSearchHistoryUseCase(save)
-            }
-        }
-
-        private fun setUseNativeShareDialog(enabled: Boolean) {
-            viewModelScope.launch {
-                setUseNativeShareDialogUseCase(enabled)
             }
         }
 

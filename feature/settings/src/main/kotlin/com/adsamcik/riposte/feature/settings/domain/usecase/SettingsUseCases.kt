@@ -87,17 +87,6 @@ class SetHoldToShareDelayUseCase
     }
 
 /**
- * Use case for updating use native share dialog setting.
- */
-class SetUseNativeShareDialogUseCase
-    @Inject
-    constructor(
-        private val repository: SettingsRepository,
-    ) {
-        suspend operator fun invoke(enabled: Boolean) = repository.setUseNativeShareDialog(enabled)
-    }
-
-/**
  * Use case for updating default sharing format.
  */
 class SetDefaultFormatUseCase

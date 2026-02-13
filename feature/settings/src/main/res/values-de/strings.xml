@@ -44,8 +44,6 @@
     
     <!-- Sharing Section -->
     <string name="settings_section_sharing">Teilen</string>
-    <string name="settings_use_native_share_title">System-Teilen-Dialog verwenden</string>
-    <string name="settings_use_native_share_subtitle">Androids eingebautes Teilen-Menü statt In-App-Schnellteilen verwenden</string>
     <string name="settings_share_format_title">Bildformat</string>
     <string name="settings_share_format_subtitle">Format beim Teilen von Memes</string>
     <string name="settings_share_format_jpeg">Standard (JPEG)</string>

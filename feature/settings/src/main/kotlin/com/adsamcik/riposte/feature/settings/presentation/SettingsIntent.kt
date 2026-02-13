@@ -16,8 +16,6 @@ sealed interface SettingsIntent {
     data class SetGridDensity(val preference: UserDensityPreference) : SettingsIntent
 
     // Sharing
-    data class SetUseNativeShareDialog(val enabled: Boolean) : SettingsIntent
-
     data class SetDefaultFormat(val format: ImageFormat) : SettingsIntent
 
     data class SetDefaultQuality(val quality: Int) : SettingsIntent

@@ -44,8 +44,6 @@
     <string name="settings_search_history_subtitle">Save recent searches</string>
     
     <!-- Sharing Section -->
-    <string name="settings_use_native_share_title">Use system share dialog</string>
-    <string name="settings_use_native_share_subtitle">Use Android\'s built-in share sheet instead of in-app quick share</string>
     <string name="settings_share_format_title">Image Format</string>
     <string name="settings_share_format_subtitle">Format used when sharing memes</string>
     <string name="settings_share_format_jpeg">Standard (JPEG)</string>

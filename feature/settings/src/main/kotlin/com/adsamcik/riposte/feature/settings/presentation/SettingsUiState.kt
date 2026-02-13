@@ -45,8 +45,6 @@ data class SettingsUiState(
     val dynamicColorsEnabled: Boolean = true,
     // Display
     val gridDensityPreference: UserDensityPreference = UserDensityPreference.AUTO,
-    // Sharing
-    val useNativeShareDialog: Boolean = false,
     // Sharing defaults
     val defaultFormat: ImageFormat = ImageFormat.WEBP,
     val defaultQuality: Int = 85,

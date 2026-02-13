@@ -26,7 +26,6 @@ import com.adsamcik.riposte.feature.settings.domain.usecase.SetEnableSemanticSea
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetGridDensityUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetSaveSearchHistoryUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetStripMetadataUseCase
-import com.adsamcik.riposte.feature.settings.domain.usecase.SetUseNativeShareDialogUseCase
 import com.google.common.truth.Truth.assertThat
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -65,7 +64,6 @@ class SettingsViewModelTest {
     private lateinit var setEnableSemanticSearchUseCase: SetEnableSemanticSearchUseCase
     private lateinit var setSaveSearchHistoryUseCase: SetSaveSearchHistoryUseCase
     private lateinit var setDefaultFormatUseCase: SetDefaultFormatUseCase
-    private lateinit var setUseNativeShareDialogUseCase: SetUseNativeShareDialogUseCase
     private lateinit var setDefaultQualityUseCase: SetDefaultQualityUseCase
     private lateinit var setDefaultMaxDimensionUseCase: SetDefaultMaxDimensionUseCase
     private lateinit var setStripMetadataUseCase: SetStripMetadataUseCase
@@ -106,7 +104,6 @@ class SettingsViewModelTest {
         setEnableSemanticSearchUseCase = mockk(relaxed = true)
         setSaveSearchHistoryUseCase = mockk(relaxed = true)
         setDefaultFormatUseCase = mockk(relaxed = true)
-        setUseNativeShareDialogUseCase = mockk(relaxed = true)
         setDefaultQualityUseCase = mockk(relaxed = true)
         setDefaultMaxDimensionUseCase = mockk(relaxed = true)
         setStripMetadataUseCase = mockk(relaxed = true)
@@ -136,7 +133,6 @@ class SettingsViewModelTest {
             setEnableSemanticSearchUseCase = setEnableSemanticSearchUseCase,
             setSaveSearchHistoryUseCase = setSaveSearchHistoryUseCase,
             setDefaultFormatUseCase = setDefaultFormatUseCase,
-            setUseNativeShareDialogUseCase = setUseNativeShareDialogUseCase,
             setDefaultQualityUseCase = setDefaultQualityUseCase,
             setDefaultMaxDimensionUseCase = setDefaultMaxDimensionUseCase,
             setStripMetadataUseCase = setStripMetadataUseCase,
@@ -409,7 +405,6 @@ class SettingsViewModelTest {
                 is SettingsIntent.DismissImportConfirmDialog,
                 is SettingsIntent.OpenLicenses,
                 is SettingsIntent.OpenPrivacyPolicy,
-                is SettingsIntent.SetUseNativeShareDialog,
                 is SettingsIntent.SetStripMetadata,
                 is SettingsIntent.ShareCrashLogs,
                 is SettingsIntent.ClearCrashLogs,

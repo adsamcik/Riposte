@@ -47,11 +47,6 @@ interface SettingsRepository {
     suspend fun setHoldToShareDelay(delayMs: Long)
 
     /**
-     * Updates the use native share dialog setting.
-     */
-    suspend fun setUseNativeShareDialog(enabled: Boolean)
-
-    /**
      * Updates the default sharing format.
      */
     suspend fun setDefaultFormat(format: ImageFormat)
