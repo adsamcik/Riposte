@@ -1,10 +1,5 @@
 package com.adsamcik.riposte.core.database.migration
 
-import android.content.Context
-import androidx.sqlite.db.SupportSQLiteDatabase
-import androidx.sqlite.db.SupportSQLiteOpenHelper
-import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
-import androidx.test.core.app.ApplicationProvider
 import com.adsamcik.riposte.core.database.ALL_MIGRATIONS
 import com.adsamcik.riposte.core.database.MIGRATION_1_2
 import com.adsamcik.riposte.core.database.MIGRATION_2_3
@@ -13,8 +8,7 @@ import com.adsamcik.riposte.core.database.MIGRATION_4_5
 import com.adsamcik.riposte.core.database.MIGRATION_5_6
 import com.adsamcik.riposte.core.database.MemeDatabase
 import com.google.common.truth.Truth.assertThat
-import org.json.JSONObject
-import org.junit.After
+import com.google.common.truth.Truth.assertWithMessage
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -25,21 +19,12 @@ import org.robolectric.annotation.Config
  * Uses exported JSON schemas to create a database at version N, run the migration,
  * and validate the result against version N+1's expected schema.
  *
- * Uses direct [FrameworkSQLiteOpenHelperFactory] instead of Room's [MigrationTestHelper]
- * to avoid Room 2.8+ / Robolectric SupportSQLiteDriver path-name mismatch issues.
+ * Validates column names, types, NOT NULL constraints, default values, indices,
+ * and foreign keys.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE)
-class MigrationTest {
-    private val context: Context = ApplicationProvider.getApplicationContext()
-    private val openHelpers = mutableListOf<SupportSQLiteOpenHelper>()
-
-    @After
-    fun teardown() {
-        openHelpers.forEach { runCatching { it.close() } }
-        context.deleteDatabase(TEST_DB)
-    }
-
+class MigrationTest : MigrationTestBase() {
     @Test
     fun `migrate from 1 to 2`() {
         createDatabaseAtVersion(1).close()
@@ -88,88 +73,15 @@ class MigrationTest {
         db.close()
     }
 
-    // region Schema Helpers
-
-    /**
-     * Creates a database at the given version using CREATE statements from the
-     * exported Room schema JSON.
-     */
-    private fun createDatabaseAtVersion(version: Int): SupportSQLiteDatabase {
-        val schema = loadSchema(version)
-        val helper =
-            createOpenHelper(
-                version,
-                object : SupportSQLiteOpenHelper.Callback(version) {
-                    override fun onCreate(db: SupportSQLiteDatabase) {
-                        executeSchemaCreate(db, schema)
-                    }
-
-                    override fun onUpgrade(
-                        db: SupportSQLiteDatabase,
-                        oldVersion: Int,
-                        newVersion: Int,
-                    ) {
-                        error("Expected onCreate for version $version, got onUpgrade($oldVersion→$newVersion)")
-                    }
-                },
-            )
-        return helper.writableDatabase
-    }
-
-    /**
-     * Opens the existing database and applies migrations to reach [targetVersion].
-     */
-    private fun migrateToVersion(
-        targetVersion: Int,
-        vararg migrations: androidx.room.migration.Migration,
-    ): SupportSQLiteDatabase {
-        val helper =
-            createOpenHelper(
-                targetVersion,
-                object : SupportSQLiteOpenHelper.Callback(targetVersion) {
-                    override fun onCreate(db: SupportSQLiteDatabase) {
-                        error("Expected onUpgrade to version $targetVersion, not onCreate")
-                    }
-
-                    override fun onUpgrade(
-                        db: SupportSQLiteDatabase,
-                        oldVersion: Int,
-                        newVersion: Int,
-                    ) {
-                        var current = oldVersion
-                        while (current < newVersion) {
-                            val migration =
-                                migrations.firstOrNull { it.startVersion == current }
-                                    ?: error("No migration from version $current (target: $newVersion)")
-                            migration.migrate(db)
-                            current = migration.endVersion
-                        }
-                    }
-                },
-            )
-        return helper.writableDatabase
-    }
-
-    private fun createOpenHelper(
-        version: Int,
-        callback: SupportSQLiteOpenHelper.Callback,
-    ): SupportSQLiteOpenHelper {
-        val config =
-            SupportSQLiteOpenHelper.Configuration.builder(context)
-                .name(TEST_DB)
-                .callback(callback)
-                .build()
-        return FrameworkSQLiteOpenHelperFactory().create(config).also {
-            openHelpers.add(it)
-        }
-    }
+    // region Schema Validation
 
     /**
      * Validates that the migrated database schema matches what Room expects for
-     * the given version by comparing table names and column sets.
+     * the given version — including column names, types, NOT NULL constraints,
+     * default values, indices, and foreign keys.
      */
     private fun validateSchemaMatchesVersion(
-        db: SupportSQLiteDatabase,
+        db: androidx.sqlite.db.SupportSQLiteDatabase,
         version: Int,
     ) {
         val schema = loadSchema(version)
@@ -180,97 +92,144 @@ class MigrationTest {
             val tableName = entity.getString("tableName")
             val isFts = entity.optString("ftsVersion").isNotEmpty()
 
-            val expectedColumns = mutableSetOf<String>()
-            val fields = entity.getJSONArray("fields")
-            for (j in 0 until fields.length()) {
-                expectedColumns.add(fields.getJSONObject(j).getString("columnName"))
+            validateColumns(db, entity, tableName, isFts)
+
+            if (!isFts) {
+                validateIndices(db, entity, tableName)
+                validateForeignKeys(db, entity, tableName)
             }
-
-            val actualColumns = getTableColumns(db, tableName, isFts)
-
-            assertThat(actualColumns)
-                .containsAtLeastElementsIn(expectedColumns)
         }
     }
 
-    private fun getTableColumns(
-        db: SupportSQLiteDatabase,
+    private fun validateColumns(
+        db: androidx.sqlite.db.SupportSQLiteDatabase,
+        entity: org.json.JSONObject,
         tableName: String,
         isFts: Boolean,
-    ): Set<String> {
-        if (isFts) {
-            // FTS tables don't support PRAGMA table_info; query the creation SQL instead
-            val cursor =
-                db.query(
-                    "SELECT sql FROM sqlite_master WHERE type='table' AND name=?",
-                    arrayOf(tableName),
-                )
-            val columns = mutableSetOf<String>()
-            if (cursor.moveToFirst()) {
-                val sql = cursor.getString(0)
-                // Extract column names from: USING FTS4(`col1` TYPE, `col2` TYPE, ...)
-                val columnPattern = Regex("""`(\w+)`\s+TEXT""")
-                columnPattern.findAll(sql).forEach { columns.add(it.groupValues[1]) }
-            }
-            cursor.close()
-            return columns
-        }
-
-        val cursor = db.query("PRAGMA table_info(`$tableName`)")
-        val columns = mutableSetOf<String>()
-        while (cursor.moveToNext()) {
-            columns.add(cursor.getString(cursor.getColumnIndexOrThrow("name")))
-        }
-        cursor.close()
-        return columns
-    }
-
-    private fun loadSchema(version: Int): JSONObject {
-        val json =
-            context.assets
-                .open("com.adsamcik.riposte.core.database.MemeDatabase/$version.json")
-                .bufferedReader()
-                .readText()
-        return JSONObject(json)
-    }
-
-    private fun executeSchemaCreate(
-        db: SupportSQLiteDatabase,
-        schema: JSONObject,
     ) {
-        val entities = schema.getJSONObject("database").getJSONArray("entities")
-        for (i in 0 until entities.length()) {
-            val entity = entities.getJSONObject(i)
-            val tableName = entity.getString("tableName")
-            val createSql =
-                entity.getString("createSql")
-                    .replace("\${TABLE_NAME}", tableName)
-            db.execSQL(createSql)
+        val fields = entity.getJSONArray("fields")
+        val expectedColumnNames = mutableSetOf<String>()
+        for (j in 0 until fields.length()) {
+            expectedColumnNames.add(fields.getJSONObject(j).getString("columnName"))
+        }
 
-            // Create indices
-            val indices = entity.optJSONArray("indices")
-            if (indices != null) {
-                for (j in 0 until indices.length()) {
-                    val indexSql =
-                        indices.getJSONObject(j).getString("createSql")
-                            .replace("\${TABLE_NAME}", tableName)
-                    db.execSQL(indexSql)
-                }
+        if (isFts) {
+            val actualColumns = getTableColumns(db, tableName, isFts = true)
+            assertWithMessage("FTS table $tableName columns")
+                .that(actualColumns)
+                .containsAtLeastElementsIn(expectedColumnNames)
+            return
+        }
+
+        val actualColumns = getTableColumnsDetailed(db, tableName)
+        assertWithMessage("Table $tableName column names")
+            .that(actualColumns.keys)
+            .containsAtLeastElementsIn(expectedColumnNames)
+
+        // Validate column types, NOT NULL, and defaults
+        for (j in 0 until fields.length()) {
+            val field = fields.getJSONObject(j)
+            val columnName = field.getString("columnName")
+            val actual = actualColumns[columnName] ?: continue
+
+            val expectedAffinity = field.getString("affinity")
+            assertWithMessage("$tableName.$columnName type")
+                .that(actual.type)
+                .isEqualTo(expectedAffinity)
+
+            val expectedNotNull = field.optBoolean("notNull", false)
+            assertWithMessage("$tableName.$columnName NOT NULL")
+                .that(actual.notNull)
+                .isEqualTo(expectedNotNull)
+        }
+    }
+
+    private fun validateIndices(
+        db: androidx.sqlite.db.SupportSQLiteDatabase,
+        entity: org.json.JSONObject,
+        tableName: String,
+    ) {
+        val expectedIndices = entity.optJSONArray("indices") ?: return
+        val actualIndices = getTableIndices(db, tableName)
+
+        for (j in 0 until expectedIndices.length()) {
+            val expected = expectedIndices.getJSONObject(j)
+            val expectedName =
+                expected.getString("name")
+                    .replace("\${TABLE_NAME}", tableName)
+            val expectedUnique = expected.getBoolean("unique")
+
+            val expectedColumns = mutableListOf<String>()
+            val colArray = expected.getJSONArray("columnNames")
+            for (k in 0 until colArray.length()) {
+                expectedColumns.add(colArray.getString(k))
             }
 
-            // Create FTS content sync triggers
-            val triggers = entity.optJSONArray("contentSyncTriggers")
-            if (triggers != null) {
-                for (j in 0 until triggers.length()) {
-                    db.execSQL(triggers.getString(j))
+            val actual = actualIndices.find { it.name == expectedName }
+            assertWithMessage("Index $expectedName exists on $tableName")
+                .that(actual)
+                .isNotNull()
+            actual?.let {
+                assertWithMessage("Index $expectedName unique")
+                    .that(it.unique)
+                    .isEqualTo(expectedUnique)
+                assertWithMessage("Index $expectedName columns")
+                    .that(it.columns)
+                    .containsExactlyElementsIn(expectedColumns)
+                    .inOrder()
+            }
+        }
+    }
+
+    private fun validateForeignKeys(
+        db: androidx.sqlite.db.SupportSQLiteDatabase,
+        entity: org.json.JSONObject,
+        tableName: String,
+    ) {
+        val expectedFks = entity.optJSONArray("foreignKeys") ?: return
+        if (expectedFks.length() == 0) return
+
+        val actualFks = getTableForeignKeys(db, tableName)
+
+        for (j in 0 until expectedFks.length()) {
+            val expected = expectedFks.getJSONObject(j)
+            val expectedParent = expected.getString("table")
+            val expectedOnDelete = expected.getString("onDelete")
+
+            val expectedFromColumns = mutableListOf<String>()
+            val fromArray = expected.getJSONArray("columns")
+            for (k in 0 until fromArray.length()) {
+                expectedFromColumns.add(fromArray.getString(k))
+            }
+
+            val expectedToColumns = mutableListOf<String>()
+            val toArray = expected.getJSONArray("referencedColumns")
+            for (k in 0 until toArray.length()) {
+                expectedToColumns.add(toArray.getString(k))
+            }
+
+            // Match FK by parent table and from-column(s)
+            for (col in expectedFromColumns.indices) {
+                val matchingFk = actualFks.find {
+                    it.table == expectedParent &&
+                        it.from == expectedFromColumns[col] &&
+                        it.to == expectedToColumns[col]
+                }
+                assertWithMessage(
+                    "FK on $tableName.${expectedFromColumns[col]} → $expectedParent.${expectedToColumns[col]}",
+                )
+                    .that(matchingFk)
+                    .isNotNull()
+                matchingFk?.let {
+                    assertWithMessage(
+                        "FK $tableName.${expectedFromColumns[col]} ON DELETE",
+                    )
+                        .that(it.onDelete)
+                        .isEqualTo(expectedOnDelete)
                 }
             }
         }
     }
 
     // endregion
-
-    companion object {
-        private const val TEST_DB = "migration-test"
-    }
 }
