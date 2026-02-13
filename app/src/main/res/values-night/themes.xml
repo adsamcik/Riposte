@@ -2,8 +2,9 @@
 <resources>
     <!-- Splash screen theme for dark mode -->
     <style name="Theme.Riposte.Splash" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenBackground">@color/ic_launcher_background</item>
         <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/ic_launcher_background</item>
         <item name="postSplashScreenTheme">@style/Theme.Riposte</item>
     </style>
 
@@ -14,8 +15,4 @@
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:windowLightNavigationBar">false</item>
     </style>
-
-    <!-- Splash screen colors for dark mode -->
-    <color name="splash_background">#1C1B1F</color>
-    <color name="splash_icon_background">#BB86FC</color>
 </resources>
