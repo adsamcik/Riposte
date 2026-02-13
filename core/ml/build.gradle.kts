@@ -1,6 +1,5 @@
 plugins {
     alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
 }
@@ -46,7 +45,12 @@ dependencies {
     implementation(libs.ai.edge.rag)
 
     // LiteRT (for semantic embeddings - replaces TensorFlow Lite)
-    implementation(libs.bundles.litert)
+    implementation(libs.litert.runtime)
+    implementation(libs.litert.support) {
+        // litert-support and litert-support-api share namespace org.tensorflow.lite.support,
+        // which AGP 9 rejects. Exclude litert-support-api to resolve the conflict.
+        exclude(group = "com.google.ai.edge.litert", module = "litert-support-api")
+    }
 
     // DJL HuggingFace Tokenizers (for EmbeddingGemma tokenization)
     implementation(libs.djl.tokenizers)

@@ -20,7 +20,8 @@ rootProject.name = "riposte"
 include(":app")
 
 // Baseline Profile module
-include(":baselineprofile")
+// TODO: Re-enable when baseline profile plugin supports AGP 9
+// include(":baselineprofile")
 
 // Core modules
 include(":core:common")

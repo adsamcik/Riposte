@@ -2,12 +2,12 @@ import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
-    alias(libs.plugins.baselineprofile)
+    // TODO: Re-enable when baseline profile plugin supports AGP 9
+    // alias(libs.plugins.baselineprofile)
 }
 
 android {
@@ -248,8 +248,8 @@ dependencies {
     // Profile Installer for baseline profiles
     implementation(libs.profile.installer)
 
-    // Baseline Profile
-    baselineProfile(project(":baselineprofile"))
+    // TODO: Re-enable when baseline profile plugin supports AGP 9
+    // baselineProfile(project(":baselineprofile"))
 
     // Testing
     testImplementation(libs.bundles.testing)
@@ -262,10 +262,8 @@ dependencies {
     kspAndroidTest(libs.hilt.compiler)
 }
 
-baselineProfile {
-    // Automatically generate baseline profile during release builds
-    automaticGenerationDuringBuild = false
-
-    // Don't include in debug builds
-    dexLayoutOptimization = true
-}
+// TODO: Re-enable when baseline profile plugin supports AGP 9
+// baselineProfile {
+//     automaticGenerationDuringBuild = false
+//     dexLayoutOptimization = true
+// }
