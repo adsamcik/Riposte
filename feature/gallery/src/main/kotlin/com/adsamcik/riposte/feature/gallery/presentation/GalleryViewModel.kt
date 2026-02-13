@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
+import androidx.paging.cachedIn
 import com.adsamcik.riposte.core.common.di.DefaultDispatcher
 import com.adsamcik.riposte.core.common.suggestion.GetSuggestionsUseCase
 import com.adsamcik.riposte.core.common.suggestion.SuggestionContext
@@ -11,6 +12,7 @@ import com.adsamcik.riposte.core.common.suggestion.Surface
 import com.adsamcik.riposte.core.datastore.PreferencesDataStore
 import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.feature.gallery.R
+import com.adsamcik.riposte.feature.gallery.domain.repository.GalleryRepository
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GalleryViewModelUseCases
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -23,7 +25,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
@@ -39,6 +44,7 @@ class GalleryViewModel
         private val useCases: GalleryViewModelUseCases,
         private val getSuggestionsUseCase: GetSuggestionsUseCase,
         private val shareTargetRepository: com.adsamcik.riposte.core.common.repository.ShareTargetRepository,
+        private val galleryRepository: GalleryRepository,
         @DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
         private val preferencesDataStore: PreferencesDataStore,
         val searchDelegate: SearchDelegate,
@@ -48,10 +54,23 @@ class GalleryViewModel
 
         /**
          * Paged memes flow for the "All" filter.
-         * Sorted by primary emoji tag for emoji-based grouping.
+         * Reacts to emoji filter changes — when filters are active, a filtered
+         * PagingSource is used so filtering happens at the SQL level instead of
+         * O(n) iteration during Compose recomposition.
          */
+        @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
         val pagedMemes: Flow<PagingData<Meme>> =
-            useCases.getPagedMemes(viewModelScope, "emoji")
+            _uiState
+                .map { it.activeEmojiFilters }
+                .distinctUntilChanged()
+                .flatMapLatest { emojiFilters ->
+                    if (emojiFilters.isEmpty()) {
+                        galleryRepository.getPagedMemes("emoji")
+                    } else {
+                        galleryRepository.getPagedMemesByEmojis(emojiFilters)
+                    }
+                }
+                .cachedIn(viewModelScope)
 
         private val _effects = Channel<GalleryEffect>(Channel.BUFFERED)
         val effects = merge(_effects.receiveAsFlow(), searchDelegate.effects)

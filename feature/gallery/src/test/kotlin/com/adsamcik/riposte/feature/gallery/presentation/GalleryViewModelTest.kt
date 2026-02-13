@@ -52,6 +52,7 @@ class GalleryViewModelTest {
     private lateinit var getAllEmojisWithCountsUseCase: GetAllEmojisWithCountsUseCase
     private lateinit var getSuggestionsUseCase: GetSuggestionsUseCase
     private lateinit var shareTargetRepository: com.adsamcik.riposte.core.common.repository.ShareTargetRepository
+    private lateinit var galleryRepository: com.adsamcik.riposte.feature.gallery.domain.repository.GalleryRepository
     private lateinit var preferencesDataStore: PreferencesDataStore
     private lateinit var searchDelegate: SearchDelegate
     private lateinit var context: Context
@@ -92,6 +93,9 @@ class GalleryViewModelTest {
         getAllEmojisWithCountsUseCase = mockk()
         getSuggestionsUseCase = GetSuggestionsUseCase()
         shareTargetRepository = mockk(relaxed = true)
+        galleryRepository = mockk(relaxed = true)
+        every { galleryRepository.getPagedMemes(any()) } returns kotlinx.coroutines.flow.emptyFlow()
+        every { galleryRepository.getPagedMemesByEmojis(any()) } returns kotlinx.coroutines.flow.emptyFlow()
         searchDelegate = mockk(relaxed = true)
         every { searchDelegate.state } returns MutableStateFlow(SearchSliceState())
         every { searchDelegate.effects } returns kotlinx.coroutines.flow.emptyFlow()
@@ -127,6 +131,7 @@ class GalleryViewModelTest {
             useCases = useCases,
             getSuggestionsUseCase = getSuggestionsUseCase,
             shareTargetRepository = shareTargetRepository,
+            galleryRepository = galleryRepository,
             defaultDispatcher = mainDispatcherRule.testDispatcher,
             preferencesDataStore = preferencesDataStore,
             searchDelegate = searchDelegate,

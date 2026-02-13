@@ -21,6 +21,12 @@ interface GalleryRepository {
     fun getPagedMemes(sortBy: String = "recent"): Flow<PagingData<Meme>>
 
     /**
+     * Get memes filtered by any of the given emojis as paged data.
+     * Filtering happens at the SQL level via INNER JOIN on emoji_tags.
+     */
+    fun getPagedMemesByEmojis(emojis: Set<String>): Flow<PagingData<Meme>>
+
+    /**
      * Get favorite memes.
      */
     fun getFavorites(): Flow<List<Meme>>
