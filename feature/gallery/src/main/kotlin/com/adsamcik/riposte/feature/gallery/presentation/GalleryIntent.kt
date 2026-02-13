@@ -94,26 +94,6 @@ sealed interface GalleryIntent {
      */
     data object ClearEmojiFilters : GalleryIntent
 
-    /**
-     * User selected a specific share target from the quick share sheet.
-     */
-    data class SelectShareTarget(val target: com.adsamcik.riposte.core.model.ShareTarget) : GalleryIntent
-
-    /**
-     * User tapped "More…" in the quick share sheet (open system chooser).
-     */
-    data object QuickShareMore : GalleryIntent
-
-    /**
-     * Dismiss the quick share bottom sheet.
-     */
-    data object DismissQuickShare : GalleryIntent
-
-    /**
-     * Copy the meme to clipboard from the quick share sheet.
-     */
-    data object CopyToClipboard : GalleryIntent
-
     // ── Search intents (inline search) ──
 
     /**

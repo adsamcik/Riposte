@@ -1,7 +1,6 @@
 package com.adsamcik.riposte.feature.gallery.presentation
 
 import com.adsamcik.riposte.core.model.Meme
-import com.adsamcik.riposte.core.model.ShareTarget
 import com.adsamcik.riposte.feature.gallery.domain.usecase.SimilarMemesStatus
 
 data class MemeDetailUiState(
@@ -17,8 +16,6 @@ data class MemeDetailUiState(
     val errorMessage: String? = null,
     val similarMemesStatus: SimilarMemesStatus? = null,
     val isLoadingSimilar: Boolean = false,
-    val quickShareMeme: Meme? = null,
-    val quickShareTargets: List<ShareTarget> = emptyList(),
     val allMemeIds: List<Long> = emptyList(),
 ) {
     val hasUnsavedChanges: Boolean

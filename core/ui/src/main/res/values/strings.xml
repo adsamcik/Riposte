@@ -50,18 +50,6 @@
     <string name="ui_state_selected">Selected</string>
     <string name="ui_state_not_selected">Not selected</string>
 
-    <!-- QuickShareBottomSheet Component -->
-    <string name="quick_share_title">Share to…</string>
-    <string name="quick_share_more">More</string>
-    <string name="quick_share_show_all_apps">Show all apps (%1$d)</string>
-    <string name="quick_share_show_fewer">Show fewer</string>
-    <string name="quick_share_category_messaging">Messaging</string>
-    <string name="quick_share_category_email">Email</string>
-    <string name="quick_share_category_social">Social</string>
-    <string name="quick_share_category_other">Other</string>
-    <string name="quick_share_copy_clipboard">Copy to clipboard</string>
-    <string name="quick_share_system_chooser">Use system share menu</string>
-
     <!-- SearchResultsHeader -->
     <plurals name="ui_search_results_count">
         <item quantity="one">%1$d result</item>

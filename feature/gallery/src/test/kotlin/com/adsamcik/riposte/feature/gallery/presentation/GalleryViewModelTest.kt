@@ -51,7 +51,6 @@ class GalleryViewModelTest {
     private lateinit var getAllMemeIdsUseCase: GetAllMemeIdsUseCase
     private lateinit var getAllEmojisWithCountsUseCase: GetAllEmojisWithCountsUseCase
     private lateinit var getSuggestionsUseCase: GetSuggestionsUseCase
-    private lateinit var shareTargetRepository: com.adsamcik.riposte.core.common.repository.ShareTargetRepository
     private lateinit var galleryRepository: com.adsamcik.riposte.feature.gallery.domain.repository.GalleryRepository
     private lateinit var preferencesDataStore: PreferencesDataStore
     private lateinit var searchDelegate: SearchDelegate
@@ -92,7 +91,6 @@ class GalleryViewModelTest {
         getAllMemeIdsUseCase = mockk()
         getAllEmojisWithCountsUseCase = mockk()
         getSuggestionsUseCase = GetSuggestionsUseCase()
-        shareTargetRepository = mockk(relaxed = true)
         galleryRepository = mockk(relaxed = true)
         every { galleryRepository.getPagedMemes(any()) } returns kotlinx.coroutines.flow.emptyFlow()
         every { galleryRepository.getPagedMemesByEmojis(any()) } returns kotlinx.coroutines.flow.emptyFlow()
@@ -130,7 +128,6 @@ class GalleryViewModelTest {
             context = context,
             useCases = useCases,
             getSuggestionsUseCase = getSuggestionsUseCase,
-            shareTargetRepository = shareTargetRepository,
             galleryRepository = galleryRepository,
             defaultDispatcher = mainDispatcherRule.testDispatcher,
             preferencesDataStore = preferencesDataStore,
@@ -562,12 +559,8 @@ class GalleryViewModelTest {
     // region Share Intent Tests
 
     @Test
-    fun `ShareSelected with single meme delegates to quickShare`() =
+    fun `ShareSelected with single meme navigates to share screen`() =
         runTest {
-            coEvery { preferencesDataStore.sharingPreferences } returns
-                flowOf(
-                    com.adsamcik.riposte.core.model.SharingPreferences(useNativeShareDialog = true),
-                )
             viewModel = createViewModel()
             advanceUntilIdle()
             viewModel.onIntent(GalleryIntent.StartSelection(1))

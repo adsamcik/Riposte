@@ -85,14 +85,6 @@ data class GalleryUiState(
      */
     val filteredMemes: List<Meme> = emptyList(),
     /**
-     * Meme currently being quick-shared (shows the bottom sheet), or null.
-     */
-    val quickShareMeme: Meme? = null,
-    /**
-     * Frequent share targets for the quick share bottom sheet.
-     */
-    val quickShareTargets: List<com.adsamcik.riposte.core.model.ShareTarget> = emptyList(),
-    /**
      * Current screen mode: browsing or searching.
      */
     val screenMode: ScreenMode = ScreenMode.Browsing,

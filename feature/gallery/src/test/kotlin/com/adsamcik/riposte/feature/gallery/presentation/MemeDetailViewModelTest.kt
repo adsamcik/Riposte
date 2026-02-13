@@ -5,7 +5,6 @@ import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.adsamcik.riposte.core.model.EmojiTag
 import com.adsamcik.riposte.core.model.Meme
-import com.adsamcik.riposte.core.model.SharingPreferences
 import com.adsamcik.riposte.core.testing.MainDispatcherRule
 import com.adsamcik.riposte.feature.gallery.R
 import com.adsamcik.riposte.feature.gallery.domain.usecase.DeleteMemesUseCase
@@ -104,14 +103,6 @@ class MemeDetailViewModelTest {
             savedStateHandle = savedStateHandle,
             useCases = useCases,
             userActionTracker = mockk(relaxed = true),
-            preferencesDataStore =
-                mockk(relaxed = true) {
-                    every { sharingPreferences } returns
-                        flowOf(
-                            SharingPreferences.DEFAULT.copy(useNativeShareDialog = true),
-                        )
-                },
-            shareTargetRepository = mockk(relaxed = true),
         )
     }
 
@@ -802,22 +793,6 @@ class MemeDetailViewModelTest {
             }
         }
 
-    @Test
-    fun `CopyToClipboard uses current meme ID`() =
-        runTest {
-            viewModel = createViewModel()
-            advanceUntilIdle()
-
-            viewModel.effects.test {
-                viewModel.onIntent(MemeDetailIntent.CopyToClipboard)
-                advanceUntilIdle()
-
-                val effect = awaitItem()
-                assertThat(effect).isInstanceOf(MemeDetailEffect.CopyToClipboard::class.java)
-                assertThat((effect as MemeDetailEffect.CopyToClipboard).memeId).isEqualTo(1L)
-            }
-        }
-
     // endregion
 
     // region State Integrity Under Meme Change
@@ -1067,53 +1042,6 @@ class MemeDetailViewModelTest {
                 val effect = awaitItem()
                 assertThat(effect).isInstanceOf(MemeDetailEffect.NavigateToShare::class.java)
             }
-        }
-
-    @Test
-    fun `QuickShareMore navigates to share screen and clears quick share state`() =
-        runTest {
-            viewModel = createViewModel()
-            advanceUntilIdle()
-
-            viewModel.effects.test {
-                viewModel.onIntent(MemeDetailIntent.QuickShareMore)
-                advanceUntilIdle()
-
-                val effect = awaitItem()
-                assertThat(effect).isInstanceOf(MemeDetailEffect.NavigateToShare::class.java)
-            }
-
-            val state = viewModel.uiState.value
-            assertThat(state.quickShareMeme).isNull()
-            assertThat(state.quickShareTargets).isEmpty()
-        }
-
-    @Test
-    fun `DismissQuickShare clears quick share state`() =
-        runTest {
-            viewModel = createViewModel()
-            advanceUntilIdle()
-
-            viewModel.onIntent(MemeDetailIntent.DismissQuickShare)
-            advanceUntilIdle()
-
-            val state = viewModel.uiState.value
-            assertThat(state.quickShareMeme).isNull()
-            assertThat(state.quickShareTargets).isEmpty()
-        }
-
-    @Test
-    fun `CopyToClipboard clears quick share state`() =
-        runTest {
-            viewModel = createViewModel()
-            advanceUntilIdle()
-
-            viewModel.onIntent(MemeDetailIntent.CopyToClipboard)
-            advanceUntilIdle()
-
-            val state = viewModel.uiState.value
-            assertThat(state.quickShareMeme).isNull()
-            assertThat(state.quickShareTargets).isEmpty()
         }
 
     // endregion

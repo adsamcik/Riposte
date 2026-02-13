@@ -43,7 +43,6 @@ class GalleryViewModel
         @ApplicationContext private val context: Context,
         private val useCases: GalleryViewModelUseCases,
         private val getSuggestionsUseCase: GetSuggestionsUseCase,
-        private val shareTargetRepository: com.adsamcik.riposte.core.common.repository.ShareTargetRepository,
         private val galleryRepository: GalleryRepository,
         @DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
         private val preferencesDataStore: PreferencesDataStore,
@@ -114,10 +113,6 @@ class GalleryViewModel
                 is GalleryIntent.QuickShare -> quickShare(intent.memeId)
                 is GalleryIntent.ToggleEmojiFilter -> toggleEmojiFilter(intent.emoji)
                 is GalleryIntent.ClearEmojiFilters -> clearEmojiFilters()
-                is GalleryIntent.SelectShareTarget -> selectShareTarget(intent.target)
-                is GalleryIntent.QuickShareMore -> quickShareMore()
-                is GalleryIntent.DismissQuickShare -> dismissQuickShare()
-                is GalleryIntent.CopyToClipboard -> copyToClipboard()
                 is GalleryIntent.DismissImportStatus -> dismissImportStatus()
                 // Search intents — delegate
                 is GalleryIntent.UpdateSearchQuery,
@@ -454,7 +449,7 @@ class GalleryViewModel
                     }
                 clearSelection()
                 _effects.send(
-                    GalleryEffect.LaunchQuickShare(android.content.Intent.createChooser(intent, null)),
+                    GalleryEffect.LaunchShareIntent(android.content.Intent.createChooser(intent, null)),
                 )
             }
         }
@@ -467,68 +462,7 @@ class GalleryViewModel
 
         private fun quickShare(memeId: Long) {
             viewModelScope.launch {
-                // Check if user prefers native share dialog
-                val useNative = preferencesDataStore.sharingPreferences.first().useNativeShareDialog
-                if (useNative) {
-                    _effects.send(GalleryEffect.NavigateToShare(memeId))
-                    return@launch
-                }
-
-                val meme =
-                    _uiState.value.memes.find { it.id == memeId }
-                        ?: _uiState.value.suggestions.find { it.id == memeId }
-                        ?: _uiState.value.searchState.results.find { it.meme.id == memeId }?.meme
-                        ?: useCases.getMemeById(memeId)
-                if (meme == null) {
-                    _effects.send(GalleryEffect.NavigateToShare(memeId))
-                    return@launch
-                }
-                val targets = shareTargetRepository.getTopShareTargets(limit = 6)
-                _uiState.update {
-                    it.copy(quickShareMeme = meme, quickShareTargets = targets)
-                }
-            }
-        }
-
-        private fun selectShareTarget(target: com.adsamcik.riposte.core.model.ShareTarget) {
-            val meme = _uiState.value.quickShareMeme ?: return
-            viewModelScope.launch {
-                shareTargetRepository.recordShare(target)
-                _uiState.update { it.copy(quickShareMeme = null, quickShareTargets = emptyList()) }
-                val intent =
-                    android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                        type = meme.mimeType
-                        val uri =
-                            androidx.core.content.FileProvider.getUriForFile(
-                                context,
-                                "${context.packageName}.fileprovider",
-                                java.io.File(meme.filePath),
-                            )
-                        putExtra(android.content.Intent.EXTRA_STREAM, uri)
-                        addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                        setClassName(target.packageName, target.activityName)
-                    }
-                _effects.send(GalleryEffect.LaunchQuickShare(intent))
-            }
-        }
-
-        private fun quickShareMore() {
-            val meme = _uiState.value.quickShareMeme ?: return
-            _uiState.update { it.copy(quickShareMeme = null, quickShareTargets = emptyList()) }
-            viewModelScope.launch {
-                _effects.send(GalleryEffect.NavigateToShare(meme.id))
-            }
-        }
-
-        private fun dismissQuickShare() {
-            _uiState.update { it.copy(quickShareMeme = null, quickShareTargets = emptyList()) }
-        }
-
-        private fun copyToClipboard() {
-            val meme = _uiState.value.quickShareMeme ?: return
-            _uiState.update { it.copy(quickShareMeme = null, quickShareTargets = emptyList()) }
-            viewModelScope.launch {
-                _effects.send(GalleryEffect.CopyToClipboard(meme.id))
+                _effects.send(GalleryEffect.NavigateToShare(memeId))
             }
         }
 

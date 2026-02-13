@@ -4,9 +4,7 @@ import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.adsamcik.riposte.core.common.repository.ShareTargetRepository
 import com.adsamcik.riposte.core.common.review.UserActionTracker
-import com.adsamcik.riposte.core.datastore.PreferencesDataStore
 import com.adsamcik.riposte.core.model.EmojiTag
 import com.adsamcik.riposte.feature.gallery.R
 import com.adsamcik.riposte.feature.gallery.domain.usecase.MemeDetailUseCases
@@ -17,7 +15,6 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -31,8 +28,6 @@ class MemeDetailViewModel
         savedStateHandle: SavedStateHandle,
         private val useCases: MemeDetailUseCases,
         private val userActionTracker: UserActionTracker,
-        private val preferencesDataStore: PreferencesDataStore,
-        private val shareTargetRepository: ShareTargetRepository,
     ) : ViewModel() {
         private var currentMemeId: Long = savedStateHandle.get<Long>("memeId") ?: -1L
 
@@ -68,10 +63,6 @@ class MemeDetailViewModel
                 is MemeDetailIntent.Dismiss -> dismiss()
                 is MemeDetailIntent.LoadSimilarMemes -> loadSimilarMemes()
                 is MemeDetailIntent.NavigateToSimilarMeme -> navigateToMeme(intent.memeId)
-                is MemeDetailIntent.SelectShareTarget -> selectShareTarget(intent.target)
-                is MemeDetailIntent.QuickShareMore -> quickShareMore()
-                is MemeDetailIntent.DismissQuickShare -> dismissQuickShare()
-                is MemeDetailIntent.CopyToClipboard -> copyToClipboard()
                 is MemeDetailIntent.ChangeMeme -> changeMeme(intent.memeId)
                 is MemeDetailIntent.SearchByEmoji -> searchByEmoji(intent.emoji)
             }
@@ -244,22 +235,7 @@ class MemeDetailViewModel
         }
 
         private fun share() {
-            viewModelScope.launch {
-                val useNative = preferencesDataStore.sharingPreferences.first().useNativeShareDialog
-                if (useNative) {
-                    openShareScreen()
-                    return@launch
-                }
-                val meme =
-                    _uiState.value.meme ?: run {
-                        openShareScreen()
-                        return@launch
-                    }
-                val targets = shareTargetRepository.getTopShareTargets(limit = 6)
-                _uiState.update {
-                    it.copy(quickShareMeme = meme, quickShareTargets = targets)
-                }
-            }
+            openShareScreen()
         }
 
         private fun saveChanges() {
@@ -361,45 +337,6 @@ class MemeDetailViewModel
         private fun navigateToMeme(memeId: Long) {
             viewModelScope.launch {
                 _effects.send(MemeDetailEffect.NavigateToMeme(memeId))
-            }
-        }
-
-        private fun selectShareTarget(target: com.adsamcik.riposte.core.model.ShareTarget) {
-            val meme = _uiState.value.quickShareMeme ?: return
-            viewModelScope.launch {
-                shareTargetRepository.recordShare(target)
-                _uiState.update { it.copy(quickShareMeme = null, quickShareTargets = emptyList()) }
-                val intent =
-                    android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                        type = meme.mimeType
-                        val uri =
-                            androidx.core.content.FileProvider.getUriForFile(
-                                context,
-                                "${context.packageName}.fileprovider",
-                                java.io.File(meme.filePath),
-                            )
-                        putExtra(android.content.Intent.EXTRA_STREAM, uri)
-                        addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                        setClassName(target.packageName, target.activityName)
-                    }
-                _effects.send(MemeDetailEffect.LaunchQuickShare(intent))
-            }
-        }
-
-        private fun quickShareMore() {
-            _uiState.update { it.copy(quickShareMeme = null, quickShareTargets = emptyList()) }
-            openShareScreen()
-        }
-
-        private fun dismissQuickShare() {
-            _uiState.update { it.copy(quickShareMeme = null, quickShareTargets = emptyList()) }
-        }
-
-        private fun copyToClipboard() {
-            val meme = _uiState.value.quickShareMeme ?: _uiState.value.meme ?: return
-            _uiState.update { it.copy(quickShareMeme = null, quickShareTargets = emptyList()) }
-            viewModelScope.launch {
-                _effects.send(MemeDetailEffect.CopyToClipboard(meme.id))
             }
         }
 

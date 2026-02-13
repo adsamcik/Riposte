@@ -96,7 +96,6 @@ You are an expert Android performance and UX reviewer for the Riposte codebase. 
 - `core/ui/component/MemeCard.kt` — Grid item rendering
 - `core/ui/component/SearchBar.kt` — Search input
 - `core/ui/component/HoldToShareContainer.kt` — Share gesture
-- `core/ui/component/QuickShareBottomSheet.kt` — Share targets
 - `core/ui/component/LoadingStates.kt` — Shimmer/skeleton
 - `core/ui/component/EmojiFilterRail.kt` — Filter navigation
 - `feature/gallery/presentation/GalleryScreen.kt` — Main grid + paging

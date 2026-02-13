@@ -35,17 +35,12 @@ sealed interface GalleryEffect {
     data class NavigateToShare(val memeId: Long) : GalleryEffect
 
     /**
-     * Launch a quick share to a specific app target.
+     * Launch a share intent directly (e.g., for multi-select share).
      */
-    data class LaunchQuickShare(val intent: android.content.Intent) : GalleryEffect
+    data class LaunchShareIntent(val intent: android.content.Intent) : GalleryEffect
 
     /**
      * Trigger haptic feedback for UI interactions.
      */
     data object TriggerHapticFeedback : GalleryEffect
-
-    /**
-     * Copy meme image to clipboard.
-     */
-    data class CopyToClipboard(val memeId: Long) : GalleryEffect
 }

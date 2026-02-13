@@ -129,57 +129,12 @@ fun MemeDetailScreen(
                 is MemeDetailEffect.NavigateBack -> onNavigateBack()
                 is MemeDetailEffect.NavigateToShare -> onNavigateToShare(effect.memeId)
                 is MemeDetailEffect.NavigateToMeme -> onNavigateToMeme(effect.memeId)
-                is MemeDetailEffect.LaunchQuickShare -> {
-                    try {
-                        context.startActivity(effect.intent)
-                    } catch (_: android.content.ActivityNotFoundException) {
-                        snackbarHostState.showSnackbar("Unable to share — app not found")
-                    }
-                }
                 is MemeDetailEffect.ShowSnackbar -> snackbarHostState.showSnackbar(effect.message)
                 is MemeDetailEffect.ShowError -> snackbarHostState.showSnackbar(effect.message)
-                is MemeDetailEffect.CopyToClipboard -> {
-                    val meme = uiState.meme
-                    if (meme != null) {
-                        val uri =
-                            androidx.core.content.FileProvider.getUriForFile(
-                                context,
-                                "${context.packageName}.fileprovider",
-                                java.io.File(meme.filePath),
-                            )
-                        val clip =
-                            android.content.ClipData.newUri(
-                                context.contentResolver,
-                                meme.title ?: meme.fileName,
-                                uri,
-                            )
-                        val clipboard =
-                            context.getSystemService(
-                                android.content.Context.CLIPBOARD_SERVICE,
-                            ) as android.content.ClipboardManager
-                        clipboard.setPrimaryClip(clip)
-                        snackbarHostState.showSnackbar(
-                            context.getString(com.adsamcik.riposte.core.ui.R.string.quick_share_copy_clipboard),
-                        )
-                    }
-                }
                 is MemeDetailEffect.NavigateToGalleryWithEmoji ->
                     onNavigateToGalleryWithEmoji(effect.emoji)
             }
         }
-    }
-
-    // Quick share bottom sheet
-    val quickShareMeme = uiState.quickShareMeme
-    if (quickShareMeme != null) {
-        com.adsamcik.riposte.core.ui.component.QuickShareBottomSheet(
-            meme = quickShareMeme,
-            frequentTargets = uiState.quickShareTargets,
-            onTargetSelected = { target -> viewModel.onIntent(MemeDetailIntent.SelectShareTarget(target)) },
-            onMoreClick = { viewModel.onIntent(MemeDetailIntent.QuickShareMore) },
-            onCopyToClipboard = { viewModel.onIntent(MemeDetailIntent.CopyToClipboard) },
-            onDismiss = { viewModel.onIntent(MemeDetailIntent.DismissQuickShare) },
-        )
     }
 
     MemeDetailScreenContent(

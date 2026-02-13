@@ -143,7 +143,7 @@ fun GalleryScreen(
                 }
                 is GalleryEffect.ShowError -> snackbarHostState.showSnackbar(effect.message)
                 is GalleryEffect.NavigateToShare -> onNavigateToShare(effect.memeId)
-                is GalleryEffect.LaunchQuickShare -> {
+                is GalleryEffect.LaunchShareIntent -> {
                     try {
                         context.startActivity(effect.intent)
                     } catch (_: android.content.ActivityNotFoundException) {
@@ -151,31 +151,6 @@ fun GalleryScreen(
                     }
                 }
                 is GalleryEffect.TriggerHapticFeedback -> { /* Handled by Compose haptic feedback */ }
-                is GalleryEffect.CopyToClipboard -> {
-                    val meme = uiState.memes.find { it.id == effect.memeId }
-                    if (meme != null) {
-                        val uri =
-                            androidx.core.content.FileProvider.getUriForFile(
-                                context,
-                                "${context.packageName}.fileprovider",
-                                java.io.File(meme.filePath),
-                            )
-                        val clip =
-                            android.content.ClipData.newUri(
-                                context.contentResolver,
-                                meme.title ?: meme.fileName,
-                                uri,
-                            )
-                        val clipboard =
-                            context.getSystemService(
-                                android.content.Context.CLIPBOARD_SERVICE,
-                            ) as android.content.ClipboardManager
-                        clipboard.setPrimaryClip(clip)
-                        snackbarHostState.showSnackbar(
-                            context.getString(com.adsamcik.riposte.core.ui.R.string.quick_share_copy_clipboard),
-                        )
-                    }
-                }
             }
         }
     }
@@ -290,19 +265,6 @@ private fun GalleryScreenContent(
                     Text(stringResource(R.string.gallery_button_cancel))
                 }
             },
-        )
-    }
-
-    // Quick share bottom sheet
-    val quickShareMeme = uiState.quickShareMeme
-    if (quickShareMeme != null) {
-        com.adsamcik.riposte.core.ui.component.QuickShareBottomSheet(
-            meme = quickShareMeme,
-            frequentTargets = uiState.quickShareTargets,
-            onTargetSelected = { target -> onIntent(GalleryIntent.SelectShareTarget(target)) },
-            onMoreClick = { onIntent(GalleryIntent.QuickShareMore) },
-            onCopyToClipboard = { onIntent(GalleryIntent.CopyToClipboard) },
-            onDismiss = { onIntent(GalleryIntent.DismissQuickShare) },
         )
     }
 
