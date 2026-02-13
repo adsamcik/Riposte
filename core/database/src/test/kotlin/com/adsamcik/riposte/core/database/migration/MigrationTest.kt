@@ -9,6 +9,8 @@ import com.adsamcik.riposte.core.database.ALL_MIGRATIONS
 import com.adsamcik.riposte.core.database.MIGRATION_1_2
 import com.adsamcik.riposte.core.database.MIGRATION_2_3
 import com.adsamcik.riposte.core.database.MIGRATION_3_4
+import com.adsamcik.riposte.core.database.MIGRATION_4_5
+import com.adsamcik.riposte.core.database.MIGRATION_5_6
 import com.adsamcik.riposte.core.database.MemeDatabase
 import com.google.common.truth.Truth.assertThat
 import org.json.JSONObject
@@ -59,6 +61,22 @@ class MigrationTest {
         createDatabaseAtVersion(3).close()
         val db = migrateToVersion(4, MIGRATION_3_4)
         validateSchemaMatchesVersion(db, 4)
+        db.close()
+    }
+
+    @Test
+    fun `migrate from 4 to 5`() {
+        createDatabaseAtVersion(4).close()
+        val db = migrateToVersion(5, MIGRATION_4_5)
+        validateSchemaMatchesVersion(db, 5)
+        db.close()
+    }
+
+    @Test
+    fun `migrate from 5 to 6`() {
+        createDatabaseAtVersion(5).close()
+        val db = migrateToVersion(6, MIGRATION_5_6)
+        validateSchemaMatchesVersion(db, 6)
         db.close()
     }
 

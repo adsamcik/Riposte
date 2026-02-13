@@ -1,6 +1,7 @@
 package com.adsamcik.riposte.core.database.entity
 
 import androidx.room.Entity
+import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
@@ -34,6 +35,14 @@ data class ImportRequestEntity(
 @Entity(
     tableName = "import_request_items",
     indices = [Index(value = ["requestId"])],
+    foreignKeys = [
+        ForeignKey(
+            entity = ImportRequestEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["requestId"],
+            onDelete = ForeignKey.CASCADE,
+        ),
+    ],
 )
 data class ImportRequestItemEntity(
     @PrimaryKey val id: String,
