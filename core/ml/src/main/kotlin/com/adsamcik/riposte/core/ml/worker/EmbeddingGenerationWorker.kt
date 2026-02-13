@@ -116,9 +116,10 @@ class EmbeddingGenerationWorker
                             KEY_REMAINING_COUNT to remainingCount,
                         )
 
-                    // If there are more memes, schedule another run
+                    // If there are more memes, schedule another run.
+                    // Use REPLACE since this work is still technically running.
                     if (remainingCount > 0) {
-                        enqueue(context)
+                        enqueueContinuation(context)
                     }
 
                     Result.success(outputData)
@@ -193,7 +194,7 @@ class EmbeddingGenerationWorker
 
             /**
              * Enqueues the embedding generation work.
-             * Uses unique work to prevent duplicate runs.
+             * Uses KEEP to prevent duplicate runs when triggered externally.
              */
             fun enqueue(context: Context) {
                 val constraints =
@@ -216,6 +217,36 @@ class EmbeddingGenerationWorker
                     .enqueueUniqueWork(
                         WORK_NAME,
                         ExistingWorkPolicy.KEEP,
+                        request,
+                    )
+            }
+
+            /**
+             * Enqueues a continuation batch from within a running worker.
+             * Uses REPLACE because the current work is still technically active
+             * when this is called, so KEEP would silently drop the request.
+             */
+            private fun enqueueContinuation(context: Context) {
+                val constraints =
+                    Constraints.Builder()
+                        .setRequiresBatteryNotLow(true)
+                        .build()
+
+                val request =
+                    OneTimeWorkRequestBuilder<EmbeddingGenerationWorker>()
+                        .setConstraints(constraints)
+                        .setBackoffCriteria(
+                            BackoffPolicy.EXPONENTIAL,
+                            30,
+                            TimeUnit.SECONDS,
+                        )
+                        .addTag(WORK_NAME)
+                        .build()
+
+                WorkManager.getInstance(context)
+                    .enqueueUniqueWork(
+                        WORK_NAME,
+                        ExistingWorkPolicy.REPLACE,
                         request,
                     )
             }

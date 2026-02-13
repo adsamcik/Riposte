@@ -48,14 +48,17 @@ class EmbeddingManager
         private val versionManager: EmbeddingModelVersionManager,
     ) {
         /**
-         * Proactively initializes the embedding model in the background so
-         * the first search is not blocked by model loading (~119ms+).
+         * Initializes the embedding model and resumes any incomplete indexing.
          *
-         * Safe to call on any flavor — lite/simple generators treat this as a no-op.
-         * Tracks initialization failures per app version for confirmed-error logic.
+         * Performs warm-up (model initialization), then checks for model upgrades
+         * and schedules background generation if there is pending work.
+         * All steps run sequentially in a single coroutine to avoid race conditions.
+         *
+         * Safe to call on any flavor — lite/simple generators treat warm-up as a no-op.
          */
-        fun warmUp(scope: CoroutineScope) {
+        fun warmUpAndResumeIndexing(scope: CoroutineScope) {
             scope.launch {
+                // 1. Initialize the embedding model
                 try {
                     embeddingGenerator.initialize()
                     versionManager.clearInitializationFailure()
@@ -68,18 +71,8 @@ class EmbeddingManager
                         Log.w(TAG, "Failed to record initialization failure", ve)
                     }
                 }
-            }
-        }
 
-        /**
-         * Resume incomplete embedding indexing on app startup.
-         *
-         * Checks for model upgrades, then schedules background generation
-         * if there is pending work and the model initialized successfully.
-         * Should be called after [warmUp] in [CoroutineScope] that outlives Activity.
-         */
-        fun resumeIncompleteIndexing(scope: CoroutineScope) {
-            scope.launch {
+                // 2. Resume incomplete indexing (runs after warm-up completes)
                 try {
                     checkAndHandleModelUpgrade()
 

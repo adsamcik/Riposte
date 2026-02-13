@@ -6,7 +6,6 @@ import androidx.compose.material.icons.filled.Brightness4
 import androidx.compose.material.icons.filled.ColorLens
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Hub
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Storage
@@ -147,24 +146,6 @@ internal fun LazyListScope.searchSection(
 @Composable
 private fun EmbeddingSearchSettings(uiState: SettingsUiState) {
     val embeddingState = uiState.embeddingSearchState ?: return
-    ClickableSettingItem(
-        title = stringResource(R.string.settings_embedding_model_title),
-        subtitle =
-            stringResource(
-                R.string.settings_embedding_model_subtitle,
-                embeddingState.dimension,
-            ),
-        onClick = { },
-        icon = Icons.Default.Hub,
-        showChevron = false,
-        trailingText =
-            stringResource(
-                R.string.settings_embedding_model_version,
-                embeddingState.modelName,
-                embeddingState.modelVersion,
-            ),
-    )
-
     ClickableSettingItem(
         title = stringResource(R.string.settings_search_index_title),
         subtitle = embeddingIndexSubtitle(embeddingState),
