@@ -1,8 +1,11 @@
 package com.adsamcik.riposte.feature.share.data
 
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import androidx.core.content.FileProvider
 import com.adsamcik.riposte.core.common.AppConstants
 import com.adsamcik.riposte.core.database.dao.MemeDao
@@ -130,6 +133,12 @@ class ShareRepositoryImpl
             val messagingIntents = resolveMessagingAppIntents(uri, mimeType)
             if (messagingIntents.isNotEmpty()) {
                 chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, messagingIntents.toTypedArray())
+
+                // On API 33+, exclude pinned components from the main list to avoid duplicates
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    val excludedComponents = messagingIntents.mapNotNull { it.component }.toTypedArray()
+                    chooserIntent.putExtra(Intent.EXTRA_EXCLUDE_COMPONENTS, excludedComponents)
+                }
             }
 
             return chooserIntent
@@ -137,7 +146,8 @@ class ShareRepositoryImpl
 
         /**
          * Resolves explicit share intents for installed messaging apps.
-         * These appear at the top of the system chooser via EXTRA_INITIAL_INTENTS.
+         * Each intent targets a specific activity component so the system chooser
+         * displays them correctly at the top via EXTRA_INITIAL_INTENTS.
          */
         private fun resolveMessagingAppIntents(
             uri: Uri,
@@ -145,17 +155,25 @@ class ShareRepositoryImpl
         ): List<Intent> {
             val pm = context.packageManager
             return MESSAGING_PACKAGES.mapNotNull { pkg ->
-                try {
-                    @Suppress("DEPRECATION")
-                    pm.getPackageInfo(pkg, 0)
+                val queryIntent =
                     Intent(Intent.ACTION_SEND).apply {
                         type = mimeType
-                        putExtra(Intent.EXTRA_STREAM, uri)
-                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                         setPackage(pkg)
                     }
-                } catch (_: android.content.pm.PackageManager.NameNotFoundException) {
-                    null
+                @Suppress("DEPRECATION")
+                val resolveInfo =
+                    pm.queryIntentActivities(queryIntent, PackageManager.MATCH_DEFAULT_ONLY)
+                        .firstOrNull() ?: return@mapNotNull null
+
+                Intent(Intent.ACTION_SEND).apply {
+                    type = mimeType
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    component =
+                        ComponentName(
+                            resolveInfo.activityInfo.packageName,
+                            resolveInfo.activityInfo.name,
+                        )
                 }
             }
         }
