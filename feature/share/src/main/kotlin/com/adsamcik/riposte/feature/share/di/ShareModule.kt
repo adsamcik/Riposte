@@ -1,9 +1,7 @@
 package com.adsamcik.riposte.feature.share.di
 
-import com.adsamcik.riposte.feature.share.data.DefaultBitmapLoader
+import com.adsamcik.riposte.core.common.share.ShareRepository
 import com.adsamcik.riposte.feature.share.data.ShareRepositoryImpl
-import com.adsamcik.riposte.feature.share.domain.BitmapLoader
-import com.adsamcik.riposte.feature.share.domain.repository.ShareRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -16,8 +14,4 @@ abstract class ShareModule {
     @Binds
     @Singleton
     abstract fun bindShareRepository(impl: ShareRepositoryImpl): ShareRepository
-
-    @Binds
-    @Singleton
-    abstract fun bindBitmapLoader(impl: DefaultBitmapLoader): BitmapLoader
 }

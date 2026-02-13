@@ -20,7 +20,3 @@ object ImportRoute
 // Settings Feature Routes
 @Serializable
 object SettingsRoute
-
-// Share Feature Routes
-@Serializable
-data class ShareRoute(val memeId: Long)

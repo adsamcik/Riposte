@@ -16,7 +16,7 @@ import com.adsamcik.riposte.core.model.ImageFormat
 import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.core.model.MemeMetadata
 import com.adsamcik.riposte.core.model.ShareConfig
-import com.adsamcik.riposte.feature.share.domain.repository.ShareRepository
+import com.adsamcik.riposte.core.common.share.ShareRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
