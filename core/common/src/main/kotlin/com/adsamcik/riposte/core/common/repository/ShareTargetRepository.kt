@@ -1,4 +1,4 @@
-package com.adsamcik.riposte.core.database.repository
+package com.adsamcik.riposte.core.common.repository
 
 import com.adsamcik.riposte.core.model.ShareTarget
 import kotlinx.coroutines.flow.Flow

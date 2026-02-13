@@ -38,7 +38,7 @@ class GalleryViewModel
         @ApplicationContext private val context: Context,
         private val useCases: GalleryViewModelUseCases,
         private val getSuggestionsUseCase: GetSuggestionsUseCase,
-        private val shareTargetRepository: com.adsamcik.riposte.core.database.repository.ShareTargetRepository,
+        private val shareTargetRepository: com.adsamcik.riposte.core.common.repository.ShareTargetRepository,
         @DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
         private val preferencesDataStore: PreferencesDataStore,
         val searchDelegate: SearchDelegate,

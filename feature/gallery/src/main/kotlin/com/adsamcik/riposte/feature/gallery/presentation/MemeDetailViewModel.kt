@@ -4,8 +4,8 @@ import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.adsamcik.riposte.core.common.repository.ShareTargetRepository
 import com.adsamcik.riposte.core.common.review.UserActionTracker
-import com.adsamcik.riposte.core.database.repository.ShareTargetRepository
 import com.adsamcik.riposte.core.datastore.PreferencesDataStore
 import com.adsamcik.riposte.core.model.EmojiTag
 import com.adsamcik.riposte.feature.gallery.R
