@@ -89,7 +89,7 @@ class PreferencesDataStore
                         defaultFormat =
                             prefs[PreferencesKeys.DEFAULT_FORMAT]?.let {
                                 ImageFormat.valueOf(it)
-                            } ?: ImageFormat.WEBP,
+                            } ?: ImageFormat.JPEG,
                         defaultQuality = prefs[PreferencesKeys.DEFAULT_QUALITY] ?: 85,
                         maxWidth = prefs[PreferencesKeys.MAX_WIDTH] ?: 1080,
                         maxHeight = prefs[PreferencesKeys.MAX_HEIGHT] ?: 1080,
