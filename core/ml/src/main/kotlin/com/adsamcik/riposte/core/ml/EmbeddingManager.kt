@@ -2,6 +2,7 @@ package com.adsamcik.riposte.core.ml
 
 import android.content.Context
 import android.util.Log
+import androidx.core.content.pm.PackageInfoCompat
 import com.adsamcik.riposte.core.database.dao.MemeEmbeddingDao
 import com.adsamcik.riposte.core.database.entity.MemeEmbeddingEntity
 import com.adsamcik.riposte.core.ml.worker.EmbeddingGenerationWorker
@@ -51,14 +52,52 @@ class EmbeddingManager
          * the first search is not blocked by model loading (~119ms+).
          *
          * Safe to call on any flavor — lite/simple generators treat this as a no-op.
+         * Tracks initialization failures per app version for confirmed-error logic.
          */
         fun warmUp(scope: CoroutineScope) {
             scope.launch {
                 try {
                     embeddingGenerator.initialize()
+                    versionManager.clearInitializationFailure()
                     Log.d(TAG, "Embedding model warm-up completed")
                 } catch (e: Exception) {
                     Log.w(TAG, "Embedding model warm-up failed (non-fatal)", e)
+                    try {
+                        versionManager.recordInitializationFailure(getAppVersionCode())
+                    } catch (ve: Exception) {
+                        Log.w(TAG, "Failed to record initialization failure", ve)
+                    }
+                }
+            }
+        }
+
+        /**
+         * Resume incomplete embedding indexing on app startup.
+         *
+         * Checks for model upgrades, then schedules background generation
+         * if there is pending work and the model initialized successfully.
+         * Should be called after [warmUp] in [CoroutineScope] that outlives Activity.
+         */
+        fun resumeIncompleteIndexing(scope: CoroutineScope) {
+            scope.launch {
+                try {
+                    checkAndHandleModelUpgrade()
+
+                    if (embeddingGenerator.initializationError == null) {
+                        val stats = getStatistics()
+                        if (!stats.isFullyIndexed) {
+                            Log.d(
+                                TAG,
+                                "Resuming indexing: ${stats.pendingEmbeddingCount} pending, " +
+                                    "${stats.regenerationNeededCount} regenerating",
+                            )
+                            scheduleBackgroundGeneration()
+                        }
+                    } else {
+                        Log.d(TAG, "Skipping auto-reindex: model error present")
+                    }
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed to resume incomplete indexing", e)
                 }
             }
         }
@@ -138,6 +177,8 @@ class EmbeddingManager
 
         /**
          * Get embedding statistics.
+         * The [EmbeddingStatistics.modelError] is only populated when the error
+         * has been confirmed (multiple failures on the same app version).
          */
         suspend fun getStatistics(): EmbeddingStatistics {
             val validCount = memeEmbeddingDao.countValidEmbeddings()
@@ -145,13 +186,22 @@ class EmbeddingManager
             val regenerationCount = memeEmbeddingDao.countEmbeddingsNeedingRegeneration()
             val versionCounts = memeEmbeddingDao.getEmbeddingCountByModelVersion()
 
+            val rawError = embeddingGenerator.initializationError
+            val confirmedError =
+                if (rawError != null) {
+                    val confirmed = versionManager.isErrorConfirmedForVersion(getAppVersionCode())
+                    if (confirmed) rawError else null
+                } else {
+                    null
+                }
+
             return EmbeddingStatistics(
                 validEmbeddingCount = validCount,
                 pendingEmbeddingCount = pendingCount,
                 regenerationNeededCount = regenerationCount,
                 currentModelVersion = versionManager.currentModelVersion,
                 embeddingsByVersion = versionCounts.associate { it.modelVersion to it.count },
-                modelError = embeddingGenerator.initializationError,
+                modelError = confirmedError,
             )
         }
 
@@ -221,6 +271,15 @@ class EmbeddingManager
             val hash = digest.digest(text.toByteArray(Charsets.UTF_8))
             // Truncate to 32 chars (128 bits) for storage efficiency while maintaining uniqueness
             return hash.take(16).joinToString("") { "%02x".format(it) }
+        }
+
+        private fun getAppVersionCode(): Long {
+            return try {
+                val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+                PackageInfoCompat.getLongVersionCode(packageInfo)
+            } catch (e: Exception) {
+                0L
+            }
         }
 
         companion object {

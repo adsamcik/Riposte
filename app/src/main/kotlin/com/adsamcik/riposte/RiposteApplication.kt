@@ -42,6 +42,7 @@ class RiposteApplication : Application(), Configuration.Provider {
         appLifecycleTracker.init()
         sharingShortcutUpdater.start(applicationScope)
         embeddingManager.warmUp(applicationScope)
+        embeddingManager.resumeIncompleteIndexing(applicationScope)
     }
 
     private fun installCrashHandler() {
