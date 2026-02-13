@@ -117,10 +117,46 @@ class ShareRepositoryImpl
             uri: Uri,
             mimeType: String,
         ): Intent {
-            return Intent(Intent.ACTION_SEND).apply {
-                type = mimeType
-                putExtra(Intent.EXTRA_STREAM, uri)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            val baseIntent =
+                Intent(Intent.ACTION_SEND).apply {
+                    type = mimeType
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+
+            val chooserIntent = Intent.createChooser(baseIntent, null)
+
+            // Prioritize messaging apps at the top of the chooser
+            val messagingIntents = resolveMessagingAppIntents(uri, mimeType)
+            if (messagingIntents.isNotEmpty()) {
+                chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, messagingIntents.toTypedArray())
+            }
+
+            return chooserIntent
+        }
+
+        /**
+         * Resolves explicit share intents for installed messaging apps.
+         * These appear at the top of the system chooser via EXTRA_INITIAL_INTENTS.
+         */
+        private fun resolveMessagingAppIntents(
+            uri: Uri,
+            mimeType: String,
+        ): List<Intent> {
+            val pm = context.packageManager
+            return MESSAGING_PACKAGES.mapNotNull { pkg ->
+                try {
+                    @Suppress("DEPRECATION")
+                    pm.getPackageInfo(pkg, 0)
+                    Intent(Intent.ACTION_SEND).apply {
+                        type = mimeType
+                        putExtra(Intent.EXTRA_STREAM, uri)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        setPackage(pkg)
+                    }
+                } catch (_: android.content.pm.PackageManager.NameNotFoundException) {
+                    null
+                }
             }
         }
 
@@ -224,6 +260,24 @@ class ShareRepositoryImpl
         companion object {
             /** Maximum age for cached share files before cleanup (24 hours). */
             private const val CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000L
+
+            /** Well-known messaging app packages, in priority order. */
+            private val MESSAGING_PACKAGES =
+                listOf(
+                    "com.whatsapp",
+                    "org.telegram.messenger",
+                    "com.discord",
+                    "org.thoughtcrime.securesms",
+                    "com.facebook.orca",
+                    "com.google.android.apps.messaging",
+                    "com.slack",
+                    "com.microsoft.teams",
+                    "com.viber.voip",
+                    "com.skype.raider",
+                    "com.kakao.talk",
+                    "jp.naver.line.android",
+                    "com.tencent.mm",
+                )
         }
 
         /**

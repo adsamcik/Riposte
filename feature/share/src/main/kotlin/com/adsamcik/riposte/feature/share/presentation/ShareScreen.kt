@@ -72,7 +72,6 @@ fun ShareScreen(
     val snackbarHostState = remember { SnackbarHostState() }
 
     // Hoist string resources for use in LaunchedEffect
-    val shareChooserTitle = stringResource(R.string.share_chooser_title)
     val savedToGalleryMessage = stringResource(R.string.share_message_saved_to_gallery)
     val noShareAppsMessage = stringResource(R.string.share_error_no_apps)
 
@@ -81,7 +80,7 @@ fun ShareScreen(
             when (effect) {
                 is ShareEffect.LaunchShareIntent -> {
                     try {
-                        context.startActivity(android.content.Intent.createChooser(effect.intent, shareChooserTitle))
+                        context.startActivity(effect.intent)
                     } catch (e: android.content.ActivityNotFoundException) {
                         snackbarHostState.showSnackbar(noShareAppsMessage)
                     }

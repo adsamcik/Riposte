@@ -9,7 +9,6 @@ import com.adsamcik.riposte.core.model.EmbeddingType
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -160,7 +159,7 @@ class EmbeddingManager
          * Observe embedding statistics as a Flow.
          */
         fun observeValidEmbeddingCount(): Flow<Int> {
-            return memeEmbeddingDao.observeAllValidEmbeddings().map { it.size }
+            return memeEmbeddingDao.observeValidEmbeddingsCount()
         }
 
         /**

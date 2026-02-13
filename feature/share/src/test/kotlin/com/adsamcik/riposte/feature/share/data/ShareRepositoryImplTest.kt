@@ -129,39 +129,43 @@ class ShareRepositoryImplTest {
     // region createShareIntent Tests
 
     @Test
-    fun `createShareIntent creates intent with correct action`() {
+    fun `createShareIntent returns chooser intent`() {
         val uri = Uri.parse("content://test/image.jpg")
 
         val intent = repository.createShareIntent(uri, "image/jpeg")
 
-        assertThat(intent.action).isEqualTo(Intent.ACTION_SEND)
+        assertThat(intent.action).isEqualTo(Intent.ACTION_CHOOSER)
     }
 
     @Test
-    fun `createShareIntent creates intent with correct type`() {
+    fun `createShareIntent wraps ACTION_SEND intent with correct type`() {
         val uri = Uri.parse("content://test/image.jpg")
 
-        val intent = repository.createShareIntent(uri, "image/jpeg")
+        val chooser = repository.createShareIntent(uri, "image/jpeg")
+        val wrapped = chooser.getParcelableExtra<Intent>(Intent.EXTRA_INTENT)!!
 
-        assertThat(intent.type).isEqualTo("image/jpeg")
+        assertThat(wrapped.action).isEqualTo(Intent.ACTION_SEND)
+        assertThat(wrapped.type).isEqualTo("image/jpeg")
     }
 
     @Test
-    fun `createShareIntent includes URI as extra stream`() {
+    fun `createShareIntent includes URI as extra stream in wrapped intent`() {
         val uri = Uri.parse("content://test/image.png")
 
-        val intent = repository.createShareIntent(uri, "image/png")
+        val chooser = repository.createShareIntent(uri, "image/png")
+        val wrapped = chooser.getParcelableExtra<Intent>(Intent.EXTRA_INTENT)!!
 
-        assertThat(intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)).isEqualTo(uri)
+        assertThat(wrapped.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)).isEqualTo(uri)
     }
 
     @Test
-    fun `createShareIntent adds read URI permission flag`() {
+    fun `createShareIntent adds read URI permission flag in wrapped intent`() {
         val uri = Uri.parse("content://test/image.webp")
 
-        val intent = repository.createShareIntent(uri, "image/webp")
+        val chooser = repository.createShareIntent(uri, "image/webp")
+        val wrapped = chooser.getParcelableExtra<Intent>(Intent.EXTRA_INTENT)!!
 
-        assertThat(intent.flags and Intent.FLAG_GRANT_READ_URI_PERMISSION).isNotEqualTo(0)
+        assertThat(wrapped.flags and Intent.FLAG_GRANT_READ_URI_PERMISSION).isNotEqualTo(0)
     }
 
     // endregion
