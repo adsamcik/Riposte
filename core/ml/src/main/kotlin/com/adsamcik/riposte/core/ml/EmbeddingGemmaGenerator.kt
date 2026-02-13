@@ -80,8 +80,8 @@ class EmbeddingGemmaGenerator
         private var _initializationError: String? = null
         override val initializationError: String? get() = _initializationError
 
-        /** Whether GPU acceleration is enabled. */
-        private var useGpu = true
+        /** Whether GPU acceleration is enabled (auto-detected based on OpenCL availability). */
+        private var useGpu = isOpenClAvailable()
 
         /** Executor for handling ListenableFuture callbacks. */
         private var callbackExecutor = Executors.newSingleThreadExecutor()
@@ -490,6 +490,22 @@ class EmbeddingGemmaGenerator
 
         companion object {
             private const val TAG = "EmbeddingGemma"
+
+            /**
+             * Checks whether OpenCL is available on this device.
+             * The AI Edge RAG SDK's native code fatally aborts (CHECK failure) if the GPU
+             * delegate cannot be created. Since this is a native abort, it cannot be caught
+             * by Java/Kotlin exception handlers. We proactively check for OpenCL availability
+             * to avoid passing useGpu=true on devices where it would crash.
+             */
+            private fun isOpenClAvailable(): Boolean =
+                try {
+                    System.loadLibrary("OpenCL")
+                    true
+                } catch (_: UnsatisfiedLinkError) {
+                    Log.w(TAG, "OpenCL not available, disabling GPU acceleration")
+                    false
+                }
 
             /** Directory where model files are stored. */
             const val MODEL_DIRECTORY = "embedding_models"
