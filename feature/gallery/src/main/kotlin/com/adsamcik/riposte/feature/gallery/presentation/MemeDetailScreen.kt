@@ -115,6 +115,7 @@ fun MemeDetailScreen(
     onNavigateBack: () -> Unit,
     onNavigateToShare: (Long) -> Unit = {},
     onNavigateToMeme: (Long) -> Unit = {},
+    onNavigateToGalleryWithEmoji: (String) -> Unit = {},
     viewModel: MemeDetailViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -162,6 +163,8 @@ fun MemeDetailScreen(
                         )
                     }
                 }
+                is MemeDetailEffect.NavigateToGalleryWithEmoji ->
+                    onNavigateToGalleryWithEmoji(effect.emoji)
             }
         }
     }
@@ -703,7 +706,10 @@ private fun MemeInfoSheet(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     meme.emojiTags.forEach { tag ->
-                        EmojiChip(emojiTag = tag)
+                        EmojiChip(
+                            emojiTag = tag,
+                            onClick = { onIntent(MemeDetailIntent.SearchByEmoji(tag.emoji)) },
+                        )
                     }
                 }
             } else {

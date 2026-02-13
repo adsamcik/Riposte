@@ -48,4 +48,6 @@ sealed interface MemeDetailIntent {
     data object CopyToClipboard : MemeDetailIntent
 
     data class ChangeMeme(val memeId: Long) : MemeDetailIntent
+
+    data class SearchByEmoji(val emoji: String) : MemeDetailIntent
 }

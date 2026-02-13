@@ -8,6 +8,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navOptions
 import com.adsamcik.riposte.core.common.navigation.GalleryRoute
 import com.adsamcik.riposte.core.common.navigation.MemeDetailRoute
+import com.adsamcik.riposte.feature.gallery.navigation.EMOJI_FILTER_KEY
 import com.adsamcik.riposte.feature.gallery.navigation.galleryScreen
 import com.adsamcik.riposte.feature.gallery.navigation.memeDetailScreen
 import com.adsamcik.riposte.feature.gallery.navigation.navigateToMemeDetail
@@ -66,6 +67,11 @@ fun RiposteNavHost(
                         popUpTo<MemeDetailRoute> { inclusive = true }
                     },
                 )
+            },
+            onNavigateToGalleryWithEmoji = { emoji ->
+                navController.getBackStackEntry(GalleryRoute)
+                    .savedStateHandle[EMOJI_FILTER_KEY] = emoji
+                navController.popBackStack(GalleryRoute, inclusive = false)
             },
         )
 

@@ -73,12 +73,19 @@ class MemeDetailViewModel
                 is MemeDetailIntent.DismissQuickShare -> dismissQuickShare()
                 is MemeDetailIntent.CopyToClipboard -> copyToClipboard()
                 is MemeDetailIntent.ChangeMeme -> changeMeme(intent.memeId)
+                is MemeDetailIntent.SearchByEmoji -> searchByEmoji(intent.emoji)
             }
         }
 
         private fun openShareScreen() {
             viewModelScope.launch {
                 _effects.send(MemeDetailEffect.NavigateToShare(currentMemeId))
+            }
+        }
+
+        private fun searchByEmoji(emoji: String) {
+            viewModelScope.launch {
+                _effects.send(MemeDetailEffect.NavigateToGalleryWithEmoji(emoji))
             }
         }
 

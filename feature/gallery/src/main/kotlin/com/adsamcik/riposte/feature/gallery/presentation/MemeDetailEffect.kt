@@ -14,4 +14,6 @@ sealed interface MemeDetailEffect {
     data class NavigateToMeme(val memeId: Long) : MemeDetailEffect
 
     data class CopyToClipboard(val memeId: Long) : MemeDetailEffect
+
+    data class NavigateToGalleryWithEmoji(val emoji: String) : MemeDetailEffect
 }

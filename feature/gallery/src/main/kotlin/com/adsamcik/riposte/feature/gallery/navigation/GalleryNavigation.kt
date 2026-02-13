@@ -1,5 +1,7 @@
 package com.adsamcik.riposte.feature.gallery.navigation
 
+import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavOptions
@@ -27,20 +29,30 @@ fun NavGraphBuilder.galleryScreen(
     onNavigateToSettings: () -> Unit,
     onNavigateToShare: (Long) -> Unit,
 ) {
-    composable<GalleryRoute> {
+    composable<GalleryRoute> { backStackEntry ->
+        val savedStateHandle = backStackEntry.savedStateHandle
+        val emojiFilter =
+            savedStateHandle.getStateFlow<String?>(EMOJI_FILTER_KEY, null)
+                .collectAsStateWithLifecycle()
+
         GalleryScreen(
             onNavigateToMeme = onNavigateToMeme,
             onNavigateToImport = onNavigateToImport,
             onNavigateToSettings = onNavigateToSettings,
             onNavigateToShare = onNavigateToShare,
+            initialEmojiFilter = emojiFilter.value,
+            onEmojiFilterConsumed = { savedStateHandle.remove<String>(EMOJI_FILTER_KEY) },
         )
     }
 }
+
+const val EMOJI_FILTER_KEY = "emoji_filter"
 
 fun NavGraphBuilder.memeDetailScreen(
     onNavigateBack: () -> Unit,
     onNavigateToShare: (Long) -> Unit = {},
     onNavigateToMeme: (Long) -> Unit = {},
+    onNavigateToGalleryWithEmoji: (String) -> Unit = {},
 ) {
     composable<MemeDetailRoute> { backStackEntry ->
         val route = backStackEntry.toRoute<MemeDetailRoute>()
@@ -48,6 +60,7 @@ fun NavGraphBuilder.memeDetailScreen(
             onNavigateBack = onNavigateBack,
             onNavigateToShare = onNavigateToShare,
             onNavigateToMeme = onNavigateToMeme,
+            onNavigateToGalleryWithEmoji = onNavigateToGalleryWithEmoji,
         )
     }
 }

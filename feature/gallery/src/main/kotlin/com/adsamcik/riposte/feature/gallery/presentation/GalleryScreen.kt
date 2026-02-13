@@ -117,6 +117,8 @@ fun GalleryScreen(
     onNavigateToImport: () -> Unit,
     onNavigateToSettings: () -> Unit,
     onNavigateToShare: (Long) -> Unit = {},
+    initialEmojiFilter: String? = null,
+    onEmojiFilterConsumed: () -> Unit = {},
     viewModel: GalleryViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -175,6 +177,15 @@ fun GalleryScreen(
                     }
                 }
             }
+        }
+    }
+
+    // Handle emoji filter passed from detail screen
+    LaunchedEffect(initialEmojiFilter) {
+        if (initialEmojiFilter != null) {
+            viewModel.onIntent(GalleryIntent.ClearEmojiFilters)
+            viewModel.onIntent(GalleryIntent.ToggleEmojiFilter(initialEmojiFilter))
+            onEmojiFilterConsumed()
         }
     }
 
