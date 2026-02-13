@@ -32,10 +32,10 @@ mlkit-text-recognition = "16.0.1"
 mlkit-image-labeling = "17.0.9"
 
 # MediaPipe (On-device AI Tasks)
-mediapipe-tasks-text = "0.10.21"
+mediapipe-tasks-text = "0.10.32"
 
 # LiteRT (Replaces TensorFlow Lite)
-litert = "1.4.1"
+litert = "2.1.1"
 
 # Google AI Edge RAG SDK (for EmbeddingGemma)
 ai-edge-rag = "0.3.0"
@@ -153,8 +153,6 @@ mediapipe-tasks-text = { group = "com.google.mediapipe", name = "tasks-text", ve
 
 # LiteRT (On-device AI Runtime - Replaces TensorFlow Lite)
 litert-runtime = { group = "com.google.ai.edge.litert", name = "litert", version.ref = "litert" }
-litert-support = { group = "com.google.ai.edge.litert", name = "litert-support", version.ref = "litert" }
-litert-gpu = { group = "com.google.ai.edge.litert", name = "litert-gpu", version.ref = "litert" }
 
 # Google AI Edge RAG SDK (for EmbeddingGemma)
 ai-edge-rag = { group = "com.google.ai.edge.localagents", name = "localagents-rag", version.ref = "ai-edge-rag" }
@@ -224,7 +222,7 @@ compose-debug = ["compose-ui-tooling", "compose-ui-test-manifest"]
 lifecycle = ["lifecycle-runtime-compose", "lifecycle-viewmodel-compose"]
 room = ["room-runtime", "room-ktx"]
 mlkit = ["mlkit-text-recognition", "mlkit-image-labeling"]
-litert = ["litert-runtime", "litert-support"]
+litert = ["litert-runtime"]
 testing = ["junit", "coroutines-test", "mockk", "turbine", "truth"]
 android-testing = ["androidx-test-ext", "espresso-core", "compose-ui-test-junit4", "hilt-android-testing"]
 
