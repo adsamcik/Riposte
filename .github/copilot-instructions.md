@@ -183,7 +183,7 @@ meme-cli annotate ./memes --zip --force           # ZIP bundle, overwrite existi
 ```
 
 - Requires `copilot auth login` first
-- Uses `gpt-4.1` model via `github-copilot-sdk`
+- Uses `gpt-5-mini` model via `github-copilot-sdk`
 - Outputs JSON sidecar files per image (schema v1.3)
 - No fallback behavior — errors propagate, not placeholder data
 - Rate limited: 1s minimum delay between requests, exponential backoff on 429/5xx, up to 8 retries

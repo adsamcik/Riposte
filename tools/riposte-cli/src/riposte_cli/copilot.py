@@ -300,7 +300,7 @@ def _parse_response_content(content: str) -> dict[str, Any]:
 
 async def analyze_image_async(
     image_path: Path,
-    model: str = "gpt-4.1",
+    model: str = "gpt-5-mini",
     verbose: bool = False,
     languages: list[str] | None = None,
 ) -> dict[str, Any]:
@@ -308,7 +308,7 @@ async def analyze_image_async(
     
     Args:
         image_path: Path to the image file.
-        model: Model to use (default: gpt-4.1).
+        model: Model to use (default: gpt-5-mini).
         verbose: Whether to print debug information.
         languages: List of BCP 47 language codes for multilingual output.
             First language is the primary language.
@@ -461,7 +461,7 @@ async def analyze_image_async(
 def analyze_image(
     image_path: Path,
     access_token: str | None = None,  # Kept for API compatibility, not used with SDK
-    model: str = "gpt-4.1",
+    model: str = "gpt-5-mini",
     verbose: bool = False,
     languages: list[str] | None = None,
 ) -> dict[str, Any]:
@@ -470,7 +470,7 @@ def analyze_image(
     Args:
         image_path: Path to the image file.
         access_token: Ignored (kept for API compatibility).
-        model: Model to use (default: gpt-4.1).
+        model: Model to use (default: gpt-5-mini).
         verbose: Whether to print debug information.
         languages: List of BCP 47 language codes for multilingual output.
         

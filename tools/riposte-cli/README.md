@@ -84,7 +84,7 @@ meme-cli annotate ./my-memes --zip
 meme-cli annotate ./my-memes --output ./annotated
 
 # Use a specific model
-meme-cli annotate ./my-memes --model gpt-4.1
+meme-cli annotate ./my-memes --model gpt-5-mini
 ```
 
 ### 3. Import to Android App
@@ -111,7 +111,7 @@ meme-cli annotate <folder> [OPTIONS]
 Options:
   --zip                    Bundle images and sidecars into a .meme.zip file
   --output, -o PATH        Output directory for sidecar files (default: same as input)
-  --model, -m TEXT         Model to use for analysis (default: gpt-4.1)
+  --model, -m TEXT         Model to use for analysis (default: gpt-5-mini)
   --languages, -l TEXT     Comma-separated BCP 47 language codes (default: en)
   --force, -f              Force regeneration of all sidecars, overwriting existing
   --continue               Only process images without existing JSON sidecars

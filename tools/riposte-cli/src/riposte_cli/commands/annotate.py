@@ -240,8 +240,8 @@ def write_sidecar(image_path: Path, metadata: dict, output_dir: Path | None = No
 )
 @click.option(
     "--model", "-m",
-    default="gpt-4.1",
-    help="Model to use for analysis (default: gpt-4.1)",
+    default="gpt-5-mini",
+    help="Model to use for analysis (default: gpt-5-mini)",
 )
 @click.option(
     "--languages", "-l",

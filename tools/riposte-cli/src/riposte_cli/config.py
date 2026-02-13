@@ -106,10 +106,10 @@ def get_default_model() -> str:
     """Get the default model to use.
     
     Returns:
-        The model name (default: openai/gpt-4.1).
+        The model name (default: openai/gpt-5-mini).
     """
     config = load_config()
-    return config.get("default_model", "openai/gpt-4.1")
+    return config.get("default_model", "openai/gpt-5-mini")
 
 
 def save_default_model(model: str) -> None:
