@@ -10,6 +10,7 @@
     <string name="settings_section_appearance">Appearance</string>
     <string name="settings_section_search">Search</string>
     <string name="settings_section_sharing">Sharing</string>
+    <string name="settings_section_library">Library</string>
     <string name="settings_section_storage">Storage</string>
     <string name="settings_section_about">About</string>
     
@@ -63,6 +64,12 @@
 
     <!-- Storage Section -->
     <string name="settings_clear_cache_title">Clear Cache</string>
+
+    <!-- Library Section -->
+    <string name="settings_library_total_memes_title">Total Memes</string>
+    <string name="settings_library_favorites_title">Favorites</string>
+
+    <!-- Storage Section (cont.) -->
     <string name="settings_clear_cache_subtitle">Free up %1$s</string>
     <string name="settings_clear_cache_subtitle_empty">Cache is empty</string>
     <string name="settings_export_data_title">Export Data</string>

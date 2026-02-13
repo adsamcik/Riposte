@@ -6,9 +6,11 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.CleaningServices
+import androidx.compose.material.icons.filled.Collections
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Policy
 import androidx.compose.material.icons.filled.Upload
@@ -119,6 +121,32 @@ private fun ShareMaxSizeSettingItem(
             }
         },
     )
+}
+
+internal fun LazyListScope.librarySection(uiState: SettingsUiState) {
+    item(key = "library") {
+        SettingsSection(title = stringResource(R.string.settings_section_library)) {
+            ClickableSettingItem(
+                title = stringResource(R.string.settings_library_total_memes_title),
+                subtitle = null,
+                onClick = { },
+                icon = Icons.Default.Collections,
+                showChevron = false,
+                trailingText = uiState.totalMemeCount.toString(),
+            )
+
+            if (uiState.favoriteMemeCount > 0) {
+                ClickableSettingItem(
+                    title = stringResource(R.string.settings_library_favorites_title),
+                    subtitle = null,
+                    onClick = { },
+                    icon = Icons.Default.Favorite,
+                    showChevron = false,
+                    trailingText = uiState.favoriteMemeCount.toString(),
+                )
+            }
+        }
+    }
 }
 
 internal fun LazyListScope.storageSection(

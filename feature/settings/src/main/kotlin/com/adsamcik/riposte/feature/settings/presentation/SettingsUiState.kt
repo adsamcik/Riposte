@@ -54,6 +54,9 @@ data class SettingsUiState(
     val enableSemanticSearch: Boolean = true,
     val saveSearchHistory: Boolean = true,
     val embeddingSearchState: EmbeddingSearchState? = null,
+    // Library
+    val totalMemeCount: Int = 0,
+    val favoriteMemeCount: Int = 0,
     // Storage
     val cacheSize: String = "0 B",
     val showClearCacheDialog: Boolean = false,

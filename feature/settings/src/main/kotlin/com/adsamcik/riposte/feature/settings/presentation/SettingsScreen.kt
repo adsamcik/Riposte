@@ -174,6 +174,7 @@ fun SettingsScreen(
                 appearanceSection(uiState = uiState, onIntent = onIntent)
                 searchSection(uiState = uiState, onIntent = onIntent)
                 sharingSection(uiState = uiState, onIntent = onIntent)
+                librarySection(uiState = uiState)
                 storageSection(uiState = uiState, onIntent = onIntent)
                 diagnosticsSection(uiState = uiState, onIntent = onIntent)
                 aboutSection(uiState = uiState, onIntent = onIntent)
