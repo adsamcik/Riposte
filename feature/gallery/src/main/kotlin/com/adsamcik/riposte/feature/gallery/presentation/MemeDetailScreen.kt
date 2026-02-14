@@ -121,6 +121,7 @@ fun MemeDetailScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
     val zoomState = rememberZoomState()
+    val shareNoAppMessage = stringResource(R.string.gallery_error_share_no_app)
 
     LaunchedEffect(Unit) {
         viewModel.effects.collectLatest { effect ->
@@ -130,7 +131,7 @@ fun MemeDetailScreen(
                     try {
                         context.startActivity(effect.intent)
                     } catch (_: android.content.ActivityNotFoundException) {
-                        snackbarHostState.showSnackbar("Unable to share — app not found")
+                        snackbarHostState.showSnackbar(shareNoAppMessage)
                     }
                 }
                 is MemeDetailEffect.NavigateToMeme -> onNavigateToMeme(effect.memeId)
