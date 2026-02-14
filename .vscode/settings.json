@@ -1,0 +1,18 @@
+{
+  "mcp": {
+    "servers": {
+      "android": {
+        "command": "C:\\Users\\adam-\\.local\\bin\\uv.exe",
+        "args": [
+          "--directory",
+          "C:\\Users\\adam-\\android-mcp-server",
+          "run",
+          "server.py"
+        ],
+        "env": {
+          "PATH": "C:\\Users\\adam-\\AppData\\Local\\Android\\Sdk\\platform-tools;${env:PATH}"
+        }
+      }
+    }
+  }
+}
