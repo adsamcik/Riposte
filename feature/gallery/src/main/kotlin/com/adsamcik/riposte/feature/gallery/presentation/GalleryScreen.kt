@@ -394,7 +394,7 @@ private fun GalleryScreenContent(
                     .padding(paddingValues),
         ) {
             // Content area with top space for floating search bar
-            val floatingBarSpace = if (!uiState.isSelectionMode) 64.dp else 0.dp
+            val floatingBarSpace = 0.dp
             Box(
                 modifier =
                     Modifier
@@ -795,7 +795,7 @@ private fun GalleryContent(
             LazyVerticalGrid(
                 state = gridState,
                 columns = GridCells.Fixed(columns),
-                contentPadding = PaddingValues(start = 4.dp, end = 4.dp, top = 4.dp, bottom = 80.dp),
+                contentPadding = PaddingValues(start = 4.dp, end = 4.dp, top = if (uiState.isSelectionMode) 4.dp else 64.dp, bottom = 80.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
                 content = gridContent,
