@@ -476,8 +476,10 @@ def annotate(
             img_start = time.monotonic()
             
             for attempt in range(max_retries):
+                acquired = False
                 try:
                     await limiter.acquire()
+                    acquired = True
                     try:
                         result = await analyze_image_async(
                             image_path,
@@ -488,6 +490,7 @@ def annotate(
                         )
                     finally:
                         await limiter.release()
+                        acquired = False
                     
                     content_hash = get_image_hash(image_path)
                     metadata = create_sidecar_metadata(
@@ -522,6 +525,8 @@ def annotate(
                     )
                     sys.exit(1)
                 except asyncio.CancelledError:
+                    if acquired:
+                        await limiter.release()
                     raise
                 except RateLimitError as e:
                     wait_time = await limiter.record_rate_limit(
@@ -636,6 +641,7 @@ def annotate(
                 await shared_client.stop()
         
         # Run async processing
+        was_interrupted = False
         try:
             processed, errors, was_interrupted = asyncio.run(process_images())
         except KeyboardInterrupt:
@@ -643,7 +649,6 @@ def annotate(
             console.print(
                 "\n[yellow]Interrupted before processing started[/yellow]"
             )
-            processed, errors = [], []
         
         # Summary
         console.print()

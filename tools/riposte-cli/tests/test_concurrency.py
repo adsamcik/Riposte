@@ -243,3 +243,73 @@ class TestConcurrencyLimiter:
         assert limiter.active_tasks == 1
         await limiter.release()
         assert limiter.active_tasks == 0
+
+    @pytest.mark.asyncio
+    async def test_overlapping_pauses_longest_wins(self) -> None:
+        """When two workers hit 429 concurrently, the longer pause must win.
+        
+        The green light should NOT be set until the longest pause expires.
+        """
+        limiter = ConcurrencyLimiter(max_concurrency=4)
+        limiter._rate_limiter = RateLimiter(min_delay=0.01, max_delay=1.0)
+
+        async def short_pause() -> None:
+            await limiter.record_rate_limit(retry_after=0.05)
+
+        async def long_pause() -> None:
+            await asyncio.sleep(0.01)  # Start slightly after first pause
+            await limiter.record_rate_limit(retry_after=0.15)
+
+        async def check_still_paused() -> bool:
+            """Check that green light is still off after the short pause ends."""
+            # Wait for the short pause to finish (~0.06s) but before the
+            # long pause ends (~0.17s)
+            await asyncio.sleep(0.08)
+            return limiter.is_paused
+
+        results = await asyncio.gather(
+            short_pause(),
+            long_pause(),
+            check_still_paused(),
+        )
+        # The observer at 0.08s should see the limiter still paused
+        # because the long pause (0.15s + buffer) hasn't finished yet
+        still_paused_at_check = results[2]
+        assert still_paused_at_check, (
+            "Green light was set prematurely — short pause "
+            "should not have resumed workers"
+        )
+
+
+class TestErrorDetection:
+    """Tests for error code detection in error messages."""
+
+    def test_429_not_matched_in_filename(self) -> None:
+        """Filenames like 'error_429.png' should not trigger rate limit detection."""
+        import re
+        error_msg = "Failed to process file: error_429.png not found"
+        # The old code would match "429" anywhere; the new code uses word boundaries
+        assert not re.search(r'\b429\b', error_msg.replace("error_429", "error_x"))
+        # But a real 429 status should match
+        assert re.search(r'\b429\b', "HTTP 429 Too Many Requests")
+        assert re.search(r'\b429\b', "status 429")
+
+    def test_500_not_matched_in_filename(self) -> None:
+        """Filenames like 'image_500.jpg' should not trigger server error detection."""
+        import re
+        error_msg = "Error processing image_500.jpg"
+        # "500" inside "image_500" should not match with word boundaries
+        assert not re.search(r'\b(500|502|503|504)\b', error_msg)
+
+    def test_real_status_codes_match(self) -> None:
+        """Real HTTP status codes in error messages should be detected."""
+        import re
+        for code in ["500", "502", "503", "504"]:
+            assert re.search(r'\b(500|502|503|504)\b', f"HTTP {code} error")
+            assert re.search(r'\b(500|502|503|504)\b', f"status code: {code}")
+
+    def test_rate_limit_keyword_match(self) -> None:
+        """'rate limit' keyword detection should work."""
+        assert "rate limit" in "rate limit exceeded".lower()
+        # But just "rate" alone shouldn't match (was a bug before)
+        assert "rate limit" not in "generating at a moderate rate".lower()

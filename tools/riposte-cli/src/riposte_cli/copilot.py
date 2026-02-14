@@ -6,6 +6,7 @@ Requires GitHub Copilot CLI installed and in PATH.
 
 import asyncio
 import json
+import re
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -284,6 +285,8 @@ class ConcurrencyLimiter:
         # How many successes before trying to restore one concurrency slot
         self._restore_threshold = 10
         self._lock = asyncio.Lock()
+        # Track when the current pause should end (monotonic time)
+        self._pause_until: float = 0.0
     
     @property
     def rate_limiter(self) -> RateLimiter:
@@ -331,6 +334,9 @@ class ConcurrencyLimiter:
     async def record_rate_limit(self, retry_after: float | None = None) -> float:
         """Record a 429 rate limit error. Pauses all workers.
         
+        If multiple workers hit 429 concurrently, the longest pause wins —
+        a shorter pause finishing first will not prematurely resume workers.
+        
         Returns:
             Wait time in seconds.
         """
@@ -338,11 +344,24 @@ class ConcurrencyLimiter:
             wait_time = self._rate_limiter.record_failure(retry_after=retry_after)
             self._successes_since_last_reduce = 0
             self._reduce_concurrency()
+            
+            # Extend pause if this 429 requires a longer wait than the
+            # currently active pause (prevents premature resume).
+            new_pause_until = time.monotonic() + wait_time
+            if new_pause_until > self._pause_until:
+                self._pause_until = new_pause_until
+            else:
+                # A longer pause is already active — just wait it out
+                wait_time = max(0, self._pause_until - time.monotonic())
         
-        # Pause all workers, wait, then resume
         self._green_light.clear()
         await asyncio.sleep(wait_time)
-        self._green_light.set()
+        
+        # Only resume if no later pause has been scheduled
+        async with self._lock:
+            if time.monotonic() >= self._pause_until:
+                self._green_light.set()
+        
         return wait_time
     
     async def record_server_error(self) -> float:
@@ -364,13 +383,22 @@ class ConcurrencyLimiter:
         return self._rate_limiter.should_give_up()
     
     def _reduce_concurrency(self) -> None:
-        """Reduce concurrency by one slot (must hold self._lock)."""
+        """Reduce concurrency by one slot (must hold self._lock).
+        
+        The reduction takes effect naturally: we track a lower
+        _current_concurrency and create a fresh semaphore with the new
+        value on the next batch. For in-progress batches, the extra
+        slot is consumed when we release() one fewer permit than was
+        originally available — workers that finish will not get new
+        slots until concurrency is restored.
+        """
         if self._current_concurrency > self.min_concurrency:
             self._current_concurrency -= 1
-            # Drain one permit from the semaphore without blocking.
-            # If no permit is immediately available the reduction takes
-            # effect naturally once a running task releases.
-            if self._semaphore._value > 0:
+            # Drain one permit without blocking via the internal counter.
+            # This is a CPython implementation detail but is stable across
+            # Python 3.10-3.13. The alternative (letting it drain naturally)
+            # delays the reduction until a task happens to release.
+            if self._semaphore._value > 0:  # noqa: SLF001
                 self._semaphore._value -= 1
 
 
@@ -540,7 +568,8 @@ async def analyze_image_async(
             error_lower = error_message.lower()
             
             # Check for rate limit errors (429)
-            if "rate" in error_lower or "429" in error_message:
+            # Use word boundary regex to avoid matching filenames like "image_429.png"
+            if "rate limit" in error_lower or re.search(r'\b429\b', error_message):
                 wait_time = _rate_limiter.record_failure()
                 raise RateLimitError(
                     f"Rate limit exceeded. Retry after {wait_time:.1f}s",
@@ -548,13 +577,10 @@ async def analyze_image_async(
                 ) from e
             
             # Check for server errors (500, 502, 504) - transient, can retry
-            if any(code in error_message for code in ["500", "502", "504"]):
+            server_code_match = re.search(r'\b(500|502|503|504)\b', error_message)
+            if server_code_match:
                 wait_time = _rate_limiter.record_failure(is_server_error=True)
-                status = 500
-                for code in [500, 502, 504]:
-                    if str(code) in error_message:
-                        status = code
-                        break
+                status = int(server_code_match.group(1))
                 raise ServerError(
                     f"Server error ({status}). Retry after {wait_time:.1f}s",
                     status_code=status,
@@ -563,7 +589,7 @@ async def analyze_image_async(
             # Check for server error keywords
             if any(kw in error_lower for kw in [
                 "internal server", "bad gateway", "gateway timeout",
-                "service unavailable", "503"
+                "service unavailable",
             ]):
                 wait_time = _rate_limiter.record_failure(is_server_error=True)
                 raise ServerError(
