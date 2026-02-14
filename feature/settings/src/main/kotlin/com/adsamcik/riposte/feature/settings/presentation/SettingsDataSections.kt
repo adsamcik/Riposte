@@ -3,6 +3,9 @@
 package com.adsamcik.riposte.feature.settings.presentation
 
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.CleaningServices
@@ -125,23 +128,17 @@ private fun ShareMaxSizeSettingItem(
 internal fun LazyListScope.librarySection(uiState: SettingsUiState) {
     item(key = "library") {
         SettingsSection(title = stringResource(R.string.settings_section_library)) {
-            ClickableSettingItem(
-                title = stringResource(R.string.settings_library_total_memes_title),
-                subtitle = null,
-                onClick = { },
-                icon = Icons.Default.Collections,
-                showChevron = false,
-                trailingText = uiState.totalMemeCount.toString(),
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_library_total_memes_title)) },
+                leadingContent = { Icon(imageVector = Icons.Default.Collections, contentDescription = null) },
+                trailingContent = { Text(uiState.totalMemeCount.toString()) },
             )
 
             if (uiState.favoriteMemeCount > 0) {
-                ClickableSettingItem(
-                    title = stringResource(R.string.settings_library_favorites_title),
-                    subtitle = null,
-                    onClick = { },
-                    icon = Icons.Default.Favorite,
-                    showChevron = false,
-                    trailingText = uiState.favoriteMemeCount.toString(),
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.settings_library_favorites_title)) },
+                    leadingContent = { Icon(imageVector = Icons.Default.Favorite, contentDescription = null) },
+                    trailingContent = { Text(uiState.favoriteMemeCount.toString()) },
                 )
             }
         }

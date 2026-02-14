@@ -1,6 +1,9 @@
 package com.adsamcik.riposte.feature.settings.presentation
 
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Brightness4
 import androidx.compose.material.icons.filled.ColorLens
@@ -146,12 +149,10 @@ internal fun LazyListScope.searchSection(
 @Composable
 private fun EmbeddingSearchSettings(uiState: SettingsUiState) {
     val embeddingState = uiState.embeddingSearchState ?: return
-    ClickableSettingItem(
-        title = stringResource(R.string.settings_search_index_title),
-        subtitle = embeddingIndexSubtitle(embeddingState),
-        onClick = { },
-        icon = Icons.Default.Storage,
-        showChevron = false,
+    ListItem(
+        headlineContent = { Text(stringResource(R.string.settings_search_index_title)) },
+        supportingContent = { Text(embeddingIndexSubtitle(embeddingState)) },
+        leadingContent = { Icon(imageVector = Icons.Default.Storage, contentDescription = null) },
     )
 }
 
