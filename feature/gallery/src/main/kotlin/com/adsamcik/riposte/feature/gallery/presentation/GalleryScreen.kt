@@ -24,11 +24,9 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -84,7 +82,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.pluralStringResource
@@ -282,15 +279,10 @@ private fun GalleryScreenContent(
     }
 
     val keyboardController = LocalSoftwareKeyboardController.current
-    val density = LocalDensity.current
-    val imeBottom = WindowInsets.ime.getBottom(density)
 
     BackHandler(enabled = uiState.screenMode == ScreenMode.Searching) {
-        if (imeBottom > 0) {
-            keyboardController?.hide()
-        } else {
-            onIntent(GalleryIntent.ClearSearch)
-        }
+        keyboardController?.hide()
+        onIntent(GalleryIntent.ClearSearch)
     }
 
     Scaffold(
@@ -1048,12 +1040,21 @@ private fun BoxScope.SelectionOverlay(
     }
 
     // Circular check indicator
+    val selectionStateDescription = if (isSelected) {
+        stringResource(R.string.gallery_cd_selected)
+    } else {
+        stringResource(R.string.gallery_cd_not_selected)
+    }
     Box(
         modifier =
             Modifier
                 .align(Alignment.TopStart)
                 .padding(6.dp)
                 .size(24.dp)
+                .semantics {
+                    role = Role.Checkbox
+                    stateDescription = selectionStateDescription
+                }
                 .graphicsLayer {
                     scaleX = checkScale
                     scaleY = checkScale
