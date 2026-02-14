@@ -285,7 +285,6 @@ private fun GalleryScreenContent(
 
     BackHandler(enabled = uiState.screenMode == ScreenMode.Searching) {
         keyboardController?.hide()
-        onIntent(GalleryIntent.ClearSearch)
     }
 
     Scaffold(
@@ -835,15 +834,10 @@ private fun FloatingSearchBar(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        // Navigation icon (close for search/filters)
-        if (uiState.screenMode == ScreenMode.Searching) {
-            IconButton(onClick = { onIntent(GalleryIntent.ClearSearch) }) {
-                Icon(
-                    Icons.Default.Close,
-                    contentDescription = stringResource(R.string.gallery_cd_clear_filter),
-                )
-            }
-        } else if (uiState.filter !is GalleryFilter.All || uiState.activeEmojiFilters.isNotEmpty()) {
+        // Navigation icon (close for active filters when not searching)
+        if (uiState.screenMode != ScreenMode.Searching &&
+            (uiState.filter !is GalleryFilter.All || uiState.activeEmojiFilters.isNotEmpty())
+        ) {
             IconButton(onClick = {
                 onIntent(GalleryIntent.ClearEmojiFilters)
                 onIntent(GalleryIntent.SetFilter(GalleryFilter.All))
