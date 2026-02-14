@@ -37,15 +37,17 @@ class SearchRepositoryImpl
 
             val ftsQuery = prepareFtsQuery(query)
             return memeSearchDao.searchMemes(ftsQuery).map { entities ->
-                entities.mapIndexed { index, entity ->
-                    val relevanceScore = 1.0f - (index * 0.01f).coerceAtMost(0.5f)
-                    val matchType = determineMatchType(entity, query)
-                    SearchResult(
-                        meme = entity.toDomain(),
-                        relevanceScore = relevanceScore,
-                        matchType = matchType,
-                    )
-                }
+                val results =
+                    entities.mapIndexed { index, entity ->
+                        val relevanceScore = 1.0f - (index * 0.01f).coerceAtMost(0.5f)
+                        val matchType = determineMatchType(entity, query)
+                        SearchResult(
+                            meme = entity.toDomain(),
+                            relevanceScore = relevanceScore,
+                            matchType = matchType,
+                        )
+                    }
+                prioritizeFavorites(results)
             }
         }
 
@@ -139,14 +141,16 @@ class SearchRepositoryImpl
             val emojiQuery = FtsQuerySanitizer.prepareEmojiQuery(emoji)
             if (emojiQuery.isBlank()) return flowOf(emptyList())
             return memeSearchDao.searchByEmoji(emojiQuery).map { entities ->
-                entities.mapIndexed { index, entity ->
-                    val relevanceScore = 1.0f - (index * 0.01f).coerceAtMost(0.5f)
-                    SearchResult(
-                        meme = entity.toDomain(),
-                        relevanceScore = relevanceScore,
-                        matchType = MatchType.EMOJI,
-                    )
-                }
+                val results =
+                    entities.mapIndexed { index, entity ->
+                        val relevanceScore = 1.0f - (index * 0.01f).coerceAtMost(0.5f)
+                        SearchResult(
+                            meme = entity.toDomain(),
+                            relevanceScore = relevanceScore,
+                            matchType = MatchType.EMOJI,
+                        )
+                    }
+                prioritizeFavorites(results)
             }
         }
 
@@ -231,7 +235,19 @@ class SearchRepositoryImpl
                 }
             }
 
-            return resultMap.values.sortedByDescending { it.relevanceScore }
+            return prioritizeFavorites(resultMap.values.sortedByDescending { it.relevanceScore })
+        }
+
+        /**
+         * Prioritizes favorited memes in search results by moving them to the front,
+         * provided their relevance score meets the minimum threshold.
+         * Preserves relative ordering within both favorite and non-favorite groups.
+         */
+        private fun prioritizeFavorites(results: List<SearchResult>): List<SearchResult> {
+            val (favorites, rest) = results.partition {
+                it.meme.isFavorite && it.relevanceScore >= FAVORITE_BOOST_THRESHOLD
+            }
+            return favorites + rest
         }
 
         private fun com.adsamcik.riposte.core.database.entity.MemeEntity.toDomain(): Meme {
@@ -295,5 +311,6 @@ class SearchRepositoryImpl
             private const val TAG = "SearchRepositoryImpl"
             private const val FTS_WEIGHT = 0.6f
             private const val SEMANTIC_WEIGHT = 0.4f
+            private const val FAVORITE_BOOST_THRESHOLD = 0.5f
         }
     }

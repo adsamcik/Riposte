@@ -477,6 +477,161 @@ class SearchRepositoryImplTest {
 
     // endregion
 
+    // region Favorite Prioritization Tests
+
+    @Test
+    fun `searchMemes prioritizes favorited memes above threshold`() =
+        runTest {
+            val entities =
+                listOf(
+                    createTestMemeEntity(1, "meme1.jpg", title = "test normal"),
+                    createTestMemeEntity(2, "meme2.jpg", title = "test favorite", isFavorite = true),
+                    createTestMemeEntity(3, "meme3.jpg", title = "test also normal"),
+                )
+            every { memeSearchDao.searchMemes(any()) } returns flowOf(entities)
+
+            repository.searchMemes("test").test {
+                val results = awaitItem()
+                assertThat(results).hasSize(3)
+                // Favorited meme (id=2) should appear first
+                assertThat(results[0].meme.id).isEqualTo(2)
+                assertThat(results[0].meme.isFavorite).isTrue()
+                awaitComplete()
+            }
+        }
+
+    @Test
+    fun `searchMemes prioritizes all favorites since FTS scores are above threshold`() =
+        runTest {
+            // FTS scores floor at 0.5 due to coerceAtMost(0.5f), so all meet
+            // the FAVORITE_BOOST_THRESHOLD and should be prioritized
+            val entities =
+                (1..60).map { i ->
+                    createTestMemeEntity(
+                        id = i.toLong(),
+                        fileName = "meme$i.jpg",
+                        title = "test content",
+                        isFavorite = i == 60,
+                    )
+                }
+            every { memeSearchDao.searchMemes(any()) } returns flowOf(entities)
+
+            repository.searchMemes("test").test {
+                val results = awaitItem()
+                assertThat(results[0].meme.id).isEqualTo(60)
+                assertThat(results[0].meme.isFavorite).isTrue()
+                awaitComplete()
+            }
+        }
+
+    @Test
+    fun `searchHybrid does not prioritize favorites with low relevance score`() =
+        runTest {
+            // With FTS_WEIGHT=0.6, a score of 0.5 becomes 0.3, which is below threshold
+            val entities =
+                (1..60).map { i ->
+                    createTestMemeEntity(
+                        id = i.toLong(),
+                        fileName = "meme$i.jpg",
+                        title = "test content",
+                        isFavorite = i == 60,
+                    )
+                }
+            every { memeSearchDao.searchMemes(any()) } returns flowOf(entities)
+
+            val disabledPrefs = defaultPreferences.copy(enableSemanticSearch = false)
+            every { preferencesDataStore.appPreferences } returns flowOf(disabledPrefs)
+
+            repository =
+                SearchRepositoryImpl(
+                    memeDao = memeDao,
+                    memeSearchDao = memeSearchDao,
+                    memeEmbeddingDao = memeEmbeddingDao,
+                    emojiTagDao = emojiTagDao,
+                    semanticSearchEngine = semanticSearchEngine,
+                    preferencesDataStore = preferencesDataStore,
+                )
+
+            val results = repository.searchHybrid("test", 100)
+
+            // The favorite at the end has weighted score 0.5 * 0.6 = 0.3
+            // which is below FAVORITE_BOOST_THRESHOLD, so it should NOT be boosted
+            assertThat(results[0].meme.id).isNotEqualTo(60)
+        }
+
+    @Test
+    fun `searchByEmoji prioritizes favorited memes above threshold`() =
+        runTest {
+            val entities =
+                listOf(
+                    createTestMemeEntity(1, "meme1.jpg", emojiTagsJson = "😂"),
+                    createTestMemeEntity(2, "meme2.jpg", emojiTagsJson = "😂", isFavorite = true),
+                    createTestMemeEntity(3, "meme3.jpg", emojiTagsJson = "😂"),
+                )
+            every { memeSearchDao.searchByEmoji(any()) } returns flowOf(entities)
+
+            repository.searchByEmoji("😂").test {
+                val results = awaitItem()
+                assertThat(results).hasSize(3)
+                assertThat(results[0].meme.id).isEqualTo(2)
+                assertThat(results[0].meme.isFavorite).isTrue()
+                awaitComplete()
+            }
+        }
+
+    @Test
+    fun `searchHybrid prioritizes favorited memes above threshold`() =
+        runTest {
+            val normalEntity = createTestMemeEntity(1, "normal.jpg", title = "test")
+            val favoriteEntity = createTestMemeEntity(2, "favorite.jpg", title = "test", isFavorite = true)
+            every { memeSearchDao.searchMemes(any()) } returns flowOf(listOf(normalEntity, favoriteEntity))
+
+            val disabledPrefs = defaultPreferences.copy(enableSemanticSearch = false)
+            every { preferencesDataStore.appPreferences } returns flowOf(disabledPrefs)
+
+            repository =
+                SearchRepositoryImpl(
+                    memeDao = memeDao,
+                    memeSearchDao = memeSearchDao,
+                    memeEmbeddingDao = memeEmbeddingDao,
+                    emojiTagDao = emojiTagDao,
+                    semanticSearchEngine = semanticSearchEngine,
+                    preferencesDataStore = preferencesDataStore,
+                )
+
+            val results = repository.searchHybrid("test", 20)
+
+            assertThat(results[0].meme.id).isEqualTo(2)
+            assertThat(results[0].meme.isFavorite).isTrue()
+        }
+
+    @Test
+    fun `favorite prioritization preserves relative order within favorites and non-favorites`() =
+        runTest {
+            val entities =
+                listOf(
+                    createTestMemeEntity(1, "meme1.jpg", title = "test first"),
+                    createTestMemeEntity(2, "meme2.jpg", title = "test fav2", isFavorite = true),
+                    createTestMemeEntity(3, "meme3.jpg", title = "test third"),
+                    createTestMemeEntity(4, "meme4.jpg", title = "test fav1", isFavorite = true),
+                )
+            every { memeSearchDao.searchMemes(any()) } returns flowOf(entities)
+
+            repository.searchMemes("test").test {
+                val results = awaitItem()
+                assertThat(results).hasSize(4)
+                // Favorites first (in their original relevance order)
+                assertThat(results[0].meme.id).isEqualTo(2)
+                assertThat(results[1].meme.id).isEqualTo(4)
+                // Then non-favorites
+                assertThat(results[2].meme.id).isEqualTo(1)
+                assertThat(results[3].meme.id).isEqualTo(3)
+                awaitComplete()
+            }
+        }
+
+    // endregion
+
     // region Helper Functions
 
     private fun createTestMemeEntity(
