@@ -2,7 +2,7 @@
 
 Use this prompt when dispatching the UX design model via:
 ```
-task(agent_type: "general-purpose", model: "claude-opus-4", prompt: ...)
+task(agent_type: "general-purpose", model: "claude-opus-4.6", prompt: ...)
 ```
 
 ---

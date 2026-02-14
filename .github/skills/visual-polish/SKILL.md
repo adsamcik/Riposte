@@ -5,7 +5,7 @@ description: >
   or user-provided screenshots using dual-model analysis, then fixes issues directly.
   Gracefully degrades to code-only analysis when no device is available.
   Use when asked to polish UI, find visual bugs, audit spacing, or improve visual quality.
-version: 2.0.0
+version: 3.0.0
 triggers:
   - polish the UI
   - visual audit
@@ -51,12 +51,25 @@ Select mode based on available tools:
 
 | Mode | When | What's Available |
 |------|------|-----------------|
-| **Live** | Android MCP server running + device connected | `get_screenshot`, `get_uilayout`, `execute_adb_command` |
+| **Live** | Android MCP server running + device connected | `mobile_take_screenshot`, `mobile_list_elements_on_screen`, `mobile_click_on_screen_at_coordinates`, `mobile_launch_app` |
 | **Screenshot** | User provides screenshots in a folder | `view` tool reads images from disk |
 | **Code-only** | No device, no screenshots | Static analysis of Compose code for theme compliance |
 
 **Always attempt Live mode first.** If MCP tools are unavailable, ask the user:
 "No Android device detected. Should I (A) analyze screenshots you provide, or (B) do a code-only audit?"
+
+### Hybrid Mode (per-screen fallback)
+
+In practice, some screens may be reachable via Live mode while others are blocked (ANR, crash, navigation issues). The skill supports **per-screen mode selection** with automatic fallback:
+
+| Situation | Action |
+|-----------|--------|
+| Screen reachable | Use Live mode |
+| Blocked by dialog/modal | Try dismiss (Back button, tap outside) → if fails, Code-only for that screen |
+| App crash/ANR | Restart app → retry navigation once → if fails, Code-only for that screen |
+| Screen requires specific data/state | Note limitation → Code-only with context note |
+
+Track the mode used per screen in the findings file (add `Mode: Live` or `Mode: Code-only (blocked by ANR)` to each screen section).
 
 ---
 
@@ -64,13 +77,29 @@ Select mode based on available tools:
 
 ```text
 1. DETECT MODE  → Check if Android MCP tools are available
-2. CAPTURE      → Screenshot + layout dump (Live) or read images (Screenshot)
+1b. FRESH BUILD → Build + install APK (unless user says app is current)
+2. CAPTURE      → Screenshot + element list (Live) or read images (Screenshot)
 3. EVALUATE     → Dual-model analysis via parallel task tool calls
 4. MERGE        → Deduplicate, resolve conflicts, prioritize
 5. PERSIST      → Write merged findings to scratch file (survives compaction)
 6. FIX          → Code changes, batched per screen (max 3 rounds)
+6b. REBUILD     → Build + install + relaunch (build failures don't count as a round)
 7. VERIFY       → Re-screenshot (Live) or user confirms (Screenshot/Code-only)
 ```
+
+---
+
+## Phase 0: Fresh Build (Live mode)
+
+Before capturing, ensure the installed APK reflects current code:
+
+```text
+1. Build: ./gradlew :app:assembleStandardDebug
+2. Install: mobile_install_app(device, "app/build/outputs/apk/standard/debug/app-standard-debug.apk")
+3. Launch: mobile_launch_app(device, "com.adsamcik.riposte.debug")
+```
+
+Skip if the user explicitly says the app is already current.
 
 ---
 
@@ -79,11 +108,29 @@ Select mode based on available tools:
 ### Live Mode
 
 ```text
-1. Launch: execute_adb_command("adb shell am start -n com.adriantache.mememood/.MainActivity")
-2. Wait, then: get_screenshot → save mental note of screen name
-3. Also: get_uilayout → objective spatial data (bounds, coordinates)
-4. Navigate to next state via execute_adb_command("adb shell input tap X Y")
+1. Launch: mobile_launch_app(device, "com.adsamcik.riposte.debug")
+2. Wait 2-3 seconds for the app to load
+3. mobile_take_screenshot → identify current screen
+4. mobile_list_elements_on_screen → spatial data (bounds, coordinates, labels)
+5. Navigate: mobile_click_on_screen_at_coordinates(device, x, y)
+6. If blocked (dialog, ANR): try mobile_press_button(device, "BACK")
+   → if still blocked, fall back to Code-only for that screen
 ```
+
+### Dark Mode Toggle (Live mode)
+
+Test critical-path screens (Gallery, Detail) in both themes:
+
+```text
+# Enable dark mode (via adb shell)
+adb shell cmd uimode night yes
+# Re-screenshot Gallery + Detail
+
+# Reset to light mode
+adb shell cmd uimode night no
+```
+
+If the app doesn't visibly change, dynamic colors may be inactive — note in findings.
 
 ### Screenshot Mode
 
@@ -101,20 +148,55 @@ Select mode based on available tools:
 3. No visual evaluation — structural analysis only
 ```
 
-### Screen Priority Order
+### Screen Priority & State Matrix
 
-Audit the **critical path first**, not alphabetically:
+Audit the **critical path first**. For each screen, capture the listed states:
+
+| Priority | Screen | States to Capture | How to Reach |
+|----------|--------|--------------------|--------------|
+| 1 | Gallery (populated) | Default grid, Scrolled down, Filtered by emoji | Launch app; swipe up; tap emoji chip |
+| 2 | Gallery (empty) | Empty state | Fresh install or clear app data |
+| 3 | Meme Detail | Normal view, Share sheet visible | Tap meme in gallery; tap share button |
+| 4 | Share UI | Format/quality options | From Detail, tap share action |
+| 5 | Search (with results) | Results visible, Keyboard open | Tap search, type query |
+| 6 | Search (no results) | Empty results state | Type nonsense query |
+| 7 | Import | Import flow | Tap import action |
+| 8 | Settings | Settings screen | Navigate to settings |
+
+For critical-path screens (1-4), also capture in the **opposite theme** (dark/light).
+
+---
+
+## Handling App-Level Blockers
+
+When encountering issues that prevent normal app operation during a visual audit:
+
+### Blocker Types & Actions
+
+| Blocker | Action | Report as Finding? |
+|---------|--------|-------------------|
+| **ANR Dialog** | Dismiss → continue audit | ✅ Yes — critical UX issue |
+| **Crash Dialog** | Restart app → retry once → ask user if persists | ✅ Yes — critical UX issue |
+| **Permission Prompts** | Grant permissions → continue | ❌ No — expected behavior |
+| **Onboarding Flow** | Complete flow → continue | Only if poorly designed |
+| **Login Required** | Ask user for credentials or skip screen | ❌ No |
+| **Empty State (no data)** | Evaluate the empty state design itself | Only if poor empty state |
+
+### Decision Tree
 
 ```text
-1. Gallery (populated)     ← users see this 90% of the time
-2. Gallery (empty state)   ← first-time users see this
-3. Meme Detail             ← second most visited
-4. Share UI                ← the money moment
-5. Search (with results)   ← core functionality
-6. Search (no results)     ← common frustration point
-7. Import                  ← one-time flow
-8. Settings                ← lowest priority
+Encounter blocker
+├── Can I dismiss/bypass it? (Back button, grant permission, tap through)
+│   ├── YES → Dismiss → Continue → Note in findings if it's a UX issue
+│   └── NO → Does it block the entire audit or just this screen?
+│       ├── Just this screen → Code-only fallback for this screen
+│       └── Entire audit → Ask user for help
+└── Is this blocker itself a UX problem users would hit?
+    ├── YES → Add to findings as 🔴 Critical
+    └── NO → Document as operational note only
 ```
+
+**Key principle:** Visual polish audits assess what users see and experience. If a blocker creates a poor user experience, it's a finding. If it only prevents the audit, it's a limitation to work around.
 
 ---
 
@@ -218,6 +300,7 @@ Device: [device info or N/A]
 ## Screen: [Name] — [State]
 
 ### Status: PENDING | IN_PROGRESS | FIXED | VERIFIED
+### Mode: Live | Code-only (reason) | Screenshot
 
 ### 🔴 Glaring
 - [ ] [Issue]: [evidence] — Source: [model(s)], Confidence: [H/M/L]
@@ -259,7 +342,13 @@ Context compaction can discard the detailed evaluation findings mid-session. By 
 1. **Re-read findings file first** — if context was compacted, `view` the findings file to restore state
 2. **Batch fixes per screen** — don't rebuild after every single fix
 3. **Max 3 fix rounds total** — diminishing returns are real
-4. **Build once per batch**: `./gradlew :app:assembleStandardDebug`
+4. **Build + install + relaunch** after each batch:
+   ```text
+   ./gradlew :app:assembleStandardDebug
+   mobile_install_app(device, "app/build/outputs/apk/standard/debug/app-standard-debug.apk")
+   mobile_launch_app(device, "com.adsamcik.riposte.debug")
+   ```
+   If the build fails, fix compilation errors first — build failures do NOT count toward the 3-round cap.
 5. **Verify**: Re-screenshot (Live) or inform user to check (other modes)
 6. **Update findings file** — check off fixed items and update screen status
 
@@ -284,15 +373,23 @@ Context compaction can discard the detailed evaluation findings mid-session. By 
 
 ## Phase 5: Cross-Screen Consistency (final pass)
 
-After individual screens are fixed, do ONE quick pass through all screens checking:
+After individual screens are fixed, do ONE quick pass checking:
 
-- App bar styling matches across screens
-- Spacing scale is consistent
-- Typography hierarchy is consistent
-- Color usage is consistent
-- Empty/loading states share the same pattern
+**Code-based checks (all screens, regardless of mode):**
+- Theme token usage (`colorScheme`, `typography`, spacing values)
+- Modifier patterns and shared component reuse
+- Consistent use of design system components
+
+**Visual checks (Live/Screenshot screens only):**
+- App bar styling appears identical across screens
+- Spacing scale looks consistent
+- Typography hierarchy is visually uniform
+- Color usage matches across screens
+- Empty/loading states share the same visual pattern
 
 This is a single-model pass. Any inconsistency is a 🟡 issue.
+
+**Confidence note:** Code-only consistency checks are lower confidence than visual verification. When screens have mixed modes, prioritize visual comparisons between Live-evaluated screens and flag code-only screens as "consistency unverified visually."
 
 ---
 
