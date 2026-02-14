@@ -2,6 +2,22 @@
 
 **Riposte** is a multi-module Android app for organizing, searching, and sharing memes with emoji-based categorization and AI-powered semantic search.
 
+## Project Setup
+
+| Property | Value |
+|----------|-------|
+| Package / Application ID | `com.adsamcik.riposte` |
+| Namespace pattern | `com.adsamcik.riposte.{layer}.{module}` (e.g., `core.database`, `feature.gallery`) |
+| Min SDK | 31 (Android 12) |
+| Target / Compile SDK | 36 |
+| JVM target | 17 |
+| AGP | 9.0.0 |
+| Kotlin | 2.3.0 |
+| Compose compiler | Derived from Kotlin plugin (2.3.0) |
+| Version | 0.2.0 (versionCode 2) |
+
+Release signing reads `RELEASE_STORE_FILE`, `RELEASE_STORE_PASSWORD`, `RELEASE_KEY_ALIAS`, `RELEASE_KEY_PASSWORD` from `local.properties`; falls back to debug signing if absent.
+
 ## Tech Stack
 
 | Component | Technology |
@@ -17,30 +33,6 @@
 | Navigation | Type-safe Navigation Compose 2.9.6 |
 | Serialization | Kotlinx Serialization 1.8.0 |
 | Build | Gradle 8.13.2, Version Catalogs (`gradle/libs.versions.toml`) |
-
-## Project Structure
-
-```
-riposte/
-├── app/                    # Main application, wires all modules together
-├── core/
-│   ├── common/            # Shared utilities, navigation routes, extensions
-│   ├── database/          # Room database, DAOs, entities, migrations
-│   ├── datastore/         # DataStore preferences
-│   ├── ml/                # ML Kit, MediaPipe, semantic search, embeddings
-│   ├── model/             # Domain models (Meme, EmojiTag, ShareConfig, etc.)
-│   ├── search/            # Search coordination layer
-│   ├── testing/           # Test utilities, fakes, rules
-│   └── ui/                # Design system, theme, reusable components
-├── feature/
-│   ├── gallery/           # Meme grid view, detail view, favorites
-│   ├── import/            # Image import, ZIP bundle import
-│   ├── share/             # Sharing with format/quality/size options
-│   └── settings/          # App preferences
-├── baselineprofile/       # Startup performance optimization
-├── docs/                  # Technical documentation
-└── tools/riposte-cli/     # Python CLI for batch AI annotation
-```
 
 ## Build, Test & Lint Commands
 
@@ -71,6 +63,9 @@ riposte/
 
 # Test coverage report
 ./gradlew testDebugUnitTestCoverage
+
+# Verify coverage thresholds (60% overall, 50% branch)
+./gradlew verifyCoverage
 ```
 
 ### Build Flavors
@@ -96,6 +91,7 @@ Clean Architecture + MVI, split across multi-module Gradle project (`app/`, `cor
 - **Feature → Core only.** Feature modules must NOT depend on other features.
 - **Core modules must NOT depend on features.**
 - `app` module wires everything together (includes all features + all core modules).
+- `aipacks/` contains AI Pack modules (`generic_embedding`, `soc_optimized`) delivered via install-time dynamic delivery for platform-specific ML models.
 
 ### MVI Per Screen
 
@@ -106,7 +102,21 @@ Each feature screen has three sealed types plus a ViewModel:
 - **Effect**: Sealed interface for one-time side effects (navigation, snackbars)
 - **ViewModel**: Processes intents → updates `StateFlow<UiState>` + emits effects via `Channel`
 
-Business logic lives in single-purpose **Use Case** classes (`operator fun invoke`), not in ViewModels.
+```kotlin
+// Example pattern — every feature screen follows this structure
+data class FeatureUiState(val items: List<Item> = emptyList(), val isLoading: Boolean = false)
+
+sealed interface FeatureIntent {
+    data object LoadData : FeatureIntent
+    data class ItemClicked(val id: Long) : FeatureIntent
+}
+
+sealed interface FeatureEffect {
+    data class NavigateToDetail(val id: Long) : FeatureEffect
+}
+```
+
+Business logic lives in single-purpose **Use Case** classes (`operator fun invoke`), not in ViewModels. Repositories are defined as interfaces bound via Hilt `@Binds`, with implementations using `@Inject constructor`.
 
 ### Navigation
 
@@ -139,6 +149,16 @@ The app implements `Configuration.Provider` for `HiltWorkerFactory`. Workers use
 | `kotlin.instructions.md` | All Kotlin files |
 | `gradle.instructions.md` | Build files, version catalogs |
 
+### Convention Plugins
+
+Reusable Gradle plugins in `buildSrc/` extract shared build configuration:
+
+- `riposte.android.library` — Base Android library setup
+- `riposte.android.compose` — Compose compiler and dependencies
+- `riposte.android.hilt` — Hilt DI wiring
+- `riposte.android.testing` — Test dependencies
+- `riposte.android.jacoco` — Code coverage (JaCoCo)
+
 ### Security
 
 - **FTS query sanitization**: Always remove special chars (`"*():`) and operators (`OR`, `AND`, `NOT`) from user input before FTS MATCH clauses. Never concatenate raw input.
@@ -158,13 +178,27 @@ The app implements `Configuration.Provider` for `HiltWorkerFactory`. Workers use
 - When ML model version changes, embeddings are flagged `needsRegeneration`
 - Compose `modifier` parameter: always `modifier: Modifier = Modifier` as the **last** parameter
 - Dependencies go in `gradle/libs.versions.toml` (version catalog), not inline
-- Custom convention plugins live in `buildSrc/` (e.g., `riposte.android.library`, `riposte.android.compose`, `riposte.android.hilt`)
 - Metadata schema is v1.3 — supports `primaryLanguage`, `localizations` for i18n, and `basedOn` for meme origin
-- **Database schema versioning**: Only one schema version bump per release cycle. If the database version was already bumped since the last release, add changes to the existing migration instead of creating a new one. The released version is tracked in `core/database/released-schema-version.txt` and enforced by the `validateDatabaseSchema` Gradle task.
+- **Database schema versioning**: Only one schema version bump per release cycle. If the database version was already bumped since the last release, add changes to the existing migration instead of creating a new one. The released version is tracked in `core/database/released-schema-version.txt` (currently v5) and enforced by the `validateDatabaseSchema` Gradle task.
+- Use `collectAsStateWithLifecycle` (not `collectAsState`) when collecting Flows in Compose
 
-### Testing Stack
+### Testing
 
-JUnit 4 + MockK + Turbine (Flow testing) + Truth (assertions). Test utilities and fakes in `core/testing`. Compose UI tests use `createAndroidComposeRule` with `HiltTestRunner`. Backtick test names: `` `when user clicks save then meme is persisted` ``.
+JUnit 4 + MockK + Turbine (Flow testing) + Truth (assertions). Test utilities and fakes in `core/testing`. Backtick test names: `` `when user clicks save then meme is persisted` ``.
+
+Coverage thresholds: 60% overall, 50% branch (enforced by `verifyCoverage` task).
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `gradle/libs.versions.toml` | All dependency versions |
+| `core/database/.../MemeDatabase.kt` | Room database with migrations |
+| `core/ml/.../SemanticSearchEngine.kt` | Hybrid FTS + vector search |
+| `core/model/.../Meme.kt` | Primary domain model |
+| `app/.../RiposteNavHost.kt` | Navigation graph |
+| `core/database/released-schema-version.txt` | Released DB version (for migration rules) |
+| `.github/instructions/` | Domain-specific coding guidelines |
 
 ## UX Philosophy
 
