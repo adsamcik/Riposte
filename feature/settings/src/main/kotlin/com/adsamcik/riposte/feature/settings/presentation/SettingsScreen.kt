@@ -79,7 +79,9 @@ fun SettingsScreen(
                     snackbarHostState.showSnackbar(effect.message)
                 }
                 is SettingsEffect.NavigateToLicenses -> {
-                    // Navigate to licenses screen
+                    snackbarHostState.showSnackbar(
+                        context.getString(R.string.settings_licenses_not_available),
+                    )
                 }
                 is SettingsEffect.OpenUrl -> {
                     uriHandler.openUri(effect.url)

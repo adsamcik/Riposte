@@ -82,6 +82,7 @@
     <!-- About Section -->
     <string name="settings_version_title">Version</string>
     <string name="settings_open_source_licenses_title">Open Source Licenses</string>
+    <string name="settings_licenses_not_available">Open source licenses will be available in a future update</string>
     <string name="settings_privacy_policy_title">Privacy Policy</string>
     
     <!-- Clear Cache Dialog -->
