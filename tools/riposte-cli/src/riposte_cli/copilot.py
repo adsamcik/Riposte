@@ -423,6 +423,7 @@ async def analyze_image_async(
     model: str = "gpt-5-mini",
     verbose: bool = False,
     languages: list[str] | None = None,
+    client: CopilotClient | None = None,
 ) -> dict[str, Any]:
     """Analyze a meme image using GitHub Copilot SDK.
     
@@ -433,6 +434,9 @@ async def analyze_image_async(
         languages: List of BCP 47 language codes for multilingual output.
             First language is the primary language.
             If None or empty, defaults to English only.
+        client: Optional shared CopilotClient. If provided, it must already
+            be started and will NOT be stopped when this function returns.
+            If None, a temporary client is created and stopped per call.
         
     Returns:
         Dictionary with emojis, title, description, tags, searchPhrases,
@@ -461,12 +465,17 @@ async def analyze_image_async(
     await _rate_limiter.wait_if_needed()
     
     t_start = time.monotonic()
-    client = CopilotClient()
+    
+    # Use shared client or create a temporary one
+    owns_client = client is None
+    if owns_client:
+        client = CopilotClient()
     try:
-        await client.start()
-        t_client = time.monotonic()
-        if verbose:
-            print(f"  [DEBUG] Client started (+{t_client - t_start:.1f}s)")
+        if owns_client:
+            await client.start()
+            t_client = time.monotonic()
+            if verbose:
+                print(f"  [DEBUG] Client started (+{t_client - t_start:.1f}s)")
         
         # Create session — streaming=True and no tools to ensure the model
         # responds directly without trying to invoke agent tools.
@@ -578,7 +587,8 @@ async def analyze_image_async(
             f"Failed to connect to Copilot CLI: {e}"
         )
     finally:
-        await client.stop()
+        if owns_client:
+            await client.stop()
 
 
 def analyze_image(

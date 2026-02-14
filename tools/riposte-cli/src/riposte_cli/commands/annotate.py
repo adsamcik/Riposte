@@ -33,6 +33,7 @@ from riposte_cli.copilot import (
     RateLimitError,
     ServerError,
 )
+from copilot import CopilotClient
 from riposte_cli.hashing import (
     deduplicate_images,
     get_image_hash,
@@ -420,9 +421,15 @@ def annotate(
         )
     
     if skipped > 0:
+        remaining = len(images)
+        total = remaining + skipped
         console.print(
             f"[dim]Skipping {skipped} image(s) with existing sidecars[/dim]"
         )
+        if remaining > 0:
+            console.print(
+                f"[dim]Resuming: {remaining} remaining of {total} total[/dim]"
+            )
     if exact_dupes > 0:
         console.print(
             f"[dim]Skipping {exact_dupes} exact duplicate(s) "
@@ -460,7 +467,7 @@ def annotate(
 
         async def process_single_image(
             image_path: Path,
-            idx: int,
+            shared_client: CopilotClient,
             progress: Progress,
             task_id: int,
         ) -> tuple[Path, Path] | tuple[Path, str] | None:
@@ -477,6 +484,7 @@ def annotate(
                             model=model,
                             verbose=verbose,
                             languages=language_list,
+                            client=shared_client,
                         )
                     finally:
                         await limiter.release()
@@ -513,11 +521,13 @@ def annotate(
                         "https://github.com/github/copilot-cli"
                     )
                     sys.exit(1)
+                except asyncio.CancelledError:
+                    raise
                 except RateLimitError as e:
                     wait_time = await limiter.record_rate_limit(
                         retry_after=e.retry_after,
                     )
-                    if limiter.should_give_up():
+                    if attempt + 1 >= max_retries:
                         console.print(
                             f"\n[red]Too many rate limits. "
                             f"Skipping {image_path.name}[/red]"
@@ -532,7 +542,7 @@ def annotate(
                     )
                 except ServerError as e:
                     wait_time = await limiter.record_server_error()
-                    if limiter.should_give_up():
+                    if attempt + 1 >= max_retries:
                         console.print(
                             f"\n[red]Too many server errors. "
                             f"Skipping {image_path.name}[/red]"
@@ -567,40 +577,73 @@ def annotate(
             return (image_path, "Exhausted all retries")
 
         async def process_images():
-            with Progress(
-                SpinnerColumn(),
-                TextColumn("[progress.description]{task.description}"),
-                BarColumn(),
-                TaskProgressColumn(),
-                TimeElapsedColumn(),
-                TimeRemainingColumn(),
-                console=console,
-            ) as progress:
-                task_id = progress.add_task(
-                    f"Annotating ({concurrency} workers)...",
-                    total=len(images),
-                )
+            shared_client = CopilotClient()
+            interrupted = False
+            try:
+                await shared_client.start()
                 
-                tasks = [
-                    process_single_image(img, idx, progress, task_id)
-                    for idx, img in enumerate(images)
-                ]
-                results = await asyncio.gather(*tasks)
-            
-            _processed = []
-            _errors = []
-            for result in results:
-                if result is None:
-                    continue
-                path, second = result
-                if isinstance(second, Path):
-                    _processed.append((path, second))
-                else:
-                    _errors.append((path, second))
-            return _processed, _errors
+                with Progress(
+                    SpinnerColumn(),
+                    TextColumn("[progress.description]{task.description}"),
+                    BarColumn(),
+                    TaskProgressColumn(),
+                    TimeElapsedColumn(),
+                    TimeRemainingColumn(),
+                    console=console,
+                ) as progress:
+                    task_id = progress.add_task(
+                        f"Annotating ({concurrency} workers)...",
+                        total=len(images),
+                    )
+                    
+                    pending_tasks = [
+                        asyncio.create_task(
+                            process_single_image(img, shared_client, progress, task_id),
+                            name=img.name,
+                        )
+                        for img in images
+                    ]
+                    
+                    try:
+                        results = await asyncio.gather(*pending_tasks)
+                    except (KeyboardInterrupt, asyncio.CancelledError):
+                        interrupted = True
+                        console.print(
+                            "\n[yellow]Interrupted — finishing in-flight "
+                            "requests...[/yellow]"
+                        )
+                        # Cancel tasks that haven't started yet
+                        for t in pending_tasks:
+                            if not t.done():
+                                t.cancel()
+                        # Wait for all tasks to finish (cancelled or not)
+                        results = await asyncio.gather(
+                            *pending_tasks, return_exceptions=True
+                        )
+                
+                _processed = []
+                _errors = []
+                for result in results:
+                    if result is None or isinstance(result, BaseException):
+                        continue
+                    path, second = result
+                    if isinstance(second, Path):
+                        _processed.append((path, second))
+                    else:
+                        _errors.append((path, second))
+                return _processed, _errors, interrupted
+            finally:
+                await shared_client.stop()
         
         # Run async processing
-        processed, errors = asyncio.run(process_images())
+        try:
+            processed, errors, was_interrupted = asyncio.run(process_images())
+        except KeyboardInterrupt:
+            was_interrupted = True
+            console.print(
+                "\n[yellow]Interrupted before processing started[/yellow]"
+            )
+            processed, errors = [], []
         
         # Summary
         console.print()
@@ -612,6 +655,17 @@ def annotate(
         if errors:
             console.print(
                 f"[red]✗ Failed to annotate {len(errors)} image(s)[/red]"
+            )
+        if was_interrupted:
+            skipped_count = len(images) - len(processed) - len(errors)
+            if skipped_count > 0:
+                console.print(
+                    f"[yellow]⚠ {skipped_count} image(s) not started "
+                    f"(interrupted)[/yellow]"
+                )
+            console.print(
+                "[dim]Run again with --continue to process "
+                "remaining images[/dim]"
             )
     
     # Create ZIP bundle if requested — includes ALL images with sidecars

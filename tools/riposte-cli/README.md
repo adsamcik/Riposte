@@ -218,12 +218,14 @@ my-memes/
 
 The CLI processes multiple images concurrently (default: 4 workers) with intelligent rate limit handling:
 
+- **Shared client**: A single Copilot SDK connection is reused across all workers, eliminating per-image startup overhead
 - **Adaptive concurrency**: Starts at `--concurrency N` workers; automatically reduces on 429 errors and gradually restores on sustained success
 - **Global pause on 429**: When any worker hits a rate limit, ALL workers pause until the backoff period elapses — prevents wasting quota
+- **Per-image retries**: Each image gets up to 5 retry attempts independently; one image's failures don't affect another's retry budget
 - **Exponential backoff**: Automatically increases wait time after repeated errors
 - **Retry-After support**: Respects server-specified wait times
 - **Jitter**: Random variation to prevent thundering herd problems
-- **Automatic retries**: Up to 5 retries per image with intelligent delays
+- **Graceful Ctrl+C**: Pressing Ctrl+C cancels pending work but lets in-flight requests finish. Completed sidecars are preserved on disk. Run again with `--continue` to process the rest
 
 ```bash
 # Default: 4 parallel workers
@@ -234,6 +236,9 @@ meme-cli annotate ./my-memes -j 1
 
 # Maximum parallelism
 meme-cli annotate ./my-memes -j 10
+
+# Resume after interruption
+meme-cli annotate ./my-memes --continue
 ```
 
 You don't need to configure anything beyond `--concurrency` — backpressure is handled automatically.

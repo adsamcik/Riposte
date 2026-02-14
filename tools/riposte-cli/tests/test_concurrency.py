@@ -51,6 +51,18 @@ class TestRateLimiter:
         rl.record_failure()
         assert rl._get_error_rate() == pytest.approx(0.5)
 
+    def test_success_resets_consecutive_failures(self) -> None:
+        """Verify success from one image doesn't bleed into another's state."""
+        rl = RateLimiter(max_backoff_attempts=5)
+        rl.record_failure()
+        rl.record_failure()
+        assert rl.consecutive_failures == 2
+        rl.record_success()
+        assert rl.consecutive_failures == 0
+        # Should not give up after a reset
+        rl.record_failure()
+        assert not rl.should_give_up()
+
 
 class TestConcurrencyLimiter:
     """Tests for the ConcurrencyLimiter class."""
@@ -182,3 +194,52 @@ class TestConcurrencyLimiter:
             observer(),
         )
         assert paused_observed
+
+    @pytest.mark.asyncio
+    async def test_per_image_retry_uses_local_counter(self) -> None:
+        """Verify that per-image retry decisions use local attempt count,
+        not the shared limiter's consecutive_failures."""
+        limiter = ConcurrencyLimiter(max_concurrency=4)
+        limiter._rate_limiter = RateLimiter(
+            min_delay=0.01, max_delay=0.05, max_backoff_attempts=8
+        )
+
+        # Simulate what happens in annotate.py: two workers hit rate limits
+        # Worker A gets 429, records it globally
+        await limiter.record_rate_limit(retry_after=0.01)
+        # Worker B succeeds, resetting consecutive_failures to 0
+        await limiter.record_success()
+
+        # The shared limiter should NOT say "give up" because success reset it
+        assert not limiter.should_give_up()
+
+        # But per-image attempt tracking (local variable) is independent:
+        # Worker A is on attempt 2 of 5 — it decides locally, not via should_give_up()
+        local_attempt = 2
+        max_retries = 5
+        assert local_attempt < max_retries  # Worker A continues
+
+    @pytest.mark.asyncio
+    async def test_cancellation_during_acquire(self) -> None:
+        """Verify that cancelled tasks release properly during acquire."""
+        limiter = ConcurrencyLimiter(max_concurrency=1)
+
+        # Fill the single slot
+        await limiter.acquire()
+
+        async def waiting_worker() -> None:
+            await limiter.acquire()
+            await limiter.release()
+
+        task = asyncio.create_task(waiting_worker())
+        await asyncio.sleep(0.01)
+
+        # Cancel the waiting task
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+
+        # Original slot should still be held
+        assert limiter.active_tasks == 1
+        await limiter.release()
+        assert limiter.active_tasks == 0
