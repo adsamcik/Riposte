@@ -845,7 +845,7 @@ private fun ZoomableImage(
         AsyncImage(
             model = filePath,
             contentDescription = contentDescription,
-            contentScale = ContentScale.Crop,
+            contentScale = ContentScale.Fit,
             onState = { imageState = it },
             modifier = Modifier.fillMaxSize(),
         )
