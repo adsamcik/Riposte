@@ -27,12 +27,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyGridScope
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
@@ -42,6 +44,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SelectAll
@@ -52,6 +55,7 @@ import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -67,6 +71,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -237,6 +242,12 @@ private fun GalleryScreenContent(
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val columns = rememberGridColumns(uiState.densityPreference)
+    val gridState = rememberLazyGridState()
+    val isScrolled by remember {
+        derivedStateOf {
+            gridState.firstVisibleItemIndex > 0 || gridState.firstVisibleItemScrollOffset > 0
+        }
+    }
 
     // Delete confirmation dialog
     if (showDeleteDialog) {
@@ -285,9 +296,9 @@ private fun GalleryScreenContent(
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            TopAppBar(
-                title = {
-                    if (uiState.isSelectionMode) {
+            if (uiState.isSelectionMode) {
+                TopAppBar(
+                    title = {
                         Text(
                             pluralStringResource(
                                 R.plurals.gallery_selected_count,
@@ -295,96 +306,26 @@ private fun GalleryScreenContent(
                                 uiState.selectionCount,
                             ),
                         )
-                    } else {
-                        com.adsamcik.riposte.core.ui.component.SearchBar(
-                            query = uiState.searchState.query,
-                            onQueryChange = { onIntent(GalleryIntent.UpdateSearchQuery(it)) },
-                            onSearch = { /* debounce handles it */ },
-                            placeholder = stringResource(com.adsamcik.riposte.core.search.R.string.search_placeholder),
-                        )
-                    }
-                },
-                navigationIcon = {
-                    if (uiState.isSelectionMode) {
+                    },
+                    navigationIcon = {
                         IconButton(onClick = { onIntent(GalleryIntent.ClearSelection) }) {
                             Icon(
                                 Icons.Default.Close,
                                 contentDescription = stringResource(R.string.gallery_cd_cancel_selection),
                             )
                         }
-                    } else if (uiState.screenMode == ScreenMode.Searching) {
-                        IconButton(onClick = { onIntent(GalleryIntent.ClearSearch) }) {
-                            Icon(
-                                Icons.Default.Close,
-                                contentDescription = stringResource(R.string.gallery_cd_clear_filter),
-                            )
-                        }
-                    } else if (uiState.filter !is GalleryFilter.All || uiState.activeEmojiFilters.isNotEmpty()) {
-                        IconButton(onClick = {
-                            onIntent(GalleryIntent.ClearEmojiFilters)
-                            onIntent(GalleryIntent.SetFilter(GalleryFilter.All))
-                        }) {
-                            Icon(
-                                Icons.Default.Close,
-                                contentDescription = stringResource(R.string.gallery_cd_clear_filter),
-                            )
-                        }
-                    }
-                },
-                actions = {
-                    if (uiState.isSelectionMode) {
+                    },
+                    actions = {
                         IconButton(onClick = { onIntent(GalleryIntent.SelectAll) }) {
                             Icon(
                                 Icons.Default.SelectAll,
                                 contentDescription = stringResource(R.string.gallery_cd_select_all),
                             )
                         }
-                    } else {
-                        IconButton(onClick = { onShowMenuChange(true) }) {
-                            Icon(
-                                Icons.Default.MoreVert,
-                                contentDescription = stringResource(R.string.gallery_cd_more_options),
-                            )
-                        }
-                        DropdownMenu(
-                            expanded = showMenu,
-                            onDismissRequest = { onShowMenuChange(false) },
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.gallery_menu_all_memes)) },
-                                onClick = {
-                                    onIntent(GalleryIntent.SetFilter(GalleryFilter.All))
-                                    onShowMenuChange(false)
-                                },
-                            )
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.gallery_menu_favorites)) },
-                                leadingIcon = { Icon(Icons.Outlined.FavoriteBorder, null) },
-                                onClick = {
-                                    onIntent(GalleryIntent.SetFilter(GalleryFilter.Favorites))
-                                    onShowMenuChange(false)
-                                },
-                            )
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.gallery_menu_select)) },
-                                leadingIcon = { Icon(Icons.Default.SelectAll, null) },
-                                onClick = {
-                                    onIntent(GalleryIntent.EnterSelectionMode)
-                                    onShowMenuChange(false)
-                                },
-                            )
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.gallery_menu_settings)) },
-                                onClick = {
-                                    onNavigateToSettings()
-                                    onShowMenuChange(false)
-                                },
-                            )
-                        }
-                    }
-                },
-                scrollBehavior = scrollBehavior,
-            )
+                    },
+                    scrollBehavior = scrollBehavior,
+                )
+            }
         },
         bottomBar = {
             AnimatedVisibility(
@@ -457,14 +398,23 @@ private fun GalleryScreenContent(
                     .fillMaxSize()
                     .padding(paddingValues),
         ) {
-            when {
-                uiState.screenMode == ScreenMode.Searching -> {
-                    val searchColumns = maxOf(2, columns - 1)
-                    GalleryContent(
+            // Content area with top space for floating search bar
+            val floatingBarSpace = if (!uiState.isSelectionMode) 64.dp else 0.dp
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(top = floatingBarSpace),
+            ) {
+                when {
+                    uiState.screenMode == ScreenMode.Searching -> {
+                        val searchColumns = maxOf(2, columns - 1)
+                        GalleryContent(
                         uiState = uiState,
                         uniqueEmojis = uiState.uniqueEmojis,
                         onIntent = onIntent,
                         columns = searchColumns,
+                        gridState = gridState,
                     ) {
                         // Recent searches (when query is empty and not searched yet)
                         if (uiState.searchState.query.isBlank() && !uiState.searchState.hasSearched) {
@@ -618,6 +568,7 @@ private fun GalleryScreenContent(
                                 uniqueEmojis = uiState.uniqueEmojis,
                                 onIntent = onIntent,
                                 columns = columns,
+                                gridState = gridState,
                             ) {
                                 // Suggestions first
                                 items(
@@ -715,6 +666,7 @@ private fun GalleryScreenContent(
                         uniqueEmojis = uiState.uniqueEmojis,
                         onIntent = onIntent,
                         columns = columns,
+                        gridState = gridState,
                     ) {
                         // Suggestions first
                         items(
@@ -751,6 +703,20 @@ private fun GalleryScreenContent(
                     }
                 }
             }
+            }
+
+            // Floating search bar overlay
+            if (!uiState.isSelectionMode) {
+                FloatingSearchBar(
+                    uiState = uiState,
+                    isScrolled = isScrolled,
+                    showMenu = showMenu,
+                    onIntent = onIntent,
+                    onShowMenuChange = onShowMenuChange,
+                    onNavigateToSettings = onNavigateToSettings,
+                    modifier = Modifier.align(Alignment.TopCenter),
+                )
+            }
         }
     }
 }
@@ -767,21 +733,56 @@ private fun GalleryContent(
     uniqueEmojis: List<Pair<String, Int>>,
     onIntent: (GalleryIntent) -> Unit,
     columns: Int,
+    gridState: LazyGridState = rememberLazyGridState(),
     gridContent: LazyGridScope.() -> Unit,
 ) {
-    val gridState = rememberLazyGridState()
-
     Column {
         // Emoji Filter Rail — only shown during search
         if (uiState.screenMode == ScreenMode.Searching &&
-            uniqueEmojis.isNotEmpty() && !uiState.isSelectionMode
+            !uiState.isSelectionMode
         ) {
-            EmojiFilterRail(
-                emojis = uniqueEmojis,
-                activeFilters = uiState.activeEmojiFilters,
-                onEmojiToggle = { emoji -> onIntent(GalleryIntent.ToggleEmojiFilter(emoji)) },
-                onClearAll = { onIntent(GalleryIntent.ClearEmojiFilters) },
-            )
+            val showFavoritesChip = uiState.favoritesCount > 0
+            val isFavoritesActive = uiState.filter is GalleryFilter.Favorites
+
+            if (uniqueEmojis.isNotEmpty() || showFavoritesChip) {
+                EmojiFilterRail(
+                    emojis = uniqueEmojis,
+                    activeFilters = uiState.activeEmojiFilters,
+                    onEmojiToggle = { emoji -> onIntent(GalleryIntent.ToggleEmojiFilter(emoji)) },
+                    onClearAll = { onIntent(GalleryIntent.ClearEmojiFilters) },
+                    leadingContent = if (showFavoritesChip) {
+                        {
+                            item(key = "favorites_chip") {
+                                FilterChip(
+                                    selected = isFavoritesActive,
+                                    onClick = {
+                                        val newFilter = if (isFavoritesActive) {
+                                            GalleryFilter.All
+                                        } else {
+                                            GalleryFilter.Favorites
+                                        }
+                                        onIntent(GalleryIntent.SetFilter(newFilter))
+                                    },
+                                    label = { Text(stringResource(R.string.gallery_chip_favorites)) },
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = if (isFavoritesActive) {
+                                                Icons.Filled.Favorite
+                                            } else {
+                                                Icons.Outlined.FavoriteBorder
+                                            },
+                                            contentDescription = null,
+                                            modifier = Modifier.size(18.dp),
+                                        )
+                                    },
+                                )
+                            }
+                        }
+                    } else {
+                        null
+                    },
+                )
+            }
         }
 
         // Import progress banner
@@ -804,6 +805,105 @@ private fun GalleryContent(
                 verticalArrangement = Arrangement.spacedBy(6.dp),
                 content = gridContent,
             )
+        }
+    }
+}
+
+/**
+ * Floating search bar overlay with animated menu icon background.
+ * The three-dots icon shows a circle background when the user scrolls.
+ */
+@Suppress("LongMethod", "LongParameterList")
+@Composable
+private fun FloatingSearchBar(
+    uiState: GalleryUiState,
+    isScrolled: Boolean,
+    showMenu: Boolean,
+    onIntent: (GalleryIntent) -> Unit,
+    onShowMenuChange: (Boolean) -> Unit,
+    onNavigateToSettings: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val menuBgAlpha by animateFloatAsState(
+        targetValue = if (isScrolled) 1f else 0f,
+        animationSpec = tween(durationMillis = 200),
+        label = "menuBgAlpha",
+    )
+
+    Row(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .height(64.dp)
+                .padding(start = 8.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        // Navigation icon (close for search/filters)
+        if (uiState.screenMode == ScreenMode.Searching) {
+            IconButton(onClick = { onIntent(GalleryIntent.ClearSearch) }) {
+                Icon(
+                    Icons.Default.Close,
+                    contentDescription = stringResource(R.string.gallery_cd_clear_filter),
+                )
+            }
+        } else if (uiState.filter !is GalleryFilter.All || uiState.activeEmojiFilters.isNotEmpty()) {
+            IconButton(onClick = {
+                onIntent(GalleryIntent.ClearEmojiFilters)
+                onIntent(GalleryIntent.SetFilter(GalleryFilter.All))
+            }) {
+                Icon(
+                    Icons.Default.Close,
+                    contentDescription = stringResource(R.string.gallery_cd_clear_filter),
+                )
+            }
+        }
+
+        // Search bar
+        com.adsamcik.riposte.core.ui.component.SearchBar(
+            query = uiState.searchState.query,
+            onQueryChange = { onIntent(GalleryIntent.UpdateSearchQuery(it)) },
+            onSearch = { /* debounce handles it */ },
+            placeholder = stringResource(com.adsamcik.riposte.core.search.R.string.search_placeholder),
+            modifier = Modifier.weight(1f),
+        )
+
+        // More options with animated circle background
+        Box {
+            IconButton(
+                onClick = { onShowMenuChange(true) },
+                modifier =
+                    Modifier
+                        .background(
+                            color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = menuBgAlpha),
+                            shape = CircleShape,
+                        ),
+            ) {
+                Icon(
+                    Icons.Default.MoreVert,
+                    contentDescription = stringResource(R.string.gallery_cd_more_options),
+                )
+            }
+            DropdownMenu(
+                expanded = showMenu,
+                onDismissRequest = { onShowMenuChange(false) },
+            ) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.gallery_menu_select)) },
+                    leadingIcon = { Icon(Icons.Default.SelectAll, null) },
+                    onClick = {
+                        onIntent(GalleryIntent.EnterSelectionMode)
+                        onShowMenuChange(false)
+                    },
+                )
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.gallery_menu_settings)) },
+                    onClick = {
+                        onNavigateToSettings()
+                        onShowMenuChange(false)
+                    },
+                )
+            }
         }
     }
 }

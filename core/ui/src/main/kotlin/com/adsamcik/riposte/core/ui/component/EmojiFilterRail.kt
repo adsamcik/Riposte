@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -38,6 +39,7 @@ private const val MAX_EMOJI_COUNT = 200
  * @param activeFilters Set of currently selected emoji filters.
  * @param onEmojiToggle Callback when an emoji filter is toggled.
  * @param onClearAll Callback to clear all active filters.
+ * @param leadingContent Optional slot for additional chips rendered before the emoji chips.
  * @param maxVisible Maximum number of emojis to show before overflow.
  * @param modifier Modifier to be applied to the component.
  */
@@ -47,6 +49,7 @@ fun EmojiFilterRail(
     activeFilters: Set<String>,
     onEmojiToggle: (String) -> Unit,
     onClearAll: () -> Unit = {},
+    leadingContent: (LazyListScope.() -> Unit)? = null,
     maxVisible: Int = 7,
     modifier: Modifier = Modifier,
 ) {
@@ -62,6 +65,9 @@ fun EmojiFilterRail(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             contentPadding = PaddingValues(horizontal = 16.dp),
         ) {
+            // Leading content slot (e.g., Favorites chip)
+            leadingContent?.invoke(this)
+
             // Clear all button when filters are active
             if (activeFilters.isNotEmpty()) {
                 item(key = "clear_all") {

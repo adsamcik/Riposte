@@ -179,4 +179,5 @@ data class GalleryViewModelUseCases
         val toggleFavorite: ToggleFavoriteUseCase,
         val getAllMemeIds: GetAllMemeIdsUseCase,
         val getAllEmojisWithCounts: GetAllEmojisWithCountsUseCase,
+        val getLibraryStats: GetLibraryStatsUseCase,
     )

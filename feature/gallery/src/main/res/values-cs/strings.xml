@@ -12,6 +12,7 @@
     <!-- Filter State -->
     <string name="gallery_title_favorites">⭐ Oblíbené</string>
     <string name="gallery_cd_clear_filter">Zrušit filtr</string>
+    <string name="gallery_chip_favorites">Oblíbené</string>
 
     <!-- Section Headers -->
     <string name="gallery_section_suggested">✨ Doporučené</string>

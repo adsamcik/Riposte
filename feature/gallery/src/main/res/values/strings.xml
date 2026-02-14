@@ -12,6 +12,7 @@
     <!-- Filter State -->
     <string name="gallery_title_favorites">⭐ Favorites</string>
     <string name="gallery_cd_clear_filter">Clear filter</string>
+    <string name="gallery_chip_favorites">Favorites</string>
 
     <!-- Section Headers -->
     <string name="gallery_section_suggested">✨ Suggested</string>

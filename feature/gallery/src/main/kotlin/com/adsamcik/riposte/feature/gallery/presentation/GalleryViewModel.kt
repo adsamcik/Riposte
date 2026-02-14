@@ -95,6 +95,7 @@ class GalleryViewModel
             observeImportWork()
             observeEmbeddingWork()
             observeUniqueEmojis()
+            observeFavoritesCount()
         }
 
         fun onIntent(intent: GalleryIntent) {
@@ -151,6 +152,29 @@ class GalleryViewModel
                 useCases.getAllEmojisWithCounts().collectLatest { emojiCounts ->
                     _uiState.update { it.copy(uniqueEmojis = emojiCounts) }
                 }
+            }
+        }
+
+        /** Observe favorites count for the conditional Favorites chip in search mode. */
+        private fun observeFavoritesCount() {
+            viewModelScope.launch {
+                useCases.getLibraryStats()
+                    .map { it.favoriteMemes }
+                    .distinctUntilChanged()
+                    .collectLatest { count ->
+                        _uiState.update { state ->
+                            // Auto-clear Favorites filter when no favorites remain
+                            if (count == 0 && state.filter is GalleryFilter.Favorites) {
+                                state.copy(favoritesCount = count, filter = GalleryFilter.All)
+                            } else {
+                                state.copy(favoritesCount = count)
+                            }
+                        }
+                        // Reload memes if filter was auto-cleared
+                        if (_uiState.value.favoritesCount == 0 && _uiState.value.filter is GalleryFilter.All) {
+                            loadMemes()
+                        }
+                    }
             }
         }
 

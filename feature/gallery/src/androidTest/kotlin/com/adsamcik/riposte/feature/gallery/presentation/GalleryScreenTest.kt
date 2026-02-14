@@ -166,10 +166,10 @@ class GalleryScreenTest {
         assertThat(memeCards.size).isEqualTo(testMemes.size)
     }
 
-    // ============ Filter Tab Tests ============
+    // ============ Overflow Menu Tests ============
 
     @Test
-    fun galleryScreen_showsFilterTabs() {
+    fun galleryScreen_showsOverflowMenuItems() {
         composeTestRule.setContent {
             RiposteTheme {
                 GalleryScreen(
@@ -186,12 +186,15 @@ class GalleryScreenTest {
             }
         }
 
-        composeTestRule.onNodeWithText("All").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Favorites").assertIsDisplayed()
+        // Open overflow menu
+        composeTestRule.onNodeWithContentDescription("More options").performClick()
+
+        composeTestRule.onNodeWithText("Select").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Settings").assertIsDisplayed()
     }
 
     @Test
-    fun galleryScreen_switchesToFavorites_onTabClick() {
+    fun galleryScreen_showsFavoritesChipInSearchMode() {
         var receivedIntent: GalleryIntent? = null
 
         composeTestRule.setContent {
@@ -201,6 +204,8 @@ class GalleryScreenTest {
                         GalleryUiState(
                             memes = testMemes,
                             isLoading = false,
+                            screenMode = ScreenMode.Searching,
+                            favoritesCount = 3,
                         ),
                     onIntent = { receivedIntent = it },
                     onNavigateToMeme = {},

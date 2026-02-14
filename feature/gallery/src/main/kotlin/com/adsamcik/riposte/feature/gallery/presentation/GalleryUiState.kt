@@ -99,6 +99,11 @@ data class GalleryUiState(
      */
     val importStatus: ImportWorkStatus = ImportWorkStatus.Idle,
     /**
+     * Number of favorited memes. Used to conditionally show the Favorites chip
+     * in the search-mode emoji filter rail.
+     */
+    val favoritesCount: Int = 0,
+    /**
      * Active one-shot notification to display in the notification banner.
      */
     val notification: GalleryNotification? = null,

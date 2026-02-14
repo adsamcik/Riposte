@@ -5,6 +5,7 @@ import android.content.Intent
 import app.cash.turbine.turbineScope
 import com.adsamcik.riposte.core.common.share.ShareMemeUseCase
 import com.adsamcik.riposte.core.common.suggestion.GetSuggestionsUseCase
+import com.adsamcik.riposte.core.database.LibraryStatistics
 import com.adsamcik.riposte.core.datastore.PreferencesDataStore
 import com.adsamcik.riposte.core.model.AppPreferences
 import com.adsamcik.riposte.core.model.DarkMode
@@ -17,6 +18,7 @@ import com.adsamcik.riposte.feature.gallery.domain.usecase.GalleryViewModelUseCa
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GetAllEmojisWithCountsUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GetAllMemeIdsUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GetFavoritesUseCase
+import com.adsamcik.riposte.feature.gallery.domain.usecase.GetLibraryStatsUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GetMemeByIdUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GetMemesByEmojiUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GetMemesUseCase
@@ -52,6 +54,7 @@ class GalleryViewModelTest {
     private lateinit var toggleFavoriteUseCase: ToggleFavoriteUseCase
     private lateinit var getAllMemeIdsUseCase: GetAllMemeIdsUseCase
     private lateinit var getAllEmojisWithCountsUseCase: GetAllEmojisWithCountsUseCase
+    private lateinit var getLibraryStatsUseCase: GetLibraryStatsUseCase
     private lateinit var getSuggestionsUseCase: GetSuggestionsUseCase
     private lateinit var shareMemeUseCase: ShareMemeUseCase
     private lateinit var galleryRepository: com.adsamcik.riposte.feature.gallery.domain.repository.GalleryRepository
@@ -93,6 +96,7 @@ class GalleryViewModelTest {
         toggleFavoriteUseCase = mockk()
         getAllMemeIdsUseCase = mockk()
         getAllEmojisWithCountsUseCase = mockk()
+        getLibraryStatsUseCase = mockk()
         getSuggestionsUseCase = GetSuggestionsUseCase()
         shareMemeUseCase = mockk()
         coEvery { shareMemeUseCase(any()) } returns Result.success(Intent())
@@ -114,6 +118,7 @@ class GalleryViewModelTest {
         coEvery { preferencesDataStore.setShareTipShown() } returns Unit
         coEvery { getAllMemeIdsUseCase() } returns testMemes.map { it.id }
         every { getAllEmojisWithCountsUseCase() } returns flowOf(emptyList())
+        every { getLibraryStatsUseCase() } returns flowOf(LibraryStatistics(totalMemes = 3, favoriteMemes = 1))
     }
 
     private fun createViewModel(): GalleryViewModel {
@@ -128,6 +133,7 @@ class GalleryViewModelTest {
                 toggleFavorite = toggleFavoriteUseCase,
                 getAllMemeIds = getAllMemeIdsUseCase,
                 getAllEmojisWithCounts = getAllEmojisWithCountsUseCase,
+                getLibraryStats = getLibraryStatsUseCase,
             )
         return GalleryViewModel(
             context = context,
@@ -541,6 +547,41 @@ class GalleryViewModelTest {
             verify { getMemesByEmojiUseCase("😂") }
             assertThat(viewModel.uiState.value.filter).isEqualTo(GalleryFilter.ByEmoji("😂"))
             assertThat(viewModel.uiState.value.memes).hasSize(1)
+        }
+
+    // endregion
+
+    // region Favorites Count Tests
+
+    @Test
+    fun `favoritesCount is populated from library stats`() =
+        runTest {
+            every { getLibraryStatsUseCase() } returns flowOf(LibraryStatistics(totalMemes = 10, favoriteMemes = 5))
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.favoritesCount).isEqualTo(5)
+        }
+
+    @Test
+    fun `favorites filter auto-clears when favorites count drops to zero`() =
+        runTest {
+            val statsFlow = MutableStateFlow(LibraryStatistics(totalMemes = 10, favoriteMemes = 3))
+            every { getLibraryStatsUseCase() } returns statsFlow
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            // Set filter to Favorites
+            viewModel.onIntent(GalleryIntent.SetFilter(GalleryFilter.Favorites))
+            advanceUntilIdle()
+            assertThat(viewModel.uiState.value.filter).isEqualTo(GalleryFilter.Favorites)
+
+            // Simulate all favorites being removed
+            statsFlow.value = LibraryStatistics(totalMemes = 10, favoriteMemes = 0)
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.filter).isEqualTo(GalleryFilter.All)
+            assertThat(viewModel.uiState.value.favoritesCount).isEqualTo(0)
         }
 
     // endregion
