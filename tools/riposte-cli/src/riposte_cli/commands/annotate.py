@@ -24,8 +24,10 @@ from rich.progress import (
 from riposte_cli import __version__
 from riposte_cli.copilot import (
     analyze_image_async,
+    create_concurrency_limiter,
     get_rate_limiter,
     reset_rate_limiter,
+    ConcurrencyLimiter,
     CopilotError,
     CopilotNotAuthenticatedError,
     RateLimitError,
@@ -280,6 +282,12 @@ def write_sidecar(image_path: Path, metadata: dict, output_dir: Path | None = No
 )
 @click.option("--dry-run", is_flag=True, help="Show what would be processed")
 @click.option("--verbose", "-v", is_flag=True, help="Show detailed progress")
+@click.option(
+    "--concurrency", "-j",
+    type=click.IntRange(1, 10),
+    default=4,
+    help="Max parallel API requests (1-10, default: 4)",
+)
 def annotate(
     folder: Path,
     create_zip: bool,
@@ -293,6 +301,7 @@ def annotate(
     similarity_threshold: int,
     dry_run: bool,
     verbose: bool,
+    concurrency: int,
 ) -> None:
     """Annotate images in a folder with AI-generated metadata.
     
@@ -424,7 +433,10 @@ def annotate(
             f"[dim]Skipping {near_dupes} near-duplicate(s) "
             "(similar perceptual hash)[/dim]"
         )
-    console.print(f"[bold]Processing {len(images)} image(s)[/bold]\n")
+    console.print(f"[bold]Processing {len(images)} image(s)[/bold]")
+    if images:
+        console.print(f"[dim]Concurrency: {concurrency} parallel workers[/dim]")
+    console.print()
     
     if not images:
         console.print("[green]✓ All images already have sidecars![/green]")
@@ -443,15 +455,118 @@ def annotate(
     errors = []
     
     if images:
-        # Reset rate limiter for this batch
-        reset_rate_limiter()
-    
-        # Process images with async
-        async def process_images():
-            _processed = []
-            _errors = []
-            rate_limiter = get_rate_limiter()
+        # Create concurrency limiter for this batch
+        limiter = create_concurrency_limiter(max_concurrency=concurrency)
+
+        async def process_single_image(
+            image_path: Path,
+            idx: int,
+            progress: Progress,
+            task_id: int,
+        ) -> tuple[Path, Path] | tuple[Path, str] | None:
+            """Process a single image with retries, respecting the concurrency limiter."""
+            max_retries = 5
+            img_start = time.monotonic()
             
+            for attempt in range(max_retries):
+                try:
+                    await limiter.acquire()
+                    try:
+                        result = await analyze_image_async(
+                            image_path,
+                            model=model,
+                            verbose=verbose,
+                            languages=language_list,
+                        )
+                    finally:
+                        await limiter.release()
+                    
+                    content_hash = get_image_hash(image_path)
+                    metadata = create_sidecar_metadata(
+                        emojis=result["emojis"],
+                        title=result.get("title"),
+                        description=result.get("description"),
+                        tags=result.get("tags"),
+                        search_phrases=result.get("searchPhrases"),
+                        primary_language=primary_language,
+                        localizations=result.get("localizations"),
+                        content_hash=content_hash,
+                        based_on=result.get("basedOn"),
+                    )
+                    sidecar_path = write_sidecar(image_path, metadata, output_dir)
+                    
+                    await limiter.record_success()
+                    img_elapsed = time.monotonic() - img_start
+                    emojis_str = " ".join(result.get("emojis", []))
+                    console.print(
+                        f"  [green]✓[/green] "
+                        f"{image_path.name} → {emojis_str} "
+                        f"[dim]({img_elapsed:.1f}s)[/dim]"
+                    )
+                    progress.advance(task_id)
+                    return (image_path, sidecar_path)
+
+                except CopilotNotAuthenticatedError as e:
+                    console.print(f"\n[red]Error: {e}[/red]")
+                    console.print(
+                        "Install GitHub Copilot CLI: "
+                        "https://github.com/github/copilot-cli"
+                    )
+                    sys.exit(1)
+                except RateLimitError as e:
+                    wait_time = await limiter.record_rate_limit(
+                        retry_after=e.retry_after,
+                    )
+                    if limiter.should_give_up():
+                        console.print(
+                            f"\n[red]Too many rate limits. "
+                            f"Skipping {image_path.name}[/red]"
+                        )
+                        progress.advance(task_id)
+                        return (image_path, str(e))
+                    console.print(
+                        f"\n[yellow]Rate limit hit — all workers paused "
+                        f"{wait_time:.1f}s "
+                        f"(attempt {attempt + 1}/{max_retries}, "
+                        f"concurrency → {limiter.current_concurrency})[/yellow]"
+                    )
+                except ServerError as e:
+                    wait_time = await limiter.record_server_error()
+                    if limiter.should_give_up():
+                        console.print(
+                            f"\n[red]Too many server errors. "
+                            f"Skipping {image_path.name}[/red]"
+                        )
+                        progress.advance(task_id)
+                        return (image_path, str(e))
+                    console.print(
+                        f"\n[yellow]Server error. "
+                        f"Waiting {wait_time:.1f}s... "
+                        f"(attempt {attempt + 1}/{max_retries})[/yellow]"
+                    )
+                    await asyncio.sleep(wait_time)
+                except CopilotError as e:
+                    img_elapsed = time.monotonic() - img_start
+                    console.print(
+                        f"  [red]✗[/red] {image_path.name}: "
+                        f"{e} [dim]({img_elapsed:.1f}s)[/dim]"
+                    )
+                    progress.advance(task_id)
+                    return (image_path, str(e))
+                except Exception as e:
+                    img_elapsed = time.monotonic() - img_start
+                    console.print(
+                        f"  [red]✗[/red] {image_path.name}: "
+                        f"{e} [dim]({img_elapsed:.1f}s)[/dim]"
+                    )
+                    progress.advance(task_id)
+                    return (image_path, str(e))
+            
+            # Exhausted retries
+            progress.advance(task_id)
+            return (image_path, "Exhausted all retries")
+
+        async def process_images():
             with Progress(
                 SpinnerColumn(),
                 TextColumn("[progress.description]{task.description}"),
@@ -461,119 +576,27 @@ def annotate(
                 TimeRemainingColumn(),
                 console=console,
             ) as progress:
-                task = progress.add_task("Annotating images...", total=len(images))
+                task_id = progress.add_task(
+                    f"Annotating ({concurrency} workers)...",
+                    total=len(images),
+                )
                 
-                for idx, image_path in enumerate(images):
-                    progress.update(
-                        task,
-                        description=(
-                            f"[{idx + 1}/{len(images)}] "
-                            f"{image_path.name}"
-                        ),
-                    )
-                    
-                    img_start = time.monotonic()
-                    
-                    # Retry loop for rate limiting
-                    max_retries = 5
-                    for attempt in range(max_retries):
-                        try:
-                            # Analyze image with Copilot SDK
-                            result = await analyze_image_async(
-                                image_path,
-                                model=model,
-                                verbose=verbose,
-                                languages=language_list,
-                            )
-                            
-                            # Get content hash for deduplication
-                            content_hash = get_image_hash(image_path)
-                            
-                            # Create sidecar metadata
-                            metadata = create_sidecar_metadata(
-                                emojis=result["emojis"],
-                                title=result.get("title"),
-                                description=result.get("description"),
-                                tags=result.get("tags"),
-                                search_phrases=result.get("searchPhrases"),
-                                primary_language=primary_language,
-                                localizations=result.get("localizations"),
-                                content_hash=content_hash,
-                                based_on=result.get("basedOn"),
-                            )
-                            
-                            # Write sidecar file
-                            sidecar_path = write_sidecar(
-                                image_path, metadata, output_dir
-                            )
-                            _processed.append((image_path, sidecar_path))
-                            
-                            img_elapsed = time.monotonic() - img_start
-                            emojis_str = " ".join(result.get("emojis", []))
-                            console.print(
-                                f"  [green]✓[/green] "
-                                f"{image_path.name} → {emojis_str} "
-                                f"[dim]({img_elapsed:.1f}s)[/dim]"
-                            )
-                            break  # Success, exit retry loop
-                            
-                        except CopilotNotAuthenticatedError as e:
-                            console.print(f"\n[red]Error: {e}[/red]")
-                            console.print(
-                                "Install GitHub Copilot CLI: "
-                                "https://github.com/github/copilot-cli"
-                            )
-                            sys.exit(1)
-                        except RateLimitError as e:
-                            wait_time = e.retry_after or 1.0  # Use retry_after, fallback to 1s
-                            if rate_limiter.should_give_up():
-                                console.print(
-                                    f"\n[red]Too many rate limits. "
-                                    f"Skipping {image_path.name}[/red]"
-                                )
-                                _errors.append((image_path, str(e)))
-                                break
-                            console.print(
-                                f"\n[yellow]Rate limit hit. "
-                                f"Waiting {wait_time:.1f}s... "
-                                f"(attempt {attempt + 1}/{max_retries})[/yellow]"
-                            )
-                            await asyncio.sleep(wait_time)
-                        except ServerError as e:
-                            # Server errors (500/502/504) are transient, retry
-                            wait_time = rate_limiter.record_failure()
-                            if rate_limiter.should_give_up():
-                                console.print(
-                                    f"\n[red]Too many server errors. "
-                                    f"Skipping {image_path.name}[/red]"
-                                )
-                                _errors.append((image_path, str(e)))
-                                break
-                            console.print(
-                                f"\n[yellow]Server error. "
-                                f"Waiting {wait_time:.1f}s... "
-                                f"(attempt {attempt + 1}/{max_retries})[/yellow]"
-                            )
-                            await asyncio.sleep(wait_time)
-                        except CopilotError as e:
-                            _errors.append((image_path, str(e)))
-                            img_elapsed = time.monotonic() - img_start
-                            console.print(
-                                f"  [red]✗[/red] {image_path.name}: "
-                                f"{e} [dim]({img_elapsed:.1f}s)[/dim]"
-                            )
-                            break
-                        except Exception as e:
-                            _errors.append((image_path, str(e)))
-                            img_elapsed = time.monotonic() - img_start
-                            console.print(
-                                f"  [red]✗[/red] {image_path.name}: "
-                                f"{e} [dim]({img_elapsed:.1f}s)[/dim]"
-                            )
-                            break
-                    
-                    progress.advance(task)
+                tasks = [
+                    process_single_image(img, idx, progress, task_id)
+                    for idx, img in enumerate(images)
+                ]
+                results = await asyncio.gather(*tasks)
             
+            _processed = []
+            _errors = []
+            for result in results:
+                if result is None:
+                    continue
+                path, second = result
+                if isinstance(second, Path):
+                    _processed.append((path, second))
+                else:
+                    _errors.append((path, second))
             return _processed, _errors
         
         # Run async processing

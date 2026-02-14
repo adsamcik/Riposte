@@ -8,6 +8,7 @@ A command-line tool for annotating meme images using the GitHub Copilot SDK. Gen
 - 😀 **Emoji Suggestions**: Automatically suggests relevant emoji tags based on content
 - 📝 **Text Extraction**: Extracts visible text from memes
 - � **Smart Deduplication**: SHA-256 + perceptual hashing to skip duplicate images
+- ⚡ **Parallel Processing**: Concurrent API requests with adaptive backpressure
 - �📦 **ZIP Bundling**: Package images + metadata for easy import to the Android app
 - 🔐 **Native Auth**: Uses Copilot CLI authentication (no separate login required)
 
@@ -113,6 +114,7 @@ Options:
   --output, -o PATH        Output directory for sidecar files (default: same as input)
   --model, -m TEXT         Model to use for analysis (default: gpt-5-mini)
   --languages, -l TEXT     Comma-separated BCP 47 language codes (default: en)
+  --concurrency, -j N      Max parallel API requests (1-10, default: 4)
   --force, -f              Force regeneration of all sidecars, overwriting existing
   --continue               Only process images without existing JSON sidecars
   --add-new                Alias for --continue
@@ -212,17 +214,29 @@ my-memes/
 }
 ```
 
-## Rate Limiting
+## Rate Limiting & Parallelism
 
-The CLI includes smart rate limiting with:
+The CLI processes multiple images concurrently (default: 4 workers) with intelligent rate limit handling:
 
-- **Exponential backoff**: Automatically increases wait time after repeated 429 errors
+- **Adaptive concurrency**: Starts at `--concurrency N` workers; automatically reduces on 429 errors and gradually restores on sustained success
+- **Global pause on 429**: When any worker hits a rate limit, ALL workers pause until the backoff period elapses — prevents wasting quota
+- **Exponential backoff**: Automatically increases wait time after repeated errors
 - **Retry-After support**: Respects server-specified wait times
-- **Adaptive throttling**: Slows down based on recent error rate
-- **Automatic retries**: Up to 5 retries per image with intelligent delays
 - **Jitter**: Random variation to prevent thundering herd problems
+- **Automatic retries**: Up to 5 retries per image with intelligent delays
 
-You don't need to configure anything - the rate limiter handles it automatically.
+```bash
+# Default: 4 parallel workers
+meme-cli annotate ./my-memes
+
+# Sequential processing (like old behavior)
+meme-cli annotate ./my-memes -j 1
+
+# Maximum parallelism
+meme-cli annotate ./my-memes -j 10
+```
+
+You don't need to configure anything beyond `--concurrency` — backpressure is handled automatically.
 
 ## How It Works
 

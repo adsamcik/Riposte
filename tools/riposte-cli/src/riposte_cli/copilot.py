@@ -257,8 +257,128 @@ class RateLimiter:
         return failures / len(self.recent_results)
 
 
+class ConcurrencyLimiter:
+    """Manages concurrent API requests with adaptive backpressure.
+    
+    Coordinates multiple async workers via a semaphore and a global pause
+    event. When any worker receives a 429 or repeated server errors, all
+    workers are paused until the backoff period elapses. Concurrency is
+    dynamically reduced on errors and gradually restored on success.
+    """
+    
+    def __init__(
+        self,
+        max_concurrency: int = 4,
+        min_concurrency: int = 1,
+        rate_limiter: RateLimiter | None = None,
+    ):
+        self.max_concurrency = max_concurrency
+        self.min_concurrency = min_concurrency
+        self._current_concurrency = max_concurrency
+        self._semaphore = asyncio.Semaphore(max_concurrency)
+        self._green_light = asyncio.Event()
+        self._green_light.set()  # Start unpaused
+        self._rate_limiter = rate_limiter or RateLimiter()
+        self._active_tasks = 0
+        self._successes_since_last_reduce = 0
+        # How many successes before trying to restore one concurrency slot
+        self._restore_threshold = 10
+        self._lock = asyncio.Lock()
+    
+    @property
+    def rate_limiter(self) -> RateLimiter:
+        return self._rate_limiter
+    
+    @property
+    def current_concurrency(self) -> int:
+        return self._current_concurrency
+    
+    @property
+    def active_tasks(self) -> int:
+        return self._active_tasks
+    
+    @property
+    def is_paused(self) -> bool:
+        return not self._green_light.is_set()
+    
+    async def acquire(self) -> None:
+        """Acquire a concurrency slot, waiting for pause to clear first."""
+        await self._green_light.wait()
+        await self._semaphore.acquire()
+        async with self._lock:
+            self._active_tasks += 1
+    
+    async def release(self) -> None:
+        """Release a concurrency slot."""
+        self._semaphore.release()
+        async with self._lock:
+            self._active_tasks = max(0, self._active_tasks - 1)
+    
+    async def record_success(self) -> None:
+        """Record a successful request. May restore concurrency."""
+        async with self._lock:
+            self._rate_limiter.record_success()
+            self._successes_since_last_reduce += 1
+            
+            if (
+                self._successes_since_last_reduce >= self._restore_threshold
+                and self._current_concurrency < self.max_concurrency
+            ):
+                self._current_concurrency += 1
+                self._semaphore.release()  # Add a slot
+                self._successes_since_last_reduce = 0
+    
+    async def record_rate_limit(self, retry_after: float | None = None) -> float:
+        """Record a 429 rate limit error. Pauses all workers.
+        
+        Returns:
+            Wait time in seconds.
+        """
+        async with self._lock:
+            wait_time = self._rate_limiter.record_failure(retry_after=retry_after)
+            self._successes_since_last_reduce = 0
+            self._reduce_concurrency()
+        
+        # Pause all workers, wait, then resume
+        self._green_light.clear()
+        await asyncio.sleep(wait_time)
+        self._green_light.set()
+        return wait_time
+    
+    async def record_server_error(self) -> float:
+        """Record a server error (5xx). Does NOT pause all workers.
+        
+        Returns:
+            Wait time in seconds.
+        """
+        async with self._lock:
+            wait_time = self._rate_limiter.record_failure(is_server_error=True)
+            self._successes_since_last_reduce = 0
+            # Only reduce concurrency on repeated server errors
+            if self._rate_limiter.consecutive_failures >= 3:
+                self._reduce_concurrency()
+        return wait_time
+    
+    def should_give_up(self) -> bool:
+        """Check if we've exceeded max retries."""
+        return self._rate_limiter.should_give_up()
+    
+    def _reduce_concurrency(self) -> None:
+        """Reduce concurrency by one slot (must hold self._lock)."""
+        if self._current_concurrency > self.min_concurrency:
+            self._current_concurrency -= 1
+            # Drain one permit from the semaphore without blocking.
+            # If no permit is immediately available the reduction takes
+            # effect naturally once a running task releases.
+            if self._semaphore._value > 0:
+                self._semaphore._value -= 1
+
+
 # Global rate limiter instance
 _rate_limiter = RateLimiter()
+
+# Global concurrency limiter (created fresh per annotate run)
+_concurrency_limiter: ConcurrencyLimiter | None = None
 
 
 def _parse_response_content(content: str) -> dict[str, Any]:
@@ -500,3 +620,28 @@ def reset_rate_limiter() -> None:
     """Reset the rate limiter state."""
     global _rate_limiter
     _rate_limiter = RateLimiter()
+
+
+def create_concurrency_limiter(
+    max_concurrency: int = 4,
+) -> ConcurrencyLimiter:
+    """Create a new ConcurrencyLimiter for a batch run.
+    
+    Args:
+        max_concurrency: Maximum number of concurrent API requests.
+        
+    Returns:
+        A fresh ConcurrencyLimiter instance.
+    """
+    global _concurrency_limiter, _rate_limiter
+    _rate_limiter = RateLimiter()
+    _concurrency_limiter = ConcurrencyLimiter(
+        max_concurrency=max_concurrency,
+        rate_limiter=_rate_limiter,
+    )
+    return _concurrency_limiter
+
+
+def get_concurrency_limiter() -> ConcurrencyLimiter | None:
+    """Get the current concurrency limiter instance."""
+    return _concurrency_limiter
