@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.Build
 import androidx.core.content.FileProvider
 import com.adsamcik.riposte.core.common.AppConstants
+import com.adsamcik.riposte.core.common.share.ShareRepository
 import com.adsamcik.riposte.core.database.dao.MemeDao
 import com.adsamcik.riposte.core.datastore.PreferencesDataStore
 import com.adsamcik.riposte.core.ml.XmpMetadataHandler
@@ -16,7 +17,6 @@ import com.adsamcik.riposte.core.model.ImageFormat
 import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.core.model.MemeMetadata
 import com.adsamcik.riposte.core.model.ShareConfig
-import com.adsamcik.riposte.core.common.share.ShareRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -160,6 +160,7 @@ class ShareRepositoryImpl
                         type = mimeType
                         setPackage(pkg)
                     }
+
                 @Suppress("DEPRECATION")
                 val resolveInfo =
                     pm.queryIntentActivities(queryIntent, PackageManager.MATCH_DEFAULT_ONLY)
