@@ -35,6 +35,7 @@
     <string name="gallery_cd_clear">Vymazat</string>
     <string name="gallery_cd_remove">Odebrat</string>
     <string name="gallery_cd_selected">Vybráno</string>
+    <string name="gallery_cd_not_selected">Nevybráno</string>
     <string name="gallery_cd_confirm">Potvrdit</string>
     <string name="gallery_cd_meme_image">Meme obrázek: %s</string>
 

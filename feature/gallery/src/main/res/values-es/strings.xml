@@ -26,6 +26,7 @@
     <string name="gallery_cd_clear">Limpiar</string>
     <string name="gallery_cd_remove">Quitar</string>
     <string name="gallery_cd_selected">Seleccionado</string>
+    <string name="gallery_cd_not_selected">No seleccionado</string>
     <string name="gallery_cd_confirm">Confirmar</string>
     <string name="gallery_cd_meme_image">Imagen de meme: %s</string>
 

@@ -26,6 +26,7 @@
     <string name="gallery_cd_clear">Leeren</string>
     <string name="gallery_cd_remove">Entfernen</string>
     <string name="gallery_cd_selected">Ausgewählt</string>
+    <string name="gallery_cd_not_selected">Nicht ausgewählt</string>
     <string name="gallery_cd_confirm">Bestätigen</string>
     <string name="gallery_cd_meme_image">Meme-Bild: %s</string>
 
