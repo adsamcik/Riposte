@@ -509,6 +509,7 @@ private fun ImportGridContent(
                 emojis = emojiStrings,
                 isSelected = index == editingIndex,
                 hasError = image.error != null,
+                errorMessage = image.error,
                 isProcessing = image.isProcessing,
                 onClick = { onImageClick(index) },
                 onRemove = { onRemoveImage(index) },
@@ -527,6 +528,7 @@ private fun ImportImageCard(
     emojis: List<String>,
     isSelected: Boolean,
     hasError: Boolean,
+    errorMessage: String?,
     isProcessing: Boolean,
     onClick: () -> Unit,
     onRemove: () -> Unit,
@@ -600,15 +602,28 @@ private fun ImportImageCard(
 
             // Error indicator
             if (hasError) {
-                Icon(
-                    Icons.Default.Warning,
-                    contentDescription = stringResource(R.string.import_content_description_error),
-                    tint = MaterialTheme.colorScheme.error,
-                    modifier =
-                        Modifier
-                            .align(Alignment.Center)
-                            .size(32.dp),
-                )
+                Column(
+                    modifier = Modifier.align(Alignment.Center),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Icon(
+                        Icons.Default.Warning,
+                        contentDescription = stringResource(R.string.import_content_description_error),
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(32.dp),
+                    )
+                    if (errorMessage != null) {
+                        Text(
+                            text = errorMessage,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.error,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                        )
+                    }
+                }
             }
 
             // Emoji preview
