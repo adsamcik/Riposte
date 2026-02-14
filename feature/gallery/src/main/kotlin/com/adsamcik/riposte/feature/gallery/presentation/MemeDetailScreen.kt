@@ -928,7 +928,6 @@ private fun SimilarMemesSection(
             when (status) {
                 is SimilarMemesStatus.Found -> {
                     LazyRow(
-                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         items(

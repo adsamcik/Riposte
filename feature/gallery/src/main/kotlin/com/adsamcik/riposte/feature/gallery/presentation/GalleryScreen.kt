@@ -811,8 +811,8 @@ private fun GalleryContent(
                 state = gridState,
                 columns = GridCells.Fixed(columns),
                 contentPadding = PaddingValues(start = 4.dp, end = 4.dp, top = if (uiState.isSelectionMode) 4.dp else 64.dp, bottom = 120.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
                 content = gridContent,
             )
         }
@@ -845,7 +845,7 @@ private fun FloatingSearchBar(
             modifier
                 .fillMaxWidth()
                 .height(64.dp)
-                .padding(start = 8.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
+                .padding(start = 4.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {

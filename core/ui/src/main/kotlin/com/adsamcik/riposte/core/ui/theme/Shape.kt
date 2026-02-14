@@ -52,7 +52,7 @@ val CookieShape: Shape =
             val w = size.width
             val h = size.height
             // Corner indent depth — subtle enough to preserve content
-            val indent = min(w, h) * 0.06f
+            val indent = min(w, h) * 0.035f
             val cornerRadius = min(w, h) * 0.08f
 
             // Top edge: flat top with indented corners

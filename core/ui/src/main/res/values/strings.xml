@@ -55,4 +55,5 @@
         <item quantity="one">%1$d result</item>
         <item quantity="other">%1$d results</item>
     </plurals>
+    <string name="ui_search_results_query">for \"%1$s\"</string>
 </resources>

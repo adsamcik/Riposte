@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.dp
 import com.adsamcik.riposte.core.ui.R
 import com.adsamcik.riposte.core.ui.theme.RiposteTheme
 
-private val MoreChipShape = RoundedCornerShape(18.dp)
+private val MoreChipShape = RoundedCornerShape(20.dp)
 
 /**
  * Chip component that displays a count of additional items.

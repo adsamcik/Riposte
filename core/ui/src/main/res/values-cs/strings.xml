@@ -48,4 +48,7 @@
     <string name="ui_state_not_favorited">Není v oblíbených</string>
     <string name="ui_state_selected">Vybráno</string>
     <string name="ui_state_not_selected">Nevybráno</string>
+
+    <!-- SearchResultsHeader -->
+    <string name="ui_search_results_query">pro \"%1$s\"</string>
 </resources>

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Search Bar -->
-    <string name="search_placeholder">Hledej textem, emoji nebo náladou…</string>
+    <string name="search_placeholder">Text, emoji nebo nálada…</string>
     <string name="search_content_description">Pole pro vyhledávání memů</string>
 
     <!-- Search Bar Actions -->

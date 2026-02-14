@@ -15,4 +15,7 @@
     <string name="ui_search_placeholder">Pesquisar memes…</string>
     <string name="ui_search_icon_description">Pesquisar</string>
     <string name="ui_search_clear_description">Limpar pesquisa</string>
+
+    <!-- SearchResultsHeader -->
+    <string name="ui_search_results_query">para \"%1$s\"</string>
 </resources>
