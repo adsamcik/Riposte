@@ -324,14 +324,14 @@ private fun MemeDetailContent(
                 modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars),
             )
         },
-        containerColor = Color.Black,
+        containerColor = MaterialTheme.colorScheme.scrim,
     ) { paddingValues ->
         Box(
             modifier =
                 Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
-                    .background(Color.Black),
+                    .background(MaterialTheme.colorScheme.scrim),
         ) {
             MemeImagePager(
                 uiState = uiState,
@@ -355,7 +355,7 @@ private fun MemeDetailContent(
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = stringResource(R.string.gallery_cd_navigate_back),
-                    tint = Color.White,
+                    tint = MaterialTheme.colorScheme.inverseOnSurface,
                 )
             }
         }
