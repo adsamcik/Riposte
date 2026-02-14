@@ -682,8 +682,8 @@ def annotate(
             for image_path in all_images:
                 sidecar_path = output_dir / f"{image_path.name}.json"
                 if sidecar_path.exists():
-                    zf.write(image_path, image_path.name)
-                    zf.write(sidecar_path, sidecar_path.name)
+                    zf.writestr(image_path.name, image_path.read_bytes())
+                    zf.writestr(sidecar_path.name, sidecar_path.read_bytes())
                     bundled += 1
         
         if bundled > 0:
