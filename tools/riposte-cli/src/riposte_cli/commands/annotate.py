@@ -3,6 +3,7 @@
 import asyncio
 import json
 import sys
+import time
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
@@ -16,6 +17,8 @@ from rich.progress import (
     TextColumn,
     BarColumn,
     TaskProgressColumn,
+    TimeElapsedColumn,
+    TimeRemainingColumn,
 )
 
 from riposte_cli import __version__
@@ -454,14 +457,22 @@ def annotate(
                 TextColumn("[progress.description]{task.description}"),
                 BarColumn(),
                 TaskProgressColumn(),
+                TimeElapsedColumn(),
+                TimeRemainingColumn(),
                 console=console,
             ) as progress:
                 task = progress.add_task("Annotating images...", total=len(images))
                 
-                for image_path in images:
+                for idx, image_path in enumerate(images):
                     progress.update(
-                        task, description=f"Processing {image_path.name}..."
+                        task,
+                        description=(
+                            f"[{idx + 1}/{len(images)}] "
+                            f"{image_path.name}"
+                        ),
                     )
+                    
+                    img_start = time.monotonic()
                     
                     # Retry loop for rate limiting
                     max_retries = 5
@@ -497,12 +508,13 @@ def annotate(
                             )
                             _processed.append((image_path, sidecar_path))
                             
-                            if verbose:
-                                emojis_str = " ".join(result.get("emojis", []))
-                                console.print(
-                                    f"  [green]✓[/green] "
-                                    f"{image_path.name} → {emojis_str}"
-                                )
+                            img_elapsed = time.monotonic() - img_start
+                            emojis_str = " ".join(result.get("emojis", []))
+                            console.print(
+                                f"  [green]✓[/green] "
+                                f"{image_path.name} → {emojis_str} "
+                                f"[dim]({img_elapsed:.1f}s)[/dim]"
+                            )
                             break  # Success, exit retry loop
                             
                         except CopilotNotAuthenticatedError as e:
@@ -545,14 +557,18 @@ def annotate(
                             await asyncio.sleep(wait_time)
                         except CopilotError as e:
                             _errors.append((image_path, str(e)))
+                            img_elapsed = time.monotonic() - img_start
                             console.print(
-                                f"  [red]✗[/red] {image_path.name}: {e}"
+                                f"  [red]✗[/red] {image_path.name}: "
+                                f"{e} [dim]({img_elapsed:.1f}s)[/dim]"
                             )
                             break
                         except Exception as e:
                             _errors.append((image_path, str(e)))
+                            img_elapsed = time.monotonic() - img_start
                             console.print(
-                                f"  [red]✗[/red] {image_path.name}: {e}"
+                                f"  [red]✗[/red] {image_path.name}: "
+                                f"{e} [dim]({img_elapsed:.1f}s)[/dim]"
                             )
                             break
                     

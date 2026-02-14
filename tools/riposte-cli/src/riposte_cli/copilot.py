@@ -336,19 +336,27 @@ async def analyze_image_async(
         print(f"  [DEBUG] Image: {image_path.name}")
         print(f"  [DEBUG] Model: {model}")
         print(f"  [DEBUG] Languages: {', '.join(languages)}")
-        print(f"  [DEBUG] Using Copilot SDK")
     
     # Wait if we're being rate limited
     await _rate_limiter.wait_if_needed()
     
+    t_start = time.monotonic()
     client = CopilotClient()
     try:
         await client.start()
+        t_client = time.monotonic()
+        if verbose:
+            print(f"  [DEBUG] Client started (+{t_client - t_start:.1f}s)")
         
-        # Create session with system message for meme analysis
+        # Create session — streaming=True and no tools to ensure the model
+        # responds directly without trying to invoke agent tools.
+        # reasoning_effort='low' is required for reasoning models (e.g.
+        # gpt-5-mini) which otherwise default to high effort and hang.
         session_config = {
             "model": model,
-            "streaming": False,
+            "streaming": True,
+            "available_tools": [],
+            "reasoning_effort": "low",
             "system_message": {
                 "mode": "replace",
                 "content": system_prompt,
@@ -356,86 +364,36 @@ async def analyze_image_async(
         }
         
         session = await client.create_session(session_config)
+        t_session = time.monotonic()
+        if verbose:
+            print(f"  [DEBUG] Session created (+{t_session - t_start:.1f}s)")
         try:
-            done = asyncio.Event()
-            result_content: str | None = None
-            error_message: str | None = None
+            # Use send_and_wait for cleaner completion handling
+            t_send = time.monotonic()
+            response = await session.send_and_wait(
+                {
+                    "prompt": "Analyze this meme and provide the JSON metadata.",
+                    "attachments": [
+                        {
+                            "type": "file",
+                            "path": str(image_path.resolve()),
+                            "display_name": image_path.name,
+                        }
+                    ],
+                },
+                timeout=120.0,
+            )
+            t_done = time.monotonic()
+            if verbose:
+                print(
+                    f"  [DEBUG] Response received in {t_done - t_send:.1f}s "
+                    f"(total: {t_done - t_start:.1f}s)"
+                )
             
-            def on_event(event):
-                nonlocal result_content, error_message
-                
-                if verbose:
-                    event_type = getattr(event.type, 'value', str(event.type))
-                    print(f"  [DEBUG] Event: {event_type}")
-                
-                event_type = getattr(event.type, 'value', str(event.type))
-                if event_type == "assistant.message":
-                    result_content = event.data.content
-                elif event_type == "session.idle":
-                    done.set()
-                elif event_type == "session.error":
-                    error_message = getattr(event.data, "message", str(event.data))
-                    done.set()
-            
-            session.on(on_event)
-            
-            # Send the image for analysis
-            await session.send({
-                "prompt": "Analyze this meme and provide the JSON metadata.",
-                "attachments": [
-                    {
-                        "type": "file",
-                        "path": str(image_path.resolve()),
-                        "display_name": image_path.name,
-                    }
-                ],
-            })
-            
-            # Wait for completion with timeout
-            try:
-                await asyncio.wait_for(done.wait(), timeout=120.0)
-            except asyncio.TimeoutError:
-                raise CopilotError("Timeout waiting for Copilot response")
-            
-            if error_message:
-                error_lower = error_message.lower()
-                
-                # Check for rate limit errors (429)
-                if "rate" in error_lower or "429" in error_message:
-                    wait_time = _rate_limiter.record_failure()
-                    raise RateLimitError(
-                        f"Rate limit exceeded. Retry after {wait_time:.1f}s",
-                        retry_after=wait_time,
-                    )
-                
-                # Check for server errors (500, 502, 504) - transient, can retry
-                if any(code in error_message for code in ["500", "502", "504"]):
-                    wait_time = _rate_limiter.record_failure(is_server_error=True)
-                    status = 500  # Default
-                    for code in [500, 502, 504]:
-                        if str(code) in error_message:
-                            status = code
-                            break
-                    raise ServerError(
-                        f"Server error ({status}). Retry after {wait_time:.1f}s",
-                        status_code=status,
-                    )
-                
-                # Check for server error keywords
-                if any(kw in error_lower for kw in [
-                    "internal server", "bad gateway", "gateway timeout",
-                    "service unavailable", "503"
-                ]):
-                    wait_time = _rate_limiter.record_failure(is_server_error=True)
-                    raise ServerError(
-                        f"Server error. Retry after {wait_time:.1f}s",
-                        status_code=503,
-                    )
-                raise CopilotError(f"Copilot error: {error_message}")
-            
-            if not result_content:
+            if not response or not response.data.content:
                 raise CopilotError("No response from Copilot")
             
+            result_content = response.data.content
             if verbose:
                 print(f"  [DEBUG] Response: {result_content[:500]}...")
             
@@ -443,6 +401,51 @@ async def analyze_image_async(
             parsed = _parse_response_content(result_content)
             _rate_limiter.record_success()
             return parsed
+        except asyncio.TimeoutError:
+            elapsed = time.monotonic() - t_start
+            raise CopilotError(
+                f"Timeout after {elapsed:.0f}s waiting for Copilot response"
+            )
+        except Exception as e:
+            error_message = str(e)
+            error_lower = error_message.lower()
+            
+            # Check for rate limit errors (429)
+            if "rate" in error_lower or "429" in error_message:
+                wait_time = _rate_limiter.record_failure()
+                raise RateLimitError(
+                    f"Rate limit exceeded. Retry after {wait_time:.1f}s",
+                    retry_after=wait_time,
+                ) from e
+            
+            # Check for server errors (500, 502, 504) - transient, can retry
+            if any(code in error_message for code in ["500", "502", "504"]):
+                wait_time = _rate_limiter.record_failure(is_server_error=True)
+                status = 500
+                for code in [500, 502, 504]:
+                    if str(code) in error_message:
+                        status = code
+                        break
+                raise ServerError(
+                    f"Server error ({status}). Retry after {wait_time:.1f}s",
+                    status_code=status,
+                ) from e
+            
+            # Check for server error keywords
+            if any(kw in error_lower for kw in [
+                "internal server", "bad gateway", "gateway timeout",
+                "service unavailable", "503"
+            ]):
+                wait_time = _rate_limiter.record_failure(is_server_error=True)
+                raise ServerError(
+                    f"Server error. Retry after {wait_time:.1f}s",
+                    status_code=503,
+                ) from e
+            
+            # Re-raise CopilotError subtypes as-is
+            if isinstance(e, CopilotError):
+                raise
+            raise CopilotError(f"Copilot error: {error_message}") from e
         finally:
             await session.destroy()
     except FileNotFoundError:
