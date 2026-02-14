@@ -124,7 +124,7 @@ Dispatch **two parallel `task` tool calls** with different models. Each evaluate
 
 ```text
 task(agent_type: "general-purpose", model: "gpt-5.3-codex", prompt: <spatial prompt>)
-task(agent_type: "general-purpose", model: "claude-opus-4", prompt: <ux prompt>)
+task(agent_type: "general-purpose", model: "claude-opus-4.6", prompt: <ux prompt>)
 ```
 
 **When to use dual-model vs single:**
@@ -132,7 +132,7 @@ task(agent_type: "general-purpose", model: "claude-opus-4", prompt: <ux prompt>)
 | Screens | Approach |
 |---------|----------|
 | Gallery, Detail, Share (critical path) | Dual-model |
-| All other screens | Single-model (Opus) |
+| All other screens | Single-model (Opus 4.6) |
 | Verification re-screenshots | Single-model (any, quick check) |
 
 Full prompts are in `prompts/spatial-analyst.md` and `prompts/ux-critic.md`.
