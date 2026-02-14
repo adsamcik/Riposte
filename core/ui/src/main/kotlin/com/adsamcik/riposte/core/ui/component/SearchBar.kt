@@ -60,7 +60,6 @@ fun SearchBar(
         modifier =
             modifier
                 .fillMaxWidth()
-                .height(52.dp)
                 .focusRequester(focusRequester),
         textStyle = MaterialTheme.typography.bodyMedium,
         placeholder = {

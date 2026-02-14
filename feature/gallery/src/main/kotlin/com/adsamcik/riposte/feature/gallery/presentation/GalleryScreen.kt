@@ -776,6 +776,7 @@ private fun GalleryContent(
                     } else {
                         null
                     },
+                    modifier = Modifier.padding(top = 64.dp),
                 )
             }
         }
