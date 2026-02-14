@@ -568,7 +568,7 @@ private fun GalleryScreenContent(
                                 // Suggestions first
                                 items(
                                     items = uiState.suggestions,
-                                    key = { it.id },
+                                    key = { "suggestion_${it.id}" },
                                 ) { meme ->
                                     val isSelected = meme.id in uiState.selectedMemeIds
                                     val memeDescription = meme.title ?: meme.fileName
@@ -666,7 +666,7 @@ private fun GalleryScreenContent(
                         // Suggestions first
                         items(
                             items = uiState.suggestions,
-                            key = { it.id },
+                            key = { "suggestion_${it.id}" },
                         ) { meme ->
                             val isSelected = meme.id in uiState.selectedMemeIds
                             val memeDescription = meme.title ?: meme.fileName
