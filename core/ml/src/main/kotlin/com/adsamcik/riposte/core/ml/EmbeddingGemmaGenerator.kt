@@ -80,8 +80,16 @@ class EmbeddingGemmaGenerator
         private var _initializationError: String? = null
         override val initializationError: String? get() = _initializationError
 
-        /** Whether GPU acceleration is enabled (auto-detected based on OpenCL availability). */
-        private var useGpu = isOpenClAvailable()
+        /** Whether GPU acceleration is enabled (auto-detected on first use). */
+        private var useGpu: Boolean? = null
+
+        private fun shouldUseGpu(): Boolean {
+            val current = useGpu
+            if (current != null) return current
+            val available = isOpenClAvailable()
+            useGpu = available
+            return available
+        }
 
         /** Executor for handling ListenableFuture callbacks. */
         private var callbackExecutor = Executors.newSingleThreadExecutor()
@@ -287,7 +295,7 @@ class EmbeddingGemmaGenerator
                     return
                 }
 
-                Log.d(TAG, "Initializing EmbeddingGemma with GPU=$useGpu")
+                Log.d(TAG, "Initializing EmbeddingGemma with GPU=${shouldUseGpu()}")
                 Log.d(TAG, "Model path: $modelPath")
                 Log.d(TAG, "Tokenizer path: $tokenizerPath")
 
@@ -295,7 +303,7 @@ class EmbeddingGemmaGenerator
                     GemmaEmbeddingModel(
                         modelPath,
                         tokenizerPath,
-                        useGpu,
+                        shouldUseGpu(),
                     )
 
                 Log.i(TAG, "EmbeddingGemma initialized successfully (dimension: $embeddingDimension)")
@@ -312,7 +320,7 @@ class EmbeddingGemmaGenerator
                 Log.e(TAG, "Failed to initialize EmbeddingGemma", e)
 
                 // Try CPU fallback if GPU fails
-                if (useGpu) {
+                if (shouldUseGpu()) {
                     Log.i(TAG, "Retrying with CPU...")
                     useGpu = false
                     try {
