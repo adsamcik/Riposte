@@ -5,6 +5,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -26,6 +27,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.adsamcik.riposte.core.ui.R
 import com.adsamcik.riposte.core.ui.theme.RiposteShapes
@@ -58,9 +60,15 @@ fun SearchBar(
         modifier =
             modifier
                 .fillMaxWidth()
+                .height(52.dp)
                 .focusRequester(focusRequester),
+        textStyle = MaterialTheme.typography.bodyMedium,
         placeholder = {
-            Text(text = placeholder ?: defaultPlaceholder)
+            Text(
+                text = placeholder ?: defaultPlaceholder,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         },
         leadingIcon = {
             Icon(

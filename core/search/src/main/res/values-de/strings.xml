@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Search Bar -->
-    <string name="search_placeholder">Suche Memes nach Text, Emoji oder beschreibe, was du suchst…</string>
+    <string name="search_placeholder">Suche nach Text, Emoji oder Stimmung…</string>
     <string name="search_content_description">Memes-Sucheingabefeld</string>
 
     <!-- Search Bar Actions -->
