@@ -38,7 +38,9 @@
     <string name="settings_search_index_complete">Todos os %1$d memes indexados</string>
     <string name="settings_search_index_progress">%1$d de %2$d memes indexados</string>
     <string name="settings_search_index_regenerating">%1$d de %2$d memes indexados, %3$d regenerando</string>
-    <string name="settings_search_index_error">Indisponível: %1$s</string>
+    <string name="settings_search_index_error_not_supported">Indexação não é suportada neste dispositivo</string>
+    <string name="settings_search_index_error_not_included">Modelo de pesquisa não incluído nesta versão</string>
+    <string name="settings_search_index_error_failed">Indexação falhou — tente reinstalar o aplicativo</string>
     <string name="settings_search_history_title">Histórico de Pesquisa</string>
     <string name="settings_search_history_subtitle">Salvar pesquisas recentes</string>
     

@@ -159,10 +159,7 @@ private fun EmbeddingSearchSettings(uiState: SettingsUiState) {
 private fun embeddingIndexSubtitle(embeddingState: EmbeddingSearchState): String =
     when {
         embeddingState.modelError != null ->
-            stringResource(
-                R.string.settings_search_index_error,
-                embeddingState.modelError,
-            )
+            embeddingErrorMessage(embeddingState.modelError)
         embeddingState.isFullyIndexed ->
             stringResource(
                 R.string.settings_search_index_complete,
@@ -181,4 +178,15 @@ private fun embeddingIndexSubtitle(embeddingState: EmbeddingSearchState): String
                 embeddingState.indexedCount,
                 embeddingState.totalCount,
             )
+    }
+
+@Composable
+private fun embeddingErrorMessage(modelError: String): String =
+    when (modelError) {
+        "Model not compatible with this device" ->
+            stringResource(R.string.settings_search_index_error_not_supported)
+        "Model files not found" ->
+            stringResource(R.string.settings_search_index_error_not_included)
+        else ->
+            stringResource(R.string.settings_search_index_error_failed)
     }
