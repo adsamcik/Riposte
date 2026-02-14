@@ -63,12 +63,18 @@ tasks.register("validateDatabaseSchema") {
 
         val annotationVersion =
             Regex("""version\s*=\s*(\d+)""")
-                .find(dbContent)?.groupValues?.get(1)?.toInt()
+                .find(dbContent)
+                ?.groupValues
+                ?.get(1)
+                ?.toInt()
                 ?: throw GradleException("Could not find version in @Database annotation")
 
         val latestVersion =
             Regex("""LATEST_VERSION\s*=\s*(\d+)""")
-                .find(dbContent)?.groupValues?.get(1)?.toInt()
+                .find(dbContent)
+                ?.groupValues
+                ?.get(1)
+                ?.toInt()
                 ?: throw GradleException("Could not find LATEST_VERSION constant")
 
         if (annotationVersion != latestVersion) {
@@ -79,7 +85,10 @@ tasks.register("validateDatabaseSchema") {
 
         // Enforce at most one version bump per release cycle
         val releasedVersion =
-            releasedVersionFile.asFile.readText().trim().toIntOrNull()
+            releasedVersionFile.asFile
+                .readText()
+                .trim()
+                .toIntOrNull()
                 ?: throw GradleException(
                     "Could not read released-schema-version.txt. " +
                         "It must contain a single integer (the database version from the last release).",
@@ -107,7 +116,8 @@ tasks.register("validateDatabaseSchema") {
         }
 
         val schemaVersions =
-            schemaDir.listFiles { f -> f.extension == "json" }
+            schemaDir
+                .listFiles { f -> f.extension == "json" }
                 ?.mapNotNull { it.nameWithoutExtension.toIntOrNull() }
                 ?.sorted()
                 ?: throw GradleException("No schema files found")
