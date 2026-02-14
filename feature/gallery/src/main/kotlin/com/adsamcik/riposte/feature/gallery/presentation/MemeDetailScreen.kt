@@ -184,6 +184,25 @@ private fun MemeDetailScreenContent(
 ) {
     var showDiscardDialog by remember { mutableStateOf(false) }
 
+    val onRequestBack = {
+        when {
+            uiState.isEditMode && uiState.hasUnsavedChanges -> showDiscardDialog = true
+            uiState.isEditMode -> {
+                onIntent(MemeDetailIntent.DiscardChanges)
+                onNavigateBack()
+            }
+            else -> onNavigateBack()
+        }
+    }
+
+    val onCancelEdit = {
+        if (uiState.hasUnsavedChanges) {
+            showDiscardDialog = true
+        } else {
+            onIntent(MemeDetailIntent.ToggleEditMode)
+        }
+    }
+
     BackHandler(enabled = true) {
         when {
             uiState.isEditMode && uiState.hasUnsavedChanges -> showDiscardDialog = true
@@ -221,7 +240,8 @@ private fun MemeDetailScreenContent(
             MemeDetailContent(
                 uiState = uiState,
                 onIntent = onIntent,
-                onNavigateBack = onNavigateBack,
+                onNavigateBack = onRequestBack,
+                onCancelEdit = onCancelEdit,
                 snackbarHostState = snackbarHostState,
                 zoomState = zoomState,
             )
@@ -298,6 +318,7 @@ private fun MemeDetailContent(
     uiState: MemeDetailUiState,
     onIntent: (MemeDetailIntent) -> Unit,
     onNavigateBack: () -> Unit,
+    onCancelEdit: () -> Unit,
     snackbarHostState: SnackbarHostState,
     zoomState: ZoomState,
 ) {
@@ -321,6 +342,7 @@ private fun MemeDetailContent(
             MemeInfoSheet(
                 uiState = uiState,
                 onIntent = onIntent,
+                onCancelEdit = onCancelEdit,
                 modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars),
             )
         },
@@ -421,6 +443,7 @@ private fun MemeImagePager(
 private fun MemeInfoSheet(
     uiState: MemeDetailUiState,
     onIntent: (MemeDetailIntent) -> Unit,
+    onCancelEdit: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val meme = uiState.meme ?: return
@@ -442,7 +465,7 @@ private fun MemeInfoSheet(
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 FilledTonalIconButton(
-                    onClick = { onIntent(MemeDetailIntent.ToggleEditMode) },
+                    onClick = { if (uiState.isEditMode) onCancelEdit() else onIntent(MemeDetailIntent.ToggleEditMode) },
                 ) {
                     Icon(
                         if (uiState.isEditMode) Icons.Default.Close else Icons.Default.Edit,
