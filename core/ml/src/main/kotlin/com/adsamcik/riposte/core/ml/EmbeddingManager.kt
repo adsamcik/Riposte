@@ -270,7 +270,7 @@ class EmbeddingManager
             return try {
                 val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
                 PackageInfoCompat.getLongVersionCode(packageInfo)
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 0L
             }
         }

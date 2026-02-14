@@ -29,6 +29,7 @@ import javax.inject.Singleton
  * - "litert_use:2.0.0" - Updated USE model
  */
 @Singleton
+@Suppress("TooManyFunctions")
 class EmbeddingModelVersionManager
     @Inject
     constructor(
@@ -177,6 +178,7 @@ class EmbeddingModelVersionManager
          * failures on the same app version. Resets automatically when a new
          * app version is installed.
          */
+        @Suppress("ReturnCount")
         suspend fun isErrorConfirmedForVersion(appVersionCode: Long): Boolean {
             val prefs = context.embeddingPrefs.data.first()
             val storedVersion = prefs[KEY_ERROR_APP_VERSION_CODE] ?: return false
