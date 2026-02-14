@@ -385,7 +385,11 @@ private fun ImportResultSummary(
         verticalArrangement = Arrangement.Center,
     ) {
         Text(
-            text = if (result.failureCount == 0) "✅" else "⚠️",
+            text = when {
+                result.successCount == 0 && result.failureCount == 0 -> "⚠️"
+                result.failureCount == 0 -> "✅"
+                else -> "⚠️"
+            },
             style = MaterialTheme.typography.displayLarge,
         )
         Spacer(Modifier.height(16.dp))
