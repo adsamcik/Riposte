@@ -7,10 +7,12 @@ import com.adsamcik.riposte.core.common.crash.CrashReportWriter
 import com.adsamcik.riposte.core.common.lifecycle.AppLifecycleTracker
 import com.adsamcik.riposte.core.ml.EmbeddingManager
 import com.adsamcik.riposte.sharing.SharingShortcutUpdater
+import dagger.Lazy
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import java.io.File
 import javax.inject.Inject
 
@@ -26,13 +28,13 @@ class RiposteApplication : Application(), Configuration.Provider {
     lateinit var workerFactory: HiltWorkerFactory
 
     @Inject
-    lateinit var sharingShortcutUpdater: SharingShortcutUpdater
+    lateinit var sharingShortcutUpdater: Lazy<SharingShortcutUpdater>
 
     @Inject
     lateinit var appLifecycleTracker: AppLifecycleTracker
 
     @Inject
-    lateinit var embeddingManager: EmbeddingManager
+    lateinit var embeddingManager: Lazy<EmbeddingManager>
 
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -40,8 +42,11 @@ class RiposteApplication : Application(), Configuration.Provider {
         super.onCreate()
         installCrashHandler()
         appLifecycleTracker.init()
-        sharingShortcutUpdater.start(applicationScope)
-        embeddingManager.warmUpAndResumeIndexing(applicationScope)
+        // Launch heavy dependency construction off the main thread
+        applicationScope.launch {
+            sharingShortcutUpdater.get().start(applicationScope)
+            embeddingManager.get().warmUpAndResumeIndexing(applicationScope)
+        }
     }
 
     private fun installCrashHandler() {
