@@ -285,6 +285,7 @@ private fun GalleryScreenContent(
 
     BackHandler(enabled = uiState.screenMode == ScreenMode.Searching) {
         keyboardController?.hide()
+        onIntent(GalleryIntent.ClearSearch)
     }
 
     Scaffold(
@@ -795,7 +796,7 @@ private fun GalleryContent(
             LazyVerticalGrid(
                 state = gridState,
                 columns = GridCells.Fixed(columns),
-                contentPadding = PaddingValues(start = 4.dp, end = 4.dp, top = if (uiState.isSelectionMode) 4.dp else 64.dp, bottom = 80.dp),
+                contentPadding = PaddingValues(start = 4.dp, end = 4.dp, top = if (uiState.isSelectionMode) 4.dp else 64.dp, bottom = 120.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
                 content = gridContent,
