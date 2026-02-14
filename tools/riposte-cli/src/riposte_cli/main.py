@@ -4,6 +4,7 @@ import click
 
 from riposte_cli.auth import auth
 from riposte_cli.commands.annotate import annotate
+from riposte_cli.commands.dedupe import dedupe
 
 
 @click.group()
@@ -20,6 +21,8 @@ def cli():
       meme-cli annotate ./memes
       meme-cli annotate ./memes --zip
       meme-cli annotate ./memes --languages en,cs,de
+      meme-cli dedupe ./memes
+      meme-cli dedupe ./memes --dry-run
 
     \b
     Prerequisites:
@@ -32,6 +35,7 @@ def cli():
 # Register commands
 cli.add_command(annotate)
 cli.add_command(auth)
+cli.add_command(dedupe)
 
 
 if __name__ == "__main__":

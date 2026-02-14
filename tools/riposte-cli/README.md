@@ -8,6 +8,7 @@ A command-line tool for annotating meme images using the GitHub Copilot SDK. Gen
 - 😀 **Emoji Suggestions**: Automatically suggests relevant emoji tags based on content
 - 📝 **Text Extraction**: Extracts visible text from memes
 - � **Smart Deduplication**: SHA-256 + perceptual hashing to skip duplicate images
+- 🧹 **Duplicate Cleanup**: Automatically find and remove duplicate images
 - ⚡ **Parallel Processing**: Concurrent API requests with adaptive backpressure
 - �📦 **ZIP Bundling**: Package images + metadata for easy import to the Android app
 - 🔐 **Native Auth**: Uses Copilot CLI authentication (no separate login required)
@@ -168,6 +169,45 @@ meme-cli annotate ./my-memes --similarity-threshold 0
 
 # Disable all deduplication
 meme-cli annotate ./my-memes --no-dedup
+```
+
+### `meme-cli dedupe`
+
+Find and remove duplicate images from a folder.
+
+```bash
+meme-cli dedupe <folder> [OPTIONS]
+
+Options:
+  --output, -o PATH        Directory where sidecar files are stored (default: same as input)
+  --similarity-threshold N Max Hamming distance for near-duplicates (default: 10)
+  --no-near                Only remove exact duplicates (skip perceptual matching)
+  --dry-run                Show duplicates without deleting anything
+  --yes, -y                Skip confirmation prompt
+  --verbose, -v            Show detailed output
+```
+
+For each set of duplicates, the first image (alphabetically) is kept and the rest
+are deleted along with their sidecar JSON files. The hash manifest is updated to
+remove entries for deleted files.
+
+**Examples:**
+
+```bash
+# Preview duplicates (no deletion)
+meme-cli dedupe ./my-memes --dry-run
+
+# Remove duplicates with confirmation prompt
+meme-cli dedupe ./my-memes
+
+# Remove duplicates without confirmation
+meme-cli dedupe ./my-memes -y
+
+# Only remove exact duplicates (identical files)
+meme-cli dedupe ./my-memes --no-near
+
+# Stricter near-duplicate threshold
+meme-cli dedupe ./my-memes --similarity-threshold 5
 ```
 
 ## Supported Image Formats
