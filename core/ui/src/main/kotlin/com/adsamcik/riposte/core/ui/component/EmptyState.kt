@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material3.Button
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -29,6 +30,7 @@ import com.adsamcik.riposte.core.ui.theme.RiposteTheme
  * @param message The descriptive message providing context or guidance
  * @param actionLabel Optional label for the action button. If null, no button is shown.
  * @param onAction Optional callback for the action button. Must be provided with [actionLabel].
+ * @param primaryAction Whether to use a prominent primary button style instead of tonal.
  * @param modifier Modifier to be applied to the root layout
  */
 @Composable
@@ -38,6 +40,7 @@ fun EmptyState(
     message: String,
     actionLabel: String? = null,
     onAction: (() -> Unit)? = null,
+    primaryAction: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -69,8 +72,14 @@ fun EmptyState(
         )
         if (actionLabel != null && onAction != null) {
             Spacer(modifier = Modifier.height(24.dp))
-            FilledTonalButton(onClick = onAction) {
-                Text(text = actionLabel)
+            if (primaryAction) {
+                Button(onClick = onAction) {
+                    Text(text = actionLabel)
+                }
+            } else {
+                FilledTonalButton(onClick = onAction) {
+                    Text(text = actionLabel)
+                }
             }
         }
     }

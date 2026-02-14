@@ -370,8 +370,10 @@ private fun GalleryScreenContent(
             }
         },
         floatingActionButton = {
+            val isGalleryEmpty = uiState.isEmpty ||
+                (uiState.usePaging && pagedMemes != null && pagedMemes.itemCount == 0)
             AnimatedVisibility(
-                visible = !uiState.isSelectionMode,
+                visible = !uiState.isSelectionMode && !isGalleryEmpty,
                 enter = fadeIn(),
                 exit = fadeOut(),
             ) {
@@ -516,13 +518,19 @@ private fun GalleryScreenContent(
                     )
                 }
                 uiState.isEmpty && !uiState.usePaging -> {
-                    EmptyState(
-                        icon = "🖼️",
-                        title = stringResource(R.string.gallery_empty_title),
-                        message = stringResource(R.string.gallery_empty_message),
-                        actionLabel = stringResource(R.string.gallery_button_import_memes),
-                        onAction = { onIntent(GalleryIntent.NavigateToImport) },
-                    )
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        EmptyState(
+                            icon = "🖼️",
+                            title = stringResource(R.string.gallery_empty_title),
+                            message = stringResource(R.string.gallery_empty_message),
+                            actionLabel = stringResource(R.string.gallery_button_import_memes),
+                            onAction = { onIntent(GalleryIntent.NavigateToImport) },
+                            primaryAction = true,
+                        )
+                    }
                 }
                 uiState.usePaging && pagedMemes != null -> {
                     // Handle paging load states
@@ -544,13 +552,19 @@ private fun GalleryScreenContent(
                             )
                         }
                         pagedMemes.itemCount == 0 -> {
-                            EmptyState(
-                                icon = "🖼️",
-                                title = stringResource(R.string.gallery_empty_title),
-                                message = stringResource(R.string.gallery_empty_message),
-                                actionLabel = stringResource(R.string.gallery_button_import_memes),
-                                onAction = { onIntent(GalleryIntent.NavigateToImport) },
-                            )
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                EmptyState(
+                                    icon = "🖼️",
+                                    title = stringResource(R.string.gallery_empty_title),
+                                    message = stringResource(R.string.gallery_empty_message),
+                                    actionLabel = stringResource(R.string.gallery_button_import_memes),
+                                    onAction = { onIntent(GalleryIntent.NavigateToImport) },
+                                    primaryAction = true,
+                                )
+                            }
                         }
                         else -> {
                             val suggestionIds =

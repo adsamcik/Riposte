@@ -2,11 +2,6 @@
 <resources>
     <string name="app_name">Riposte</string>
     
-    <!-- Gallery -->
-    <string name="gallery_title">Riposte</string>
-    <string name="gallery_empty_title">Noch keine Memes</string>
-    <string name="gallery_empty_message">Importiere ein paar Memes, um loszulegen!</string>
-    
     <!-- Import -->
     <string name="import_title">Memes importieren</string>
     

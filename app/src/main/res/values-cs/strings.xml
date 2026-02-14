@@ -2,11 +2,6 @@
 <resources>
     <string name="app_name">Riposte</string>
     
-    <!-- Gallery -->
-    <string name="gallery_title">Riposte</string>
-    <string name="gallery_empty_title">Zatím žádné memy</string>
-    <string name="gallery_empty_message">Importuj nějaké memy a můžeme začít!</string>
-    
     <!-- Import -->
     <string name="import_title">Importovat memy</string>
     
