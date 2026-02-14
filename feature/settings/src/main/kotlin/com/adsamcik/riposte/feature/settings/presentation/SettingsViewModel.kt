@@ -123,7 +123,10 @@ class SettingsViewModel
                                         modelVersion = modelInfo.version.substringAfter(":"),
                                         dimension = modelInfo.dimension,
                                         indexedCount = stats.validEmbeddingCount,
-                                        totalCount = stats.validEmbeddingCount + stats.pendingEmbeddingCount + stats.regenerationNeededCount,
+                                        totalCount =
+                                            stats.validEmbeddingCount +
+                                                stats.pendingEmbeddingCount +
+                                                stats.regenerationNeededCount,
                                         pendingCount = stats.pendingEmbeddingCount,
                                         regenerationCount = stats.regenerationNeededCount,
                                         modelError = stats.modelError,

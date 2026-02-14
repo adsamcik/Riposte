@@ -8,10 +8,8 @@ import javax.inject.Inject
 /**
  * Use case for observing library statistics (total memes, favorites, indexed).
  */
-class ObserveLibraryStatsUseCase
-    @Inject
-    constructor(
-        private val statsProvider: LibraryStatsProvider,
-    ) {
-        operator fun invoke(): Flow<LibraryStatistics> = statsProvider.observeStatistics()
-    }
+class ObserveLibraryStatsUseCase @Inject constructor(
+    private val statsProvider: LibraryStatsProvider,
+) {
+    operator fun invoke(): Flow<LibraryStatistics> = statsProvider.observeStatistics()
+}

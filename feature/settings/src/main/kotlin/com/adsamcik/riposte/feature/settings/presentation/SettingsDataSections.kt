@@ -46,7 +46,6 @@ internal fun LazyListScope.sharingSection(
                 checked = !uiState.stripMetadata,
                 onCheckedChange = { onIntent(SettingsIntent.SetStripMetadata(!it)) },
             )
-
         }
     }
 }
