@@ -37,7 +37,7 @@ fun SearchResultsHeader(
         modifier =
             modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(horizontal = 16.dp, vertical = 8.dp),
     ) {
         val countText = pluralStringResource(R.plurals.ui_search_results_count, resultCount, resultCount)
         val headerText = if (durationMs > 0) {

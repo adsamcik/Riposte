@@ -1,5 +1,11 @@
 package com.adsamcik.riposte.feature.settings.presentation
 
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Brightness4
@@ -9,11 +15,17 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import com.adsamcik.riposte.core.model.DarkMode
 import com.adsamcik.riposte.core.model.UserDensityPreference
 import com.adsamcik.riposte.feature.settings.R
@@ -150,7 +162,24 @@ private fun EmbeddingSearchSettings(uiState: SettingsUiState) {
     val embeddingState = uiState.embeddingSearchState ?: return
     ListItem(
         headlineContent = { Text(stringResource(R.string.settings_search_index_title)) },
-        supportingContent = { Text(embeddingIndexSubtitle(embeddingState)) },
+        supportingContent = {
+            Column {
+                Text(embeddingIndexSubtitle(embeddingState))
+                if (!embeddingState.isFullyIndexed && embeddingState.modelError == null) {
+                    Spacer(Modifier.size(4.dp))
+                    LinearProgressIndicator(
+                        progress = {
+                            if (embeddingState.totalCount > 0) {
+                                embeddingState.indexedCount.toFloat() / embeddingState.totalCount
+                            } else {
+                                0f
+                            }
+                        },
+                        modifier = Modifier.padding(end = 16.dp),
+                    )
+                }
+            }
+        },
         leadingContent = { Icon(imageVector = Icons.Default.Storage, contentDescription = null) },
     )
 }

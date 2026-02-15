@@ -287,7 +287,6 @@ private fun GalleryScreenContent(
 
     BackHandler(enabled = uiState.screenMode == ScreenMode.Searching) {
         keyboardController?.hide()
-        onIntent(GalleryIntent.ClearSearch)
     }
 
     Scaffold(
@@ -375,7 +374,8 @@ private fun GalleryScreenContent(
             val isGalleryEmpty = uiState.isEmpty ||
                 (uiState.usePaging && pagedMemes != null && pagedMemes.itemCount == 0)
             AnimatedVisibility(
-                visible = !uiState.isSelectionMode && !isGalleryEmpty,
+                visible = !uiState.isSelectionMode && !isGalleryEmpty &&
+                    uiState.screenMode != ScreenMode.Searching,
                 enter = fadeIn(),
                 exit = fadeOut(),
             ) {
@@ -816,7 +816,7 @@ private fun GalleryContent(
                     end = 4.dp,
                     top = when {
                         uiState.isSelectionMode -> 4.dp
-                        uiState.screenMode == ScreenMode.Searching -> 8.dp
+                        uiState.screenMode == ScreenMode.Searching -> 4.dp
                         else -> 64.dp
                     },
                     bottom = 120.dp,
@@ -878,7 +878,7 @@ private fun GalleryEmojiFilterRail(
                 } else {
                     null
                 },
-                modifier = Modifier.padding(top = 8.dp),
+                modifier = Modifier.padding(top = 4.dp),
             )
         }
     }

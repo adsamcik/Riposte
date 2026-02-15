@@ -27,6 +27,7 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import com.adsamcik.riposte.core.ui.R
 import com.adsamcik.riposte.core.ui.theme.RiposteShapes
@@ -64,6 +65,7 @@ fun SearchBar(
         placeholder = {
             Text(
                 text = placeholder ?: defaultPlaceholder,
+                style = MaterialTheme.typography.bodyMedium.copy(lineHeight = TextUnit.Unspecified),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )

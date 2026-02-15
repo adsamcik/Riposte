@@ -55,7 +55,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHost
@@ -93,6 +92,7 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -474,7 +474,7 @@ private fun MemeInfoSheet(
     modifier: Modifier = Modifier,
 ) {
     val meme = uiState.meme ?: return
-    val dateFormatter = remember { DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM) }
+    val dateFormatter = remember { DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM) }
 
     Column(
         modifier =
@@ -552,11 +552,12 @@ private fun MemeActionButtonsRow(
             notFavoritedText = notFavoritedText,
         )
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            OutlinedIconButton(
+            FilledTonalIconButton(
                 onClick = { onIntent(MemeDetailIntent.ShowDeleteDialog) },
                 colors =
-                    IconButtonDefaults.outlinedIconButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error,
+                    IconButtonDefaults.filledTonalIconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                     ),
             ) {
                 Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.gallery_cd_delete))
@@ -764,32 +765,7 @@ private fun MemeViewModeContent(
     onIntent: (MemeDetailIntent) -> Unit,
     dateFormatter: DateTimeFormatter,
 ) {
-    // Title
-    meme.title?.let { title ->
-        Text(
-            text = title,
-            style = MaterialTheme.typography.headlineSmall,
-            modifier = Modifier.semantics { heading() },
-        )
-    } ?: Text(
-        text = meme.fileName,
-        style = MaterialTheme.typography.headlineSmall,
-        modifier = Modifier.semantics { heading() },
-    )
-
-    // Description
-    meme.description?.let { description ->
-        Spacer(Modifier.height(8.dp))
-        Text(
-            text = description,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-
-    Spacer(Modifier.height(16.dp))
-
-    // Emoji tags
+    // Emoji tags (shown first for quick identification)
     if (meme.emojiTags.isNotEmpty()) {
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -807,6 +783,35 @@ private fun MemeViewModeContent(
             text = stringResource(R.string.gallery_detail_empty_emoji_tags),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+
+    Spacer(Modifier.height(12.dp))
+
+    // Title
+    meme.title?.let { title ->
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.semantics { heading() },
+        )
+    } ?: Text(
+        text = meme.fileName,
+        style = MaterialTheme.typography.titleLarge,
+        modifier = Modifier.semantics { heading() },
+    )
+
+    // Description (collapsed by default)
+    meme.description?.let { description ->
+        Spacer(Modifier.height(4.dp))
+        var descriptionExpanded by remember { mutableStateOf(false) }
+        Text(
+            text = description,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = if (descriptionExpanded) Int.MAX_VALUE else 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.clickable { descriptionExpanded = !descriptionExpanded },
         )
     }
 
@@ -843,19 +848,7 @@ private fun MemeMetadataSection(
     )
     Spacer(Modifier.height(4.dp))
     Text(
-        text = stringResource(R.string.gallery_detail_dimensions_value, meme.width, meme.height),
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
-    Spacer(Modifier.height(4.dp))
-    Text(
-        text = formatFileSize(meme.fileSizeBytes),
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
-    Spacer(Modifier.height(4.dp))
-    Text(
-        text = meme.mimeType,
+        text = "${meme.width} × ${meme.height} · ${formatFileSize(meme.fileSizeBytes)}",
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
@@ -1051,7 +1044,21 @@ private fun SimilarMemesSection(
                     }
                 }
                 is SimilarMemesStatus.NoEmbeddingForMeme -> {
-                    SimilarMemesHint(stringResource(R.string.gallery_similar_hint_generating))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.padding(vertical = 12.dp),
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp,
+                        )
+                        Text(
+                            text = stringResource(R.string.gallery_similar_hint_generating),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
                 is SimilarMemesStatus.NoCandidates -> {
                     SimilarMemesHint(stringResource(R.string.gallery_similar_hint_no_candidates))

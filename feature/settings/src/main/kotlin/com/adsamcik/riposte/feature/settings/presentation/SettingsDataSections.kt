@@ -60,7 +60,6 @@ private fun ShareFormatSettingItem(
 ) {
     DialogSettingItem(
         title = stringResource(R.string.settings_share_format_title),
-        subtitle = stringResource(R.string.settings_share_format_subtitle),
         selectedValue = uiState.defaultFormat,
         values = listOf(ImageFormat.JPEG, ImageFormat.PNG, ImageFormat.WEBP),
         onValueChange = { onIntent(SettingsIntent.SetDefaultFormat(it)) },
