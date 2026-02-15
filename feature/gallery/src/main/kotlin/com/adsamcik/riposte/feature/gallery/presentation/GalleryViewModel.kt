@@ -123,6 +123,7 @@ class GalleryViewModel
                 is GalleryIntent.UpdateSearchQuery,
                 is GalleryIntent.ClearSearch,
                 is GalleryIntent.SelectRecentSearch,
+                is GalleryIntent.SelectSuggestion,
                 is GalleryIntent.DeleteRecentSearch,
                 is GalleryIntent.ClearRecentSearches,
                 -> searchDelegate.onIntent(intent, viewModelScope, _uiState.value.activeEmojiFilters)
