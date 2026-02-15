@@ -277,6 +277,50 @@ class ZipImporterEdgeCasesTest {
             assertFalse(extractedFile.exists())
         }
 
+    @Test
+    fun `extractBundle succeeds after cleanupExtractedFiles`() =
+        runTest {
+            val imageBytes = createMinimalJpeg()
+
+            // First extraction
+            val zipBytes1 = createZipWithEntry("first.jpg", imageBytes)
+            val zipFile1 = tempFolder.newFile("first.meme.zip")
+            zipFile1.writeBytes(zipBytes1)
+            val result1 = zipImporter.extractBundle(Uri.fromFile(zipFile1))
+            assertEquals(1, result1.extractedMemes.size)
+
+            // Cleanup (simulates what happens after a completed or cancelled import)
+            zipImporter.cleanupExtractedFiles()
+
+            // Second extraction must still work — this is the regression scenario
+            val zipBytes2 = createZipWithEntry("second.jpg", imageBytes)
+            val zipFile2 = tempFolder.newFile("second.meme.zip")
+            zipFile2.writeBytes(zipBytes2)
+            val result2 = zipImporter.extractBundle(Uri.fromFile(zipFile2))
+
+            assertEquals(1, result2.extractedMemes.size)
+            val extractedFile = File(result2.extractedMemes[0].imageUri.path!!)
+            assertTrue(extractedFile.exists())
+        }
+
+    @Test
+    fun `extractBundle succeeds after multiple cleanups`() =
+        runTest {
+            val imageBytes = createMinimalJpeg()
+
+            repeat(3) { i ->
+                val zipBytes = createZipWithEntry("image_$i.jpg", imageBytes)
+                val zipFile = tempFolder.newFile("iter_$i.meme.zip")
+                zipFile.writeBytes(zipBytes)
+                val result = zipImporter.extractBundle(Uri.fromFile(zipFile))
+
+                assertEquals("Extraction $i should succeed", 1, result.extractedMemes.size)
+                assertTrue(File(result.extractedMemes[0].imageUri.path!!).exists())
+
+                zipImporter.cleanupExtractedFiles()
+            }
+        }
+
     // ==================== isMemeZipBundle Tests ====================
 
     @Test
