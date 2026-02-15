@@ -98,6 +98,7 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -538,6 +539,18 @@ private fun GalleryScreenContent(
                                     showEmojis = true,
                                 )
                             }
+                            // End-of-results footer
+                            item(span = { GridItemSpan(maxLineSpan) }, key = "search_end_footer") {
+                                Text(
+                                    text = "·  ·  ·",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.outlineVariant,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 24.dp),
+                                )
+                            }
                         }
                     }
                 }
@@ -942,6 +955,7 @@ private fun FloatingSearchBar(
                 Icon(
                     Icons.Default.MoreVert,
                     contentDescription = stringResource(R.string.gallery_cd_more_options),
+                    tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
             DropdownMenu(

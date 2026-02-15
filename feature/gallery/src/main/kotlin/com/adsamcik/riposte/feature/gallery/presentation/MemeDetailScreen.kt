@@ -367,6 +367,7 @@ private fun MemeDetailContent(
             )
         },
         containerColor = MaterialTheme.colorScheme.scrim,
+        sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
     ) { paddingValues ->
         Box(
             modifier =
@@ -773,8 +774,8 @@ private fun MemeViewModeContent(
     // Emoji tags (shown first for quick identification)
     if (meme.emojiTags.isNotEmpty()) {
         FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             meme.emojiTags.forEach { tag ->
                 EmojiChip(
