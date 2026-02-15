@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Rule
@@ -63,6 +64,7 @@ class SearchDelegateTest {
         coEvery { searchUseCases.addRecentSearch(any()) } returns Unit
         coEvery { searchUseCases.deleteRecentSearch(any()) } returns Unit
         coEvery { searchUseCases.clearRecentSearches() } returns Unit
+        coEvery { searchUseCases.getSearchSuggestions(any()) } returns emptyList()
 
         delegate = SearchDelegate(searchUseCases)
     }
@@ -298,6 +300,110 @@ class SearchDelegateTest {
             assertThat(state.results).hasSize(1)
             scope.cancel()
         }
+
+    // region Suggestion Tests
+
+    @Test
+    fun `suggestions fetched after short debounce for query with 2+ chars`() =
+        runTest(mainDispatcherRule.testDispatcher) {
+            coEvery { searchUseCases.getSearchSuggestions(any()) } returns listOf("cat meme", "car meme")
+            delegate = SearchDelegate(searchUseCases)
+
+            val scope = createDelegateScope()
+            delegate.init(scope)
+            advanceUntilIdle()
+
+            delegate.onIntent(GalleryIntent.UpdateSearchQuery("cat"), scope, emptySet())
+
+            // Advance past suggestion debounce (150ms) but not search debounce (300ms)
+            advanceTimeBy(200)
+            // runCurrent() processes only currently scheduled work, not future
+            runCurrent()
+
+            // Suggestions should be populated (search hasn't fired yet at 200ms)
+            assertThat(delegate.state.value.suggestions).containsExactly("cat meme", "car meme")
+            // Search hasn't fired yet
+            assertThat(delegate.state.value.hasSearched).isFalse()
+            scope.cancel()
+        }
+
+    @Test
+    fun `no suggestions for query shorter than 2 chars`() =
+        runTest(mainDispatcherRule.testDispatcher) {
+            val scope = createDelegateScope()
+            delegate.init(scope)
+            advanceUntilIdle()
+
+            delegate.onIntent(GalleryIntent.UpdateSearchQuery("c"), scope, emptySet())
+            advanceTimeBy(400)
+            advanceUntilIdle()
+
+            assertThat(delegate.state.value.suggestions).isEmpty()
+            scope.cancel()
+        }
+
+    @Test
+    fun `suggestions cleared when search results arrive`() =
+        runTest(mainDispatcherRule.testDispatcher) {
+            coEvery { searchUseCases.getSearchSuggestions("funny") } returns listOf("funny cat", "fun times")
+
+            val scope = createDelegateScope()
+            delegate.init(scope)
+            advanceUntilIdle()
+
+            delegate.onIntent(GalleryIntent.UpdateSearchQuery("funny"), scope, emptySet())
+
+            // After full search debounce (300ms) — performSearch clears suggestions
+            advanceTimeBy(400)
+            advanceUntilIdle()
+
+            assertThat(delegate.state.value.suggestions).isEmpty()
+            assertThat(delegate.state.value.hasSearched).isTrue()
+            scope.cancel()
+        }
+
+    @Test
+    fun `selectSuggestion clears suggestions and triggers search`() =
+        runTest(mainDispatcherRule.testDispatcher) {
+            val scope = createDelegateScope()
+            delegate.init(scope)
+            advanceUntilIdle()
+
+            delegate.onIntent(GalleryIntent.SelectSuggestion("funny cat"), scope, emptySet())
+            advanceUntilIdle()
+
+            val state = delegate.state.value
+            assertThat(state.query).isEqualTo("funny cat")
+            assertThat(state.suggestions).isEmpty()
+            assertThat(state.hasSearched).isTrue()
+            assertThat(state.results).hasSize(3)
+            coVerify { searchUseCases.addRecentSearch("funny cat") }
+            scope.cancel()
+        }
+
+    @Test
+    fun `suggestions cleared on blank query`() =
+        runTest(mainDispatcherRule.testDispatcher) {
+            val scope = createDelegateScope()
+            delegate.init(scope)
+            advanceUntilIdle()
+
+            // Type to get into search mode, then clear
+            delegate.onIntent(GalleryIntent.UpdateSearchQuery("cat"), scope, emptySet())
+            advanceTimeBy(400)
+            advanceUntilIdle()
+
+            // Clear the query — should clear suggestions
+            delegate.onIntent(GalleryIntent.UpdateSearchQuery(""), scope, emptySet())
+            advanceTimeBy(400)
+            advanceUntilIdle()
+
+            assertThat(delegate.state.value.suggestions).isEmpty()
+            assertThat(delegate.state.value.hasSearched).isFalse()
+            scope.cancel()
+        }
+
+    // endregion
 
     @Test
     fun `blank query clears results`() =

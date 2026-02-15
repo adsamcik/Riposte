@@ -910,6 +910,22 @@ class GalleryViewModelTest {
 
     // endregion
 
+    // region Search Suggestion Tests
+
+    @Test
+    fun `SelectSuggestion routes to search delegate`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onIntent(GalleryIntent.SelectSuggestion("funny cat"))
+            advanceUntilIdle()
+
+            verify { searchDelegate.onIntent(GalleryIntent.SelectSuggestion("funny cat"), any(), any()) }
+        }
+
+    // endregion
+
     // region Notification Tests
 
     @Test
