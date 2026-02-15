@@ -46,6 +46,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material.icons.filled.Share
@@ -65,6 +66,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -726,6 +728,22 @@ private fun GalleryScreenContent(
                     modifier = Modifier.align(Alignment.TopCenter),
                 )
             }
+
+            // Notification banners below the search bar
+            Column(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 68.dp),
+            ) {
+                ImportProgressBanner(
+                    status = uiState.importStatus,
+                )
+
+                NotificationBanner(
+                    notification = uiState.notification,
+                    onDismiss = { onIntent(GalleryIntent.DismissNotification) },
+                )
+            }
         }
     }
 }
@@ -750,17 +768,6 @@ private fun GalleryContent(
             uiState = uiState,
             uniqueEmojis = uniqueEmojis,
             onIntent = onIntent,
-        )
-
-        // Import progress banner
-        ImportProgressBanner(
-            status = uiState.importStatus,
-        )
-
-        // Notification banner for one-shot events
-        NotificationBanner(
-            notification = uiState.notification,
-            onDismiss = { onIntent(GalleryIntent.DismissNotification) },
         )
 
         Box {
@@ -1202,8 +1209,8 @@ private fun RecentSearchItem(
             modifier = Modifier.weight(1f),
         ) {
             Icon(
-                imageVector = Icons.Default.Search,
-                contentDescription = stringResource(R.string.gallery_cd_search),
+                imageVector = Icons.Default.History,
+                contentDescription = stringResource(com.adsamcik.riposte.core.search.R.string.search_recent_icon),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(20.dp),
             )
@@ -1279,7 +1286,8 @@ private fun ImportProgressBanner(
 
 /**
  * Banner for one-shot notifications (import complete, indexing complete, etc.).
- * Slides in from the top with animation and can be dismissed by the user.
+ * Slides down from below the search bar with a spring animation.
+ * Uses M3 Expressive styling with Surface, rounded shape, and notification-type icons.
  */
 @Composable
 private fun NotificationBanner(
@@ -1289,8 +1297,16 @@ private fun NotificationBanner(
 ) {
     AnimatedVisibility(
         visible = notification != null,
-        enter = slideInVertically() + fadeIn(),
-        exit = slideOutVertically() + fadeOut(),
+        enter = slideInVertically(
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioLowBouncy,
+                stiffness = Spring.StiffnessMediumLow,
+            ),
+            initialOffsetY = { -it },
+        ) + fadeIn(),
+        exit = slideOutVertically(
+            targetOffsetY = { -it },
+        ) + fadeOut(),
     ) {
         val containerColor =
             when (notification) {
@@ -1305,6 +1321,14 @@ private fun NotificationBanner(
                 is GalleryNotification.ImportFailed -> MaterialTheme.colorScheme.onErrorContainer
                 is GalleryNotification.IndexingComplete -> MaterialTheme.colorScheme.onTertiaryContainer
                 null -> MaterialTheme.colorScheme.onSurface
+            }
+
+        val icon =
+            when (notification) {
+                is GalleryNotification.ImportComplete -> Icons.Default.Check
+                is GalleryNotification.ImportFailed -> Icons.Default.Close
+                is GalleryNotification.IndexingComplete -> Icons.Default.Search
+                null -> Icons.Default.Check
             }
 
         val text =
@@ -1326,28 +1350,41 @@ private fun NotificationBanner(
                 null -> ""
             }
 
-        Row(
+        Surface(
             modifier =
                 modifier
                     .fillMaxWidth()
-                    .background(containerColor)
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    .padding(horizontal = 12.dp),
+            shape = MaterialTheme.shapes.medium,
+            color = containerColor,
+            tonalElevation = 2.dp,
+            shadowElevation = 4.dp,
         ) {
-            Text(
-                text = text,
-                style = MaterialTheme.typography.bodySmall,
-                color = contentColor,
-                modifier = Modifier.weight(1f),
-            )
-            IconButton(onClick = onDismiss) {
+            Row(
+                modifier = Modifier.padding(start = 16.dp, end = 4.dp, top = 10.dp, bottom = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
                 Icon(
-                    Icons.Default.Close,
-                    contentDescription = stringResource(R.string.gallery_cd_dismiss_notification),
+                    imageVector = icon,
+                    contentDescription = null,
                     tint = contentColor,
-                    modifier = Modifier.size(16.dp),
+                    modifier = Modifier.size(20.dp),
                 )
+                Text(
+                    text = text,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = contentColor,
+                    modifier = Modifier.weight(1f),
+                )
+                IconButton(onClick = onDismiss) {
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = stringResource(R.string.gallery_cd_dismiss_notification),
+                        tint = contentColor,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
             }
         }
     }
