@@ -48,14 +48,13 @@ class MemeGridItemTest {
                         meme = testMeme,
                         isSelected = false,
                         isSelectionMode = false,
-                        memeDescription = "Test meme",
                         onIntent = { receivedIntents.add(it) },
                     )
                 }
             }
         }
 
-        composeRule.onNodeWithContentDescription("Test meme").performClick()
+        composeRule.onNodeWithContentDescription("Test meme, 😂").performClick()
 
         assertThat(receivedIntents).hasSize(1)
         assertThat(receivedIntents.first()).isEqualTo(GalleryIntent.OpenMeme(1L))
@@ -72,14 +71,13 @@ class MemeGridItemTest {
                         meme = testMeme,
                         isSelected = false,
                         isSelectionMode = false,
-                        memeDescription = "Test meme",
                         onIntent = { receivedIntents.add(it) },
                     )
                 }
             }
         }
 
-        composeRule.onNodeWithContentDescription("Test meme").performTouchInput {
+        composeRule.onNodeWithContentDescription("Test meme, 😂").performTouchInput {
             longClick()
         }
 
@@ -100,14 +98,13 @@ class MemeGridItemTest {
                         meme = testMeme,
                         isSelected = false,
                         isSelectionMode = true,
-                        memeDescription = "Test meme",
                         onIntent = { receivedIntents.add(it) },
                     )
                 }
             }
         }
 
-        composeRule.onNodeWithContentDescription("Test meme").performClick()
+        composeRule.onNodeWithContentDescription("Test meme, 😂").performClick()
 
         assertThat(receivedIntents).contains(GalleryIntent.ToggleSelection(1L))
         assertThat(receivedIntents).doesNotContain(GalleryIntent.OpenMeme(1L))

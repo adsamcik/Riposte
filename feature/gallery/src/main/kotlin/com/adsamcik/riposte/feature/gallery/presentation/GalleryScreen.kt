@@ -530,12 +530,10 @@ private fun GalleryScreenContent(
                                 key = { "search_${it.meme.id}" },
                             ) { result ->
                                 val isSelected = result.meme.id in uiState.selectedMemeIds
-                                val memeDescription = result.meme.title ?: result.meme.fileName
                                 MemeGridItem(
                                     meme = result.meme,
                                     isSelected = isSelected,
                                     isSelectionMode = uiState.isSelectionMode,
-                                    memeDescription = memeDescription,
                                     onIntent = onIntent,
                                     showEmojis = true,
                                 )
@@ -624,13 +622,11 @@ private fun GalleryScreenContent(
                                     key = { "suggestion_${it.id}" },
                                 ) { meme ->
                                     val isSelected = meme.id in uiState.selectedMemeIds
-                                    val memeDescription = meme.title ?: meme.fileName
 
                                     MemeGridItem(
                                         meme = meme,
                                         isSelected = isSelected,
                                         isSelectionMode = uiState.isSelectionMode,
-                                        memeDescription = memeDescription,
                                         onIntent = onIntent,
                                     )
                                 }
@@ -648,12 +644,10 @@ private fun GalleryScreenContent(
                                         val meme = pagedMemes[index]
                                         if (meme != null) {
                                             val isSelected = meme.id in uiState.selectedMemeIds
-                                            val memeDescription = meme.title ?: meme.fileName
                                             MemeGridItem(
                                                 meme = meme,
                                                 isSelected = isSelected,
                                                 isSelectionMode = uiState.isSelectionMode,
-                                                memeDescription = memeDescription,
                                                 onIntent = onIntent,
                                             )
                                         }
@@ -722,13 +716,11 @@ private fun GalleryScreenContent(
                             key = { "suggestion_${it.id}" },
                         ) { meme ->
                             val isSelected = meme.id in uiState.selectedMemeIds
-                            val memeDescription = meme.title ?: meme.fileName
 
                             MemeGridItem(
                                 meme = meme,
                                 isSelected = isSelected,
                                 isSelectionMode = uiState.isSelectionMode,
-                                memeDescription = memeDescription,
                                 onIntent = onIntent,
                             )
                         }
@@ -739,12 +731,10 @@ private fun GalleryScreenContent(
                             key = { it.id },
                         ) { meme ->
                             val isSelected = meme.id in uiState.selectedMemeIds
-                            val memeDescription = meme.title ?: meme.fileName
                             MemeGridItem(
                                 meme = meme,
                                 isSelected = isSelected,
                                 isSelectionMode = uiState.isSelectionMode,
-                                memeDescription = memeDescription,
                                 onIntent = onIntent,
                             )
                         }
@@ -812,8 +802,8 @@ private fun GalleryContent(
                 state = gridState,
                 columns = GridCells.Fixed(columns),
                 contentPadding = PaddingValues(
-                    start = 4.dp,
-                    end = 4.dp,
+                    start = 8.dp,
+                    end = 8.dp,
                     top = when {
                         uiState.isSelectionMode -> 4.dp
                         uiState.screenMode == ScreenMode.Searching -> 4.dp
@@ -910,7 +900,7 @@ private fun FloatingSearchBar(
             modifier
                 .fillMaxWidth()
                 .height(64.dp)
-                .padding(start = 4.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
+                .padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
@@ -991,7 +981,6 @@ internal fun MemeGridItem(
     meme: Meme,
     isSelected: Boolean,
     isSelectionMode: Boolean,
-    memeDescription: String,
     onIntent: (GalleryIntent) -> Unit,
     showEmojis: Boolean = false,
 ) {
@@ -999,14 +988,12 @@ internal fun MemeGridItem(
         SelectionModeGridItem(
             meme = meme,
             isSelected = isSelected,
-            memeDescription = memeDescription,
             onIntent = onIntent,
             showEmojis = showEmojis,
         )
     } else {
         NormalModeGridItem(
             meme = meme,
-            memeDescription = memeDescription,
             onIntent = onIntent,
             showEmojis = showEmojis,
         )
@@ -1018,7 +1005,6 @@ internal fun MemeGridItem(
 private fun SelectionModeGridItem(
     meme: Meme,
     isSelected: Boolean,
-    memeDescription: String,
     onIntent: (GalleryIntent) -> Unit,
     showEmojis: Boolean = false,
 ) {
@@ -1053,7 +1039,6 @@ private fun SelectionModeGridItem(
                     onLongClick = { /* No long click in selection mode */ },
                 )
                 .semantics(mergeDescendants = true) {
-                    contentDescription = memeDescription
                     stateDescription = if (isSelected) selectedText else notSelectedText
                     role = Role.Checkbox
                 },
@@ -1169,7 +1154,6 @@ private fun BoxScope.SelectionOverlay(
 @Composable
 private fun NormalModeGridItem(
     meme: Meme,
-    memeDescription: String,
     onIntent: (GalleryIntent) -> Unit,
     showEmojis: Boolean = false,
 ) {
@@ -1189,7 +1173,6 @@ private fun NormalModeGridItem(
                     },
                 )
                 .semantics(mergeDescendants = true) {
-                    contentDescription = memeDescription
                     role = Role.Button
                 },
     ) {
