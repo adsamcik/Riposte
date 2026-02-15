@@ -809,7 +809,7 @@ private fun MemeViewModeContent(
 
     // Description (collapsed by default)
     meme.description?.let { description ->
-        Spacer(Modifier.height(4.dp))
+        Spacer(Modifier.height(8.dp))
         var descriptionExpanded by remember { mutableStateOf(false) }
         Text(
             text = description,
