@@ -465,6 +465,7 @@ private fun GalleryScreenContent(
                         } else if (uiState.searchState.hasSearched && uiState.searchState.results.isEmpty()) {
                             // No results
                             item(span = { GridItemSpan(maxLineSpan) }, key = "search_no_results") {
+                                val hasFilters = uiState.activeEmojiFilters.isNotEmpty()
                                 EmptyState(
                                     icon = "🔍",
                                     title =
@@ -476,6 +477,18 @@ private fun GalleryScreenContent(
                                             com.adsamcik.riposte.core.search.R.string.search_no_results_description,
                                             uiState.searchState.query,
                                         ),
+                                    actionLabel = if (hasFilters) {
+                                        stringResource(
+                                            com.adsamcik.riposte.core.search.R.string.search_no_results_clear_filters,
+                                        )
+                                    } else {
+                                        stringResource(R.string.gallery_menu_all_memes)
+                                    },
+                                    onAction = if (hasFilters) {
+                                        { onIntent(GalleryIntent.ClearEmojiFilters) }
+                                    } else {
+                                        { onIntent(GalleryIntent.ClearSearch) }
+                                    },
                                 )
                             }
                         } else if (uiState.searchState.results.isNotEmpty()) {
