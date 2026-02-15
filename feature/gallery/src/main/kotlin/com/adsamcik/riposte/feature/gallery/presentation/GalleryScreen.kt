@@ -777,7 +777,11 @@ private fun GalleryContent(
                 contentPadding = PaddingValues(
                     start = 4.dp,
                     end = 4.dp,
-                    top = if (uiState.isSelectionMode) 4.dp else 64.dp,
+                    top = when {
+                        uiState.isSelectionMode -> 4.dp
+                        uiState.screenMode == ScreenMode.Searching -> 8.dp
+                        else -> 64.dp
+                    },
                     bottom = 120.dp,
                 ),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -837,7 +841,7 @@ private fun GalleryEmojiFilterRail(
                 } else {
                     null
                 },
-                modifier = Modifier.padding(top = 64.dp),
+                modifier = Modifier.padding(top = 8.dp),
             )
         }
     }
