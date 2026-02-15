@@ -116,10 +116,18 @@ class EmbeddingGenerationWorker
                             KEY_REMAINING_COUNT to remainingCount,
                         )
 
-                    // If there are more memes, schedule another run.
-                    // Use REPLACE since this work is still technically running.
-                    if (remainingCount > 0) {
+                    // Only schedule continuation if we made progress this batch.
+                    // If no memes succeeded, the model is likely unavailable and
+                    // re-scheduling immediately would create an infinite loop that
+                    // floods the main thread with WorkManager overhead, causing ANR.
+                    if (remainingCount > 0 && successCount > 0) {
                         enqueueContinuation(context)
+                    } else if (remainingCount > 0) {
+                        android.util.Log.w(
+                            TAG,
+                            "Batch had no successes ($failureCount failures), " +
+                                "not scheduling continuation to avoid busy loop",
+                        )
                     }
 
                     Result.success(outputData)
@@ -184,6 +192,7 @@ class EmbeddingGenerationWorker
             const val BATCH_SIZE = 20
             const val MAX_RETRY_COUNT = 3
             const val CURRENT_MODEL_VERSION = "embeddinggemma:1.0.0"
+            private const val CONTINUATION_DELAY_SECONDS = 5L
 
             // Output data keys
             const val KEY_PROCESSED_COUNT = "processed_count"
@@ -235,6 +244,7 @@ class EmbeddingGenerationWorker
                 val request =
                     OneTimeWorkRequestBuilder<EmbeddingGenerationWorker>()
                         .setConstraints(constraints)
+                        .setInitialDelay(CONTINUATION_DELAY_SECONDS, TimeUnit.SECONDS)
                         .setBackoffCriteria(
                             BackoffPolicy.EXPONENTIAL,
                             30,
