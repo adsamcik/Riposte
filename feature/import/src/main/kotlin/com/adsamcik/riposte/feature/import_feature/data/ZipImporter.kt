@@ -104,9 +104,8 @@ class DefaultZipImporter
                 isLenient = true
             }
 
-        private val extractDir: File by lazy {
-            File(context.cacheDir, "zip_extract").also { it.mkdirs() }
-        }
+        private val extractDir: File
+            get() = File(context.cacheDir, "zip_extract").also { it.mkdirs() }
 
         companion object {
             private const val MEME_ZIP_EXTENSION = ".meme.zip"
