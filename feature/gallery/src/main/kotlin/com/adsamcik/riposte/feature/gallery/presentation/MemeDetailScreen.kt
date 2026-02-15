@@ -557,8 +557,8 @@ private fun MemeActionButtonsRow(
                 onClick = { onIntent(MemeDetailIntent.ShowDeleteDialog) },
                 colors =
                     IconButtonDefaults.filledTonalIconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                        contentColor = MaterialTheme.colorScheme.onErrorContainer,
                     ),
             ) {
                 Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.gallery_cd_delete))
