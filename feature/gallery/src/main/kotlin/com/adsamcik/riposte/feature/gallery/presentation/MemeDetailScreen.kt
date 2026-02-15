@@ -978,6 +978,7 @@ private fun ZoomableImage(
             model = filePath,
             contentDescription = contentDescription,
             contentScale = ContentScale.Fit,
+            alignment = Alignment.TopCenter,
             onState = { imageState = it },
             modifier = Modifier.fillMaxSize(),
         )
