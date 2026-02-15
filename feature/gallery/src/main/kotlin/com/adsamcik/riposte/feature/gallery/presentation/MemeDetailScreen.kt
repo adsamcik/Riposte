@@ -580,6 +580,11 @@ private fun EditActionButton(
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         FilledTonalIconButton(
             onClick = { if (isEditMode) onCancelEdit() else onToggleEdit() },
+            colors =
+                IconButtonDefaults.filledTonalIconButtonColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                ),
         ) {
             Icon(
                 if (isEditMode) Icons.Default.Close else Icons.Default.Edit,

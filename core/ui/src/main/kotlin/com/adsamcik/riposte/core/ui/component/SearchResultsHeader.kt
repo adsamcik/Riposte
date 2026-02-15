@@ -51,13 +51,6 @@ fun SearchResultsHeader(
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        if (query.isNotEmpty()) {
-            Text(
-                text = stringResource(R.string.ui_search_results_query, query),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
     }
 }
 

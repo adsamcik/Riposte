@@ -112,7 +112,6 @@ private fun GridDensitySettingItem(
 ) {
     DialogSettingItem(
         title = stringResource(R.string.settings_grid_density_title),
-        subtitle = stringResource(R.string.settings_grid_density_subtitle),
         selectedValue = uiState.gridDensityPreference,
         values = UserDensityPreference.entries,
         onValueChange = { onIntent(SettingsIntent.SetGridDensity(it)) },

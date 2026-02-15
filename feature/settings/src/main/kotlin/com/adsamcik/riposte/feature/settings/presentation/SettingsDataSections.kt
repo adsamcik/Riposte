@@ -14,7 +14,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.HighQuality
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.NoPhotography
+import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.PhotoSizeSelectLarge
 import androidx.compose.material.icons.filled.Policy
 import androidx.compose.material.icons.filled.Upload
@@ -52,7 +52,7 @@ internal fun LazyListScope.sharingSection(
                 subtitle = stringResource(R.string.settings_share_strip_metadata_subtitle),
                 checked = !uiState.stripMetadata,
                 onCheckedChange = { onIntent(SettingsIntent.SetStripMetadata(!it)) },
-                icon = Icons.Default.NoPhotography,
+                icon = Icons.Default.Label,
             )
         }
     }
@@ -102,7 +102,7 @@ private fun ShareQualitySettingItem(
                 )
             },
             valueRange = 10f..100f,
-            steps = 8,
+            steps = 0,
             valueLabel = { stringResource(R.string.settings_share_quality_value, it.toInt()) },
         )
     }
@@ -115,7 +115,6 @@ private fun ShareMaxSizeSettingItem(
 ) {
     DialogSettingItem(
         title = stringResource(R.string.settings_share_max_size_title),
-        subtitle = stringResource(R.string.settings_share_max_size_subtitle),
         icon = Icons.Default.PhotoSizeSelectLarge,
         selectedValue = uiState.defaultMaxDimension,
         values = listOf(480, 720, 1080, 2048),
