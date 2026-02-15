@@ -1,11 +1,11 @@
 ---
 name: visual-polish
 description: >
-  Visual quality audit for Riposte. Evaluates the running app (via Android MCP server)
-  or user-provided screenshots using dual-model analysis, then fixes issues directly.
-  Gracefully degrades to code-only analysis when no device is available.
+  Visual quality audit for Riposte in a strict live-device workflow.
+  Evaluates the running app (via Android MCP server) using dual-model analysis,
+  then fixes issues directly.
   Use when asked to polish UI, find visual bugs, audit spacing, or improve visual quality.
-version: 3.0.0
+version: 3.1.0
 triggers:
   - polish the UI
   - visual audit
@@ -15,7 +15,6 @@ triggers:
   - UI polish
   - wasted space
   - visual quality
-  - screenshot review
   - look and feel
 ---
 
@@ -45,46 +44,35 @@ Runtime visual quality audit. Evaluates what users **actually see**, not just wh
 
 ---
 
-## Operating Modes
+## Operating Mode (Golden Path)
 
-Select mode based on available tools:
+Use a single required mode:
 
 | Mode | When | What's Available |
 |------|------|-----------------|
-| **Live** | Android MCP server running + device connected | `mobile_take_screenshot`, `mobile_list_elements_on_screen`, `mobile_click_on_screen_at_coordinates`, `mobile_launch_app` |
-| **Screenshot** | User provides screenshots in a folder | `view` tool reads images from disk |
-| **Code-only** | No device, no screenshots | Static analysis of Compose code for theme compliance |
+| **Live (required)** | Android MCP server running + device connected | `mobile_take_screenshot`, `mobile_list_elements_on_screen`, `mobile_click_on_screen_at_coordinates`, `mobile_launch_app` |
 
-**Always attempt Live mode first.** If MCP tools are unavailable, ask the user:
-"No Android device detected. Should I (A) analyze screenshots you provide, or (B) do a code-only audit?"
+**No fallback modes.** If Live mode is unavailable, stop and ask the user to connect a device and rerun.
 
-### Hybrid Mode (per-screen fallback)
+### Golden Path Rule
 
-In practice, some screens may be reachable via Live mode while others are blocked (ANR, crash, navigation issues). The skill supports **per-screen mode selection** with automatic fallback:
-
-| Situation | Action |
-|-----------|--------|
-| Screen reachable | Use Live mode |
-| Blocked by dialog/modal | Try dismiss (Back button, tap outside) → if fails, Code-only for that screen |
-| App crash/ANR | Restart app → retry navigation once → if fails, Code-only for that screen |
-| Screen requires specific data/state | Note limitation → Code-only with context note |
-
-Track the mode used per screen in the findings file (add `Mode: Live` or `Mode: Code-only (blocked by ANR)` to each screen section).
+If a screen is blocked (ANR, crash, missing state), ask the user to unblock it and retry in Live mode.
+Do not switch to screenshot analysis or code-only analysis.
 
 ---
 
 ## Workflow
 
 ```text
-1. DETECT MODE  → Check if Android MCP tools are available
+1. DETECT LIVE  → Check if Android MCP tools are available + device connected
 1b. FRESH BUILD → Build + install APK (unless user says app is current)
-2. CAPTURE      → Screenshot + element list (Live) or read images (Screenshot)
+2. CAPTURE      → Screenshot + element list (Live)
 3. EVALUATE     → Dual-model analysis via parallel task tool calls
 4. MERGE        → Deduplicate, resolve conflicts, prioritize
 5. PERSIST      → Write merged findings to scratch file (survives compaction)
 6. FIX          → Code changes, batched per screen (max 3 rounds)
 6b. REBUILD     → Build + install + relaunch (build failures don't count as a round)
-7. VERIFY       → Re-screenshot (Live) or user confirms (Screenshot/Code-only)
+7. VERIFY       → Re-screenshot (Live)
 ```
 
 ---
@@ -114,7 +102,7 @@ Skip if the user explicitly says the app is already current.
 4. mobile_list_elements_on_screen → spatial data (bounds, coordinates, labels)
 5. Navigate: mobile_click_on_screen_at_coordinates(device, x, y)
 6. If blocked (dialog, ANR): try mobile_press_button(device, "BACK")
-   → if still blocked, fall back to Code-only for that screen
+   → if still blocked, ask user to unblock and retry in Live mode
 ```
 
 ### Dark Mode Toggle (Live mode)
@@ -132,20 +120,11 @@ adb shell cmd uimode night no
 
 If the app doesn't visibly change, dynamic colors may be inactive — note in findings.
 
-### Screenshot Mode
+### Capture Constraint
 
 ```text
-1. User places screenshots in docs/screenshots/ or specifies a path
-2. Use `view` tool to read each image file
-3. User labels which screen/state each image represents
-```
-
-### Code-Only Mode
-
-```text
-1. Grep for visual anti-patterns (see prompts/code-audit-checklist.md)
-2. Read composables and check theme token usage
-3. No visual evaluation — structural analysis only
+Keep capture in Live mode for all audited screens.
+If a required screen cannot be reached, pause and ask the user to unblock it.
 ```
 
 ### Screen Priority & State Matrix
@@ -179,7 +158,7 @@ When encountering issues that prevent normal app operation during a visual audit
 | **Crash Dialog** | Restart app → retry once → ask user if persists | ✅ Yes — critical UX issue |
 | **Permission Prompts** | Grant permissions → continue | ❌ No — expected behavior |
 | **Onboarding Flow** | Complete flow → continue | Only if poorly designed |
-| **Login Required** | Ask user for credentials or skip screen | ❌ No |
+| **Login Required** | Ask user for credentials/state setup before proceeding | ❌ No |
 | **Empty State (no data)** | Evaluate the empty state design itself | Only if poor empty state |
 
 ### Decision Tree
@@ -189,14 +168,14 @@ Encounter blocker
 ├── Can I dismiss/bypass it? (Back button, grant permission, tap through)
 │   ├── YES → Dismiss → Continue → Note in findings if it's a UX issue
 │   └── NO → Does it block the entire audit or just this screen?
-│       ├── Just this screen → Code-only fallback for this screen
-│       └── Entire audit → Ask user for help
+│       ├── Just this screen → Ask user to unblock required state/screen, then retry
+│       └── Entire audit → Ask user for help and pause
 └── Is this blocker itself a UX problem users would hit?
     ├── YES → Add to findings as 🔴 Critical
     └── NO → Document as operational note only
 ```
 
-**Key principle:** Visual polish audits assess what users see and experience. If a blocker creates a poor user experience, it's a finding. If it only prevents the audit, it's a limitation to work around.
+**Key principle:** Visual polish audits assess what users see and experience in the running app. If a blocker creates a poor user experience, it's a finding. If it blocks the audit, ask the user to unblock it rather than switching modes.
 
 ---
 
@@ -294,13 +273,13 @@ Use the `create` tool (or `edit` if the file already exists from a prior screen)
 # Visual Polish Findings
 
 Generated: [timestamp]
-Mode: [Live / Screenshot / Code-only]
+Mode: Live
 Device: [device info or N/A]
 
 ## Screen: [Name] — [State]
 
 ### Status: PENDING | IN_PROGRESS | FIXED | VERIFIED
-### Mode: Live | Code-only (reason) | Screenshot
+### Mode: Live
 
 ### 🔴 Glaring
 - [ ] [Issue]: [evidence] — Source: [model(s)], Confidence: [H/M/L]
@@ -349,7 +328,7 @@ Context compaction can discard the detailed evaluation findings mid-session. By 
    mobile_launch_app(device, "com.adsamcik.riposte.debug")
    ```
    If the build fails, fix compilation errors first — build failures do NOT count toward the 3-round cap.
-5. **Verify**: Re-screenshot (Live) or inform user to check (other modes)
+5. **Verify**: Re-screenshot in Live mode
 6. **Update findings file** — check off fixed items and update screen status
 
 ### Verification (single-model, quick)
@@ -375,12 +354,12 @@ Context compaction can discard the detailed evaluation findings mid-session. By 
 
 After individual screens are fixed, do ONE quick pass checking:
 
-**Code-based checks (all screens, regardless of mode):**
+**Code-based checks (all audited screens):**
 - Theme token usage (`colorScheme`, `typography`, spacing values)
 - Modifier patterns and shared component reuse
 - Consistent use of design system components
 
-**Visual checks (Live/Screenshot screens only):**
+**Visual checks (all audited screens):**
 - App bar styling appears identical across screens
 - Spacing scale looks consistent
 - Typography hierarchy is visually uniform
@@ -388,8 +367,6 @@ After individual screens are fixed, do ONE quick pass checking:
 - Empty/loading states share the same visual pattern
 
 This is a single-model pass. Any inconsistency is a 🟡 issue.
-
-**Confidence note:** Code-only consistency checks are lower confidence than visual verification. When screens have mixed modes, prioritize visual comparisons between Live-evaluated screens and flag code-only screens as "consistency unverified visually."
 
 ---
 
