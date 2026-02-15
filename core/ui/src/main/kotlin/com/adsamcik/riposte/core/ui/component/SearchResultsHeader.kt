@@ -17,18 +17,20 @@ import com.adsamcik.riposte.core.ui.theme.RiposteTheme
 /**
  * Header component for search results display.
  *
- * Shows the result count and optionally the search query.
+ * Shows the result count, optionally the search query, and search duration.
  * Per VISUAL_DESIGN_SPEC.md Section 5, provides search context
  * above the results grid.
  *
  * @param query The search query text. If empty, only result count is shown.
  * @param resultCount The number of results found.
+ * @param durationMs Search duration in milliseconds. If 0, not displayed.
  * @param modifier Modifier to be applied to the component.
  */
 @Composable
 fun SearchResultsHeader(
     query: String,
     resultCount: Int,
+    durationMs: Long = 0L,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -37,8 +39,15 @@ fun SearchResultsHeader(
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 12.dp),
     ) {
+        val countText = pluralStringResource(R.plurals.ui_search_results_count, resultCount, resultCount)
+        val headerText = if (durationMs > 0) {
+            val seconds = durationMs / 1000.0
+            stringResource(R.string.ui_search_results_duration, countText, String.format("%.1f", seconds))
+        } else {
+            countText
+        }
         Text(
-            text = pluralStringResource(R.plurals.ui_search_results_count, resultCount, resultCount),
+            text = headerText,
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -59,6 +68,7 @@ private fun SearchResultsHeaderPreview() {
         SearchResultsHeader(
             query = "funny cat",
             resultCount = 42,
+            durationMs = 310L,
         )
     }
 }

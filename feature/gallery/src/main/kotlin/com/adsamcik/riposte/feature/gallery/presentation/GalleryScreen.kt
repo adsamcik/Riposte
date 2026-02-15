@@ -498,6 +498,7 @@ private fun GalleryScreenContent(
                                 com.adsamcik.riposte.core.ui.component.SearchResultsHeader(
                                     query = uiState.searchState.query,
                                     resultCount = uiState.searchState.totalResultCount,
+                                    durationMs = uiState.searchState.searchDurationMs,
                                 )
                             }
                             // Result items - reuse MemeGridItem
