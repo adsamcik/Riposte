@@ -11,7 +11,11 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.HighQuality
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.NoPhotography
+import androidx.compose.material.icons.filled.PhotoSizeSelectLarge
 import androidx.compose.material.icons.filled.Policy
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.Icon
@@ -48,6 +52,7 @@ internal fun LazyListScope.sharingSection(
                 subtitle = stringResource(R.string.settings_share_strip_metadata_subtitle),
                 checked = !uiState.stripMetadata,
                 onCheckedChange = { onIntent(SettingsIntent.SetStripMetadata(!it)) },
+                icon = Icons.Default.NoPhotography,
             )
         }
     }
@@ -60,6 +65,7 @@ private fun ShareFormatSettingItem(
 ) {
     DialogSettingItem(
         title = stringResource(R.string.settings_share_format_title),
+        icon = Icons.Default.Image,
         selectedValue = uiState.defaultFormat,
         values = listOf(ImageFormat.JPEG, ImageFormat.PNG, ImageFormat.WEBP),
         onValueChange = { onIntent(SettingsIntent.SetDefaultFormat(it)) },
@@ -87,6 +93,7 @@ private fun ShareQualitySettingItem(
         SliderSettingItem(
             title = stringResource(R.string.settings_share_quality_title),
             subtitle = stringResource(R.string.settings_share_quality_subtitle),
+            icon = Icons.Default.HighQuality,
             value = localQuality,
             onValueChange = { localQuality = it },
             onValueChangeFinished = {
@@ -109,6 +116,7 @@ private fun ShareMaxSizeSettingItem(
     DialogSettingItem(
         title = stringResource(R.string.settings_share_max_size_title),
         subtitle = stringResource(R.string.settings_share_max_size_subtitle),
+        icon = Icons.Default.PhotoSizeSelectLarge,
         selectedValue = uiState.defaultMaxDimension,
         values = listOf(480, 720, 1080, 2048),
         onValueChange = { onIntent(SettingsIntent.SetDefaultMaxDimension(it)) },

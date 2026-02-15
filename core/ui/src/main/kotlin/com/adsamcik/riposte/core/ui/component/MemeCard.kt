@@ -251,16 +251,16 @@ private fun BoxScope.MemeCardCompactOverlays(
             modifier =
                 Modifier
                     .align(Alignment.BottomStart)
-                    .padding(8.dp)
+                    .padding(6.dp)
                     .background(
-                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
+                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
                         shape = RiposteShapes.EmojiChipDefault,
                     )
-                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                    .padding(horizontal = 6.dp, vertical = 3.dp),
         ) {
             Text(
                 text = meme.emojiTags.take(3).joinToString("") { it.emoji },
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodyLarge,
             )
         }
     }
@@ -273,7 +273,12 @@ private fun BoxScope.MemeCardCompactOverlays(
             modifier =
                 Modifier
                     .align(Alignment.TopEnd)
-                    .padding(8.dp)
+                    .padding(6.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                        shape = RiposteShapes.EmojiChipDefault,
+                    )
+                    .padding(4.dp)
                     .size(20.dp),
         )
     }
