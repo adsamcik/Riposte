@@ -1,9 +1,6 @@
 package com.adsamcik.riposte.feature.settings.presentation
 
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.material3.Icon
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Brightness4
 import androidx.compose.material.icons.filled.ColorLens
@@ -12,12 +9,14 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.adsamcik.riposte.core.model.DarkMode
 import com.adsamcik.riposte.core.model.UserDensityPreference
 import com.adsamcik.riposte.feature.settings.R
-import com.adsamcik.riposte.feature.settings.presentation.component.ClickableSettingItem
 import com.adsamcik.riposte.feature.settings.presentation.component.DialogSettingItem
 import com.adsamcik.riposte.feature.settings.presentation.component.SettingsSection
 import com.adsamcik.riposte.feature.settings.presentation.component.SwitchSettingItem

@@ -11,6 +11,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -45,6 +46,7 @@ import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomSheetScaffold
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledTonalIconButton
@@ -74,6 +76,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
@@ -98,6 +101,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import coil3.compose.AsyncImagePainter
 import com.adsamcik.riposte.core.model.EmojiTag
+import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.core.ui.component.EmojiChip
 import com.adsamcik.riposte.core.ui.component.ErrorState
 import com.adsamcik.riposte.core.ui.component.LoadingScreen
@@ -204,13 +208,12 @@ private fun MemeDetailScreenContent(
         }
     }
 
-    BackHandler(enabled = true) {
-        when {
-            uiState.isEditMode && uiState.hasUnsavedChanges -> showDiscardDialog = true
-            uiState.isEditMode -> onIntent(MemeDetailIntent.Dismiss)
-            else -> onNavigateBack()
-        }
-    }
+    MemeDetailBackHandler(
+        uiState = uiState,
+        onIntent = onIntent,
+        onNavigateBack = onNavigateBack,
+        onShowDiscardDialog = { showDiscardDialog = true },
+    )
 
     MemeDetailDialogs(
         uiState = uiState,
@@ -246,6 +249,22 @@ private fun MemeDetailScreenContent(
                 snackbarHostState = snackbarHostState,
                 zoomState = zoomState,
             )
+        }
+    }
+}
+
+@Composable
+private fun MemeDetailBackHandler(
+    uiState: MemeDetailUiState,
+    onIntent: (MemeDetailIntent) -> Unit,
+    onNavigateBack: () -> Unit,
+    onShowDiscardDialog: () -> Unit,
+) {
+    BackHandler(enabled = true) {
+        when {
+            uiState.isEditMode && uiState.hasUnsavedChanges -> onShowDiscardDialog()
+            uiState.isEditMode -> onIntent(MemeDetailIntent.Dismiss)
+            else -> onNavigateBack()
         }
     }
 }
@@ -321,7 +340,7 @@ private fun MemeDetailContent(
     onNavigateBack: () -> Unit,
     onCancelEdit: () -> Unit,
     snackbarHostState: SnackbarHostState,
-    zoomState: ZoomState,
+    zoomState: ZoomState = rememberZoomState(),
 ) {
     val meme = uiState.meme ?: return
     val bottomSheetState = rememberStandardBottomSheetState(initialValue = SheetValue.PartiallyExpanded)
@@ -363,25 +382,32 @@ private fun MemeDetailContent(
                 onIntent = onIntent,
             )
 
-            IconButton(
-                onClick = onNavigateBack,
-                modifier =
-                    Modifier
-                        .align(Alignment.TopStart)
-                        .windowInsetsPadding(WindowInsets.statusBars)
-                        .padding(8.dp)
-                        .background(
-                            color = MaterialTheme.colorScheme.scrim.copy(alpha = 0.7f),
-                            shape = CircleShape,
-                        ),
-            ) {
-                Icon(
-                    Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.gallery_cd_navigate_back),
-                    tint = MaterialTheme.colorScheme.inverseOnSurface,
-                )
-            }
+            MemeDetailBackButton(onNavigateBack = onNavigateBack)
         }
+    }
+}
+
+@Composable
+private fun BoxScope.MemeDetailBackButton(
+    onNavigateBack: () -> Unit,
+) {
+    IconButton(
+        onClick = onNavigateBack,
+        modifier =
+            Modifier
+                .align(Alignment.TopStart)
+                .windowInsetsPadding(WindowInsets.statusBars)
+                .padding(8.dp)
+                .background(
+                    color = MaterialTheme.colorScheme.scrim.copy(alpha = 0.7f),
+                    shape = CircleShape,
+                ),
+    ) {
+        Icon(
+            Icons.AutoMirrored.Filled.ArrowBack,
+            contentDescription = stringResource(R.string.gallery_cd_navigate_back),
+            tint = MaterialTheme.colorScheme.inverseOnSurface,
+        )
     }
 }
 
@@ -449,8 +475,6 @@ private fun MemeInfoSheet(
 ) {
     val meme = uiState.meme ?: return
     val dateFormatter = remember { DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM) }
-    val favoritedText = stringResource(com.adsamcik.riposte.core.ui.R.string.ui_state_favorited)
-    val notFavoritedText = stringResource(com.adsamcik.riposte.core.ui.R.string.ui_state_not_favorited)
 
     Column(
         modifier =
@@ -459,310 +483,395 @@ private fun MemeInfoSheet(
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
     ) {
-        // Action buttons row with labels
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-        ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                FilledTonalIconButton(
-                    onClick = { if (uiState.isEditMode) onCancelEdit() else onIntent(MemeDetailIntent.ToggleEditMode) },
-                ) {
-                    Icon(
-                        if (uiState.isEditMode) Icons.Default.Close else Icons.Default.Edit,
-                        contentDescription =
-                            if (uiState.isEditMode) {
-                                stringResource(
-                                    R.string.gallery_cd_cancel_edit,
-                                )
-                            } else {
-                                stringResource(R.string.gallery_cd_edit)
-                            },
-                    )
-                }
-                Text(
-                    text =
-                        if (uiState.isEditMode) {
-                            stringResource(
-                                R.string.gallery_detail_action_cancel,
-                            )
-                        } else {
-                            stringResource(R.string.gallery_detail_action_edit)
-                        },
-                    style = MaterialTheme.typography.labelSmall,
-                    textAlign = TextAlign.Center,
-                )
-            }
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                FilledIconButton(
-                    onClick = { onIntent(MemeDetailIntent.Share) },
-                    colors =
-                        IconButtonDefaults.filledIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                        ),
-                ) {
-                    Icon(Icons.Default.Share, contentDescription = stringResource(R.string.gallery_cd_share))
-                }
-                Text(
-                    text = stringResource(R.string.gallery_detail_action_share),
-                    style = MaterialTheme.typography.labelSmall,
-                    textAlign = TextAlign.Center,
-                )
-            }
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                val haptic = LocalHapticFeedback.current
-                var animateTrigger by remember { mutableStateOf(0) }
-                val animatedScale by animateFloatAsState(
-                    targetValue = if (animateTrigger > 0) 1.3f else 1f,
-                    animationSpec =
-                        spring(
-                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                            stiffness = Spring.StiffnessMedium,
-                        ),
-                    finishedListener = { animateTrigger = 0 },
-                    label = "favorite_bounce",
-                )
-                FilledTonalIconButton(
-                    onClick = {
-                        animateTrigger++
-                        haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
-                        onIntent(MemeDetailIntent.ToggleFavorite)
-                    },
-                    colors =
-                        if (meme.isFavorite) {
-                            IconButtonDefaults.filledTonalIconButtonColors(
-                                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                            )
-                        } else {
-                            IconButtonDefaults.filledTonalIconButtonColors()
-                        },
-                    modifier =
-                        Modifier
-                            .graphicsLayer {
-                                scaleX = animatedScale
-                                scaleY = animatedScale
-                            }
-                            .semantics {
-                                role = Role.Button
-                                stateDescription = if (meme.isFavorite) favoritedText else notFavoritedText
-                            },
-                ) {
-                    Icon(
-                        if (meme.isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                        contentDescription = stringResource(R.string.gallery_cd_favorite),
-                    )
-                }
-                Text(
-                    text = stringResource(R.string.gallery_detail_action_favorite),
-                    style = MaterialTheme.typography.labelSmall,
-                    textAlign = TextAlign.Center,
-                )
-            }
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                OutlinedIconButton(
-                    onClick = { onIntent(MemeDetailIntent.ShowDeleteDialog) },
-                    colors =
-                        IconButtonDefaults.outlinedIconButtonColors(
-                            contentColor = MaterialTheme.colorScheme.error,
-                        ),
-                ) {
-                    Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.gallery_cd_delete))
-                }
-                Text(
-                    text = stringResource(R.string.gallery_detail_action_delete),
-                    style = MaterialTheme.typography.labelSmall,
-                    textAlign = TextAlign.Center,
-                )
-            }
-        }
+        MemeActionButtonsRow(
+            uiState = uiState,
+            meme = meme,
+            onIntent = onIntent,
+            onCancelEdit = onCancelEdit,
+        )
 
         Spacer(Modifier.height(16.dp))
 
         if (uiState.isEditMode) {
-            // Edit mode
-            OutlinedTextField(
-                value = uiState.editedTitle,
-                onValueChange = { onIntent(MemeDetailIntent.UpdateTitle(it)) },
-                label = { Text(stringResource(R.string.gallery_detail_label_title)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
+            MemeEditModeContent(
+                uiState = uiState,
+                onIntent = onIntent,
             )
-
-            Spacer(Modifier.height(12.dp))
-
-            OutlinedTextField(
-                value = uiState.editedDescription,
-                onValueChange = { onIntent(MemeDetailIntent.UpdateDescription(it)) },
-                label = { Text(stringResource(R.string.gallery_detail_label_description)) },
-                minLines = 2,
-                maxLines = 4,
-                modifier = Modifier.fillMaxWidth(),
-            )
-
-            Spacer(Modifier.height(16.dp))
-
-            // Emoji tags
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = stringResource(R.string.gallery_detail_label_emoji_tags),
-                    style = MaterialTheme.typography.labelMedium,
-                )
-                IconButton(
-                    onClick = { onIntent(MemeDetailIntent.ShowEmojiPicker) },
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.gallery_cd_add_emoji))
-                }
-            }
-
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                uiState.editedEmojis.forEach { emoji ->
-                    EmojiChip(
-                        emojiTag = EmojiTag.fromEmoji(emoji),
-                        onClick = { onIntent(MemeDetailIntent.RemoveEmoji(emoji)) },
-                    )
-                }
-            }
-
-            Spacer(Modifier.height(16.dp))
-
-            // Save button
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
-            ) {
-                TextButton(onClick = { onIntent(MemeDetailIntent.DiscardChanges) }) {
-                    Text(stringResource(R.string.gallery_button_discard))
-                }
-                Spacer(Modifier.width(8.dp))
-                TextButton(
-                    onClick = { onIntent(MemeDetailIntent.SaveChanges) },
-                    enabled = uiState.hasUnsavedChanges && !uiState.isSaving,
-                ) {
-                    if (uiState.isSaving) {
-                        androidx.compose.material3.CircularProgressIndicator(
-                            modifier = Modifier.size(18.dp),
-                            strokeWidth = 2.dp,
-                        )
-                    } else {
-                        Icon(Icons.Default.Check, contentDescription = stringResource(R.string.gallery_cd_confirm))
-                    }
-                    Spacer(Modifier.width(4.dp))
-                    Text(stringResource(R.string.gallery_button_save))
-                }
-            }
         } else {
-            // View mode — Title
-            meme.title?.let { title ->
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier.semantics { heading() },
-                )
-            } ?: Text(
-                text = meme.fileName,
-                style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier.semantics { heading() },
-            )
-
-            // Description
-            meme.description?.let { description ->
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-
-            Spacer(Modifier.height(16.dp))
-
-            // Emoji tags
-            if (meme.emojiTags.isNotEmpty()) {
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    meme.emojiTags.forEach { tag ->
-                        EmojiChip(
-                            emojiTag = tag,
-                            onClick = { onIntent(MemeDetailIntent.SearchByEmoji(tag.emoji)) },
-                        )
-                    }
-                }
-            } else {
-                Text(
-                    text = stringResource(R.string.gallery_detail_empty_emoji_tags),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-
-            // Divider between content and metadata
-            Spacer(Modifier.height(16.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-            Spacer(Modifier.height(12.dp))
-
-            // Metadata section — always visible, no collapsible
-            Text(
-                text =
-                    stringResource(
-                        R.string.gallery_detail_label_imported,
-                        java.time.Instant.ofEpochMilli(
-                            meme.importedAt,
-                        ).atZone(java.time.ZoneId.systemDefault()).format(dateFormatter),
-                    ),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = stringResource(R.string.gallery_detail_dimensions_value, meme.width, meme.height),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = formatFileSize(meme.fileSizeBytes),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = meme.mimeType,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-
-            // Extracted text
-            meme.textContent?.takeIf { it.isNotBlank() }?.let { text ->
-                Spacer(Modifier.height(12.dp))
-                Text(
-                    text = stringResource(R.string.gallery_detail_label_extracted_text),
-                    style = MaterialTheme.typography.labelMedium,
-                )
-                Text(
-                    text = text,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-
-            // Similar memes section
-            SimilarMemesSection(
-                status = uiState.similarMemesStatus,
-                isLoading = uiState.isLoadingSimilar,
-                onMemeClick = { onIntent(MemeDetailIntent.NavigateToSimilarMeme(it)) },
+            MemeViewModeContent(
+                meme = meme,
+                uiState = uiState,
+                onIntent = onIntent,
+                dateFormatter = dateFormatter,
             )
         }
 
         Spacer(Modifier.height(32.dp))
+    }
+}
+
+@Composable
+private fun MemeActionButtonsRow(
+    uiState: MemeDetailUiState,
+    meme: Meme,
+    onIntent: (MemeDetailIntent) -> Unit,
+    onCancelEdit: () -> Unit,
+) {
+    val favoritedText = stringResource(com.adsamcik.riposte.core.ui.R.string.ui_state_favorited)
+    val notFavoritedText = stringResource(com.adsamcik.riposte.core.ui.R.string.ui_state_not_favorited)
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+    ) {
+        EditActionButton(
+            isEditMode = uiState.isEditMode,
+            onCancelEdit = onCancelEdit,
+            onToggleEdit = { onIntent(MemeDetailIntent.ToggleEditMode) },
+        )
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            FilledIconButton(
+                onClick = { onIntent(MemeDetailIntent.Share) },
+                colors =
+                    IconButtonDefaults.filledIconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                    ),
+            ) {
+                Icon(Icons.Default.Share, contentDescription = stringResource(R.string.gallery_cd_share))
+            }
+            Text(
+                text = stringResource(R.string.gallery_detail_action_share),
+                style = MaterialTheme.typography.labelSmall,
+                textAlign = TextAlign.Center,
+            )
+        }
+        FavoriteActionButton(
+            meme = meme,
+            onIntent = onIntent,
+            favoritedText = favoritedText,
+            notFavoritedText = notFavoritedText,
+        )
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            OutlinedIconButton(
+                onClick = { onIntent(MemeDetailIntent.ShowDeleteDialog) },
+                colors =
+                    IconButtonDefaults.outlinedIconButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error,
+                    ),
+            ) {
+                Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.gallery_cd_delete))
+            }
+            Text(
+                text = stringResource(R.string.gallery_detail_action_delete),
+                style = MaterialTheme.typography.labelSmall,
+                textAlign = TextAlign.Center,
+            )
+        }
+    }
+}
+
+@Composable
+private fun EditActionButton(
+    isEditMode: Boolean,
+    onCancelEdit: () -> Unit,
+    onToggleEdit: () -> Unit,
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        FilledTonalIconButton(
+            onClick = { if (isEditMode) onCancelEdit() else onToggleEdit() },
+        ) {
+            Icon(
+                if (isEditMode) Icons.Default.Close else Icons.Default.Edit,
+                contentDescription =
+                    if (isEditMode) {
+                        stringResource(R.string.gallery_cd_cancel_edit)
+                    } else {
+                        stringResource(R.string.gallery_cd_edit)
+                    },
+            )
+        }
+        Text(
+            text =
+                if (isEditMode) {
+                    stringResource(R.string.gallery_detail_action_cancel)
+                } else {
+                    stringResource(R.string.gallery_detail_action_edit)
+                },
+            style = MaterialTheme.typography.labelSmall,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+@Composable
+private fun FavoriteActionButton(
+    meme: Meme,
+    onIntent: (MemeDetailIntent) -> Unit,
+    favoritedText: String,
+    notFavoritedText: String,
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        val haptic = LocalHapticFeedback.current
+        var animateTrigger by remember { mutableStateOf(0) }
+        val animatedScale by animateFloatAsState(
+            targetValue = if (animateTrigger > 0) 1.3f else 1f,
+            animationSpec =
+                spring(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessMedium,
+                ),
+            finishedListener = { animateTrigger = 0 },
+            label = "favorite_bounce",
+        )
+        FilledTonalIconButton(
+            onClick = {
+                animateTrigger++
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                onIntent(MemeDetailIntent.ToggleFavorite)
+            },
+            colors =
+                if (meme.isFavorite) {
+                    IconButtonDefaults.filledTonalIconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                    )
+                } else {
+                    IconButtonDefaults.filledTonalIconButtonColors()
+                },
+            modifier =
+                Modifier
+                    .graphicsLayer {
+                        scaleX = animatedScale
+                        scaleY = animatedScale
+                    }
+                    .semantics {
+                        role = Role.Button
+                        stateDescription = if (meme.isFavorite) favoritedText else notFavoritedText
+                    },
+        ) {
+            Icon(
+                if (meme.isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                contentDescription = stringResource(R.string.gallery_cd_favorite),
+            )
+        }
+        Text(
+            text = stringResource(R.string.gallery_detail_action_favorite),
+            style = MaterialTheme.typography.labelSmall,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun MemeEditModeContent(
+    uiState: MemeDetailUiState,
+    onIntent: (MemeDetailIntent) -> Unit,
+) {
+    OutlinedTextField(
+        value = uiState.editedTitle,
+        onValueChange = { onIntent(MemeDetailIntent.UpdateTitle(it)) },
+        label = { Text(stringResource(R.string.gallery_detail_label_title)) },
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth(),
+    )
+
+    Spacer(Modifier.height(12.dp))
+
+    OutlinedTextField(
+        value = uiState.editedDescription,
+        onValueChange = { onIntent(MemeDetailIntent.UpdateDescription(it)) },
+        label = { Text(stringResource(R.string.gallery_detail_label_description)) },
+        minLines = 2,
+        maxLines = 4,
+        modifier = Modifier.fillMaxWidth(),
+    )
+
+    Spacer(Modifier.height(16.dp))
+
+    // Emoji tags
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = stringResource(R.string.gallery_detail_label_emoji_tags),
+            style = MaterialTheme.typography.labelMedium,
+        )
+        IconButton(
+            onClick = { onIntent(MemeDetailIntent.ShowEmojiPicker) },
+        ) {
+            Icon(Icons.Default.Add, contentDescription = stringResource(R.string.gallery_cd_add_emoji))
+        }
+    }
+
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        uiState.editedEmojis.forEach { emoji ->
+            EmojiChip(
+                emojiTag = EmojiTag.fromEmoji(emoji),
+                onClick = { onIntent(MemeDetailIntent.RemoveEmoji(emoji)) },
+            )
+        }
+    }
+
+    Spacer(Modifier.height(16.dp))
+
+    MemeEditSaveButtons(
+        uiState = uiState,
+        onIntent = onIntent,
+    )
+}
+
+@Composable
+private fun MemeEditSaveButtons(
+    uiState: MemeDetailUiState,
+    onIntent: (MemeDetailIntent) -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.End,
+    ) {
+        TextButton(onClick = { onIntent(MemeDetailIntent.DiscardChanges) }) {
+            Text(stringResource(R.string.gallery_button_discard))
+        }
+        Spacer(Modifier.width(8.dp))
+        TextButton(
+            onClick = { onIntent(MemeDetailIntent.SaveChanges) },
+            enabled = uiState.hasUnsavedChanges && !uiState.isSaving,
+        ) {
+            if (uiState.isSaving) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(18.dp),
+                    strokeWidth = 2.dp,
+                )
+            } else {
+                Icon(Icons.Default.Check, contentDescription = stringResource(R.string.gallery_cd_confirm))
+            }
+            Spacer(Modifier.width(4.dp))
+            Text(stringResource(R.string.gallery_button_save))
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun MemeViewModeContent(
+    meme: Meme,
+    uiState: MemeDetailUiState,
+    onIntent: (MemeDetailIntent) -> Unit,
+    dateFormatter: DateTimeFormatter,
+) {
+    // Title
+    meme.title?.let { title ->
+        Text(
+            text = title,
+            style = MaterialTheme.typography.headlineSmall,
+            modifier = Modifier.semantics { heading() },
+        )
+    } ?: Text(
+        text = meme.fileName,
+        style = MaterialTheme.typography.headlineSmall,
+        modifier = Modifier.semantics { heading() },
+    )
+
+    // Description
+    meme.description?.let { description ->
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = description,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+
+    Spacer(Modifier.height(16.dp))
+
+    // Emoji tags
+    if (meme.emojiTags.isNotEmpty()) {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            meme.emojiTags.forEach { tag ->
+                EmojiChip(
+                    emojiTag = tag,
+                    onClick = { onIntent(MemeDetailIntent.SearchByEmoji(tag.emoji)) },
+                )
+            }
+        }
+    } else {
+        Text(
+            text = stringResource(R.string.gallery_detail_empty_emoji_tags),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+
+    // Divider between content and metadata
+    Spacer(Modifier.height(16.dp))
+    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+    Spacer(Modifier.height(12.dp))
+
+    MemeMetadataSection(meme = meme, dateFormatter = dateFormatter)
+
+    // Similar memes section
+    SimilarMemesSection(
+        status = uiState.similarMemesStatus,
+        isLoading = uiState.isLoadingSimilar,
+        onMemeClick = { onIntent(MemeDetailIntent.NavigateToSimilarMeme(it)) },
+    )
+}
+
+@Composable
+private fun MemeMetadataSection(
+    meme: Meme,
+    dateFormatter: DateTimeFormatter,
+) {
+    Text(
+        text =
+            stringResource(
+                R.string.gallery_detail_label_imported,
+                java.time.Instant.ofEpochMilli(
+                    meme.importedAt,
+                ).atZone(java.time.ZoneId.systemDefault()).format(dateFormatter),
+            ),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    Spacer(Modifier.height(4.dp))
+    Text(
+        text = stringResource(R.string.gallery_detail_dimensions_value, meme.width, meme.height),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    Spacer(Modifier.height(4.dp))
+    Text(
+        text = formatFileSize(meme.fileSizeBytes),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    Spacer(Modifier.height(4.dp))
+    Text(
+        text = meme.mimeType,
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+
+    // Extracted text
+    meme.textContent?.takeIf { it.isNotBlank() }?.let { text ->
+        Spacer(Modifier.height(12.dp))
+        Text(
+            text = stringResource(R.string.gallery_detail_label_extracted_text),
+            style = MaterialTheme.typography.labelMedium,
+        )
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 

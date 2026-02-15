@@ -27,9 +27,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyGridScope
@@ -53,14 +53,14 @@ import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -746,54 +746,11 @@ private fun GalleryContent(
     gridContent: LazyGridScope.() -> Unit,
 ) {
     Column {
-        // Emoji Filter Rail — only shown during search
-        if (uiState.screenMode == ScreenMode.Searching &&
-            !uiState.isSelectionMode
-        ) {
-            val showFavoritesChip = uiState.favoritesCount > 0
-            val isFavoritesActive = uiState.filter is GalleryFilter.Favorites
-
-            if (uniqueEmojis.isNotEmpty() || showFavoritesChip) {
-                EmojiFilterRail(
-                    emojis = uniqueEmojis,
-                    activeFilters = uiState.activeEmojiFilters,
-                    onEmojiToggle = { emoji -> onIntent(GalleryIntent.ToggleEmojiFilter(emoji)) },
-                    onClearAll = { onIntent(GalleryIntent.ClearEmojiFilters) },
-                    leadingContent = if (showFavoritesChip) {
-                        {
-                            item(key = "favorites_chip") {
-                                FilterChip(
-                                    selected = isFavoritesActive,
-                                    onClick = {
-                                        val newFilter = if (isFavoritesActive) {
-                                            GalleryFilter.All
-                                        } else {
-                                            GalleryFilter.Favorites
-                                        }
-                                        onIntent(GalleryIntent.SetFilter(newFilter))
-                                    },
-                                    label = { Text(stringResource(R.string.gallery_chip_favorites)) },
-                                    leadingIcon = {
-                                        Icon(
-                                            imageVector = if (isFavoritesActive) {
-                                                Icons.Filled.Favorite
-                                            } else {
-                                                Icons.Outlined.FavoriteBorder
-                                            },
-                                            contentDescription = null,
-                                            modifier = Modifier.size(18.dp),
-                                        )
-                                    },
-                                )
-                            }
-                        }
-                    } else {
-                        null
-                    },
-                    modifier = Modifier.padding(top = 64.dp),
-                )
-            }
-        }
+        GalleryEmojiFilterRail(
+            uiState = uiState,
+            uniqueEmojis = uniqueEmojis,
+            onIntent = onIntent,
+        )
 
         // Import progress banner
         ImportProgressBanner(
@@ -810,10 +767,70 @@ private fun GalleryContent(
             LazyVerticalGrid(
                 state = gridState,
                 columns = GridCells.Fixed(columns),
-                contentPadding = PaddingValues(start = 4.dp, end = 4.dp, top = if (uiState.isSelectionMode) 4.dp else 64.dp, bottom = 120.dp),
+                contentPadding = PaddingValues(
+                    start = 4.dp,
+                    end = 4.dp,
+                    top = if (uiState.isSelectionMode) 4.dp else 64.dp,
+                    bottom = 120.dp,
+                ),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 content = gridContent,
+            )
+        }
+    }
+}
+
+@Composable
+private fun GalleryEmojiFilterRail(
+    uiState: GalleryUiState,
+    uniqueEmojis: List<Pair<String, Int>>,
+    onIntent: (GalleryIntent) -> Unit,
+) {
+    if (uiState.screenMode == ScreenMode.Searching &&
+        !uiState.isSelectionMode
+    ) {
+        val showFavoritesChip = uiState.favoritesCount > 0
+        val isFavoritesActive = uiState.filter is GalleryFilter.Favorites
+
+        if (uniqueEmojis.isNotEmpty() || showFavoritesChip) {
+            EmojiFilterRail(
+                emojis = uniqueEmojis,
+                activeFilters = uiState.activeEmojiFilters,
+                onEmojiToggle = { emoji -> onIntent(GalleryIntent.ToggleEmojiFilter(emoji)) },
+                onClearAll = { onIntent(GalleryIntent.ClearEmojiFilters) },
+                leadingContent = if (showFavoritesChip) {
+                    {
+                        item(key = "favorites_chip") {
+                            FilterChip(
+                                selected = isFavoritesActive,
+                                onClick = {
+                                    val newFilter = if (isFavoritesActive) {
+                                        GalleryFilter.All
+                                    } else {
+                                        GalleryFilter.Favorites
+                                    }
+                                    onIntent(GalleryIntent.SetFilter(newFilter))
+                                },
+                                label = { Text(stringResource(R.string.gallery_chip_favorites)) },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = if (isFavoritesActive) {
+                                            Icons.Filled.Favorite
+                                        } else {
+                                            Icons.Outlined.FavoriteBorder
+                                        },
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                },
+                            )
+                        }
+                    }
+                } else {
+                    null
+                },
+                modifier = Modifier.padding(top = 64.dp),
             )
         }
     }
@@ -1231,7 +1248,13 @@ private fun ImportProgressBanner(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             LinearProgressIndicator(
-                progress = { if (inProgress != null && inProgress.total > 0) inProgress.completed.toFloat() / inProgress.total else 0f },
+                progress = {
+                    if (inProgress != null && inProgress.total > 0) {
+                        inProgress.completed.toFloat() / inProgress.total
+                    } else {
+                        0f
+                    }
+                },
                 modifier = Modifier
                     .width(40.dp)
                     .height(4.dp)

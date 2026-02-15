@@ -9,6 +9,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -506,14 +507,9 @@ private fun ImportGridContent(
     ) {
         items(images.size, key = { images[it].uri.toString() }) { index ->
             val image = images[index]
-            val emojiStrings = remember(image.emojis) { image.emojis.map { it.emoji } }
             ImportImageCard(
-                uri = image.uri,
-                emojis = emojiStrings,
+                image = image,
                 isSelected = index == editingIndex,
-                hasError = image.error != null,
-                errorMessage = image.error,
-                isProcessing = image.isProcessing,
                 onClick = { onImageClick(index) },
                 onRemove = { onRemoveImage(index) },
             )
@@ -527,16 +523,15 @@ private fun ImportGridContent(
 
 @Composable
 private fun ImportImageCard(
-    uri: Uri,
-    emojis: List<String>,
+    image: ImportImage,
     isSelected: Boolean,
-    hasError: Boolean,
-    errorMessage: String?,
-    isProcessing: Boolean,
     onClick: () -> Unit,
     onRemove: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val hasError = image.error != null
+    val emojiStrings = remember(image.emojis) { image.emojis.map { it.emoji } }
+
     Card(
         modifier =
             modifier
@@ -563,100 +558,127 @@ private fun ImportImageCard(
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             AsyncImage(
-                model = uri,
+                model = image.uri,
                 contentDescription = stringResource(R.string.import_content_description_image_to_import),
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize(),
             )
 
-            // Remove button
-            IconButton(
-                onClick = onRemove,
-                modifier =
-                    Modifier
-                        .align(Alignment.TopEnd)
-                        .background(
-                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                            shape = CircleShape,
-                        ),
-            ) {
-                Icon(
-                    Icons.Default.Close,
-                    contentDescription = stringResource(R.string.import_content_description_remove),
-                    modifier = Modifier.size(18.dp),
+            ImportImageCardRemoveButton(onRemove = onRemove)
+            ImportImageCardOverlay(
+                isProcessing = image.isProcessing,
+                errorMessage = image.error,
+                emojis = emojiStrings,
+            )
+        }
+    }
+}
+
+@Composable
+private fun BoxScope.ImportImageCardRemoveButton(
+    onRemove: () -> Unit,
+) {
+    IconButton(
+        onClick = onRemove,
+        modifier =
+            Modifier
+                .align(Alignment.TopEnd)
+                .background(
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    shape = CircleShape,
+                ),
+    ) {
+        Icon(
+            Icons.Default.Close,
+            contentDescription = stringResource(R.string.import_content_description_remove),
+            modifier = Modifier.size(18.dp),
+        )
+    }
+}
+
+@Composable
+private fun BoxScope.ImportImageCardOverlay(
+    isProcessing: Boolean,
+    errorMessage: String?,
+    emojis: List<String>,
+) {
+    if (isProcessing) {
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.32f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(24.dp),
+                strokeWidth = 2.dp,
+            )
+        }
+    }
+
+    if (errorMessage != null) {
+        ImportImageErrorIndicator(errorMessage = errorMessage)
+    }
+
+    if (emojis.isNotEmpty()) {
+        ImportImageEmojiPreview(emojis = emojis)
+    }
+}
+
+@Composable
+private fun BoxScope.ImportImageErrorIndicator(
+    errorMessage: String,
+) {
+    Column(
+        modifier = Modifier.align(Alignment.Center),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Icon(
+            Icons.Default.Warning,
+            contentDescription = stringResource(R.string.import_content_description_error),
+            tint = MaterialTheme.colorScheme.error,
+            modifier = Modifier.size(32.dp),
+        )
+        Text(
+            text = errorMessage,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.error,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+        )
+    }
+}
+
+@Composable
+private fun BoxScope.ImportImageEmojiPreview(
+    emojis: List<String>,
+) {
+    Row(
+        modifier =
+            Modifier
+                .align(Alignment.BottomStart)
+                .padding(4.dp)
+                .background(
+                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    shape = MaterialTheme.shapes.small,
                 )
-            }
-
-            // Processing indicator
-            if (isProcessing) {
-                Box(
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.32f)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        strokeWidth = 2.dp,
-                    )
-                }
-            }
-
-            // Error indicator
-            if (hasError) {
-                Column(
-                    modifier = Modifier.align(Alignment.Center),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Icon(
-                        Icons.Default.Warning,
-                        contentDescription = stringResource(R.string.import_content_description_error),
-                        tint = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.size(32.dp),
-                    )
-                    if (errorMessage != null) {
-                        Text(
-                            text = errorMessage,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.error,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
-                        )
-                    }
-                }
-            }
-
-            // Emoji preview
-            if (emojis.isNotEmpty()) {
-                Row(
-                    modifier =
-                        Modifier
-                            .align(Alignment.BottomStart)
-                            .padding(4.dp)
-                            .background(
-                                color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                                shape = MaterialTheme.shapes.small,
-                            )
-                            .padding(horizontal = 6.dp, vertical = 2.dp),
-                ) {
-                    emojis.take(3).forEach { emoji ->
-                        Text(
-                            text = emoji,
-                            style = MaterialTheme.typography.bodySmall,
-                        )
-                    }
-                    if (emojis.size > 3) {
-                        Text(
-                            text = stringResource(R.string.import_emoji_overflow, emojis.size - 3),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-            }
+                .padding(horizontal = 6.dp, vertical = 2.dp),
+    ) {
+        emojis.take(3).forEach { emoji ->
+            Text(
+                text = emoji,
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+        if (emojis.size > 3) {
+            Text(
+                text = stringResource(R.string.import_emoji_overflow, emojis.size - 3),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
