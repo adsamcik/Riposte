@@ -64,7 +64,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SmallFloatingActionButton
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -382,7 +382,7 @@ private fun GalleryScreenContent(
                 enter = fadeIn(),
                 exit = fadeOut(),
             ) {
-                SmallFloatingActionButton(
+                FloatingActionButton(
                     onClick = { onIntent(GalleryIntent.NavigateToImport) },
                     shape = RiposteShapes.FABDefault,
                     containerColor = MaterialTheme.colorScheme.primary,
@@ -401,7 +401,7 @@ private fun GalleryScreenContent(
                     .padding(paddingValues),
         ) {
             // Content area with top space for floating search bar
-            val floatingBarSpace = 0.dp
+            val floatingBarSpace = if (uiState.isSelectionMode) 0.dp else 64.dp
             Box(
                 modifier =
                     Modifier
@@ -797,11 +797,7 @@ private fun GalleryContent(
                 contentPadding = PaddingValues(
                     start = 8.dp,
                     end = 8.dp,
-                    top = when {
-                        uiState.isSelectionMode -> 4.dp
-                        uiState.screenMode == ScreenMode.Searching -> 4.dp
-                        else -> 64.dp
-                    },
+                    top = 4.dp,
                     bottom = when {
                         uiState.screenMode == ScreenMode.Searching -> 24.dp
                         else -> 120.dp
