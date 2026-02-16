@@ -78,7 +78,8 @@ class ImportWorker
                             kotlinx.serialization.json.Json.decodeFromString<MemeMetadata>(
                                 metadataJsonValue,
                             )
-                        } catch (_: Exception) {
+                        } catch (e: Exception) {
+                            Timber.w(e, "Failed to parse metadata JSON in import worker")
                             null
                         }
                     } else {

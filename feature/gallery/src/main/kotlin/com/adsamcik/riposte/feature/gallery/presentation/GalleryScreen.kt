@@ -1,6 +1,7 @@
 package com.adsamcik.riposte.feature.gallery.presentation
 
 import android.content.res.Configuration
+import timber.log.Timber
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
@@ -157,7 +158,8 @@ fun GalleryScreen(
                 is GalleryEffect.LaunchShareIntent -> {
                     try {
                         context.startActivity(effect.intent)
-                    } catch (_: android.content.ActivityNotFoundException) {
+                    } catch (e: android.content.ActivityNotFoundException) {
+                        Timber.w(e, "No app found to handle share intent")
                         snackbarHostState.showSnackbar("Unable to share — app not found")
                     }
                 }

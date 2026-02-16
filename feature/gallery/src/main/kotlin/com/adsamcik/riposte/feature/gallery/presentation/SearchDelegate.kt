@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 /**
@@ -80,6 +81,7 @@ class SearchDelegate
                                 _state.update { it.copy(suggestions = suggestions) }
                             } catch (_: Exception) {
                                 // Suggestions are best-effort; don't show errors
+                                Timber.d("Failed to load search suggestions")
                             }
                         } else {
                             _state.update { it.copy(suggestions = emptyList()) }
@@ -213,12 +215,15 @@ class SearchDelegate
                 } catch (
                     @Suppress("SwallowedException") e: UnsatisfiedLinkError,
                 ) {
+                    Timber.w(e, "Native library not available, falling back to text search")
                     fallbackToTextSearch(query, startTime, activeEmojiFilter, searchScope)
                 } catch (
                     @Suppress("SwallowedException") e: ExceptionInInitializerError,
                 ) {
+                    Timber.w(e, "Embedding model init failed, falling back to text search")
                     fallbackToTextSearch(query, startTime, activeEmojiFilter, searchScope)
                 } catch (e: Exception) {
+                    Timber.e(e, "Search failed")
                     _state.update {
                         it.copy(
                             isSearching = false,
@@ -251,6 +256,7 @@ class SearchDelegate
                     }
                 }
             } catch (e: Exception) {
+                Timber.e(e, "Fallback text search also failed")
                 _state.update {
                     it.copy(
                         isSearching = false,

@@ -7,6 +7,7 @@ import com.adsamcik.riposte.core.model.LocalizedContent
 import com.adsamcik.riposte.core.model.Meme
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import timber.log.Timber
 
 /**
  * Maps between database entities and domain models.
@@ -107,6 +108,7 @@ object MemeMapper {
             val emojis: List<String> = json.decodeFromString(jsonString)
             emojis.map { EmojiTag.fromEmoji(it) }
         } catch (e: Exception) {
+            Timber.d(e, "Failed to parse emoji tags as JSON, falling back to comma-separated format")
             // Fallback: legacy comma-separated format
             jsonString.split(",")
                 .map { it.trim() }
@@ -130,6 +132,7 @@ object MemeMapper {
         return try {
             json.decodeFromString(jsonString)
         } catch (e: Exception) {
+            Timber.w(e, "Failed to parse localizations JSON")
             emptyMap()
         }
     }
@@ -150,6 +153,7 @@ object MemeMapper {
         return try {
             json.decodeFromString(jsonString)
         } catch (e: Exception) {
+            Timber.w(e, "Failed to parse search phrases JSON")
             emptyList()
         }
     }

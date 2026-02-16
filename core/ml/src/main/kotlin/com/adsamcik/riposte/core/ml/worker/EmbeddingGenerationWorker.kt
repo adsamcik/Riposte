@@ -181,8 +181,9 @@ class EmbeddingGenerationWorker
             val phrases =
                 try {
                     kotlinx.serialization.json.Json.decodeFromString<List<String>>(jsonString)
-                } catch (_: Exception) {
+                } catch (e: Exception) {
                     // Fallback: treat as comma-separated if not valid JSON
+                    Timber.d(e, "Failed to parse search phrases as JSON, falling back to comma-separated format")
                     jsonString.split(",").map { it.trim() }
                 }
             return phrases.joinToString(". ")

@@ -422,8 +422,8 @@ class ImportViewModel
                                     duplicatesWithChangedMetadata.add(index)
                                 }
                             }
-                        } catch (_: Exception) {
-                            // Ignore check errors, proceed with import
+                        } catch (e: Exception) {
+                            Timber.d(e, "Failed to check duplicate metadata, proceeding with import")
                         }
                     }
 
@@ -589,7 +589,8 @@ class ImportViewModel
                                             localizations = image.localizations,
                                         ),
                                     )
-                                } catch (_: Exception) {
+                                } catch (e: Exception) {
+                                    Timber.w(e, "Failed to parse metadata during import")
                                     null
                                 }
                             } else {

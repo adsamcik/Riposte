@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 import java.io.File
 import javax.inject.Inject
 
@@ -103,6 +104,7 @@ class GalleryRepositoryImpl
                     memeDao.updateMeme(meme.toEntity())
                     Result.success(Unit)
                 } catch (e: Exception) {
+                    Timber.e(e, "Failed to update meme")
                     Result.failure(e)
                 }
             }
@@ -129,6 +131,7 @@ class GalleryRepositoryImpl
 
                     Result.success(Unit)
                 } catch (e: Exception) {
+                    Timber.e(e, "Failed to delete meme with tags")
                     Result.failure(e)
                 }
             }
@@ -148,6 +151,7 @@ class GalleryRepositoryImpl
                     }
                     Result.success(Unit)
                 } catch (e: Exception) {
+                    Timber.e(e, "Failed to delete meme")
                     Result.failure(e)
                 }
             }
@@ -169,6 +173,7 @@ class GalleryRepositoryImpl
                     memeDao.deleteMemesByIds(ids.toList())
                     Result.success(Unit)
                 } catch (e: Exception) {
+                    Timber.e(e, "Failed to delete %d memes", ids.size)
                     Result.failure(e)
                 }
             }
@@ -179,6 +184,7 @@ class GalleryRepositoryImpl
                     memeDao.toggleFavorite(id)
                     Result.success(Unit)
                 } catch (e: Exception) {
+                    Timber.e(e, "Failed to toggle favorite")
                     Result.failure(e)
                 }
             }

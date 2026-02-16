@@ -8,6 +8,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import timber.log.Timber
 import javax.inject.Inject
 
 /**
@@ -67,6 +68,7 @@ class GetSimilarMemesUseCase
 
                     SimilarMemesStatus.Found(memes)
                 } catch (e: Exception) {
+                    Timber.w(e, "Failed to find similar memes for meme %d", memeId)
                     SimilarMemesStatus.Error(e.message ?: "Unknown error")
                 }
             }

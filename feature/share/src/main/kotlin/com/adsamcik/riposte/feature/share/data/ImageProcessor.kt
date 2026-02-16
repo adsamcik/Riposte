@@ -11,6 +11,7 @@ import java.io.File
 import java.io.FileOutputStream
 import javax.inject.Inject
 import javax.inject.Singleton
+import timber.log.Timber
 
 /**
  * Utility class for processing images before sharing.
@@ -152,6 +153,7 @@ class ImageProcessor
                 exif.saveAttributes()
             } catch (e: Exception) {
                 // Ignore errors when stripping metadata
+                Timber.d(e, "Failed to strip EXIF metadata")
             }
         }
 
@@ -186,6 +188,7 @@ class ImageProcessor
                 destExif.saveAttributes()
             } catch (e: Exception) {
                 // Ignore errors when copying metadata
+                Timber.d(e, "Failed to copy EXIF metadata")
             }
         }
 
@@ -208,6 +211,7 @@ class ImageProcessor
                 }
                 true
             } catch (e: Exception) {
+                Timber.e(e, "Failed to save processed bitmap")
                 false
             }
         }

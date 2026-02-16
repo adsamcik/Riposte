@@ -7,6 +7,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
+import timber.log.Timber
 
 /**
  * Handles reading and writing XMP metadata for meme images.
@@ -39,6 +40,7 @@ class XmpMetadataHandler
                     readMetadataFromSidecar(path)
                 }
             } catch (e: Exception) {
+                Timber.w(e, "Failed to read XMP metadata from URI")
                 null
             }
         }
@@ -50,6 +52,7 @@ class XmpMetadataHandler
             return try {
                 readMetadataFromSidecar(filePath)
             } catch (e: Exception) {
+                Timber.w(e, "Failed to read XMP metadata from path")
                 null
             }
         }
@@ -65,6 +68,7 @@ class XmpMetadataHandler
                 val xmpContent = sidecarFile.readText()
                 parseXmpPacket(xmpContent)
             } catch (e: Exception) {
+                Timber.w(e, "Failed to parse XMP sidecar file")
                 null
             }
         }
@@ -163,12 +167,13 @@ class XmpMetadataHandler
                 sidecarFile.writeText(xmpPacket)
                 true
             } catch (e: Exception) {
+                Timber.e(e, "Failed to write XMP metadata")
                 false
             }
         }
 
         /**
-         * Escape special XML characters to prevent XML injection attacks.
+         * Escape special XML charactersto prevent XML injection attacks.
          * This must be applied to all user-provided content before embedding in XMP.
          */
         private fun escapeXml(text: String): String {
@@ -276,6 +281,7 @@ class XmpMetadataHandler
                     true
                 }
             } catch (e: Exception) {
+                Timber.w(e, "Failed to delete XMP sidecar file")
                 false
             }
         }

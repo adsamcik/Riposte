@@ -310,7 +310,8 @@ class EmbeddingManager
             return try {
                 val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
                 PackageInfoCompat.getLongVersionCode(packageInfo)
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                Timber.w(e, "Failed to get app version code")
                 0L
             }
         }

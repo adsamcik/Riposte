@@ -48,6 +48,7 @@ import java.io.File
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
@@ -182,6 +183,7 @@ class SettingsViewModel
                 val versionCode = PackageInfoCompat.getLongVersionCode(packageInfo)
                 "${packageInfo.versionName} ($versionCode)"
             } catch (e: Exception) {
+                Timber.w(e, "Failed to get app version")
                 "1.0.0"
             }
         }
@@ -356,6 +358,7 @@ class SettingsViewModel
                         SettingsEffect.ShowSnackbar(context.getString(R.string.settings_snackbar_cache_cleared)),
                     )
                 } catch (e: Exception) {
+                    Timber.e(e, "Failed to clear cache")
                     _effects.send(
                         SettingsEffect.ShowSnackbar(context.getString(R.string.settings_snackbar_cache_clear_failed)),
                     )
@@ -418,6 +421,7 @@ class SettingsViewModel
                         SettingsEffect.ShowSnackbar(context.getString(R.string.settings_snackbar_export_success, "")),
                     )
                 } catch (e: Exception) {
+                    Timber.e(e, "Failed to export settings")
                     _effects.send(
                         SettingsEffect.ShowSnackbar(
                             context.getString(R.string.settings_snackbar_export_failed, e.message ?: ""),
@@ -466,6 +470,7 @@ class SettingsViewModel
                         )
                     }
                 } catch (e: Exception) {
+                    Timber.e(e, "Failed to import settings from URI")
                     _effects.send(
                         SettingsEffect.ShowSnackbar(
                             context.getString(R.string.settings_snackbar_import_failed, e.message ?: ""),
@@ -487,7 +492,8 @@ class SettingsViewModel
                     }
                     null
                 }
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                Timber.w(e, "Failed to read settings from ZIP")
                 null
             }
         }
@@ -505,6 +511,7 @@ class SettingsViewModel
                         SettingsEffect.ShowSnackbar(context.getString(R.string.settings_snackbar_import_success)),
                     )
                 } else {
+                    Timber.w(result.exceptionOrNull(), "Settings import failed")
                     _effects.send(
                         SettingsEffect.ShowSnackbar(
                             context.getString(

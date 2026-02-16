@@ -123,8 +123,8 @@ class MemeDetailViewModel
                         launch {
                             try {
                                 useCases.recordMemeView(currentMemeId)
-                            } catch (_: Exception) {
-                                // Non-critical, don't propagate
+                            } catch (e: Exception) {
+                                Timber.d(e, "Failed to record meme view")
                             }
                         }
                         // Load similar memes in background
@@ -366,9 +366,8 @@ class MemeDetailViewModel
                 try {
                     val ids = useCases.getAllMemeIds()
                     _uiState.update { it.copy(allMemeIds = ids) }
-                } catch (_: Exception) {
-                    // Failed to load meme IDs
-                    // Non-critical — pager won't show but single view works
+                } catch (e: Exception) {
+                    Timber.d(e, "Failed to load meme IDs for pager")
                 }
             }
         }

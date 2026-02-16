@@ -1,6 +1,7 @@
 package com.adsamcik.riposte.feature.gallery.presentation
 
 import android.content.res.Configuration
+import timber.log.Timber
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -135,7 +136,8 @@ fun MemeDetailScreen(
                 is MemeDetailEffect.LaunchShareIntent -> {
                     try {
                         context.startActivity(effect.intent)
-                    } catch (_: android.content.ActivityNotFoundException) {
+                    } catch (e: android.content.ActivityNotFoundException) {
+                        Timber.w(e, "No app found to handle share intent")
                         snackbarHostState.showSnackbar(shareNoAppMessage)
                     }
                 }
