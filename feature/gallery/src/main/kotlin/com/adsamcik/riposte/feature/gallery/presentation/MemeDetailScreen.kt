@@ -82,6 +82,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
@@ -349,7 +350,9 @@ private fun MemeDetailContent(
     val bottomSheetState = rememberStandardBottomSheetState(initialValue = SheetValue.PartiallyExpanded)
     val scaffoldState = rememberBottomSheetScaffoldState(bottomSheetState = bottomSheetState)
     val screenHeightDp = LocalConfiguration.current.screenHeightDp.dp
-    val adaptivePeekHeight = (screenHeightDp * 0.3f).coerceIn(140.dp, 340.dp)
+    val navigationBarInsets = WindowInsets.navigationBars
+    val navigationBarHeight = with(LocalDensity.current) { navigationBarInsets.getBottom(this).toDp() }
+    val adaptivePeekHeight = ((screenHeightDp * 0.3f).coerceIn(140.dp, 340.dp)) + navigationBarHeight
 
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
@@ -403,7 +406,7 @@ private fun BoxScope.MemeDetailBackButton(
                 .windowInsetsPadding(WindowInsets.statusBars)
                 .padding(8.dp)
                 .background(
-                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
                     shape = CircleShape,
                 ),
     ) {
@@ -536,6 +539,7 @@ private fun MemeActionButtonsRow(
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             FilledIconButton(
                 onClick = { onIntent(MemeDetailIntent.Share) },
+                modifier = Modifier.size(56.dp),
                 colors =
                     IconButtonDefaults.filledIconButtonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
@@ -774,7 +778,22 @@ private fun MemeViewModeContent(
     onIntent: (MemeDetailIntent) -> Unit,
     dateFormatter: DateTimeFormatter,
 ) {
-    // Emoji tags (shown first for quick identification)
+    // Title
+    meme.title?.let { title ->
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.semantics { heading() },
+        )
+    } ?: Text(
+        text = meme.fileName,
+        style = MaterialTheme.typography.titleLarge,
+        modifier = Modifier.semantics { heading() },
+    )
+
+    Spacer(Modifier.height(12.dp))
+
+    // Emoji tags
     if (meme.emojiTags.isNotEmpty()) {
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -795,24 +814,9 @@ private fun MemeViewModeContent(
         )
     }
 
-    Spacer(Modifier.height(12.dp))
-
-    // Title
-    meme.title?.let { title ->
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.semantics { heading() },
-        )
-    } ?: Text(
-        text = meme.fileName,
-        style = MaterialTheme.typography.titleLarge,
-        modifier = Modifier.semantics { heading() },
-    )
-
     // Description (collapsed by default)
     meme.description?.let { description ->
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(12.dp))
         var descriptionExpanded by remember { mutableStateOf(false) }
         Text(
             text = description,
@@ -825,7 +829,7 @@ private fun MemeViewModeContent(
     }
 
     // Divider between content and metadata
-    Spacer(Modifier.height(16.dp))
+    Spacer(Modifier.height(12.dp))
     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
     Spacer(Modifier.height(12.dp))
 
@@ -852,7 +856,7 @@ private fun MemeMetadataSection(
                     meme.importedAt,
                 ).atZone(java.time.ZoneId.systemDefault()).format(dateFormatter),
             ),
-        style = MaterialTheme.typography.bodySmall,
+        style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
     Spacer(Modifier.height(4.dp))
