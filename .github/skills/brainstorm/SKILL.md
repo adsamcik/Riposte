@@ -62,6 +62,21 @@ If the prompt is ambiguous, ask the user to clarify scope before proceeding.
 
 ---
 
+## Concurrency Guard
+
+**Only one brainstorm may run at a time.** Before starting, check for an active brainstorm:
+
+```text
+1. Use `list_agents` to check for running background agents
+2. If any running agent's prompt contains "brainstorm" or matches the diverge prompts → STOP
+3. Tell the user: "A brainstorm is already in progress. Wait for it to finish or stop it first."
+4. Do NOT proceed with the workflow
+```
+
+This prevents the cascading failures (EAGAIN pipe saturation, argument parsing errors) that occur when multiple brainstorm sessions spawn parallel sub-agents simultaneously.
+
+---
+
 ## Workflow
 
 ```text
@@ -121,12 +136,14 @@ Write a brief "Current State" summary (3-5 bullets) before proceeding to ideatio
 
 ## Phase 3: Diverge (Multi-Model Ideation)
 
-Dispatch **two parallel `task` tool calls** with different models and different creative angles. Each generates ideas independently.
+Dispatch **two parallel `task` tool calls** using **`explore` agents** (lightweight, read-only — no file editing or shell access needed for ideation). Each generates ideas independently.
 
 ```text
-task(agent_type: "general-purpose", model: "claude-opus-4.6", prompt: <product-visionary prompt>)
-task(agent_type: "general-purpose", model: "gpt-5.3-codex", prompt: <technical-innovator prompt>)
+task(agent_type: "explore", model: "claude-opus-4.6", prompt: <product-visionary prompt>)
+task(agent_type: "explore", model: "gpt-5.3-codex", prompt: <technical-innovator prompt>)
 ```
+
+> **Why `explore` not `general-purpose`?** The diverge phase only needs creative output, not tool access. `explore` agents are lighter, faster, and avoid cascading tool calls that can overwhelm the CLI's I/O buffers under load.
 
 Full prompts are in `prompts/product-visionary.md` and `prompts/technical-innovator.md`.
 
@@ -134,10 +151,10 @@ Full prompts are in `prompts/product-visionary.md` and `prompts/technical-innova
 
 | Scope | Ideas per Model | Total Raw Ideas |
 |-------|----------------|-----------------|
-| Open-ended | 8-12 | 16-24 |
-| Themed | 6-8 | 12-16 |
-| Technical | 4-6 | 8-12 |
-| Problem | 5-7 | 10-14 |
+| Open-ended | 5-7 | 10-14 |
+| Themed | 4-5 | 8-10 |
+| Technical | 3-4 | 6-8 |
+| Problem | 3-5 | 6-10 |
 
 ### Per-Idea Requirements (both models)
 

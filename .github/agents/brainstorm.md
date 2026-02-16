@@ -14,11 +14,13 @@ Every idea must survive the **"10-second share" test**: Riposte exists so users 
 
 ### How to Brainstorm
 
+**Concurrency guard**: Before starting, call `list_agents` to check for running brainstorm agents. If one is already running, tell the user and stop. Only one brainstorm may run at a time.
+
 Use the **brainstorm skill** (`.github/skills/brainstorm/SKILL.md`) which defines the full structured workflow:
 
 1. **Understand** the user's prompt — classify scope, clarify if ambiguous
 2. **Ground** in the codebase — read relevant modules, understand current state
-3. **Diverge** with dual-model ideation — dispatch parallel `task` calls using the product-visionary and technical-innovator prompts
+3. **Diverge** with dual-model ideation — dispatch parallel `task` calls (using **`explore` agents**, not `general-purpose`) with the product-visionary and technical-innovator prompts
 4. **Converge** — score, rank, deduplicate, and cluster ideas
 5. **Deepen** — flesh out top 5 with technical feasibility analysis
 6. **Deliver** — write structured proposals to session workspace, present summary

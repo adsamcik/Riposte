@@ -2,7 +2,7 @@
 
 Use this prompt when dispatching the technical innovator model via:
 ```
-task(agent_type: "general-purpose", model: "gpt-5.3-codex", prompt: ...)
+task(agent_type: "explore", model: "gpt-5.3-codex", prompt: ...)
 ```
 
 ---

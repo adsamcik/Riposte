@@ -2,7 +2,7 @@
 
 Use this prompt when dispatching the product visionary model via:
 ```
-task(agent_type: "general-purpose", model: "claude-opus-4.6", prompt: ...)
+task(agent_type: "explore", model: "claude-opus-4.6", prompt: ...)
 ```
 
 ---
