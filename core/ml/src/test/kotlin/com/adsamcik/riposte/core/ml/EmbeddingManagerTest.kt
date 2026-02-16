@@ -13,9 +13,12 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
@@ -255,19 +258,24 @@ class EmbeddingManagerTest {
             coEvery { memeEmbeddingDao.getEmbeddingCountByModelVersion() } returns emptyList()
             coEvery { versionManager.isErrorConfirmedForVersion(any()) } returns false
 
-            // When — start monitoring
-            embeddingManager.warmUpAndResumeIndexing(this)
-            advanceUntilIdle()
+            val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler) + SupervisorJob())
+            try {
+                // When — start monitoring
+                embeddingManager.warmUpAndResumeIndexing(scope)
+                advanceUntilIdle()
 
-            // Simulate going to background then returning to foreground
-            isInBackgroundFlow.value = true
-            advanceUntilIdle()
-            isInBackgroundFlow.value = false
-            advanceUntilIdle()
+                // Simulate going to background then returning to foreground
+                isInBackgroundFlow.value = true
+                advanceUntilIdle()
+                isInBackgroundFlow.value = false
+                advanceUntilIdle()
 
-            // Then — getStatistics was called for foreground check (beyond the initial startup check)
-            // Two calls: one at startup, one on foreground return
-            coVerify(atLeast = 2) { memeEmbeddingDao.countMemesWithoutEmbeddings() }
+                // Then — getStatistics was called for foreground check (beyond the initial startup check)
+                // Two calls: one at startup, one on foreground return
+                coVerify(atLeast = 2) { memeEmbeddingDao.countMemesWithoutEmbeddings() }
+            } finally {
+                scope.cancel()
+            }
         }
 
     @Test
@@ -283,19 +291,23 @@ class EmbeddingManagerTest {
             coEvery { memeEmbeddingDao.getEmbeddingCountByModelVersion() } returns emptyList()
             coEvery { versionManager.isErrorConfirmedForVersion(any()) } returns false
 
-            // When
-            embeddingManager.warmUpAndResumeIndexing(this)
-            advanceUntilIdle()
+            val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler) + SupervisorJob())
+            try {
+                // When
+                embeddingManager.warmUpAndResumeIndexing(scope)
+                advanceUntilIdle()
 
-            // Simulate foreground return
-            isInBackgroundFlow.value = true
-            advanceUntilIdle()
-            isInBackgroundFlow.value = false
-            advanceUntilIdle()
+                // Simulate foreground return
+                isInBackgroundFlow.value = true
+                advanceUntilIdle()
+                isInBackgroundFlow.value = false
+                advanceUntilIdle()
 
-            // Then — stats are checked but no additional scheduling needed
-            // The key assertion is that we DON'T crash and the flow completes gracefully
-            coVerify(atLeast = 2) { memeEmbeddingDao.countMemesWithoutEmbeddings() }
+                // Then — stats are checked but no additional scheduling needed
+                coVerify(atLeast = 2) { memeEmbeddingDao.countMemesWithoutEmbeddings() }
+            } finally {
+                scope.cancel()
+            }
         }
 
     @Test
@@ -312,19 +324,24 @@ class EmbeddingManagerTest {
             coEvery { memeEmbeddingDao.countEmbeddingsNeedingRegeneration() } returns 0
             coEvery { memeEmbeddingDao.getEmbeddingCountByModelVersion() } returns emptyList()
 
-            // When
-            embeddingManager.warmUpAndResumeIndexing(this)
-            advanceUntilIdle()
+            val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler) + SupervisorJob())
+            try {
+                // When
+                embeddingManager.warmUpAndResumeIndexing(scope)
+                advanceUntilIdle()
 
-            // Simulate foreground return
-            isInBackgroundFlow.value = true
-            advanceUntilIdle()
-            isInBackgroundFlow.value = false
-            advanceUntilIdle()
+                // Simulate foreground return
+                isInBackgroundFlow.value = true
+                advanceUntilIdle()
+                isInBackgroundFlow.value = false
+                advanceUntilIdle()
 
-            // Then — should not try to schedule since model error is present
-            // Only the startup check queries the DAO (which also skips scheduling)
-            coVerify(atMost = 1) { memeEmbeddingDao.countMemesWithoutEmbeddings() }
+                // Then — should not check stats since model error is present
+                // Both startup and foreground resume skip stats when model has error
+                coVerify(exactly = 0) { memeEmbeddingDao.countMemesWithoutEmbeddings() }
+            } finally {
+                scope.cancel()
+            }
         }
 
     @Test
@@ -341,12 +358,17 @@ class EmbeddingManagerTest {
             coEvery { memeEmbeddingDao.getEmbeddingCountByModelVersion() } returns emptyList()
             coEvery { versionManager.isErrorConfirmedForVersion(any()) } returns false
 
-            // When — start monitoring (initial value is dropped)
-            embeddingManager.warmUpAndResumeIndexing(this)
-            advanceUntilIdle()
+            val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler) + SupervisorJob())
+            try {
+                // When — start monitoring (initial value is dropped)
+                embeddingManager.warmUpAndResumeIndexing(scope)
+                advanceUntilIdle()
 
-            // Then — only startup check, no foreground resume triggered by initial value
-            coVerify(exactly = 1) { memeEmbeddingDao.countMemesWithoutEmbeddings() }
+                // Then — only startup check, no foreground resume triggered by initial value
+                coVerify(exactly = 1) { memeEmbeddingDao.countMemesWithoutEmbeddings() }
+            } finally {
+                scope.cancel()
+            }
         }
 
     @Test
@@ -362,20 +384,25 @@ class EmbeddingManagerTest {
             coEvery { memeEmbeddingDao.getEmbeddingCountByModelVersion() } returns emptyList()
             coEvery { versionManager.isErrorConfirmedForVersion(any()) } returns false
 
-            // When
-            embeddingManager.warmUpAndResumeIndexing(this)
-            advanceUntilIdle()
+            val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler) + SupervisorJob())
+            try {
+                // When
+                embeddingManager.warmUpAndResumeIndexing(scope)
+                advanceUntilIdle()
 
-            // Simulate multiple background/foreground cycles
-            repeat(3) {
-                isInBackgroundFlow.value = true
-                advanceUntilIdle()
-                isInBackgroundFlow.value = false
-                advanceUntilIdle()
+                // Simulate multiple background/foreground cycles
+                repeat(3) {
+                    isInBackgroundFlow.value = true
+                    advanceUntilIdle()
+                    isInBackgroundFlow.value = false
+                    advanceUntilIdle()
+                }
+
+                // Then — startup + 3 foreground returns = 4 checks
+                coVerify(atLeast = 4) { memeEmbeddingDao.countMemesWithoutEmbeddings() }
+            } finally {
+                scope.cancel()
             }
-
-            // Then — startup + 3 foreground returns = 4 checks
-            coVerify(atLeast = 4) { memeEmbeddingDao.countMemesWithoutEmbeddings() }
         }
 
     @Test
@@ -385,35 +412,39 @@ class EmbeddingManagerTest {
             coEvery { embeddingGenerator.initialize() } returns Unit
             coEvery { versionManager.clearInitializationFailure() } returns Unit
             coEvery { versionManager.hasModelBeenUpgraded() } returns false
-            // First call succeeds (startup), subsequent calls fail (foreground return)
             coEvery { memeEmbeddingDao.countValidEmbeddings() } returns 10
             coEvery { memeEmbeddingDao.countMemesWithoutEmbeddings() } returns 0
             coEvery { memeEmbeddingDao.countEmbeddingsNeedingRegeneration() } returns 0
             coEvery { memeEmbeddingDao.getEmbeddingCountByModelVersion() } returns emptyList()
             coEvery { versionManager.isErrorConfirmedForVersion(any()) } returns false
 
-            embeddingManager.warmUpAndResumeIndexing(this)
-            advanceUntilIdle()
+            val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler) + SupervisorJob())
+            try {
+                embeddingManager.warmUpAndResumeIndexing(scope)
+                advanceUntilIdle()
 
-            // Now make stats throw on next foreground return
-            coEvery { memeEmbeddingDao.countValidEmbeddings() } throws RuntimeException("DB error")
+                // Now make stats throw on next foreground return
+                coEvery { memeEmbeddingDao.countValidEmbeddings() } throws RuntimeException("DB error")
 
-            // When — foreground return should not crash
-            isInBackgroundFlow.value = true
-            advanceUntilIdle()
-            isInBackgroundFlow.value = false
-            advanceUntilIdle()
+                // When — foreground return should not crash
+                isInBackgroundFlow.value = true
+                advanceUntilIdle()
+                isInBackgroundFlow.value = false
+                advanceUntilIdle()
 
-            // Then — no crash, flow continues working
-            // Verify next cycle still works after error recovery
-            coEvery { memeEmbeddingDao.countValidEmbeddings() } returns 10
-            coEvery { memeEmbeddingDao.countMemesWithoutEmbeddings() } returns 3
-            isInBackgroundFlow.value = true
-            advanceUntilIdle()
-            isInBackgroundFlow.value = false
-            advanceUntilIdle()
+                // Then — no crash, flow continues working
+                // Verify next cycle still works after error recovery
+                coEvery { memeEmbeddingDao.countValidEmbeddings() } returns 10
+                coEvery { memeEmbeddingDao.countMemesWithoutEmbeddings() } returns 3
+                isInBackgroundFlow.value = true
+                advanceUntilIdle()
+                isInBackgroundFlow.value = false
+                advanceUntilIdle()
 
-            coVerify(atLeast = 1) { memeEmbeddingDao.countMemesWithoutEmbeddings() }
+                coVerify(atLeast = 1) { memeEmbeddingDao.countMemesWithoutEmbeddings() }
+            } finally {
+                scope.cancel()
+            }
         }
 
     // endregion

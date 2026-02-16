@@ -9,7 +9,6 @@ import android.content.pm.PackageManager
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
-import com.adsamcik.riposte.core.ml.R
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 
@@ -27,10 +26,10 @@ class EmbeddingNotificationManager
             val channel =
                 NotificationChannel(
                     CHANNEL_ID,
-                    context.getString(R.string.embedding_notification_channel_name),
+                    CHANNEL_NAME,
                     NotificationManager.IMPORTANCE_LOW,
                 ).apply {
-                    description = context.getString(R.string.embedding_notification_channel_description)
+                    description = "Shows progress when indexing memes for search in the background"
                     setShowBadge(false)
                 }
             val manager = context.getSystemService(NotificationManager::class.java)
@@ -44,8 +43,8 @@ class EmbeddingNotificationManager
         ): Notification {
             return NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(android.R.drawable.ic_menu_search)
-                .setContentTitle(context.getString(R.string.embedding_notification_title))
-                .setContentText(context.getString(R.string.embedding_notification_progress, current, total))
+                .setContentTitle("Indexing memes")
+                .setContentText("$current of $total")
                 .setProgress(total, current, false)
                 .setOngoing(true)
                 .setSilent(true)
@@ -60,16 +59,13 @@ class EmbeddingNotificationManager
         ): Notification {
             val text =
                 when {
-                    failedCount == 0 ->
-                        context.getString(R.string.embedding_notification_complete_success, successCount)
-                    successCount == 0 ->
-                        context.getString(R.string.embedding_notification_complete_failed, failedCount)
-                    else ->
-                        context.getString(R.string.embedding_notification_complete_partial, successCount, failedCount)
+                    failedCount == 0 -> "$successCount memes indexed for search"
+                    successCount == 0 -> "Indexing failed for $failedCount memes"
+                    else -> "$successCount indexed, $failedCount failed"
                 }
             return NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(android.R.drawable.ic_menu_search)
-                .setContentTitle(context.getString(R.string.embedding_notification_complete_title))
+                .setContentTitle("Indexing complete")
                 .setContentText(text)
                 .setAutoCancel(true)
                 .build()
@@ -94,5 +90,6 @@ class EmbeddingNotificationManager
             const val CHANNEL_ID = "embedding_indexing"
             const val NOTIFICATION_ID = 2001
             const val COMPLETE_NOTIFICATION_ID = 2002
+            private const val CHANNEL_NAME = "Indexing Progress"
         }
     }
