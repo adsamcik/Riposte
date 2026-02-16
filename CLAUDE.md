@@ -182,6 +182,7 @@ When working in this codebase:
 9. **Run tests** before completing work: `./gradlew test`
 10. **Lint** before PRs: `./gradlew lint`
 11. **Never revert work done by other agents or in prior turns.** If a file was already modified, preserve those changes. Do not reset, checkout, or overwrite files to their original state. Only make additive or surgical edits on top of existing work.
+12. **Expect parallel work from other agents.** Multiple agents may be editing different modules at the same time. If you hit compile errors that look like they come from another agent's in-progress work (missing symbols, unresolved references, API mismatches that weren't there before), do **not** try to fix them. Instead, sleep and retry the build in 5-minute increments for up to 1 hour. Only treat the error as yours if it persists after retries or is clearly caused by your changes.
 
 ## CLI Tool Notes
 

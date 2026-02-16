@@ -170,6 +170,7 @@ Reusable Gradle plugins in `buildSrc/` extract shared build configuration:
 - **Commit after each completed feature or task.** Do not batch unrelated changes into a single commit.
 - **Use separate git worktrees for larger efforts.** Create a worktree with a feature branch, do the work there, then merge locally into the main branch. No pull requests needed at this time.
 - **Never revert work done by other agents or in prior turns.** If a file was already modified, preserve those changes. Do not reset, checkout, or overwrite files to their original state. Only make additive or surgical edits on top of existing work.
+- **Expect parallel work from other agents.** Multiple agents may be editing different modules simultaneously using worktrees or branches. If you encounter compile errors that appear to be caused by recent or in-progress changes from another agent (e.g., missing symbols, unresolved references, or API mismatches that weren't there before), do **not** attempt to fix them yourself. Instead, sleep and retry in 5-minute increments for up to 1 hour, re-running the build each time. Only treat the error as your own problem if it persists after retries or is clearly caused by your changes.
 
 ### Gotchas
 
