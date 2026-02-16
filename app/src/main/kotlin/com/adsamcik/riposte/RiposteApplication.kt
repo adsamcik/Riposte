@@ -14,6 +14,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import java.io.File
 import javax.inject.Inject
+import timber.log.Timber
 
 /**
  * Main Application class for Riposte.
@@ -36,6 +37,9 @@ class RiposteApplication : Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
+        if (BuildConfig.DEBUG) {
+            Timber.plant(Timber.DebugTree())
+        }
         installCrashHandler()
         appLifecycleTracker.init()
         // Launch heavy dependency construction off the main thread
