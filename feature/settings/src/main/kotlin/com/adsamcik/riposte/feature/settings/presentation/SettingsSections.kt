@@ -159,12 +159,27 @@ internal fun LazyListScope.searchSection(
 @Composable
 private fun EmbeddingSearchSettings(uiState: SettingsUiState) {
     val embeddingState = uiState.embeddingSearchState ?: return
+
+    if (embeddingState.modelError != null) {
+        ListItem(
+            headlineContent = { Text(stringResource(R.string.settings_search_index_title)) },
+            supportingContent = {
+                Text(
+                    text = embeddingErrorMessage(embeddingState.modelError),
+                    color = MaterialTheme.colorScheme.error,
+                )
+            },
+            leadingContent = { Icon(imageVector = Icons.Default.Storage, contentDescription = null) },
+        )
+        return
+    }
+
     ListItem(
         headlineContent = { Text(stringResource(R.string.settings_search_index_title)) },
         supportingContent = {
             Column {
                 Text(embeddingIndexSubtitle(embeddingState))
-                if (!embeddingState.isFullyIndexed && embeddingState.modelError == null) {
+                if (!embeddingState.isFullyIndexed) {
                     Spacer(Modifier.size(4.dp))
                     LinearProgressIndicator(
                         progress = {
@@ -186,8 +201,6 @@ private fun EmbeddingSearchSettings(uiState: SettingsUiState) {
 @Composable
 private fun embeddingIndexSubtitle(embeddingState: EmbeddingSearchState): String =
     when {
-        embeddingState.modelError != null ->
-            embeddingErrorMessage(embeddingState.modelError)
         embeddingState.isFullyIndexed ->
             stringResource(
                 R.string.settings_search_index_complete,

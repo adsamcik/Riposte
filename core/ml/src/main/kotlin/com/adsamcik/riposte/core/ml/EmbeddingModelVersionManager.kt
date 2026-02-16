@@ -24,8 +24,6 @@ import javax.inject.Singleton
  *
  * Version format: "model_name:major.minor.patch"
  * Examples:
- * - "simple_hash:1.0.0" - Hash-based fallback
- * - "litert_use:1.0.0" - Universal Sentence Encoder via LiteRT
  * - "litert_use:2.0.0" - Updated USE model
  */
 @Singleton
@@ -101,7 +99,6 @@ class EmbeddingModelVersionManager
                 currentModelVersion.startsWith("embeddinggemma") -> 768
                 currentModelVersion.startsWith("mediapipe_use") -> 512
                 currentModelVersion.startsWith("litert_use") -> 512
-                currentModelVersion.startsWith("simple_hash") -> 128
                 else -> 768
             }
         }
@@ -138,8 +135,6 @@ class EmbeddingModelVersionManager
                     "Universal Sentence Encoder via MediaPipe for semantic text embeddings"
                 version.startsWith("litert_use") ->
                     "Universal Sentence Encoder via LiteRT for semantic text embeddings"
-                version.startsWith("simple_hash") ->
-                    "Hash-based embedding fallback (reduced accuracy)"
                 else -> "Unknown embedding model"
             }
         }
@@ -193,11 +188,6 @@ class EmbeddingModelVersionManager
              * UPDATE THIS when changing the embedding model.
              */
             const val CURRENT_VERSION = "embeddinggemma:1.0.0"
-
-            /**
-             * Fallback model version for when EmbeddingGemma is unavailable.
-             */
-            const val FALLBACK_VERSION = "simple_hash:1.0.0"
 
             /**
              * Number of failed initialization attempts before the error is

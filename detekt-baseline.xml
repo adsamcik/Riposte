@@ -146,7 +146,7 @@
     <ID>Indentation:SettingsViewModel.kt$SettingsViewModel$ </ID>
     <ID>Indentation:ShareRepositoryImpl.kt$ShareRepositoryImpl$ </ID>
     <ID>Indentation:ShareRepositoryImpl.kt$ShareRepositoryImpl.Companion$ </ID>
-    <ID>Indentation:SimpleEmbeddingGenerator.kt$SimpleEmbeddingGenerator$ </ID>
+
     <ID>Indentation:SliderSettingItem.kt$ </ID>
     <ID>Indentation:SwitchSettingItem.kt$ </ID>
     <ID>Indentation:TestDataFactory.kt$TestDataFactory$ </ID>
@@ -284,10 +284,7 @@
     <ID>MagicNumber:SettingsViewModel.kt$SettingsViewModel$1_073_741_824.0</ID>
     <ID>MagicNumber:ShareUiState.kt$ShareUiState$1024</ID>
     <ID>MagicNumber:ShareUiState.kt$ShareUiState$1024.0</ID>
-    <ID>MagicNumber:SimpleEmbeddingGenerator.kt$SimpleEmbeddingGenerator$0.5f</ID>
-    <ID>MagicNumber:SimpleEmbeddingGenerator.kt$SimpleEmbeddingGenerator$0xFF</ID>
-    <ID>MagicNumber:SimpleEmbeddingGenerator.kt$SimpleEmbeddingGenerator$127.5f</ID>
-    <ID>MagicNumber:SimpleEmbeddingGenerator.kt$SimpleEmbeddingGenerator$128</ID>
+
     <ID>MagicNumber:SlotFiller.kt$SlotFiller$60.0</ID>
     <ID>MagicNumber:SuggestionConfig.kt$SuggestionConfig$1000</ID>
     <ID>MagicNumber:SuggestionConfig.kt$SuggestionConfig$48L</ID>
@@ -474,7 +471,7 @@
     <ID>UnusedPrivateProperty:GalleryNavigation.kt$val route = backStackEntry.toRoute&lt;MemeDetailRoute&gt;()</ID>
     <ID>UnusedPrivateProperty:ImageProcessor.kt$ImageProcessor$@param:ApplicationContext private val context: Context</ID>
     <ID>UnusedPrivateProperty:MlKitTextRecognizer.kt$MlKitTextRecognizer$val task = recognizer.process(image) .addOnSuccessListener { result -&gt; val text = result.text.takeIf { it.isNotBlank() } continuation.resume(text) } .addOnFailureListener { exception -&gt; continuation.resumeWithException(exception) }</ID>
-    <ID>UnusedPrivateProperty:SimpleEmbeddingGenerator.kt$SimpleEmbeddingGenerator$val task = imageLabeler.process(image) .addOnSuccessListener { labels -&gt; val labelTexts = labels.map { it.text.lowercase() } continuation.resume(labelTexts) } .addOnFailureListener { exception -&gt; continuation.resumeWithException(exception) }</ID>
+
     <ID>UseRequire:DefaultSettingsRepository.kt$DefaultSettingsRepository$throw IllegalArgumentException("Invalid backup format: expected JSON object")</ID>
     <ID>Wrapping:ClickableSettingItem.kt${ Icon(imageVector = it, contentDescription = null) }</ID>
     <ID>Wrapping:DialogSettingItem.kt${ Icon(imageVector = it, contentDescription = null) }</ID>

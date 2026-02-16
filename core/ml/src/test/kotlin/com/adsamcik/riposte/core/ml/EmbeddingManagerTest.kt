@@ -176,8 +176,7 @@ class EmbeddingManagerTest {
             coEvery { memeEmbeddingDao.countEmbeddingsNeedingRegeneration() } returns 5
             coEvery { memeEmbeddingDao.getEmbeddingCountByModelVersion() } returns
                 listOf(
-                    com.adsamcik.riposte.core.database.dao.EmbeddingVersionCount("mediapipe_use:1.0.0", 80),
-                    com.adsamcik.riposte.core.database.dao.EmbeddingVersionCount("simple_hash:1.0.0", 20),
+                    com.adsamcik.riposte.core.database.dao.EmbeddingVersionCount("mediapipe_use:1.0.0", 100),
                 )
 
             // When
@@ -189,7 +188,7 @@ class EmbeddingManagerTest {
             assertThat(stats.regenerationNeededCount).isEqualTo(5)
             assertThat(stats.totalPendingWork).isEqualTo(25)
             assertThat(stats.isFullyIndexed).isFalse()
-            assertThat(stats.embeddingsByVersion).containsEntry("mediapipe_use:1.0.0", 80)
+            assertThat(stats.embeddingsByVersion).containsEntry("mediapipe_use:1.0.0", 100)
         }
 
     @Test

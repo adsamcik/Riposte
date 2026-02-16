@@ -2,6 +2,7 @@ package com.adsamcik.riposte.core.ml
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.net.Uri
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
@@ -9,6 +10,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.security.MessageDigest
 
 /**
  * Integration tests for ML components working together.
@@ -29,7 +31,7 @@ class MlIntegrationTest {
     fun setup() {
         context = ApplicationProvider.getApplicationContext()
         textRecognizer = MlKitTextRecognizer()
-        embeddingGenerator = SimpleEmbeddingGenerator(context)
+        embeddingGenerator = TestHashEmbeddingGenerator()
         semanticSearchEngine = DefaultSemanticSearchEngine(embeddingGenerator)
     }
 
@@ -308,4 +310,34 @@ class MlIntegrationTest {
             // Each search should be fast (total under 5 seconds)
             assertThat(duration).isLessThan(5000)
         }
+}
+
+/**
+ * Lightweight hash-based embedding generator for integration tests only.
+ * Does not require native libraries or model files.
+ */
+private class TestHashEmbeddingGenerator : EmbeddingGenerator {
+    override val embeddingDimension: Int = 128
+    override val initializationError: String? = null
+
+    override suspend fun generateFromText(text: String): FloatArray {
+        val embedding = FloatArray(embeddingDimension)
+        if (text.isBlank()) return embedding
+        val words = text.lowercase().trim().split(Regex("\\s+"))
+        for (word in words) {
+            val hash = MessageDigest.getInstance("SHA-256").digest(word.toByteArray())
+            for (i in 0 until embeddingDimension) {
+                embedding[i] += (hash[i % hash.size].toInt() and 0xFF) / 127.5f - 1f
+            }
+        }
+        val norm = kotlin.math.sqrt(embedding.sumOf { (it * it).toDouble() }).toFloat()
+        if (norm > 0) for (i in embedding.indices) embedding[i] /= norm
+        return embedding
+    }
+
+    override suspend fun generateFromImage(bitmap: Bitmap): FloatArray = FloatArray(embeddingDimension)
+    override suspend fun generateFromUri(uri: Uri): FloatArray = FloatArray(embeddingDimension)
+    override suspend fun isReady(): Boolean = true
+    override suspend fun initialize() {}
+    override fun close() {}
 }
