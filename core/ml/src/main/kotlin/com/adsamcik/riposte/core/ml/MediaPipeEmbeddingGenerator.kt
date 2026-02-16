@@ -4,7 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
-import android.util.Log
+import timber.log.Timber
 import com.google.mediapipe.tasks.core.BaseOptions
 import com.google.mediapipe.tasks.text.textembedder.TextEmbedder
 import com.google.mediapipe.tasks.text.textembedder.TextEmbedderResult
@@ -95,7 +95,7 @@ class MediaPipeEmbeddingGenerator
 
                     val embedder = textEmbedder
                     if (embedder == null) {
-                        Log.w(TAG, "TextEmbedder not available, returning zero embedding")
+                        Timber.w("TextEmbedder not available, returning zero embedding")
                         return@withLock createZeroEmbedding()
                     }
 
@@ -103,7 +103,7 @@ class MediaPipeEmbeddingGenerator
                         val result: TextEmbedderResult = embedder.embed(text)
                         extractEmbedding(result)
                     } catch (e: Exception) {
-                        Log.e(TAG, "Failed to generate text embedding", e)
+                        Timber.e(e, "Failed to generate text embedding")
                         createZeroEmbedding()
                     }
                 }
@@ -115,7 +115,7 @@ class MediaPipeEmbeddingGenerator
                     val labels = getImageLabels(bitmap)
 
                     if (labels.isEmpty()) {
-                        Log.d(TAG, "No labels detected in image, returning zero embedding")
+                        Timber.d("No labels detected in image, returning zero embedding")
                         return@withContext createZeroEmbedding()
                     }
 
@@ -123,7 +123,7 @@ class MediaPipeEmbeddingGenerator
                     val labelText = labels.joinToString(" ")
                     generateFromText(labelText)
                 } catch (e: Exception) {
-                    Log.e(TAG, "Failed to generate image embedding", e)
+                    Timber.e(e, "Failed to generate image embedding")
                     createZeroEmbedding()
                 }
             }
@@ -137,7 +137,7 @@ class MediaPipeEmbeddingGenerator
                         }
 
                     if (bitmap == null) {
-                        Log.w(TAG, "Failed to decode bitmap from URI: $uri")
+                        Timber.w("Failed to decode bitmap from URI: $uri")
                         return@withContext createZeroEmbedding()
                     }
 
@@ -147,7 +147,7 @@ class MediaPipeEmbeddingGenerator
                         bitmap.recycle()
                     }
                 } catch (e: Exception) {
-                    Log.e(TAG, "Failed to generate embedding from URI", e)
+                    Timber.e(e, "Failed to generate embedding from URI")
                     createZeroEmbedding()
                 }
             }
@@ -160,7 +160,7 @@ class MediaPipeEmbeddingGenerator
         override suspend fun initialize() {
             mutex.withLock {
                 if (textEmbedder != null) {
-                    Log.d(TAG, "TextEmbedder already initialized")
+                    Timber.d("TextEmbedder already initialized")
                     return
                 }
 
@@ -198,7 +198,7 @@ class MediaPipeEmbeddingGenerator
             initializationAttempted = true
 
             try {
-                Log.d(TAG, "Initializing MediaPipe TextEmbedder with model: $MODEL_ASSET_PATH")
+                Timber.d("Initializing MediaPipe TextEmbedder with model: $MODEL_ASSET_PATH")
 
                 val baseOptions =
                     BaseOptions.builder()
@@ -217,9 +217,9 @@ class MediaPipeEmbeddingGenerator
                 // Cache the embedding dimension from the model
                 updateEmbeddingDimension()
 
-                Log.i(TAG, "MediaPipe TextEmbedder initialized successfully (dimension: $embeddingDimension)")
+                Timber.i("MediaPipe TextEmbedder initialized successfully (dimension: $embeddingDimension)")
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to initialize MediaPipe TextEmbedder", e)
+                Timber.e(e, "Failed to initialize MediaPipe TextEmbedder")
                 textEmbedder = null
             }
         }
@@ -236,11 +236,11 @@ class MediaPipeEmbeddingGenerator
                     val floatEmbedding = embeddings.first().floatEmbedding()
                     if (floatEmbedding != null) {
                         cachedEmbeddingDimension = floatEmbedding.size
-                        Log.d(TAG, "Detected embedding dimension: ${floatEmbedding.size}")
+                        Timber.d("Detected embedding dimension: ${floatEmbedding.size}")
                     }
                 }
             } catch (e: Exception) {
-                Log.w(TAG, "Failed to detect embedding dimension, using default", e)
+                Timber.w(e, "Failed to detect embedding dimension, using default")
             }
         }
 
@@ -253,7 +253,7 @@ class MediaPipeEmbeddingGenerator
         private fun extractEmbedding(result: TextEmbedderResult): FloatArray {
             val embeddings = result.embeddingResult().embeddings()
             if (embeddings.isEmpty()) {
-                Log.w(TAG, "TextEmbedder returned empty embeddings")
+                Timber.w("TextEmbedder returned empty embeddings")
                 return createZeroEmbedding()
             }
 
@@ -261,7 +261,7 @@ class MediaPipeEmbeddingGenerator
             val floatEmbedding = embedding.floatEmbedding()
 
             if (floatEmbedding == null) {
-                Log.w(TAG, "TextEmbedder returned null float embedding")
+                Timber.w("TextEmbedder returned null float embedding")
                 return createZeroEmbedding()
             }
 
@@ -285,14 +285,14 @@ class MediaPipeEmbeddingGenerator
                         continuation.resume(labelTexts)
                     }
                     .addOnFailureListener { exception ->
-                        Log.e(TAG, "ML Kit Image Labeling failed", exception)
+                        Timber.e(exception, "ML Kit Image Labeling failed")
                         // Return empty list on failure instead of throwing
                         continuation.resume(emptyList())
                     }
 
                 continuation.invokeOnCancellation {
                     // ML Kit tasks cannot be cancelled directly
-                    Log.d(TAG, "Image labeling task cancelled")
+                    Timber.d("Image labeling task cancelled")
                 }
             }
         }
@@ -303,8 +303,6 @@ class MediaPipeEmbeddingGenerator
         private fun createZeroEmbedding(): FloatArray = FloatArray(embeddingDimension)
 
         companion object {
-            private const val TAG = "MediaPipeEmbedding"
-
             /** Asset path for the Universal Sentence Encoder model. */
             const val MODEL_ASSET_PATH = "universal_sentence_encoder.tflite"
 

@@ -70,10 +70,10 @@ data class GalleryUiState(
      */
     val usePaging: Boolean = true,
     /**
-     * Active emoji filters applied on top of the gallery filter.
+     * Active emoji filter applied on top of the gallery filter (single-select).
      * Persisted in ViewModel so they survive navigation/recomposition.
      */
-    val activeEmojiFilters: Set<String> = emptySet(),
+    val activeEmojiFilter: String? = null,
     /**
      * Unique emojis with counts, derived from the current meme list.
      * Computed in the ViewModel to avoid expensive recomposition in Compose.
@@ -107,6 +107,11 @@ data class GalleryUiState(
      * Active one-shot notification to display in the notification banner.
      */
     val notification: GalleryNotification? = null,
+    /**
+     * Whether the search field is currently focused.
+     * Used to show the emoji filter rail even before a query is typed.
+     */
+    val isSearchFocused: Boolean = false,
 ) {
     /**
      * Whether any memes are selected.

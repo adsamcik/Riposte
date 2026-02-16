@@ -5,7 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
-import android.util.Log
+import timber.log.Timber
 import com.google.ai.edge.localagents.rag.models.EmbedData
 import com.google.ai.edge.localagents.rag.models.EmbeddingRequest
 import com.google.ai.edge.localagents.rag.models.GemmaEmbeddingModel
@@ -128,7 +128,7 @@ class EmbeddingGemmaGenerator
                         // Convert ImmutableList<Float> to FloatArray
                         embedding.map { it }.toFloatArray()
                     } catch (e: Exception) {
-                        Log.e(TAG, "Failed to generate text embedding", e)
+                        Timber.e(e, "Failed to generate text embedding")
                         throw e
                     }
                 }
@@ -183,7 +183,7 @@ class EmbeddingGemmaGenerator
 
                         embedding.map { it }.toFloatArray()
                     } catch (e: Exception) {
-                        Log.e(TAG, "Failed to generate document embedding", e)
+                        Timber.e(e, "Failed to generate document embedding")
                         throw e
                     }
                 }
@@ -195,7 +195,7 @@ class EmbeddingGemmaGenerator
                     val labels = getImageLabels(bitmap)
 
                     if (labels.isEmpty()) {
-                        Log.d(TAG, "No labels detected in image, returning zero embedding")
+                        Timber.d("No labels detected in image, returning zero embedding")
                         return@withContext createZeroEmbedding()
                     }
 
@@ -203,7 +203,7 @@ class EmbeddingGemmaGenerator
                     val labelText = labels.joinToString(" ")
                     generateFromDocument(labelText, title = "Image labels")
                 } catch (e: Exception) {
-                    Log.e(TAG, "Failed to generate image embedding", e)
+                    Timber.e(e, "Failed to generate image embedding")
                     throw e
                 }
             }
@@ -217,7 +217,7 @@ class EmbeddingGemmaGenerator
                         }
 
                     if (bitmap == null) {
-                        Log.w(TAG, "Failed to decode bitmap from URI: $uri")
+                        Timber.w("Failed to decode bitmap from URI: $uri")
                         return@withContext createZeroEmbedding()
                     }
 
@@ -227,7 +227,7 @@ class EmbeddingGemmaGenerator
                         bitmap.recycle()
                     }
                 } catch (e: Exception) {
-                    Log.e(TAG, "Failed to generate embedding from URI", e)
+                    Timber.e(e, "Failed to generate embedding from URI")
                     throw e
                 }
             }
@@ -240,7 +240,7 @@ class EmbeddingGemmaGenerator
         override suspend fun initialize() {
             mutex.withLock {
                 if (embeddingModel != null) {
-                    Log.d(TAG, "EmbeddingGemma already initialized")
+                    Timber.d("EmbeddingGemma already initialized")
                     return
                 }
 
@@ -282,22 +282,22 @@ class EmbeddingGemmaGenerator
                 val tokenizerPath = getTokenizerPath()
 
                 if (!File(modelPath).exists()) {
-                    Log.e(TAG, "EmbeddingGemma model not found at: $modelPath")
-                    Log.i(TAG, "Please download the model from HuggingFace: litert-community/embeddinggemma-300m")
-                    Log.i(TAG, "Or run: tools/download-embeddinggemma.ps1 -AllVariants")
+                    Timber.e("EmbeddingGemma model not found at: $modelPath")
+                    Timber.i("Please download the model from HuggingFace: litert-community/embeddinggemma-300m")
+                    Timber.i("Or run: tools/download-embeddinggemma.ps1 -AllVariants")
                     _initializationError = "Model files not found"
                     return
                 }
 
                 if (!File(tokenizerPath).exists()) {
-                    Log.e(TAG, "SentencePiece tokenizer not found at: $tokenizerPath")
+                    Timber.e("SentencePiece tokenizer not found at: $tokenizerPath")
                     _initializationError = "Model files not found"
                     return
                 }
 
-                Log.d(TAG, "Initializing EmbeddingGemma with GPU=${shouldUseGpu()}")
-                Log.d(TAG, "Model path: $modelPath")
-                Log.d(TAG, "Tokenizer path: $tokenizerPath")
+                Timber.d("Initializing EmbeddingGemma with GPU=${shouldUseGpu()}")
+                Timber.d("Model path: $modelPath")
+                Timber.d("Tokenizer path: $tokenizerPath")
 
                 embeddingModel =
                     GemmaEmbeddingModel(
@@ -306,22 +306,22 @@ class EmbeddingGemmaGenerator
                         shouldUseGpu(),
                     )
 
-                Log.i(TAG, "EmbeddingGemma initialized successfully (dimension: $embeddingDimension)")
+                Timber.i("EmbeddingGemma initialized successfully (dimension: $embeddingDimension)")
                 _initializationError = null
             } catch (e: UnsatisfiedLinkError) {
-                Log.e(TAG, "Native library not available for EmbeddingGemma (unsupported ABI?)", e)
+                Timber.e(e, "Native library not available for EmbeddingGemma (unsupported ABI?)")
                 embeddingModel = null
                 _initializationError = "Model not compatible with this device"
             } catch (e: ExceptionInInitializerError) {
-                Log.e(TAG, "EmbeddingGemma static initialization failed", e)
+                Timber.e(e, "EmbeddingGemma static initialization failed")
                 embeddingModel = null
                 _initializationError = "Model failed to load"
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to initialize EmbeddingGemma", e)
+                Timber.e(e, "Failed to initialize EmbeddingGemma")
 
                 // Try CPU fallback if GPU fails
                 if (shouldUseGpu()) {
-                    Log.i(TAG, "Retrying with CPU...")
+                    Timber.i("Retrying with CPU...")
                     useGpu = false
                     try {
                         val modelPath = getModelPath()
@@ -333,18 +333,18 @@ class EmbeddingGemmaGenerator
                                 tokenizerPath,
                                 false,
                             )
-                        Log.i(TAG, "EmbeddingGemma initialized with CPU fallback")
+                        Timber.i("EmbeddingGemma initialized with CPU fallback")
                         _initializationError = null
                     } catch (cpuError: UnsatisfiedLinkError) {
-                        Log.e(TAG, "CPU fallback failed: native library not available", cpuError)
+                        Timber.e(cpuError, "CPU fallback failed: native library not available")
                         embeddingModel = null
                         _initializationError = "Model not compatible with this device"
                     } catch (cpuError: ExceptionInInitializerError) {
-                        Log.e(TAG, "CPU fallback failed: static initialization error", cpuError)
+                        Timber.e(cpuError, "CPU fallback failed: static initialization error")
                         embeddingModel = null
                         _initializationError = "Model failed to load"
                     } catch (cpuError: Exception) {
-                        Log.e(TAG, "CPU fallback also failed", cpuError)
+                        Timber.e(cpuError, "CPU fallback also failed")
                         embeddingModel = null
                         _initializationError = "Model initialization failed"
                     }
@@ -371,13 +371,13 @@ class EmbeddingGemmaGenerator
             // Try to copy the best model for this device
             val bestModel = getBestModelFilename()
             if (copyAssetIfNeeded(bestModel, modelDir)) {
-                Log.i(TAG, "Copied optimized model from assets: $bestModel")
+                Timber.i("Copied optimized model from assets: $bestModel")
                 return
             }
 
             // Fall back to generic model
             if (copyAssetIfNeeded(MODEL_FILENAME_GENERIC, modelDir)) {
-                Log.i(TAG, "Copied generic model from assets: $MODEL_FILENAME_GENERIC")
+                Timber.i("Copied generic model from assets: $MODEL_FILENAME_GENERIC")
             }
         }
 
@@ -400,10 +400,10 @@ class EmbeddingGemmaGenerator
                         input.copyTo(output)
                     }
                 }
-                Log.d(TAG, "Copied asset: $assetName (${targetFile.length() / 1024 / 1024} MB)")
+                Timber.d("Copied asset: $assetName (${targetFile.length() / 1024 / 1024} MB)")
                 true
             } catch (e: Exception) {
-                Log.d(TAG, "Asset not found: $assetName")
+                Timber.d("Asset not found: $assetName")
                 false
             }
         }
@@ -419,14 +419,14 @@ class EmbeddingGemmaGenerator
             val bestModelFile = getBestModelFilename()
             val optimizedPath = File(modelDir, bestModelFile)
             if (optimizedPath.exists()) {
-                Log.d(TAG, "Using optimized model: $bestModelFile")
+                Timber.d("Using optimized model: $bestModelFile")
                 return optimizedPath.absolutePath
             }
 
             // Fall back to generic model
             val genericPath = File(modelDir, MODEL_FILENAME_GENERIC)
             if (genericPath.exists()) {
-                Log.d(TAG, "Using generic model (optimized not found)")
+                Timber.d("Using generic model (optimized not found)")
                 return genericPath.absolutePath
             }
 
@@ -481,12 +481,12 @@ class EmbeddingGemmaGenerator
                         continuation.resume(labelTexts)
                     }
                     .addOnFailureListener { exception ->
-                        Log.e(TAG, "ML Kit Image Labeling failed", exception)
+                        Timber.e(exception, "ML Kit Image Labeling failed")
                         continuation.resume(emptyList())
                     }
 
                 continuation.invokeOnCancellation {
-                    Log.d(TAG, "Image labeling task cancelled")
+                    Timber.d("Image labeling task cancelled")
                 }
             }
         }
@@ -497,7 +497,6 @@ class EmbeddingGemmaGenerator
         private fun createZeroEmbedding(): FloatArray = FloatArray(embeddingDimension)
 
         companion object {
-            private const val TAG = "EmbeddingGemma"
 
             /**
              * Checks whether OpenCL is available on this device.
@@ -511,7 +510,7 @@ class EmbeddingGemmaGenerator
                     System.loadLibrary("OpenCL")
                     true
                 } catch (_: UnsatisfiedLinkError) {
-                    Log.w(TAG, "OpenCL not available, disabling GPU acceleration")
+                    Timber.w("OpenCL not available, disabling GPU acceleration")
                     false
                 }
 
@@ -568,12 +567,12 @@ class EmbeddingGemmaGenerator
             fun getBestModelFilename(): String {
                 val socModel = Build.SOC_MODEL.lowercase()
 
-                Log.d(TAG, "Detected SoC: $socModel")
+                Timber.d("Detected SoC: $socModel")
 
                 // Try to find a matching platform-specific model
                 for ((chipset, modelFile) in PLATFORM_MODELS) {
                     if (socModel.contains(chipset.lowercase())) {
-                        Log.i(TAG, "Using optimized model for $chipset: $modelFile")
+                        Timber.i("Using optimized model for $chipset: $modelFile")
                         return modelFile
                     }
                 }
@@ -582,12 +581,12 @@ class EmbeddingGemmaGenerator
                 val board = Build.BOARD.lowercase()
                 for ((chipset, modelFile) in PLATFORM_MODELS) {
                     if (board.contains(chipset.lowercase())) {
-                        Log.i(TAG, "Using optimized model for $chipset (from board): $modelFile")
+                        Timber.i("Using optimized model for $chipset (from board): $modelFile")
                         return modelFile
                     }
                 }
 
-                Log.i(TAG, "Using generic model (no optimized variant for $socModel)")
+                Timber.i("Using generic model (no optimized variant for $socModel)")
                 return MODEL_FILENAME_GENERIC
             }
 

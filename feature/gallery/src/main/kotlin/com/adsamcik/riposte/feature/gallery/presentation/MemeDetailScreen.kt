@@ -55,6 +55,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHost
@@ -346,7 +347,7 @@ private fun MemeDetailContent(
     val bottomSheetState = rememberStandardBottomSheetState(initialValue = SheetValue.PartiallyExpanded)
     val scaffoldState = rememberBottomSheetScaffoldState(bottomSheetState = bottomSheetState)
     val screenHeightDp = LocalConfiguration.current.screenHeightDp.dp
-    val adaptivePeekHeight = (screenHeightDp * 0.25f).coerceIn(120.dp, 280.dp)
+    val adaptivePeekHeight = (screenHeightDp * 0.3f).coerceIn(140.dp, 340.dp)
 
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
@@ -400,14 +401,14 @@ private fun BoxScope.MemeDetailBackButton(
                 .windowInsetsPadding(WindowInsets.statusBars)
                 .padding(8.dp)
                 .background(
-                    color = MaterialTheme.colorScheme.scrim.copy(alpha = 0.7f),
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
                     shape = CircleShape,
                 ),
     ) {
         Icon(
             Icons.AutoMirrored.Filled.ArrowBack,
             contentDescription = stringResource(R.string.gallery_cd_navigate_back),
-            tint = MaterialTheme.colorScheme.inverseOnSurface,
+            tint = MaterialTheme.colorScheme.onSurface,
         )
     }
 }
@@ -553,20 +554,20 @@ private fun MemeActionButtonsRow(
             notFavoritedText = notFavoritedText,
         )
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            FilledTonalIconButton(
+            OutlinedIconButton(
                 onClick = { onIntent(MemeDetailIntent.ShowDeleteDialog) },
-                colors =
-                    IconButtonDefaults.filledTonalIconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer,
-                        contentColor = MaterialTheme.colorScheme.onErrorContainer,
-                    ),
             ) {
-                Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.gallery_cd_delete))
+                Icon(
+                    Icons.Default.Delete,
+                    contentDescription = stringResource(R.string.gallery_cd_delete),
+                    tint = MaterialTheme.colorScheme.error,
+                )
             }
             Text(
                 text = stringResource(R.string.gallery_detail_action_delete),
                 style = MaterialTheme.typography.labelSmall,
                 textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }

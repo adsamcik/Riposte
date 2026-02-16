@@ -6,7 +6,6 @@ import androidx.work.Configuration
 import com.adsamcik.riposte.core.common.crash.CrashReportWriter
 import com.adsamcik.riposte.core.common.lifecycle.AppLifecycleTracker
 import com.adsamcik.riposte.core.ml.EmbeddingManager
-import com.adsamcik.riposte.sharing.SharingShortcutUpdater
 import dagger.Lazy
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
@@ -28,9 +27,6 @@ class RiposteApplication : Application(), Configuration.Provider {
     lateinit var workerFactory: HiltWorkerFactory
 
     @Inject
-    lateinit var sharingShortcutUpdater: Lazy<SharingShortcutUpdater>
-
-    @Inject
     lateinit var appLifecycleTracker: AppLifecycleTracker
 
     @Inject
@@ -44,7 +40,6 @@ class RiposteApplication : Application(), Configuration.Provider {
         appLifecycleTracker.init()
         // Launch heavy dependency construction off the main thread
         applicationScope.launch {
-            sharingShortcutUpdater.get().start(applicationScope)
             embeddingManager.get().warmUpAndResumeIndexing(applicationScope)
         }
     }

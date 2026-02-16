@@ -275,7 +275,19 @@ val MIGRATION_5_6 =
     }
 
 /**
+ * Migration from version 6 to 7:
+ * - Drops share_targets table (share target tracking removed)
+ */
+@Suppress("MagicNumber")
+val MIGRATION_6_7 =
+    object : Migration(6, 7) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("DROP TABLE IF EXISTS share_targets")
+        }
+    }
+
+/**
  * All migrations in order. Used by [DatabaseModule] and migration tests
  * to ensure the full chain is registered and validated.
  */
-val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)

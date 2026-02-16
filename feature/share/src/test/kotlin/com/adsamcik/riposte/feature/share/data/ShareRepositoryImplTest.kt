@@ -9,6 +9,7 @@ import com.adsamcik.riposte.core.datastore.PreferencesDataStore
 import com.adsamcik.riposte.core.ml.XmpMetadataHandler
 import com.adsamcik.riposte.core.model.ImageFormat
 import com.adsamcik.riposte.core.model.SharingPreferences
+import com.adsamcik.riposte.feature.share.R
 import com.google.common.truth.Truth.assertThat
 import io.mockk.coEvery
 import io.mockk.every
@@ -49,6 +50,7 @@ class ShareRepositoryImplTest {
 
         every { context.cacheDir } returns mockCacheDir
         every { mockCacheDir.absolutePath } returns "/cache"
+        every { context.getString(R.string.share_chooser_title) } returns "Send this meme"
 
         repository =
             ShareRepositoryImpl(
@@ -135,6 +137,15 @@ class ShareRepositoryImplTest {
         val intent = repository.createShareIntent(uri, "image/jpeg")
 
         assertThat(intent.action).isEqualTo(Intent.ACTION_CHOOSER)
+    }
+
+    @Test
+    fun `createShareIntent includes localized chooser title`() {
+        val uri = Uri.parse("content://test/image.jpg")
+
+        val chooser = repository.createShareIntent(uri, "image/jpeg")
+
+        assertThat(chooser.getCharSequenceExtra(Intent.EXTRA_TITLE)?.toString()).isEqualTo("Send this meme")
     }
 
     @Test

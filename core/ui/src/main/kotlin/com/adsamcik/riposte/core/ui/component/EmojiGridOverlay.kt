@@ -36,8 +36,8 @@ import com.adsamcik.riposte.core.ui.theme.RiposteTheme
  * all available emoji filters in a 4-column grid.
  *
  * @param emojis List of emoji-count pairs.
- * @param activeFilters Set of currently selected emoji filters.
- * @param onEmojiToggle Callback when an emoji filter is toggled.
+ * @param activeFilter Currently selected emoji filter, or null if none.
+ * @param onEmojiSelected Callback when an emoji filter is selected.
  * @param onDismiss Callback when the overlay is dismissed.
  * @param modifier Modifier to be applied to the component.
  */
@@ -45,8 +45,8 @@ import com.adsamcik.riposte.core.ui.theme.RiposteTheme
 @Composable
 fun EmojiGridOverlay(
     emojis: List<Pair<String, Int>>,
-    activeFilters: Set<String>,
-    onEmojiToggle: (String) -> Unit,
+    activeFilter: String?,
+    onEmojiSelected: (String) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -92,8 +92,8 @@ fun EmojiGridOverlay(
                 ) { (emoji, _) ->
                     EmojiChip(
                         emojiTag = EmojiTag.fromEmoji(emoji),
-                        onClick = { onEmojiToggle(emoji) },
-                        isSelected = emoji in activeFilters,
+                        onClick = { onEmojiSelected(emoji) },
+                        isSelected = emoji == activeFilter,
                     )
                 }
             }
@@ -124,8 +124,8 @@ private fun EmojiGridOverlayPreview() {
                     "🥹" to 2,
                     "😩" to 1,
                 ),
-            activeFilters = setOf("😂", "🔥", "💀"),
-            onEmojiToggle = {},
+            activeFilter = "😂",
+            onEmojiSelected = {},
             onDismiss = {},
         )
     }

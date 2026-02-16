@@ -7,14 +7,12 @@ import com.adsamcik.riposte.core.database.dao.ImportRequestDao
 import com.adsamcik.riposte.core.database.dao.MemeDao
 import com.adsamcik.riposte.core.database.dao.MemeEmbeddingDao
 import com.adsamcik.riposte.core.database.dao.MemeSearchDao
-import com.adsamcik.riposte.core.database.dao.ShareTargetDao
 import com.adsamcik.riposte.core.database.entity.EmojiTagEntity
 import com.adsamcik.riposte.core.database.entity.ImportRequestEntity
 import com.adsamcik.riposte.core.database.entity.ImportRequestItemEntity
 import com.adsamcik.riposte.core.database.entity.MemeEmbeddingEntity
 import com.adsamcik.riposte.core.database.entity.MemeEntity
 import com.adsamcik.riposte.core.database.entity.MemeFtsEntity
-import com.adsamcik.riposte.core.database.entity.ShareTargetEntity
 
 /**
  * Room database for Riposte app.
@@ -25,11 +23,10 @@ import com.adsamcik.riposte.core.database.entity.ShareTargetEntity
         MemeFtsEntity::class,
         EmojiTagEntity::class,
         MemeEmbeddingEntity::class,
-        ShareTargetEntity::class,
         ImportRequestEntity::class,
         ImportRequestItemEntity::class,
     ],
-    version = 6,
+    version = 7,
     exportSchema = true,
 )
 abstract class MemeDatabase : RoomDatabase() {
@@ -38,7 +35,7 @@ abstract class MemeDatabase : RoomDatabase() {
          * Current database version. Must match the version in the @Database annotation.
          * Referenced by migration tests to verify the migration chain is complete.
          */
-        const val LATEST_VERSION = 6
+        const val LATEST_VERSION = 7
     }
 
     /**
@@ -60,11 +57,6 @@ abstract class MemeDatabase : RoomDatabase() {
      * DAO for embedding operations.
      */
     abstract fun memeEmbeddingDao(): MemeEmbeddingDao
-
-    /**
-     * DAO for share target tracking.
-     */
-    abstract fun shareTargetDao(): ShareTargetDao
 
     /**
      * DAO for import request persistence.

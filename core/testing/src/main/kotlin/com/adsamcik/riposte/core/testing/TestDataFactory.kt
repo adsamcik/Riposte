@@ -282,8 +282,6 @@ object TestDataFactory {
         maxWidth: Int = 1080,
         maxHeight: Int = 1080,
         stripMetadata: Boolean = true,
-        recentShareTargets: List<String> = emptyList(),
-        favoriteShareTargets: List<String> = emptyList(),
     ): SharingPreferences =
         SharingPreferences(
             defaultFormat = defaultFormat,
@@ -291,8 +289,6 @@ object TestDataFactory {
             maxWidth = maxWidth,
             maxHeight = maxHeight,
             stripMetadata = stripMetadata,
-            recentShareTargets = recentShareTargets,
-            favoriteShareTargets = favoriteShareTargets,
         )
 
     // ============ Test Embeddings ============

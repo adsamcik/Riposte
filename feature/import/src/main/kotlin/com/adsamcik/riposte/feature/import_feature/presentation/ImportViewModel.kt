@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
 
@@ -124,6 +125,7 @@ class ImportViewModel
             successCount: Int,
             failedCount: Int,
         ) {
+            Timber.i("Import completed: %d succeeded, %d failed", successCount, failedCount)
             useCases.cleanupExtractedFiles()
 
             _uiState.update {
@@ -305,6 +307,7 @@ class ImportViewModel
                     state.copy(selectedImages = updatedImages)
                 }
             } catch (e: Exception) {
+                Timber.w(e, "Failed to process image at index %d", index)
                 _uiState.update { state ->
                     val updatedImages = state.selectedImages.toMutableList()
                     if (index < updatedImages.size) {
@@ -425,6 +428,7 @@ class ImportViewModel
                     }
 
                     if (duplicateIndices.isNotEmpty()) {
+                        Timber.d("Found %d duplicate images during import", duplicateIndices.size)
                         _uiState.update {
                             it.copy(
                                 isImporting = false,
@@ -619,6 +623,7 @@ class ImportViewModel
                     )
                 }
             } catch (e: Exception) {
+                Timber.e(e, "Import failed for %d images", images.size)
                 _uiState.update {
                     it.copy(isImporting = false, statusMessage = null)
                 }

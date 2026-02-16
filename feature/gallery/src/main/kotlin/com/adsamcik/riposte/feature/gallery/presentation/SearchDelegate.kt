@@ -53,7 +53,7 @@ class SearchDelegate
                     .distinctUntilChanged()
                     .collectLatest { query ->
                         if (query.isNotBlank()) {
-                            performSearch(query, activeEmojiFilters = emptySet(), scope = scope)
+                            performSearch(query, activeEmojiFilter = null, scope = scope)
                         } else {
                             _state.update {
                                 it.copy(
@@ -100,13 +100,13 @@ class SearchDelegate
         fun onIntent(
             intent: GalleryIntent,
             scope: CoroutineScope,
-            activeEmojiFilters: Set<String>,
+            activeEmojiFilter: String?,
         ) {
             when (intent) {
                 is GalleryIntent.UpdateSearchQuery -> updateQuery(intent.query)
                 is GalleryIntent.ClearSearch -> clearSearch()
-                is GalleryIntent.SelectRecentSearch -> selectRecentSearch(intent.query, scope, activeEmojiFilters)
-                is GalleryIntent.SelectSuggestion -> selectSuggestion(intent.suggestion, scope, activeEmojiFilters)
+                is GalleryIntent.SelectRecentSearch -> selectRecentSearch(intent.query, scope, activeEmojiFilter)
+                is GalleryIntent.SelectSuggestion -> selectSuggestion(intent.suggestion, scope, activeEmojiFilter)
                 is GalleryIntent.DeleteRecentSearch -> deleteRecentSearch(intent.query, scope)
                 is GalleryIntent.ClearRecentSearches -> clearRecentSearches(scope)
                 else -> {} // Not a search intent
@@ -119,11 +119,11 @@ class SearchDelegate
          */
         fun refilter(
             scope: CoroutineScope,
-            activeEmojiFilters: Set<String>,
+            activeEmojiFilter: String?,
         ) {
             val query = _state.value.query
             if (query.isNotBlank()) {
-                performSearch(query, activeEmojiFilters, scope = scope)
+                performSearch(query, activeEmojiFilter, scope = scope)
             }
         }
 
@@ -142,26 +142,26 @@ class SearchDelegate
         private fun selectRecentSearch(
             query: String,
             scope: CoroutineScope,
-            emojiFilters: Set<String>,
+            emojiFilter: String?,
         ) {
             updateQuery(query)
             scope.launch {
                 searchUseCases.addRecentSearch(query)
             }
-            performSearch(query, emojiFilters, scope = scope)
+            performSearch(query, emojiFilter, scope = scope)
         }
 
         private fun selectSuggestion(
             suggestion: String,
             scope: CoroutineScope,
-            emojiFilters: Set<String>,
+            emojiFilter: String?,
         ) {
             _state.update { it.copy(suggestions = emptyList()) }
             updateQuery(suggestion)
             scope.launch {
                 searchUseCases.addRecentSearch(suggestion)
             }
-            performSearch(suggestion, emojiFilters, scope = scope)
+            performSearch(suggestion, emojiFilter, scope = scope)
         }
 
         private fun deleteRecentSearch(
@@ -185,7 +185,7 @@ class SearchDelegate
 
         private fun performSearch(
             query: String,
-            activeEmojiFilters: Set<String>,
+            activeEmojiFilter: String?,
             scope: CoroutineScope? = null,
         ) {
             val searchScope = scope ?: return
@@ -195,7 +195,7 @@ class SearchDelegate
 
                 try {
                     val results = searchUseCases.hybridSearch(query)
-                    val filtered = applyEmojiFilters(results, activeEmojiFilters)
+                    val filtered = applyEmojiFilter(results, activeEmojiFilter)
                     val endTime = System.currentTimeMillis()
 
                     _state.update {
@@ -213,11 +213,11 @@ class SearchDelegate
                 } catch (
                     @Suppress("SwallowedException") e: UnsatisfiedLinkError,
                 ) {
-                    fallbackToTextSearch(query, startTime, activeEmojiFilters, searchScope)
+                    fallbackToTextSearch(query, startTime, activeEmojiFilter, searchScope)
                 } catch (
                     @Suppress("SwallowedException") e: ExceptionInInitializerError,
                 ) {
-                    fallbackToTextSearch(query, startTime, activeEmojiFilters, searchScope)
+                    fallbackToTextSearch(query, startTime, activeEmojiFilter, searchScope)
                 } catch (e: Exception) {
                     _state.update {
                         it.copy(
@@ -233,12 +233,12 @@ class SearchDelegate
         private suspend fun fallbackToTextSearch(
             query: String,
             startTime: Long,
-            activeEmojiFilters: Set<String>,
+            activeEmojiFilter: String?,
             scope: CoroutineScope,
         ) {
             try {
                 searchUseCases.search(query).collectLatest { results ->
-                    val filtered = applyEmojiFilters(results, activeEmojiFilters)
+                    val filtered = applyEmojiFilter(results, activeEmojiFilter)
                     val endTime = System.currentTimeMillis()
                     _state.update {
                         it.copy(
@@ -261,15 +261,15 @@ class SearchDelegate
             }
         }
 
-        private fun applyEmojiFilters(
+        private fun applyEmojiFilter(
             results: List<SearchResult>,
-            activeEmojiFilters: Set<String>,
+            activeEmojiFilter: String?,
         ): List<SearchResult> {
-            if (activeEmojiFilters.isEmpty()) return results
-            val normalizedFilters = activeEmojiFilters.map { normalizeEmoji(it) }.toSet()
+            if (activeEmojiFilter == null) return results
+            val normalizedFilter = normalizeEmoji(activeEmojiFilter)
             return results.filter { result ->
                 val normalizedMemeEmojis = result.meme.emojiTags.map { normalizeEmoji(it.emoji) }
-                normalizedFilters.any { it in normalizedMemeEmojis }
+                normalizedFilter in normalizedMemeEmojis
             }
         }
 

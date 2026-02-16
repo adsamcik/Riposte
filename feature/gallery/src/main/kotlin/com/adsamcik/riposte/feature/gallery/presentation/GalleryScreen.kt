@@ -58,12 +58,12 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -89,6 +89,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -168,8 +169,7 @@ fun GalleryScreen(
     // Handle emoji filter passed from detail screen
     LaunchedEffect(initialEmojiFilter) {
         if (initialEmojiFilter != null) {
-            viewModel.onIntent(GalleryIntent.ClearEmojiFilters)
-            viewModel.onIntent(GalleryIntent.ToggleEmojiFilter(initialEmojiFilter))
+            viewModel.onIntent(GalleryIntent.SetEmojiFilter(initialEmojiFilter))
             onEmojiFilterConsumed()
         }
     }
@@ -380,7 +380,7 @@ private fun GalleryScreenContent(
                 enter = fadeIn(),
                 exit = fadeOut(),
             ) {
-                FloatingActionButton(
+                SmallFloatingActionButton(
                     onClick = { onIntent(GalleryIntent.NavigateToImport) },
                     shape = RiposteShapes.FABDefault,
                     containerColor = MaterialTheme.colorScheme.primary,
@@ -408,12 +408,11 @@ private fun GalleryScreenContent(
             ) {
                 when {
                     uiState.screenMode == ScreenMode.Searching -> {
-                        val searchColumns = maxOf(2, columns - 1)
                         GalleryContent(
                         uiState = uiState,
                         uniqueEmojis = uiState.uniqueEmojis,
                         onIntent = onIntent,
-                        columns = searchColumns,
+                        columns = columns,
                         gridState = gridState,
                     ) {
                         // Recent searches (when query is empty and not searched yet)
@@ -489,7 +488,6 @@ private fun GalleryScreenContent(
                         } else if (uiState.searchState.hasSearched && uiState.searchState.results.isEmpty()) {
                             // No results
                             item(span = { GridItemSpan(maxLineSpan) }, key = "search_no_results") {
-                                val hasFilters = uiState.activeEmojiFilters.isNotEmpty()
                                 EmptyState(
                                     icon = "🔍",
                                     title =
@@ -501,18 +499,10 @@ private fun GalleryScreenContent(
                                             com.adsamcik.riposte.core.search.R.string.search_no_results_description,
                                             uiState.searchState.query,
                                         ),
-                                    actionLabel = if (hasFilters) {
-                                        stringResource(
-                                            com.adsamcik.riposte.core.search.R.string.search_no_results_clear_filters,
-                                        )
-                                    } else {
-                                        stringResource(R.string.gallery_menu_all_memes)
-                                    },
-                                    onAction = if (hasFilters) {
-                                        { onIntent(GalleryIntent.ClearEmojiFilters) }
-                                    } else {
-                                        { onIntent(GalleryIntent.ClearSearch) }
-                                    },
+                                    actionLabel = stringResource(
+                                        com.adsamcik.riposte.core.ui.R.string.ui_loading_no_results_clear,
+                                    ),
+                                    onAction = { onIntent(GalleryIntent.ClearSearch) },
                                 )
                             }
                         } else if (uiState.searchState.results.isNotEmpty()) {
@@ -537,18 +527,6 @@ private fun GalleryScreenContent(
                                     isSelectionMode = uiState.isSelectionMode,
                                     onIntent = onIntent,
                                     showEmojis = true,
-                                )
-                            }
-                            // End-of-results footer
-                            item(span = { GridItemSpan(maxLineSpan) }, key = "search_end_footer") {
-                                Text(
-                                    text = "·  ·  ·",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.outlineVariant,
-                                    textAlign = TextAlign.Center,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 24.dp),
                                 )
                             }
                         }
@@ -822,7 +800,10 @@ private fun GalleryContent(
                         uiState.screenMode == ScreenMode.Searching -> 4.dp
                         else -> 64.dp
                     },
-                    bottom = 120.dp,
+                    bottom = when {
+                        uiState.screenMode == ScreenMode.Searching -> 24.dp
+                        else -> 120.dp
+                    },
                 ),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -838,18 +819,19 @@ private fun GalleryEmojiFilterRail(
     uniqueEmojis: List<Pair<String, Int>>,
     onIntent: (GalleryIntent) -> Unit,
 ) {
-    if (uiState.screenMode == ScreenMode.Searching &&
-        !uiState.isSelectionMode
-    ) {
+    val showEmojiRail = !uiState.isSelectionMode &&
+        (uiState.screenMode == ScreenMode.Searching || uiState.isSearchFocused)
+
+    if (showEmojiRail) {
         val showFavoritesChip = uiState.favoritesCount > 0
         val isFavoritesActive = uiState.filter is GalleryFilter.Favorites
 
         if (uniqueEmojis.isNotEmpty() || showFavoritesChip) {
             EmojiFilterRail(
                 emojis = uniqueEmojis,
-                activeFilters = uiState.activeEmojiFilters,
-                onEmojiToggle = { emoji -> onIntent(GalleryIntent.ToggleEmojiFilter(emoji)) },
-                onClearAll = { onIntent(GalleryIntent.ClearEmojiFilters) },
+                activeFilter = uiState.activeEmojiFilter,
+                onEmojiSelected = { emoji -> onIntent(GalleryIntent.SetEmojiFilter(emoji)) },
+                onClearFilter = { onIntent(GalleryIntent.ClearEmojiFilter) },
                 leadingContent = if (showFavoritesChip) {
                     {
                         item(key = "favorites_chip") {
@@ -881,7 +863,9 @@ private fun GalleryEmojiFilterRail(
                 } else {
                     null
                 },
-                modifier = Modifier.padding(top = 4.dp),
+                modifier = Modifier
+                    .padding(top = 4.dp)
+                    .testTag("EmojiFilterRail"),
             )
         }
     }
@@ -919,10 +903,10 @@ private fun FloatingSearchBar(
     ) {
         // Navigation icon (close for active filters when not searching)
         if (uiState.screenMode != ScreenMode.Searching &&
-            (uiState.filter !is GalleryFilter.All || uiState.activeEmojiFilters.isNotEmpty())
+            (uiState.filter !is GalleryFilter.All || uiState.activeEmojiFilter != null)
         ) {
             IconButton(onClick = {
-                onIntent(GalleryIntent.ClearEmojiFilters)
+                onIntent(GalleryIntent.ClearEmojiFilter)
                 onIntent(GalleryIntent.SetFilter(GalleryFilter.All))
             }) {
                 Icon(
@@ -938,6 +922,7 @@ private fun FloatingSearchBar(
             onQueryChange = { onIntent(GalleryIntent.UpdateSearchQuery(it)) },
             onSearch = { /* debounce handles it */ },
             placeholder = stringResource(com.adsamcik.riposte.core.search.R.string.search_placeholder),
+            onFocusChanged = { focused -> onIntent(GalleryIntent.SearchFieldFocusChanged(focused)) },
             modifier = Modifier.weight(1f),
         )
 

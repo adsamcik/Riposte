@@ -56,6 +56,9 @@ dependencies {
     // Kotlinx Serialization
     implementation(libs.kotlinx.serialization.json)
 
+    // Logging
+    implementation(libs.timber)
+
     // Coroutines
     implementation(libs.coroutines.core)
     implementation(libs.coroutines.android)

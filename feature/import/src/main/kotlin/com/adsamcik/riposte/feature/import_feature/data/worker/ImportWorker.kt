@@ -20,6 +20,7 @@ import com.adsamcik.riposte.feature.import_feature.domain.repository.ImportRepos
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import java.io.File
+import timber.log.Timber
 
 /**
  * WorkManager worker that processes meme imports in the background.
@@ -44,6 +45,7 @@ class ImportWorker
         override suspend fun doWork(): Result {
             val requestId = inputData.getString(KEY_REQUEST_ID) ?: return Result.failure()
             val request = importRequestDao.getRequest(requestId) ?: return Result.failure()
+            Timber.d("Starting import worker for request %s with %d images", requestId, request.imageCount)
 
             notificationManager.createChannel()
 
@@ -101,6 +103,7 @@ class ImportWorker
                         status = ImportRequestEntity.STATUS_COMPLETED,
                     )
                 } else {
+                    Timber.w("Failed to import item %s: %s", item.id, result.exceptionOrNull()?.message)
                     failed++
                     importRequestDao.updateItemStatus(
                         itemId = item.id,
@@ -130,11 +133,13 @@ class ImportWorker
                 // Update foreground notification if active
                 maybePromoteToForeground(completed, request.imageCount)
             }
+            Timber.i("Import complete: %d succeeded, %d failed out of %d total", completed, failed, request.imageCount)
 
             // Cleanup staging directory
             val stagingDir = File(request.stagingDir)
             if (stagingDir.exists()) {
                 stagingDir.deleteRecursively()
+                Timber.d("Cleaned up staging directory: %s", stagingDir.absolutePath)
             }
 
             // Final status

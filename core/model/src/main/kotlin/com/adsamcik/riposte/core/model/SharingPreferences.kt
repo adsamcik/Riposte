@@ -31,14 +31,6 @@ data class SharingPreferences(
      * Whether to strip metadata by default.
      */
     val stripMetadata: Boolean = true,
-    /**
-     * Recently used apps for sharing (package names).
-     */
-    val recentShareTargets: List<String> = emptyList(),
-    /**
-     * Favorite apps for sharing (package names).
-     */
-    val favoriteShareTargets: List<String> = emptyList(),
 ) {
     /**
      * Converts preferences to a ShareConfig.

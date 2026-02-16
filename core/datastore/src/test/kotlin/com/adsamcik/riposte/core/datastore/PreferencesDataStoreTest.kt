@@ -141,8 +141,6 @@ class PreferencesDataStoreTest {
                 assertThat(prefs.maxWidth).isEqualTo(1080)
                 assertThat(prefs.maxHeight).isEqualTo(1080)
                 assertThat(prefs.stripMetadata).isTrue()
-                assertThat(prefs.recentShareTargets).isEmpty()
-                assertThat(prefs.favoriteShareTargets).isEmpty()
 
                 cancelAndIgnoreRemainingEvents()
             }
@@ -158,8 +156,6 @@ class PreferencesDataStoreTest {
                     maxWidth = 800,
                     maxHeight = 600,
                     stripMetadata = false,
-                    recentShareTargets = listOf("com.example.app1"),
-                    favoriteShareTargets = listOf("com.example.app2"),
                 )
 
             preferencesDataStore.updateSharingPreferences(customPrefs)
@@ -172,39 +168,7 @@ class PreferencesDataStoreTest {
                 assertThat(prefs.maxWidth).isEqualTo(800)
                 assertThat(prefs.maxHeight).isEqualTo(600)
                 assertThat(prefs.stripMetadata).isFalse()
-                assertThat(prefs.recentShareTargets).containsExactly("com.example.app1")
-                assertThat(prefs.favoriteShareTargets).containsExactly("com.example.app2")
 
-                cancelAndIgnoreRemainingEvents()
-            }
-        }
-
-    @Test
-    fun `addRecentShareTarget adds package to front of list`() =
-        runTest {
-            preferencesDataStore.addRecentShareTarget("com.app1")
-            preferencesDataStore.addRecentShareTarget("com.app2")
-
-            preferencesDataStore.sharingPreferences.test {
-                val prefs = awaitItem()
-                assertThat(prefs.recentShareTargets.first()).isEqualTo("com.app2")
-                cancelAndIgnoreRemainingEvents()
-            }
-        }
-
-    @Test
-    fun `addRecentShareTarget keeps only 10 most recent`() =
-        runTest {
-            // Add 12 packages
-            repeat(12) { i ->
-                preferencesDataStore.addRecentShareTarget("com.app$i")
-            }
-
-            preferencesDataStore.sharingPreferences.test {
-                val prefs = awaitItem()
-                assertThat(prefs.recentShareTargets).hasSize(10)
-                // Most recent should be at front
-                assertThat(prefs.recentShareTargets.first()).isEqualTo("com.app11")
                 cancelAndIgnoreRemainingEvents()
             }
         }

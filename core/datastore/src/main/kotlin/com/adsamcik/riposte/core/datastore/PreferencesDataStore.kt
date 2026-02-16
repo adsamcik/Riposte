@@ -46,8 +46,6 @@ class PreferencesDataStore
             val MAX_WIDTH = intPreferencesKey("max_width")
             val MAX_HEIGHT = intPreferencesKey("max_height")
             val STRIP_METADATA = booleanPreferencesKey("strip_metadata")
-            val RECENT_SHARE_TARGETS = stringSetPreferencesKey("recent_share_targets")
-            val FAVORITE_SHARE_TARGETS = stringSetPreferencesKey("favorite_share_targets")
 
             // App preferences
             val DARK_MODE = stringPreferencesKey("dark_mode")
@@ -94,8 +92,6 @@ class PreferencesDataStore
                         maxWidth = prefs[PreferencesKeys.MAX_WIDTH] ?: 1080,
                         maxHeight = prefs[PreferencesKeys.MAX_HEIGHT] ?: 1080,
                         stripMetadata = prefs[PreferencesKeys.STRIP_METADATA] ?: true,
-                        recentShareTargets = prefs[PreferencesKeys.RECENT_SHARE_TARGETS]?.toList() ?: emptyList(),
-                        favoriteShareTargets = prefs[PreferencesKeys.FAVORITE_SHARE_TARGETS]?.toList() ?: emptyList(),
                     )
                 }
 
@@ -109,21 +105,6 @@ class PreferencesDataStore
                 prefs[PreferencesKeys.MAX_WIDTH] = preferences.maxWidth
                 prefs[PreferencesKeys.MAX_HEIGHT] = preferences.maxHeight
                 prefs[PreferencesKeys.STRIP_METADATA] = preferences.stripMetadata
-                prefs[PreferencesKeys.RECENT_SHARE_TARGETS] = preferences.recentShareTargets.toSet()
-                prefs[PreferencesKeys.FAVORITE_SHARE_TARGETS] = preferences.favoriteShareTargets.toSet()
-            }
-        }
-
-        /**
-         * Adds a package to recent share targets.
-         */
-        suspend fun addRecentShareTarget(packageName: String) {
-            context.dataStore.edit { prefs ->
-                val current = prefs[PreferencesKeys.RECENT_SHARE_TARGETS]?.toMutableList() ?: mutableListOf()
-                current.remove(packageName)
-                current.add(0, packageName)
-                // Keep only the 10 most recent
-                prefs[PreferencesKeys.RECENT_SHARE_TARGETS] = current.take(10).toSet()
             }
         }
 

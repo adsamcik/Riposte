@@ -556,6 +556,86 @@ class GalleryScreenTest {
         composeTestRule.onNodeWithText("Failed to load memes").assertIsDisplayed()
     }
 
+    // ============ Search Focus → Emoji Rail Tests ============
+
+    @Test
+    fun galleryScreen_showsEmojiFilterRail_whenSearchFocused() {
+        val emojis = listOf("😂" to 5, "🔥" to 3)
+
+        composeTestRule.setContent {
+            RiposteTheme {
+                GalleryScreen(
+                    uiState =
+                        GalleryUiState(
+                            memes = testMemes,
+                            isLoading = false,
+                            isSearchFocused = true,
+                            uniqueEmojis = emojis,
+                        ),
+                    onIntent = {},
+                    onNavigateToMeme = {},
+                    onNavigateToImport = {},
+                    onNavigateToSettings = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("EmojiFilterRail").assertIsDisplayed()
+    }
+
+    @Test
+    fun galleryScreen_hidesEmojiFilterRail_whenSearchNotFocusedAndBrowsing() {
+        composeTestRule.setContent {
+            RiposteTheme {
+                GalleryScreen(
+                    uiState =
+                        GalleryUiState(
+                            memes = testMemes,
+                            isLoading = false,
+                            isSearchFocused = false,
+                            screenMode = ScreenMode.Browsing,
+                            uniqueEmojis = listOf("😂" to 5),
+                        ),
+                    onIntent = {},
+                    onNavigateToMeme = {},
+                    onNavigateToImport = {},
+                    onNavigateToSettings = {},
+                )
+            }
+        }
+
+        composeTestRule.onAllNodesWithTag("EmojiFilterRail")
+            .fetchSemanticsNodes().let { nodes ->
+                assertThat(nodes).isEmpty()
+            }
+    }
+
+    @Test
+    fun galleryScreen_emitsSearchFieldFocusChanged_whenSearchBarClicked() {
+        var receivedIntent: GalleryIntent? = null
+
+        composeTestRule.setContent {
+            RiposteTheme {
+                GalleryScreen(
+                    uiState =
+                        GalleryUiState(
+                            memes = testMemes,
+                            isLoading = false,
+                        ),
+                    onIntent = { receivedIntent = it },
+                    onNavigateToMeme = {},
+                    onNavigateToImport = {},
+                    onNavigateToSettings = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("SearchBar").performClick()
+
+        assertThat(receivedIntent).isInstanceOf(GalleryIntent.SearchFieldFocusChanged::class.java)
+        assertThat((receivedIntent as GalleryIntent.SearchFieldFocusChanged).isFocused).isTrue()
+    }
+
     // ============ Helper Functions ============
 
     private fun createTestMeme(

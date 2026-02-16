@@ -122,33 +122,6 @@ class FakePreferencesDataStore {
         _sharingPreferences.value = preferences
     }
 
-    /**
-     * Adds a package to recent share targets.
-     */
-    suspend fun addRecentShareTarget(packageName: String) {
-        _sharingPreferences.update { prefs: SharingPreferences ->
-            val current = prefs.recentShareTargets.toMutableList()
-            current.remove(packageName)
-            current.add(0, packageName)
-            prefs.copy(recentShareTargets = current.take(10))
-        }
-    }
-
-    /**
-     * Toggles a package as a favorite share target.
-     */
-    suspend fun toggleFavoriteShareTarget(packageName: String) {
-        _sharingPreferences.update { prefs: SharingPreferences ->
-            val favorites = prefs.favoriteShareTargets.toMutableList()
-            if (packageName in favorites) {
-                favorites.remove(packageName)
-            } else {
-                favorites.add(packageName)
-            }
-            prefs.copy(favoriteShareTargets = favorites)
-        }
-    }
-
     // ============ Recent Searches ============
 
     /**
@@ -228,8 +201,6 @@ class FakePreferencesDataStore {
                 maxWidth = 1080,
                 maxHeight = 1080,
                 stripMetadata = true,
-                recentShareTargets = emptyList(),
-                favoriteShareTargets = emptyList(),
             )
     }
 }

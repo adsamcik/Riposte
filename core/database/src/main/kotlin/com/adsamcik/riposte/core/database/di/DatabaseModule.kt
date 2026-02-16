@@ -9,7 +9,6 @@ import com.adsamcik.riposte.core.database.dao.ImportRequestDao
 import com.adsamcik.riposte.core.database.dao.MemeDao
 import com.adsamcik.riposte.core.database.dao.MemeEmbeddingDao
 import com.adsamcik.riposte.core.database.dao.MemeSearchDao
-import com.adsamcik.riposte.core.database.dao.ShareTargetDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -56,12 +55,6 @@ object DatabaseModule {
     @Singleton
     fun provideMemeEmbeddingDao(database: MemeDatabase): MemeEmbeddingDao {
         return database.memeEmbeddingDao()
-    }
-
-    @Provides
-    @Singleton
-    fun provideShareTargetDao(database: MemeDatabase): ShareTargetDao {
-        return database.shareTargetDao()
     }
 
     @Provides

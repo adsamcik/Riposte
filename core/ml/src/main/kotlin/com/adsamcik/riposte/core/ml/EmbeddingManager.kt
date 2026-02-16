@@ -1,8 +1,9 @@
 package com.adsamcik.riposte.core.ml
 
 import android.content.Context
-import android.util.Log
+import timber.log.Timber
 import androidx.core.content.pm.PackageInfoCompat
+import com.adsamcik.riposte.core.common.lifecycle.AppLifecycleTracker
 import com.adsamcik.riposte.core.database.dao.MemeEmbeddingDao
 import com.adsamcik.riposte.core.database.entity.MemeEmbeddingEntity
 import com.adsamcik.riposte.core.ml.worker.EmbeddingGenerationWorker
@@ -10,6 +11,9 @@ import com.adsamcik.riposte.core.model.EmbeddingType
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -46,6 +50,7 @@ class EmbeddingManager
         private val embeddingGenerator: EmbeddingGenerator,
         private val memeEmbeddingDao: MemeEmbeddingDao,
         private val versionManager: EmbeddingModelVersionManager,
+        private val appLifecycleTracker: AppLifecycleTracker,
     ) {
         /**
          * Initializes the embedding model and resumes any incomplete indexing.
@@ -62,13 +67,13 @@ class EmbeddingManager
                 try {
                     embeddingGenerator.initialize()
                     versionManager.clearInitializationFailure()
-                    Log.d(TAG, "Embedding model warm-up completed")
+                    Timber.d("Embedding model warm-up completed")
                 } catch (e: Exception) {
-                    Log.w(TAG, "Embedding model warm-up failed (non-fatal)", e)
+                    Timber.w(e, "Embedding model warm-up failed (non-fatal)")
                     try {
                         versionManager.recordInitializationFailure(getAppVersionCode())
                     } catch (ve: Exception) {
-                        Log.w(TAG, "Failed to record initialization failure", ve)
+                        Timber.w(ve, "Failed to record initialization failure")
                     }
                 }
 
@@ -79,20 +84,22 @@ class EmbeddingManager
                     if (embeddingGenerator.initializationError == null) {
                         val stats = getStatistics()
                         if (!stats.isFullyIndexed) {
-                            Log.d(
-                                TAG,
+                            Timber.d(
                                 "Resuming indexing: ${stats.pendingEmbeddingCount} pending, " +
                                     "${stats.regenerationNeededCount} regenerating",
                             )
                             scheduleBackgroundGeneration()
                         }
                     } else {
-                        Log.d(TAG, "Skipping auto-reindex: model error present")
+                        Timber.d("Skipping auto-reindex: model error present")
                     }
                 } catch (e: Exception) {
-                    Log.w(TAG, "Failed to resume incomplete indexing", e)
+                    Timber.w(e, "Failed to resume incomplete indexing")
                 }
             }
+
+            // 3. Re-check for pending work whenever the app returns to foreground
+            observeForegroundResume(scope)
         }
 
         /**
@@ -111,7 +118,7 @@ class EmbeddingManager
             return try {
                 val embedding = embeddingGenerator.generateFromText(searchText)
                 if (isZeroEmbedding(embedding)) {
-                    Log.w(TAG, "Generated embedding is all zeros for meme $memeId, skipping storage")
+                    Timber.w("Generated embedding is all zeros for meme $memeId, skipping storage")
                     return false
                 }
 
@@ -130,7 +137,7 @@ class EmbeddingManager
                 memeEmbeddingDao.insertEmbedding(entity)
                 true
             } catch (e: Exception) {
-                android.util.Log.e(TAG, "Failed to generate embedding for meme $memeId", e)
+                Timber.e(e, "Failed to generate embedding for meme $memeId")
                 false
             }
         }
@@ -213,6 +220,39 @@ class EmbeddingManager
         }
 
         /**
+         * Observes app lifecycle and re-checks for pending indexing work
+         * whenever the app returns to the foreground. This catches cases where:
+         * - The worker stopped due to temporary model failures
+         * - New memes were added while the app was backgrounded
+         * - The previous worker batch completed but more work remains
+         */
+        private fun observeForegroundResume(scope: CoroutineScope) {
+            scope.launch {
+                appLifecycleTracker.isInBackground
+                    // Drop the initial value to only react to transitions
+                    .drop(1)
+                    // Only act when returning to foreground (false = foreground)
+                    .filter { isBackground -> !isBackground }
+                    .collectLatest {
+                        try {
+                            if (embeddingGenerator.initializationError != null) return@collectLatest
+                            val stats = getStatistics()
+                            if (!stats.isFullyIndexed) {
+                                Timber.d(
+                                    "App returned to foreground with pending indexing: " +
+                                        "${stats.pendingEmbeddingCount} pending, " +
+                                        "${stats.regenerationNeededCount} regenerating",
+                                )
+                                scheduleBackgroundGeneration()
+                            }
+                        } catch (e: Exception) {
+                            Timber.w(e, "Failed to check indexing status on foreground return")
+                        }
+                    }
+            }
+        }
+
+        /**
          * Check for model upgrades and schedule regeneration if needed.
          */
         suspend fun checkAndHandleModelUpgrade() {
@@ -273,10 +313,6 @@ class EmbeddingManager
             } catch (_: Exception) {
                 0L
             }
-        }
-
-        companion object {
-            private const val TAG = "EmbeddingManager"
         }
     }
 

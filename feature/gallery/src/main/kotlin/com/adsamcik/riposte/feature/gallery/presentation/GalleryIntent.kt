@@ -85,14 +85,14 @@ sealed interface GalleryIntent {
     data class QuickShare(val memeId: Long) : GalleryIntent
 
     /**
-     * Toggle an emoji filter on/off.
+     * Set an emoji filter (single-select). Passing the already-active emoji clears it.
      */
-    data class ToggleEmojiFilter(val emoji: String) : GalleryIntent
+    data class SetEmojiFilter(val emoji: String) : GalleryIntent
 
     /**
-     * Clear all active emoji filters.
+     * Clear the active emoji filter.
      */
-    data object ClearEmojiFilters : GalleryIntent
+    data object ClearEmojiFilter : GalleryIntent
 
     // ── Search intents (inline search) ──
 
@@ -130,4 +130,9 @@ sealed interface GalleryIntent {
      * Dismiss the active notification banner.
      */
     data object DismissNotification : GalleryIntent
+
+    /**
+     * Notify that the search field focus state changed.
+     */
+    data class SearchFieldFocusChanged(val isFocused: Boolean) : GalleryIntent
 }

@@ -1,19 +1,23 @@
 package com.adsamcik.riposte.core.ml.worker
 
 import android.content.Context
+import android.content.pm.ServiceInfo
 import androidx.hilt.work.HiltWorker
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingWorkPolicy
+import androidx.work.ForegroundInfo
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
+import com.adsamcik.riposte.core.common.lifecycle.AppLifecycleTracker
 import com.adsamcik.riposte.core.ml.EmbeddingGenerator
 import com.adsamcik.riposte.core.model.EmbeddingType
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import timber.log.Timber
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.nio.ByteBuffer
@@ -32,6 +36,7 @@ import java.util.concurrent.TimeUnit
  * - Exponential backoff on failure
  * - Progress reporting
  * - Model version tracking
+ * - Foreground service promotion when app is backgrounded
  */
 @HiltWorker
 class EmbeddingGenerationWorker
@@ -41,10 +46,14 @@ class EmbeddingGenerationWorker
         @Assisted params: WorkerParameters,
         private val embeddingGenerator: EmbeddingGenerator,
         private val embeddingRepository: EmbeddingWorkRepository,
+        private val appLifecycleTracker: AppLifecycleTracker,
+        private val notificationManager: EmbeddingNotificationManager,
     ) : CoroutineWorker(context, params) {
         override suspend fun doWork(): Result =
             withContext(Dispatchers.Default) {
                 try {
+                    notificationManager.createChannel()
+
                     // Get memes that need embedding generation
                     val pendingMemes = embeddingRepository.getMemesNeedingEmbeddings(BATCH_SIZE)
 
@@ -59,6 +68,9 @@ class EmbeddingGenerationWorker
 
                     var successCount = 0
                     var failureCount = 0
+
+                    // Promote to foreground if app is already backgrounded
+                    maybePromoteToForeground(0, pendingMemes.size)
 
                     pendingMemes.forEach { memeData ->
                         try {
@@ -95,7 +107,7 @@ class EmbeddingGenerationWorker
                             successCount++
                         } catch (e: Exception) {
                             failureCount++
-                            android.util.Log.w(TAG, "Failed to generate embedding for meme ${memeData.id}", e)
+                            Timber.w(e, "Failed to generate embedding for meme ${memeData.id}")
                         }
 
                         // Update progress
@@ -104,6 +116,9 @@ class EmbeddingGenerationWorker
                                 KEY_PROGRESS to ((successCount + failureCount) * 100 / pendingMemes.size),
                             ),
                         )
+
+                        // Update foreground notification if active
+                        maybePromoteToForeground(successCount + failureCount, pendingMemes.size)
                     }
 
                     // Check if there are more memes to process
@@ -123,16 +138,20 @@ class EmbeddingGenerationWorker
                     if (remainingCount > 0 && successCount > 0) {
                         enqueueContinuation(context)
                     } else if (remainingCount > 0) {
-                        android.util.Log.w(
-                            TAG,
+                        Timber.w(
                             "Batch had no successes ($failureCount failures), " +
                                 "not scheduling continuation to avoid busy loop",
                         )
                     }
 
+                    // Show completion notification if app is in background and this is the last batch
+                    if (remainingCount == 0 && successCount > 0 && appLifecycleTracker.isInBackground.value) {
+                        notificationManager.showCompleteNotification(successCount, failureCount)
+                    }
+
                     Result.success(outputData)
                 } catch (e: Exception) {
-                    android.util.Log.e(TAG, "Embedding generation work failed", e)
+                    Timber.e(e, "Embedding generation work failed")
                     if (runAttemptCount < MAX_RETRY_COUNT) {
                         Result.retry()
                     } else {
@@ -185,9 +204,28 @@ class EmbeddingGenerationWorker
             return hash.take(16).joinToString("") { "%02x".format(it) }
         }
 
-        companion object {
-            private const val TAG = "EmbeddingGenWorker"
+        private suspend fun maybePromoteToForeground(
+            current: Int,
+            total: Int,
+        ) {
+            if (appLifecycleTracker.isInBackground.value) {
+                setForeground(createForegroundInfo(current, total))
+            }
+        }
 
+        private fun createForegroundInfo(
+            current: Int,
+            total: Int,
+        ): ForegroundInfo {
+            val notification = notificationManager.buildProgressNotification(current, total)
+            return ForegroundInfo(
+                EmbeddingNotificationManager.NOTIFICATION_ID,
+                notification,
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC,
+            )
+        }
+
+        companion object {
             const val WORK_NAME = "embedding_generation_work"
             const val BATCH_SIZE = 20
             const val MAX_RETRY_COUNT = 3

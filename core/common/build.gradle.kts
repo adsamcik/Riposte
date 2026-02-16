@@ -31,6 +31,9 @@ dependencies {
     // Lifecycle (ProcessLifecycleOwner for app foreground/background tracking)
     implementation(libs.lifecycle.process)
 
+    // Logging
+    api(libs.timber)
+
     // Coroutines
     implementation(libs.coroutines.core)
     implementation(libs.coroutines.android)

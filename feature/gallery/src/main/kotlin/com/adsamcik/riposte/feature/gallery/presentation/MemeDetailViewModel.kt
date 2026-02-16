@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
@@ -327,7 +328,7 @@ class MemeDetailViewModel
                     val status = useCases.getSimilarMemes(currentMemeId)
                     _uiState.update { it.copy(similarMemesStatus = status, isLoadingSimilar = false) }
                 } catch (e: Exception) {
-                    android.util.Log.e("MemeDetailViewModel", "Failed to load similar memes", e)
+                    Timber.e(e, "Failed to load similar memes")
                     _uiState.update {
                         it.copy(
                             similarMemesStatus =

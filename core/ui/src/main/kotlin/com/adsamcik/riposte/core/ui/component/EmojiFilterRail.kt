@@ -33,12 +33,12 @@ private const val MAX_EMOJI_COUNT = 200
  *
  * Shows the first [maxVisible] emojis as chips, with a "more" chip if additional
  * emojis exist. Tapping the more chip expands to show [EmojiGridOverlay].
- * When filters are active, shows a clear button to reset all filters.
+ * When a filter is active, shows a clear button to reset it.
  *
  * @param emojis List of emoji-count pairs, sorted by frequency. Capped at [MAX_EMOJI_COUNT].
- * @param activeFilters Set of currently selected emoji filters.
- * @param onEmojiToggle Callback when an emoji filter is toggled.
- * @param onClearAll Callback to clear all active filters.
+ * @param activeFilter Currently selected emoji filter, or null if none.
+ * @param onEmojiSelected Callback when an emoji filter is selected (tapping the active one clears it).
+ * @param onClearFilter Callback to clear the active filter.
  * @param leadingContent Optional slot for additional chips rendered before the emoji chips.
  * @param maxVisible Maximum number of emojis to show before overflow.
  * @param modifier Modifier to be applied to the component.
@@ -46,9 +46,9 @@ private const val MAX_EMOJI_COUNT = 200
 @Composable
 fun EmojiFilterRail(
     emojis: List<Pair<String, Int>>,
-    activeFilters: Set<String>,
-    onEmojiToggle: (String) -> Unit,
-    onClearAll: () -> Unit = {},
+    activeFilter: String?,
+    onEmojiSelected: (String) -> Unit,
+    onClearFilter: () -> Unit = {},
     leadingContent: (LazyListScope.() -> Unit)? = null,
     maxVisible: Int = 7,
     modifier: Modifier = Modifier,
@@ -68,11 +68,11 @@ fun EmojiFilterRail(
             // Leading content slot (e.g., Favorites chip)
             leadingContent?.invoke(this)
 
-            // Clear all button when filters are active
-            if (activeFilters.isNotEmpty()) {
+            // Clear button when a filter is active
+            if (activeFilter != null) {
                 item(key = "clear_all") {
                     IconButton(
-                        onClick = onClearAll,
+                        onClick = onClearFilter,
                         modifier = Modifier.size(48.dp),
                     ) {
                         Icon(
@@ -91,8 +91,8 @@ fun EmojiFilterRail(
             ) { (emoji, _) ->
                 EmojiChip(
                     emojiTag = EmojiTag.fromEmoji(emoji),
-                    onClick = { onEmojiToggle(emoji) },
-                    isSelected = emoji in activeFilters,
+                    onClick = { onEmojiSelected(emoji) },
+                    isSelected = emoji == activeFilter,
                 )
             }
 
@@ -109,8 +109,8 @@ fun EmojiFilterRail(
         if (isExpanded) {
             EmojiGridOverlay(
                 emojis = limitedEmojis,
-                activeFilters = activeFilters,
-                onEmojiToggle = onEmojiToggle,
+                activeFilter = activeFilter,
+                onEmojiSelected = onEmojiSelected,
                 onDismiss = { isExpanded = false },
             )
         }
@@ -135,8 +135,8 @@ private fun EmojiFilterRailPreview() {
                     "🤣" to 8,
                     "😅" to 5,
                 ),
-            activeFilters = setOf("😂", "🔥"),
-            onEmojiToggle = {},
+            activeFilter = "😂",
+            onEmojiSelected = {},
         )
     }
 }
@@ -152,8 +152,8 @@ private fun EmojiFilterRailFewEmojisPreview() {
                     "🔥" to 5,
                     "💀" to 3,
                 ),
-            activeFilters = emptySet(),
-            onEmojiToggle = {},
+            activeFilter = null,
+            onEmojiSelected = {},
         )
     }
 }
@@ -173,8 +173,8 @@ private fun EmojiFilterRailNoneSelectedPreview() {
                     "😤" to 15,
                     "🤔" to 12,
                 ),
-            activeFilters = emptySet(),
-            onEmojiToggle = {},
+            activeFilter = null,
+            onEmojiSelected = {},
         )
     }
 }

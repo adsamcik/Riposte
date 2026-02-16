@@ -146,10 +146,6 @@
     <ID>Indentation:SettingsViewModel.kt$SettingsViewModel$ </ID>
     <ID>Indentation:ShareRepositoryImpl.kt$ShareRepositoryImpl$ </ID>
     <ID>Indentation:ShareRepositoryImpl.kt$ShareRepositoryImpl.Companion$ </ID>
-    <ID>Indentation:ShareTargetRepositoryImpl.kt$ShareTargetRepositoryImpl$ </ID>
-    <ID>Indentation:SharingShortcutManager.kt$SharingShortcutManager$ </ID>
-    <ID>Indentation:SharingShortcutManager.kt$SharingShortcutManager.Companion$ </ID>
-    <ID>Indentation:SharingShortcutUpdater.kt$SharingShortcutUpdater$ </ID>
     <ID>Indentation:SimpleEmbeddingGenerator.kt$SimpleEmbeddingGenerator$ </ID>
     <ID>Indentation:SliderSettingItem.kt$ </ID>
     <ID>Indentation:SwitchSettingItem.kt$ </ID>
@@ -358,7 +354,6 @@
     <ID>ReturnCount:ImportWorker.kt$ImportWorker$override suspend fun doWork(): Result</ID>
     <ID>ReturnCount:MediaPipeEmbeddingGenerator.kt$MediaPipeEmbeddingGenerator$private fun extractEmbedding(result: TextEmbedderResult): FloatArray</ID>
     <ID>ReturnCount:SearchRepositoryImpl.kt$SearchRepositoryImpl$override suspend fun searchSemantic( query: String, limit: Int, ): List&lt;SearchResult&gt;</ID>
-    <ID>ReturnCount:SharingShortcutManager.kt$SharingShortcutManager$private fun buildShortcut(meme: Meme): ShortcutInfoCompat?</ID>
     <ID>ReturnCount:SuggestionEngine.kt$SuggestionEngine$fun suggest( allMemes: List&lt;Meme&gt;, context: SuggestionContext, now: Long, ): List&lt;Meme&gt;</ID>
     <ID>ReturnCount:TriSignalScorer.kt$TriSignalScorer$internal fun scopeScore( meme: Meme, context: SuggestionContext, ): Double</ID>
     <ID>ReturnCount:XmpMetadataHandler.kt$XmpMetadataHandler$private fun parseXmpPacket(xmpData: String): MemeMetadata?</ID>

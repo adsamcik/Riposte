@@ -715,7 +715,7 @@ class GalleryViewModelTest {
     // region Emoji Filter Tests (p2-7)
 
     @Test
-    fun `ToggleEmojiFilter adds emoji to activeEmojiFilters`() =
+    fun `SetEmojiFilter sets active emoji filter`() =
         runTest {
             viewModel = createViewModel()
             advanceUntilIdle()
@@ -724,57 +724,69 @@ class GalleryViewModelTest {
             viewModel.onIntent(GalleryIntent.SetFilter(GalleryFilter.Favorites))
             advanceUntilIdle()
 
-            viewModel.onIntent(GalleryIntent.ToggleEmojiFilter("😂"))
+            viewModel.onIntent(GalleryIntent.SetEmojiFilter("😂"))
             advanceUntilIdle()
 
-            assertThat(viewModel.uiState.value.activeEmojiFilters).containsExactly("😂")
+            assertThat(viewModel.uiState.value.activeEmojiFilter).isEqualTo("😂")
         }
 
     @Test
-    fun `ToggleEmojiFilter removes emoji when already active`() =
+    fun `SetEmojiFilter clears emoji when already active`() =
         runTest {
             viewModel = createViewModel()
             advanceUntilIdle()
 
-            viewModel.onIntent(GalleryIntent.ToggleEmojiFilter("😂"))
-            viewModel.onIntent(GalleryIntent.ToggleEmojiFilter("😂"))
+            viewModel.onIntent(GalleryIntent.SetEmojiFilter("😂"))
+            viewModel.onIntent(GalleryIntent.SetEmojiFilter("😂"))
             advanceUntilIdle()
 
-            assertThat(viewModel.uiState.value.activeEmojiFilters).isEmpty()
+            assertThat(viewModel.uiState.value.activeEmojiFilter).isNull()
         }
 
     @Test
-    fun `ClearEmojiFilters resets all active filters`() =
+    fun `ClearEmojiFilter resets active filter`() =
         runTest {
             viewModel = createViewModel()
             advanceUntilIdle()
 
-            viewModel.onIntent(GalleryIntent.ToggleEmojiFilter("😂"))
-            viewModel.onIntent(GalleryIntent.ToggleEmojiFilter("🔥"))
+            viewModel.onIntent(GalleryIntent.SetEmojiFilter("😂"))
             advanceUntilIdle()
-            assertThat(viewModel.uiState.value.activeEmojiFilters).hasSize(2)
+            assertThat(viewModel.uiState.value.activeEmojiFilter).isNotNull()
 
-            viewModel.onIntent(GalleryIntent.ClearEmojiFilters)
+            viewModel.onIntent(GalleryIntent.ClearEmojiFilter)
             advanceUntilIdle()
 
-            assertThat(viewModel.uiState.value.activeEmojiFilters).isEmpty()
+            assertThat(viewModel.uiState.value.activeEmojiFilter).isNull()
         }
 
     @Test
-    fun `emoji filters survive in UiState across intents`() =
+    fun `SetEmojiFilter replaces previous filter with new emoji`() =
         runTest {
             viewModel = createViewModel()
             advanceUntilIdle()
 
-            viewModel.onIntent(GalleryIntent.ToggleEmojiFilter("😂"))
+            viewModel.onIntent(GalleryIntent.SetEmojiFilter("😂"))
+            viewModel.onIntent(GalleryIntent.SetEmojiFilter("🔥"))
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.activeEmojiFilter).isEqualTo("🔥")
+        }
+
+    @Test
+    fun `emoji filter survives in UiState across intents`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onIntent(GalleryIntent.SetEmojiFilter("😂"))
             advanceUntilIdle()
 
             // Trigger another unrelated intent
             viewModel.onIntent(GalleryIntent.LoadMemes)
             advanceUntilIdle()
 
-            // Emoji filters should still be present
-            assertThat(viewModel.uiState.value.activeEmojiFilters).containsExactly("😂")
+            // Emoji filter should still be present
+            assertThat(viewModel.uiState.value.activeEmojiFilter).isEqualTo("😂")
         }
 
     // endregion
@@ -833,7 +845,7 @@ class GalleryViewModelTest {
             viewModel.onIntent(GalleryIntent.SetFilter(GalleryFilter.Favorites))
             advanceUntilIdle()
 
-            viewModel.onIntent(GalleryIntent.ToggleEmojiFilter("🔥"))
+            viewModel.onIntent(GalleryIntent.SetEmojiFilter("🔥"))
             advanceUntilIdle()
 
             val filtered = viewModel.uiState.value.filteredMemes
@@ -885,12 +897,12 @@ class GalleryViewModelTest {
             viewModel = createViewModel()
             advanceUntilIdle()
 
-            viewModel.onIntent(GalleryIntent.ToggleEmojiFilter("😂"))
+            viewModel.onIntent(GalleryIntent.SetEmojiFilter("😂"))
             advanceUntilIdle()
 
             val state = viewModel.uiState.value
-            assertThat(state.activeEmojiFilters).isNotEmpty()
-            assertThat(state.activeEmojiFilters).containsExactly("😂")
+            assertThat(state.activeEmojiFilter).isNotNull()
+            assertThat(state.activeEmojiFilter).isEqualTo("😂")
         }
 
     @Test

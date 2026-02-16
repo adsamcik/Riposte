@@ -17,6 +17,7 @@ import com.adsamcik.riposte.core.model.ImageFormat
 import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.core.model.MemeMetadata
 import com.adsamcik.riposte.core.model.ShareConfig
+import com.adsamcik.riposte.feature.share.R
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -120,14 +121,17 @@ class ShareRepositoryImpl
             uri: Uri,
             mimeType: String,
         ): Intent {
+            val chooserTitle = context.getString(R.string.share_chooser_title)
             val baseIntent =
                 Intent(Intent.ACTION_SEND).apply {
                     type = mimeType
                     putExtra(Intent.EXTRA_STREAM, uri)
+                    putExtra(Intent.EXTRA_TITLE, chooserTitle)
+                    putExtra(Intent.EXTRA_SUBJECT, chooserTitle)
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
 
-            val chooserIntent = Intent.createChooser(baseIntent, null)
+            val chooserIntent = Intent.createChooser(baseIntent, chooserTitle)
 
             // Prioritize messaging apps at the top of the chooser
             val messagingIntents = resolveMessagingAppIntents(uri, mimeType)

@@ -36,6 +36,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
@@ -56,20 +57,20 @@ class GalleryViewModel
 
         /**
          * Paged memes flow for the "All" filter.
-         * Reacts to emoji filter changes — when filters are active, a filtered
+         * Reacts to emoji filter changes — when a filter is active, a filtered
          * PagingSource is used so filtering happens at the SQL level instead of
          * O(n) iteration during Compose recomposition.
          */
         @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
         val pagedMemes: Flow<PagingData<Meme>> =
             _uiState
-                .map { it.activeEmojiFilters }
+                .map { it.activeEmojiFilter }
                 .distinctUntilChanged()
-                .flatMapLatest { emojiFilters ->
-                    if (emojiFilters.isEmpty()) {
+                .flatMapLatest { emojiFilter ->
+                    if (emojiFilter == null) {
                         galleryRepository.getPagedMemes("emoji")
                     } else {
-                        galleryRepository.getPagedMemesByEmojis(emojiFilters)
+                        galleryRepository.getPagedMemesByEmojis(setOf(emojiFilter))
                     }
                 }
                 .cachedIn(viewModelScope)
@@ -116,17 +117,21 @@ class GalleryViewModel
                 is GalleryIntent.ShareSelected -> shareSelected()
                 is GalleryIntent.NavigateToImport -> navigateToImport()
                 is GalleryIntent.QuickShare -> quickShare(intent.memeId)
-                is GalleryIntent.ToggleEmojiFilter -> toggleEmojiFilter(intent.emoji)
-                is GalleryIntent.ClearEmojiFilters -> clearEmojiFilters()
+                is GalleryIntent.SetEmojiFilter -> setEmojiFilter(intent.emoji)
+                is GalleryIntent.ClearEmojiFilter -> clearEmojiFilter()
                 is GalleryIntent.DismissNotification -> dismissNotification()
+                is GalleryIntent.SearchFieldFocusChanged -> setSearchFocused(intent.isFocused)
                 // Search intents — delegate
                 is GalleryIntent.UpdateSearchQuery,
-                is GalleryIntent.ClearSearch,
                 is GalleryIntent.SelectRecentSearch,
                 is GalleryIntent.SelectSuggestion,
                 is GalleryIntent.DeleteRecentSearch,
                 is GalleryIntent.ClearRecentSearches,
-                -> searchDelegate.onIntent(intent, viewModelScope, _uiState.value.activeEmojiFilters)
+                -> searchDelegate.onIntent(intent, viewModelScope, _uiState.value.activeEmojiFilter)
+                is GalleryIntent.ClearSearch -> {
+                    clearEmojiFilter()
+                    searchDelegate.onIntent(intent, viewModelScope, null)
+                }
             }
         }
 
@@ -229,7 +234,7 @@ class GalleryViewModel
                             }
                         }
                 } catch (_: IllegalStateException) {
-                    // WorkManager not initialized — safe to ignore in tests
+                    Timber.d("WorkManager not available, skipping import work observation")
                 }
             }
         }
@@ -256,12 +261,12 @@ class GalleryViewModel
                             }
                         }
                 } catch (_: IllegalStateException) {
-                    // WorkManager not initialized — safe to ignore in tests
+                    Timber.d("WorkManager not available, skipping embedding work observation")
                 }
             }
         }
 
-        private fun loadPreferences() {
+        private fun loadPreferences(){
             viewModelScope.launch {
                 preferencesDataStore.appPreferences.collectLatest { prefs ->
                     _uiState.update { it.copy(densityPreference = prefs.userDensityPreference) }
@@ -315,6 +320,7 @@ class GalleryViewModel
             memesJob?.cancel()
 
             val filter = _uiState.value.filter
+            Timber.d("Loading memes with filter: %s", filter)
 
             // Use paging for "All" filter, regular list for filtered views
             when (filter) {
@@ -456,6 +462,7 @@ class GalleryViewModel
                         clearSelection()
                     }
                     .onFailure { error ->
+                        Timber.e(error, "Failed to delete %d memes", pendingDeleteIds.size)
                         _effects.send(
                             GalleryEffect.ShowError(
                                 error.message ?: context.getString(R.string.gallery_snackbar_delete_failed),
@@ -537,6 +544,7 @@ class GalleryViewModel
                         _effects.send(GalleryEffect.LaunchShareIntent(intent))
                     }
                     .onFailure { error ->
+                        Timber.e(error, "Quick share failed for meme %d", memeId)
                         _effects.send(
                             GalleryEffect.ShowError(
                                 error.message ?: context.getString(R.string.gallery_error_default),
@@ -550,27 +558,26 @@ class GalleryViewModel
             _uiState.update { it.copy(notification = null) }
         }
 
-        private fun toggleEmojiFilter(emoji: String) {
+        private fun setSearchFocused(isFocused: Boolean) {
+            _uiState.update { it.copy(isSearchFocused = isFocused) }
+        }
+
+        private fun setEmojiFilter(emoji: String) {
             _uiState.update { state ->
-                val newFilters =
-                    if (emoji in state.activeEmojiFilters) {
-                        state.activeEmojiFilters - emoji
-                    } else {
-                        state.activeEmojiFilters + emoji
-                    }
-                state.copy(activeEmojiFilters = newFilters)
+                val newFilter = if (state.activeEmojiFilter == emoji) null else emoji
+                state.copy(activeEmojiFilter = newFilter)
             }
             recomputeDerivedState()
             if (_uiState.value.screenMode == ScreenMode.Searching) {
-                searchDelegate.refilter(viewModelScope, _uiState.value.activeEmojiFilters)
+                searchDelegate.refilter(viewModelScope, _uiState.value.activeEmojiFilter)
             }
         }
 
-        private fun clearEmojiFilters() {
-            _uiState.update { it.copy(activeEmojiFilters = emptySet()) }
+        private fun clearEmojiFilter() {
+            _uiState.update { it.copy(activeEmojiFilter = null) }
             recomputeDerivedState()
             if (_uiState.value.screenMode == ScreenMode.Searching) {
-                searchDelegate.refilter(viewModelScope, emptySet())
+                searchDelegate.refilter(viewModelScope, null)
             }
         }
 
@@ -583,11 +590,11 @@ class GalleryViewModel
             val memes = state.memes
 
             val filtered =
-                if (state.activeEmojiFilters.isEmpty()) {
+                if (state.activeEmojiFilter == null) {
                     memes
                 } else {
                     memes.filter { meme ->
-                        meme.emojiTags.any { it.emoji in state.activeEmojiFilters }
+                        meme.emojiTags.any { it.emoji == state.activeEmojiFilter }
                     }
                 }
 

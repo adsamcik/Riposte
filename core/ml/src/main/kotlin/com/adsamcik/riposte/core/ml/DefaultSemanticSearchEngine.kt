@@ -1,6 +1,6 @@
 package com.adsamcik.riposte.core.ml
 
-import android.util.Log
+import timber.log.Timber
 import com.adsamcik.riposte.core.model.MatchType
 import com.adsamcik.riposte.core.model.SearchResult
 import kotlinx.coroutines.Dispatchers
@@ -44,13 +44,13 @@ class DefaultSemanticSearchEngine
                                 queryEmbeddingCache[query] = it
                             }
                     } catch (e: UnsatisfiedLinkError) {
-                        Log.w(TAG, "Native library not available for semantic search", e)
+                        Timber.w(e, "Native library not available for semantic search")
                         return@withContext emptyList()
                     } catch (e: ExceptionInInitializerError) {
-                        Log.w(TAG, "Embedding model failed to initialize", e)
+                        Timber.w(e, "Embedding model failed to initialize")
                         return@withContext emptyList()
                     } catch (e: Exception) {
-                        Log.w(TAG, "Failed to generate query embedding", e)
+                        Timber.w(e, "Failed to generate query embedding")
                         return@withContext emptyList()
                     }
 
@@ -85,7 +85,7 @@ class DefaultSemanticSearchEngine
                                 queryEmbeddingCache[query] = it
                             }
                     } catch (e: Exception) {
-                        Log.w(TAG, "Failed to generate query embedding for multi-vector search", e)
+                        Timber.w(e, "Failed to generate query embedding for multi-vector search")
                         return@withContext emptyList()
                     }
 
@@ -149,7 +149,6 @@ class DefaultSemanticSearchEngine
         }
 
         private companion object {
-            const val TAG = "SemanticSearchEngine"
             const val MAX_CACHE_ENTRIES = 50
         }
     }

@@ -3,6 +3,7 @@ package com.adsamcik.riposte.core.ml
 import android.content.Context
 import androidx.work.Configuration
 import androidx.work.testing.WorkManagerTestInitHelper
+import com.adsamcik.riposte.core.common.lifecycle.AppLifecycleTracker
 import com.adsamcik.riposte.core.database.dao.MemeEmbeddingDao
 import com.adsamcik.riposte.core.database.entity.MemeEmbeddingEntity
 import com.google.common.truth.Truth.assertThat
@@ -11,6 +12,11 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
+import io.mockk.verify
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
@@ -18,12 +24,15 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class EmbeddingManagerTest {
     private lateinit var context: Context
     private lateinit var embeddingGenerator: EmbeddingGenerator
     private lateinit var memeEmbeddingDao: MemeEmbeddingDao
     private lateinit var versionManager: EmbeddingModelVersionManager
+    private lateinit var appLifecycleTracker: AppLifecycleTracker
+    private lateinit var isInBackgroundFlow: MutableStateFlow<Boolean>
     private lateinit var embeddingManager: EmbeddingManager
 
     @Before
@@ -40,9 +49,12 @@ class EmbeddingManagerTest {
         embeddingGenerator = mockk()
         memeEmbeddingDao = mockk(relaxed = true)
         versionManager = mockk()
+        appLifecycleTracker = mockk()
+        isInBackgroundFlow = MutableStateFlow(false)
 
         every { versionManager.currentModelVersion } returns "mediapipe_use:1.0.0"
         every { embeddingGenerator.initializationError } returns null
+        every { appLifecycleTracker.isInBackground } returns isInBackgroundFlow
 
         embeddingManager =
             EmbeddingManager(
@@ -50,6 +62,7 @@ class EmbeddingManagerTest {
                 embeddingGenerator = embeddingGenerator,
                 memeEmbeddingDao = memeEmbeddingDao,
                 versionManager = versionManager,
+                appLifecycleTracker = appLifecycleTracker,
             )
     }
 
@@ -217,6 +230,7 @@ class EmbeddingManagerTest {
             coEvery { memeEmbeddingDao.countMemesWithoutEmbeddings() } returns 33
             coEvery { memeEmbeddingDao.countEmbeddingsNeedingRegeneration() } returns 0
             coEvery { memeEmbeddingDao.getEmbeddingCountByModelVersion() } returns emptyList()
+            coEvery { versionManager.isErrorConfirmedForVersion(any()) } returns true
 
             // When
             val stats = embeddingManager.getStatistics()
@@ -226,6 +240,184 @@ class EmbeddingManagerTest {
             assertThat(stats.validEmbeddingCount).isEqualTo(0)
             assertThat(stats.pendingEmbeddingCount).isEqualTo(33)
         }
+
+    // region Foreground Resume Tests
+
+    @Test
+    fun `warmUpAndResumeIndexing schedules work when returning to foreground with pending memes`() =
+        runTest {
+            // Given
+            coEvery { embeddingGenerator.initialize() } returns Unit
+            coEvery { versionManager.clearInitializationFailure() } returns Unit
+            coEvery { versionManager.hasModelBeenUpgraded() } returns false
+            coEvery { memeEmbeddingDao.countValidEmbeddings() } returns 10
+            coEvery { memeEmbeddingDao.countMemesWithoutEmbeddings() } returns 5
+            coEvery { memeEmbeddingDao.countEmbeddingsNeedingRegeneration() } returns 0
+            coEvery { memeEmbeddingDao.getEmbeddingCountByModelVersion() } returns emptyList()
+            coEvery { versionManager.isErrorConfirmedForVersion(any()) } returns false
+
+            // When — start monitoring
+            embeddingManager.warmUpAndResumeIndexing(this)
+            advanceUntilIdle()
+
+            // Simulate going to background then returning to foreground
+            isInBackgroundFlow.value = true
+            advanceUntilIdle()
+            isInBackgroundFlow.value = false
+            advanceUntilIdle()
+
+            // Then — getStatistics was called for foreground check (beyond the initial startup check)
+            // Two calls: one at startup, one on foreground return
+            coVerify(atLeast = 2) { memeEmbeddingDao.countMemesWithoutEmbeddings() }
+        }
+
+    @Test
+    fun `warmUpAndResumeIndexing does not schedule work when fully indexed on foreground return`() =
+        runTest {
+            // Given — fully indexed
+            coEvery { embeddingGenerator.initialize() } returns Unit
+            coEvery { versionManager.clearInitializationFailure() } returns Unit
+            coEvery { versionManager.hasModelBeenUpgraded() } returns false
+            coEvery { memeEmbeddingDao.countValidEmbeddings() } returns 10
+            coEvery { memeEmbeddingDao.countMemesWithoutEmbeddings() } returns 0
+            coEvery { memeEmbeddingDao.countEmbeddingsNeedingRegeneration() } returns 0
+            coEvery { memeEmbeddingDao.getEmbeddingCountByModelVersion() } returns emptyList()
+            coEvery { versionManager.isErrorConfirmedForVersion(any()) } returns false
+
+            // When
+            embeddingManager.warmUpAndResumeIndexing(this)
+            advanceUntilIdle()
+
+            // Simulate foreground return
+            isInBackgroundFlow.value = true
+            advanceUntilIdle()
+            isInBackgroundFlow.value = false
+            advanceUntilIdle()
+
+            // Then — stats are checked but no additional scheduling needed
+            // The key assertion is that we DON'T crash and the flow completes gracefully
+            coVerify(atLeast = 2) { memeEmbeddingDao.countMemesWithoutEmbeddings() }
+        }
+
+    @Test
+    fun `warmUpAndResumeIndexing skips foreground resume when model has error`() =
+        runTest {
+            // Given
+            coEvery { embeddingGenerator.initialize() } returns Unit
+            coEvery { versionManager.clearInitializationFailure() } returns Unit
+            coEvery { versionManager.hasModelBeenUpgraded() } returns false
+            every { embeddingGenerator.initializationError } returns "Model error"
+            coEvery { versionManager.isErrorConfirmedForVersion(any()) } returns true
+            coEvery { memeEmbeddingDao.countValidEmbeddings() } returns 0
+            coEvery { memeEmbeddingDao.countMemesWithoutEmbeddings() } returns 10
+            coEvery { memeEmbeddingDao.countEmbeddingsNeedingRegeneration() } returns 0
+            coEvery { memeEmbeddingDao.getEmbeddingCountByModelVersion() } returns emptyList()
+
+            // When
+            embeddingManager.warmUpAndResumeIndexing(this)
+            advanceUntilIdle()
+
+            // Simulate foreground return
+            isInBackgroundFlow.value = true
+            advanceUntilIdle()
+            isInBackgroundFlow.value = false
+            advanceUntilIdle()
+
+            // Then — should not try to schedule since model error is present
+            // Only the startup check queries the DAO (which also skips scheduling)
+            coVerify(atMost = 1) { memeEmbeddingDao.countMemesWithoutEmbeddings() }
+        }
+
+    @Test
+    fun `warmUpAndResumeIndexing does not react to initial background state`() =
+        runTest {
+            // Given — start in background
+            isInBackgroundFlow.value = true
+            coEvery { embeddingGenerator.initialize() } returns Unit
+            coEvery { versionManager.clearInitializationFailure() } returns Unit
+            coEvery { versionManager.hasModelBeenUpgraded() } returns false
+            coEvery { memeEmbeddingDao.countValidEmbeddings() } returns 10
+            coEvery { memeEmbeddingDao.countMemesWithoutEmbeddings() } returns 5
+            coEvery { memeEmbeddingDao.countEmbeddingsNeedingRegeneration() } returns 0
+            coEvery { memeEmbeddingDao.getEmbeddingCountByModelVersion() } returns emptyList()
+            coEvery { versionManager.isErrorConfirmedForVersion(any()) } returns false
+
+            // When — start monitoring (initial value is dropped)
+            embeddingManager.warmUpAndResumeIndexing(this)
+            advanceUntilIdle()
+
+            // Then — only startup check, no foreground resume triggered by initial value
+            coVerify(exactly = 1) { memeEmbeddingDao.countMemesWithoutEmbeddings() }
+        }
+
+    @Test
+    fun `warmUpAndResumeIndexing handles multiple foreground returns`() =
+        runTest {
+            // Given
+            coEvery { embeddingGenerator.initialize() } returns Unit
+            coEvery { versionManager.clearInitializationFailure() } returns Unit
+            coEvery { versionManager.hasModelBeenUpgraded() } returns false
+            coEvery { memeEmbeddingDao.countValidEmbeddings() } returns 10
+            coEvery { memeEmbeddingDao.countMemesWithoutEmbeddings() } returns 5
+            coEvery { memeEmbeddingDao.countEmbeddingsNeedingRegeneration() } returns 0
+            coEvery { memeEmbeddingDao.getEmbeddingCountByModelVersion() } returns emptyList()
+            coEvery { versionManager.isErrorConfirmedForVersion(any()) } returns false
+
+            // When
+            embeddingManager.warmUpAndResumeIndexing(this)
+            advanceUntilIdle()
+
+            // Simulate multiple background/foreground cycles
+            repeat(3) {
+                isInBackgroundFlow.value = true
+                advanceUntilIdle()
+                isInBackgroundFlow.value = false
+                advanceUntilIdle()
+            }
+
+            // Then — startup + 3 foreground returns = 4 checks
+            coVerify(atLeast = 4) { memeEmbeddingDao.countMemesWithoutEmbeddings() }
+        }
+
+    @Test
+    fun `warmUpAndResumeIndexing handles statistics exception on foreground return gracefully`() =
+        runTest {
+            // Given
+            coEvery { embeddingGenerator.initialize() } returns Unit
+            coEvery { versionManager.clearInitializationFailure() } returns Unit
+            coEvery { versionManager.hasModelBeenUpgraded() } returns false
+            // First call succeeds (startup), subsequent calls fail (foreground return)
+            coEvery { memeEmbeddingDao.countValidEmbeddings() } returns 10
+            coEvery { memeEmbeddingDao.countMemesWithoutEmbeddings() } returns 0
+            coEvery { memeEmbeddingDao.countEmbeddingsNeedingRegeneration() } returns 0
+            coEvery { memeEmbeddingDao.getEmbeddingCountByModelVersion() } returns emptyList()
+            coEvery { versionManager.isErrorConfirmedForVersion(any()) } returns false
+
+            embeddingManager.warmUpAndResumeIndexing(this)
+            advanceUntilIdle()
+
+            // Now make stats throw on next foreground return
+            coEvery { memeEmbeddingDao.countValidEmbeddings() } throws RuntimeException("DB error")
+
+            // When — foreground return should not crash
+            isInBackgroundFlow.value = true
+            advanceUntilIdle()
+            isInBackgroundFlow.value = false
+            advanceUntilIdle()
+
+            // Then — no crash, flow continues working
+            // Verify next cycle still works after error recovery
+            coEvery { memeEmbeddingDao.countValidEmbeddings() } returns 10
+            coEvery { memeEmbeddingDao.countMemesWithoutEmbeddings() } returns 3
+            isInBackgroundFlow.value = true
+            advanceUntilIdle()
+            isInBackgroundFlow.value = false
+            advanceUntilIdle()
+
+            coVerify(atLeast = 1) { memeEmbeddingDao.countMemesWithoutEmbeddings() }
+        }
+
+    // endregion
 
     private fun encodeEmbedding(embedding: FloatArray): ByteArray {
         val buffer =

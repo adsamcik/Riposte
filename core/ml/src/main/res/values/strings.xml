@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="embedding_notification_channel_name">Indexing Progress</string>
+    <string name="embedding_notification_channel_description">Shows progress when indexing memes for search in the background</string>
+    <string name="embedding_notification_title">Indexing memes</string>
+    <string name="embedding_notification_progress">%1$d of %2$d</string>
+    <string name="embedding_notification_complete_title">Indexing complete</string>
+    <string name="embedding_notification_complete_success">%1$d memes indexed for search</string>
+    <string name="embedding_notification_complete_partial">%1$d indexed, %2$d failed</string>
+    <string name="embedding_notification_complete_failed">Indexing failed for %1$d memes</string>
+</resources>

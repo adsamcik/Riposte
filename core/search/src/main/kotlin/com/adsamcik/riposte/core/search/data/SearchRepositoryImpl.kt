@@ -1,6 +1,6 @@
 package com.adsamcik.riposte.core.search.data
 
-import android.util.Log
+import timber.log.Timber
 import com.adsamcik.riposte.core.database.dao.EmojiTagDao
 import com.adsamcik.riposte.core.database.dao.MemeDao
 import com.adsamcik.riposte.core.database.dao.MemeEmbeddingDao
@@ -99,7 +99,7 @@ class SearchRepositoryImpl
                             .mapNotNull { row ->
                                 val decoded = decodeEmbedding(row.embedding!!)
                                 if (decoded.size < 2) {
-                                    Log.w(TAG, "Skipping embedding with invalid dimensions: ${decoded.size}")
+                                    Timber.w("Skipping embedding with invalid dimensions: ${decoded.size}")
                                     return@mapNotNull null
                                 }
                                 val type = row.embeddingType ?: "content"
@@ -308,7 +308,6 @@ class SearchRepositoryImpl
         }
 
         companion object {
-            private const val TAG = "SearchRepositoryImpl"
             private const val FTS_WEIGHT = 0.6f
             private const val SEMANTIC_WEIGHT = 0.4f
             private const val FAVORITE_BOOST_THRESHOLD = 0.5f
