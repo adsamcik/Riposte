@@ -72,11 +72,14 @@ class MemeDetailViewModel
 
         private fun share() {
             viewModelScope.launch {
+                _uiState.update { it.copy(isSharing = true) }
                 shareMemeUseCase(currentMemeId)
                     .onSuccess { intent ->
+                        _uiState.update { it.copy(isSharing = false) }
                         _effects.send(MemeDetailEffect.LaunchShareIntent(intent))
                     }
                     .onFailure { error ->
+                        _uiState.update { it.copy(isSharing = false) }
                         _effects.send(
                             MemeDetailEffect.ShowError(
                                 error.message ?: context.getString(R.string.gallery_error_default),

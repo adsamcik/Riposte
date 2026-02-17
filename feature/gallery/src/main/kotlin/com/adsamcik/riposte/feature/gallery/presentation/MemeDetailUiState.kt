@@ -13,6 +13,7 @@ data class MemeDetailUiState(
     val showDeleteDialog: Boolean = false,
     val showEmojiPicker: Boolean = false,
     val isSaving: Boolean = false,
+    val isSharing: Boolean = false,
     val errorMessage: String? = null,
     val similarMemesStatus: SimilarMemesStatus? = null,
     val isLoadingSimilar: Boolean = false,

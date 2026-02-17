@@ -545,8 +545,17 @@ private fun MemeActionButtonsRow(
                     IconButtonDefaults.filledIconButtonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                     ),
+                enabled = !uiState.isSharing,
             ) {
-                Icon(Icons.Default.Share, contentDescription = stringResource(R.string.gallery_cd_share))
+                if (uiState.isSharing) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        strokeWidth = 2.dp,
+                    )
+                } else {
+                    Icon(Icons.Default.Share, contentDescription = stringResource(R.string.gallery_cd_share))
+                }
             }
             Text(
                 text = stringResource(R.string.gallery_detail_action_share),
