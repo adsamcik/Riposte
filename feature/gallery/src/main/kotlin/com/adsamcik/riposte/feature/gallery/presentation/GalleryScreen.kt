@@ -661,8 +661,13 @@ private fun GalleryScreenContent(
                                                     .padding(16.dp),
                                             contentAlignment = Alignment.Center,
                                         ) {
+                                            val loadingDescription = stringResource(R.string.gallery_cd_loading_more)
                                             CircularProgressIndicator(
-                                                modifier = Modifier.size(32.dp),
+                                                modifier = Modifier
+                                                    .size(32.dp)
+                                                    .semantics {
+                                                        contentDescription = loadingDescription
+                                                    },
                                             )
                                         }
                                     }

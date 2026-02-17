@@ -256,7 +256,10 @@ private fun BoxScope.MemeCardCompactOverlays(
                         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
                         shape = RiposteShapes.EmojiChipDefault,
                     )
-                    .padding(horizontal = 6.dp, vertical = 3.dp),
+                    .padding(horizontal = 6.dp, vertical = 3.dp)
+                    .semantics(mergeDescendants = true) {
+                        contentDescription = meme.emojiTags.take(3).joinToString(", ") { it.emoji }
+                    },
         ) {
             Text(
                 text = meme.emojiTags.take(3).joinToString("") { it.emoji },
