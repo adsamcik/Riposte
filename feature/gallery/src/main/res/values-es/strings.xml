@@ -81,6 +81,10 @@
     <string name="gallery_snackbar_save_failed">No se pudieron guardar los cambios</string>
     <string name="gallery_snackbar_unsaved_changes">Tienes cambios sin guardar</string>
 
+    <!-- Description Expand/Collapse -->
+    <string name="gallery_detail_show_more">Mostrar más</string>
+    <string name="gallery_detail_show_less">Mostrar menos</string>
+
     <!-- Discard Changes Dialog -->
     <string name="gallery_discard_changes_title">¿Descartar cambios?</string>
     <string name="gallery_discard_changes_message">Tienes cambios sin guardar que se perderán.</string>

@@ -119,6 +119,10 @@
     <!-- Detail Action Labels (Edit Mode) -->
     <string name="gallery_detail_action_cancel">Cancel</string>
 
+    <!-- Description Expand/Collapse -->
+    <string name="gallery_detail_show_more">Show more</string>
+    <string name="gallery_detail_show_less">Show less</string>
+
     <!-- Empty Emoji Tags -->
     <string name="gallery_detail_empty_emoji_tags">No emoji tags yet — tap Edit to add some personality ✨</string>
 

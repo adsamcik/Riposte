@@ -793,11 +793,15 @@ private fun MemeViewModeContent(
         Text(
             text = title,
             style = MaterialTheme.typography.titleLarge,
+            maxLines = 3,
+            overflow = TextOverflow.Ellipsis,
             modifier = Modifier.semantics { heading() },
         )
     } ?: Text(
         text = meme.fileName,
         style = MaterialTheme.typography.titleLarge,
+        maxLines = 3,
+        overflow = TextOverflow.Ellipsis,
         modifier = Modifier.semantics { heading() },
     )
 
@@ -828,14 +832,30 @@ private fun MemeViewModeContent(
     meme.description?.let { description ->
         Spacer(Modifier.height(12.dp))
         var descriptionExpanded by remember { mutableStateOf(false) }
+        var hasTextOverflow by remember { mutableStateOf(false) }
         Text(
             text = description,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = if (descriptionExpanded) Int.MAX_VALUE else 2,
             overflow = TextOverflow.Ellipsis,
+            onTextLayout = { result -> hasTextOverflow = result.hasVisualOverflow },
             modifier = Modifier.clickable { descriptionExpanded = !descriptionExpanded },
         )
+        if (hasTextOverflow || descriptionExpanded) {
+            Text(
+                text = if (descriptionExpanded) {
+                    stringResource(R.string.gallery_detail_show_less)
+                } else {
+                    stringResource(R.string.gallery_detail_show_more)
+                },
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier
+                    .clickable { descriptionExpanded = !descriptionExpanded }
+                    .padding(top = 4.dp),
+            )
+        }
     }
 
     // Divider between content and metadata

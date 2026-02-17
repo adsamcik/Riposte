@@ -111,6 +111,10 @@
     <!-- Detail Action Labels (Edit Mode) -->
     <string name="gallery_detail_action_cancel">Zrušit</string>
 
+    <!-- Description Expand/Collapse -->
+    <string name="gallery_detail_show_more">Zobrazit více</string>
+    <string name="gallery_detail_show_less">Zobrazit méně</string>
+
     <!-- Empty Emoji Tags -->
     <string name="gallery_detail_empty_emoji_tags">Žádné emoji štítky — klepni na Upravit pro přidání</string>
 
