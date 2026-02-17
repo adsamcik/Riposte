@@ -48,6 +48,7 @@ jobs:
       - name: Upload build reports
         if: failure()
         uses: actions/upload-artifact@v4
+        continue-on-error: true
         with:
           name: build-reports
           path: |
@@ -57,6 +58,7 @@ jobs:
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
+        continue-on-error: true
         with:
           name: app-debug
           path: app/build/outputs/apk/standard/debug/app-standard-debug.apk
@@ -91,6 +93,7 @@ jobs:
       - name: Upload lint reports
         if: always()
         uses: actions/upload-artifact@v4
+        continue-on-error: true
         with:
           name: lint-reports
           path: |

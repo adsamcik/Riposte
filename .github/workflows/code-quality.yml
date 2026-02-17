@@ -39,6 +39,7 @@ jobs:
       - name: Upload detekt reports
         if: always()
         uses: actions/upload-artifact@v4
+        continue-on-error: true
         with:
           name: detekt-reports
           path: |
@@ -74,6 +75,7 @@ jobs:
       - name: Upload ktlint reports
         if: always()
         uses: actions/upload-artifact@v4
+        continue-on-error: true
         with:
           name: ktlint-reports
           path: |
