@@ -17,9 +17,9 @@ import com.adsamcik.riposte.core.ml.EmbeddingGenerator
 import com.adsamcik.riposte.core.model.EmbeddingType
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
-import timber.log.Timber
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.security.MessageDigest

@@ -1,7 +1,6 @@
 package com.adsamcik.riposte.core.ml
 
 import android.content.Context
-import timber.log.Timber
 import androidx.core.content.pm.PackageInfoCompat
 import com.adsamcik.riposte.core.common.lifecycle.AppLifecycleTracker
 import com.adsamcik.riposte.core.database.dao.MemeEmbeddingDao
@@ -15,6 +14,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.security.MessageDigest

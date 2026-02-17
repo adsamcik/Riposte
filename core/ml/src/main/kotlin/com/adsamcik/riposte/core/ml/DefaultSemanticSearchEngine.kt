@@ -1,10 +1,10 @@
 package com.adsamcik.riposte.core.ml
 
-import timber.log.Timber
 import com.adsamcik.riposte.core.model.MatchType
 import com.adsamcik.riposte.core.model.SearchResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.sqrt

@@ -6,9 +6,9 @@ import com.adsamcik.riposte.core.ml.SemanticSearchEngine
 import com.adsamcik.riposte.feature.gallery.domain.repository.GalleryRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import timber.log.Timber
 import javax.inject.Inject
 
 /**

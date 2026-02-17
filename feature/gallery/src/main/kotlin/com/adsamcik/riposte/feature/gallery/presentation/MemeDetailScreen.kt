@@ -1,7 +1,6 @@
 package com.adsamcik.riposte.feature.gallery.presentation
 
 import android.content.res.Configuration
-import timber.log.Timber
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -82,8 +81,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -113,6 +112,7 @@ import com.adsamcik.riposte.feature.gallery.domain.usecase.SimilarMemesStatus
 import com.adsamcik.riposte.feature.gallery.presentation.component.EditEmojiDialog
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
+import timber.log.Timber
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
@@ -352,7 +352,8 @@ private fun MemeDetailContent(
     val screenHeightDp = LocalConfiguration.current.screenHeightDp.dp
     val navigationBarInsets = WindowInsets.navigationBars
     val navigationBarHeight = with(LocalDensity.current) { navigationBarInsets.getBottom(this).toDp() }
-    val adaptivePeekHeight = ((screenHeightDp * 0.3f).coerceIn(140.dp, 340.dp)) + navigationBarHeight
+    val adaptivePeekHeight =
+        ((screenHeightDp * BOTTOM_SHEET_PEEK_HEIGHT_FRACTION).coerceIn(140.dp, 340.dp)) + navigationBarHeight
 
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
@@ -1028,18 +1029,7 @@ private fun SimilarMemesSection(
         )
 
         if (isLoading) {
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(100.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                androidx.compose.material3.CircularProgressIndicator(
-                    modifier = Modifier.size(24.dp),
-                    strokeWidth = 2.dp,
-                )
-            }
+            SimilarMemesLoading()
         } else {
             when (status) {
                 is SimilarMemesStatus.Found -> {
@@ -1086,6 +1076,22 @@ private fun SimilarMemesSection(
                 null -> { /* handled by early return above */ }
             }
         }
+    }
+}
+
+@Composable
+private fun SimilarMemesLoading(modifier: Modifier = Modifier) {
+    Box(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .height(100.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        CircularProgressIndicator(
+            modifier = Modifier.size(24.dp),
+            strokeWidth = 2.dp,
+        )
     }
 }
 
@@ -1208,5 +1214,7 @@ private fun MemeDetailEditModePreview() {
         )
     }
 }
+
+private const val BOTTOM_SHEET_PEEK_HEIGHT_FRACTION = 0.3f
 
 // endregion

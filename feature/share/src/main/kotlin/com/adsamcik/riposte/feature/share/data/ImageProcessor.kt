@@ -7,11 +7,11 @@ import androidx.exifinterface.media.ExifInterface
 import com.adsamcik.riposte.core.model.ImageFormat
 import com.adsamcik.riposte.core.model.ShareConfig
 import dagger.hilt.android.qualifiers.ApplicationContext
+import timber.log.Timber
 import java.io.File
 import java.io.FileOutputStream
 import javax.inject.Inject
 import javax.inject.Singleton
-import timber.log.Timber
 
 /**
  * Utility class for processing images before sharing.

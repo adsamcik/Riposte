@@ -19,8 +19,8 @@ import com.adsamcik.riposte.core.model.MemeMetadata
 import com.adsamcik.riposte.feature.import_feature.domain.repository.ImportRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
-import java.io.File
 import timber.log.Timber
+import java.io.File
 
 /**
  * WorkManager worker that processes meme imports in the background.
@@ -78,7 +78,7 @@ class ImportWorker
                             kotlinx.serialization.json.Json.decodeFromString<MemeMetadata>(
                                 metadataJsonValue,
                             )
-                        } catch (e: Exception) {
+                        } catch (e: kotlinx.serialization.SerializationException) {
                             Timber.w(e, "Failed to parse metadata JSON in import worker")
                             null
                         }

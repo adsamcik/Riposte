@@ -4,10 +4,10 @@ import android.content.Context
 import android.net.Uri
 import com.adsamcik.riposte.core.model.MemeMetadata
 import dagger.hilt.android.qualifiers.ApplicationContext
+import timber.log.Timber
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
-import timber.log.Timber
 
 /**
  * Handles reading and writing XMP metadata for meme images.
