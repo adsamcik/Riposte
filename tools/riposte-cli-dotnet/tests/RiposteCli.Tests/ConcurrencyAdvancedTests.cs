@@ -9,17 +9,16 @@ public class ConcurrencyAdvancedTests
     [Fact]
     public async Task PausedLimiter_AcquireBlocks_UntilResumed()
     {
-        var rl = new RateLimiter(minDelay: 0.01, maxDelay: 0.1, jitterFactor: 0);
+        var rl = new RateLimiter(minDelay: 0.01, maxDelay: 5.0, jitterFactor: 0);
         var limiter = new ConcurrencyLimiter(maxConcurrency: 4, rateLimiter: rl);
 
-        // Start a rate limit with enough time for the acquire to start while paused
-        var rateLimitTask = limiter.RecordRateLimitAsync(retryAfter: 0.5);
+        // Start a rate limit with a long enough pause to reliably test
+        var rateLimitTask = limiter.RecordRateLimitAsync(retryAfter: 1.0);
 
-        // Give the pause time to take effect
-        await Task.Delay(50);
-
-        // Verify it's actually paused
-        Assert.True(limiter.IsPaused);
+        // Wait for the IsPaused flag to be set (poll briefly)
+        for (var i = 0; i < 50 && !limiter.IsPaused; i++)
+            await Task.Delay(10);
+        Assert.True(limiter.IsPaused, "Limiter should be paused after RecordRateLimit");
 
         // While paused, try to acquire — should block until pause clears
         var acquired = false;
@@ -31,7 +30,7 @@ public class ConcurrencyAdvancedTests
         });
 
         // Wait a bit — acquire should NOT have completed yet while paused
-        await Task.Delay(50);
+        await Task.Delay(100);
         Assert.False(acquired, "Acquire should be blocked while paused");
 
         // Wait for the rate limit to finish (and unpause)
