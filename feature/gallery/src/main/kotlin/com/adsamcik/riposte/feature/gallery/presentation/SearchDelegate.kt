@@ -1,7 +1,5 @@
 package com.adsamcik.riposte.feature.gallery.presentation
 
-import com.adsamcik.riposte.core.common.util.normalizeEmoji
-import com.adsamcik.riposte.core.model.SearchResult
 import com.adsamcik.riposte.core.search.domain.usecase.SearchUseCases
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -54,7 +52,7 @@ class SearchDelegate
                     .distinctUntilChanged()
                     .collectLatest { query ->
                         if (query.isNotBlank()) {
-                            performSearch(query, activeEmojiFilter = null, scope = scope)
+                            performSearch(query, scope = scope)
                         } else {
                             _state.update {
                                 it.copy(
@@ -102,30 +100,15 @@ class SearchDelegate
         fun onIntent(
             intent: GalleryIntent,
             scope: CoroutineScope,
-            activeEmojiFilter: String?,
         ) {
             when (intent) {
                 is GalleryIntent.UpdateSearchQuery -> updateQuery(intent.query)
                 is GalleryIntent.ClearSearch -> clearSearch()
-                is GalleryIntent.SelectRecentSearch -> selectRecentSearch(intent.query, scope, activeEmojiFilter)
-                is GalleryIntent.SelectSuggestion -> selectSuggestion(intent.suggestion, scope, activeEmojiFilter)
+                is GalleryIntent.SelectRecentSearch -> selectRecentSearch(intent.query, scope)
+                is GalleryIntent.SelectSuggestion -> selectSuggestion(intent.suggestion, scope)
                 is GalleryIntent.DeleteRecentSearch -> deleteRecentSearch(intent.query, scope)
                 is GalleryIntent.ClearRecentSearches -> clearRecentSearches(scope)
                 else -> {} // Not a search intent
-            }
-        }
-
-        /**
-         * Re-run the current search with updated emoji filters.
-         * Called by the coordinator when emoji filters change while searching.
-         */
-        fun refilter(
-            scope: CoroutineScope,
-            activeEmojiFilter: String?,
-        ) {
-            val query = _state.value.query
-            if (query.isNotBlank()) {
-                performSearch(query, activeEmojiFilter, scope = scope)
             }
         }
 
@@ -144,26 +127,24 @@ class SearchDelegate
         private fun selectRecentSearch(
             query: String,
             scope: CoroutineScope,
-            emojiFilter: String?,
         ) {
             updateQuery(query)
             scope.launch {
                 searchUseCases.addRecentSearch(query)
             }
-            performSearch(query, emojiFilter, scope = scope)
+            performSearch(query, scope = scope)
         }
 
         private fun selectSuggestion(
             suggestion: String,
             scope: CoroutineScope,
-            emojiFilter: String?,
         ) {
             _state.update { it.copy(suggestions = emptyList()) }
             updateQuery(suggestion)
             scope.launch {
                 searchUseCases.addRecentSearch(suggestion)
             }
-            performSearch(suggestion, emojiFilter, scope = scope)
+            performSearch(suggestion, scope = scope)
         }
 
         private fun deleteRecentSearch(
@@ -187,7 +168,6 @@ class SearchDelegate
 
         private fun performSearch(
             query: String,
-            activeEmojiFilter: String?,
             scope: CoroutineScope? = null,
         ) {
             val searchScope = scope ?: return
@@ -197,13 +177,12 @@ class SearchDelegate
 
                 try {
                     val results = searchUseCases.hybridSearch(query)
-                    val filtered = applyEmojiFilter(results, activeEmojiFilter)
                     val endTime = System.currentTimeMillis()
 
                     _state.update {
                         it.copy(
-                            results = filtered,
-                            totalResultCount = filtered.size,
+                            results = results,
+                            totalResultCount = results.size,
                             searchDurationMs = endTime - startTime,
                             isSearching = false,
                             hasSearched = true,
@@ -216,12 +195,12 @@ class SearchDelegate
                     @Suppress("SwallowedException") e: UnsatisfiedLinkError,
                 ) {
                     Timber.w(e, "Native library not available, falling back to text search")
-                    fallbackToTextSearch(query, startTime, activeEmojiFilter, searchScope)
+                    fallbackToTextSearch(query, startTime, searchScope)
                 } catch (
                     @Suppress("SwallowedException") e: ExceptionInInitializerError,
                 ) {
                     Timber.w(e, "Embedding model init failed, falling back to text search")
-                    fallbackToTextSearch(query, startTime, activeEmojiFilter, searchScope)
+                    fallbackToTextSearch(query, startTime, searchScope)
                 } catch (e: Exception) {
                     Timber.e(e, "Search failed")
                     _state.update {
@@ -238,17 +217,15 @@ class SearchDelegate
         private suspend fun fallbackToTextSearch(
             query: String,
             startTime: Long,
-            activeEmojiFilter: String?,
             scope: CoroutineScope,
         ) {
             try {
                 searchUseCases.search(query).collectLatest { results ->
-                    val filtered = applyEmojiFilter(results, activeEmojiFilter)
                     val endTime = System.currentTimeMillis()
                     _state.update {
                         it.copy(
-                            results = filtered,
-                            totalResultCount = filtered.size,
+                            results = results,
+                            totalResultCount = results.size,
                             searchDurationMs = endTime - startTime,
                             isSearching = false,
                             hasSearched = true,
@@ -264,18 +241,6 @@ class SearchDelegate
                         errorMessage = e.message ?: "Search failed",
                     )
                 }
-            }
-        }
-
-        private fun applyEmojiFilter(
-            results: List<SearchResult>,
-            activeEmojiFilter: String?,
-        ): List<SearchResult> {
-            if (activeEmojiFilter == null) return results
-            val normalizedFilter = normalizeEmoji(activeEmojiFilter)
-            return results.filter { result ->
-                val normalizedMemeEmojis = result.meme.emojiTags.map { normalizeEmoji(it.emoji) }
-                normalizedFilter in normalizedMemeEmojis
             }
         }
 
