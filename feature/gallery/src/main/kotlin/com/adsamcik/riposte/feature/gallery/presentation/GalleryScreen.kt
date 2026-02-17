@@ -88,6 +88,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
@@ -286,9 +287,15 @@ private fun GalleryScreenContent(
     }
 
     val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
 
     BackHandler(enabled = uiState.screenMode == ScreenMode.Searching) {
-        keyboardController?.hide()
+        if (uiState.isSearchFocused) {
+            keyboardController?.hide()
+            focusManager.clearFocus()
+        } else {
+            onIntent(GalleryIntent.ClearSearch)
+        }
     }
 
     Scaffold(
