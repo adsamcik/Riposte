@@ -205,20 +205,20 @@ Coverage thresholds: 60% overall, 50% branch (enforced by `verifyCoverage` task)
 
 The core user flow is: chatting → need a meme → open app → find via emoji/search → share → back to chat **in under 10 seconds**. Every feature decision should serve this share moment. Emojis are the primary taxonomy. Speed is a feature — gallery loads instantly, search results appear as you type.
 
-## CLI Tool (`tools/riposte-cli/`)
+## CLI Tool (`tools/riposte-cli-dotnet/`)
 
-Python CLI for batch AI annotation of meme images using GitHub Copilot SDK.
+.NET 8 CLI for batch AI annotation of meme images using GitHub Copilot SDK.
 
 ```bash
-cd tools/riposte-cli
-scripts/setup.ps1   # or setup.sh — creates venv
-meme-cli annotate ./memes                        # English only
-meme-cli annotate ./memes --languages en,cs,de   # With translations
-meme-cli annotate ./memes --zip --force           # ZIP bundle, overwrite existing
+cd tools/riposte-cli-dotnet
+dotnet run --project src/RiposteCli -- annotate ./memes                        # English only
+dotnet run --project src/RiposteCli -- annotate ./memes --languages en,cs,de   # With translations
+dotnet run --project src/RiposteCli -- annotate ./memes --zip --force           # ZIP bundle, overwrite existing
 ```
 
 - Requires `copilot auth login` first
-- Uses `gpt-5-mini` model via `github-copilot-sdk`
+- Uses `gpt-5-mini` model via `GitHub.Copilot.SDK` NuGet package
+- Installable as a dotnet tool: `dotnet tool install -g RiposteCli`
 - Outputs JSON sidecar files per image (schema v1.3)
 - No fallback behavior — errors propagate, not placeholder data
 - Rate limited: 1s minimum delay between requests, exponential backoff on 429/5xx, up to 8 retries

@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>RiposteCli</RootNamespace>
+    <AssemblyName>meme-cli</AssemblyName>
+    <Version>1.0.0</Version>
+    <Description>CLI tool for annotating meme images with GitHub Copilot AI for Riposte Android app</Description>
+    <Authors>Riposte</Authors>
+    <License>MIT</License>
+
+    <!-- dotnet tool packaging -->
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>meme-cli</ToolCommandName>
+    <PackageId>RiposteCli</PackageId>
+    <PackageVersion>1.0.0</PackageVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="RiposteCli.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="GitHub.Copilot.SDK" Version="*" />
+    <PackageReference Include="System.CommandLine" Version="2.*" />
+    <PackageReference Include="Spectre.Console" Version="0.*" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.*" />
+    <PackageReference Include="CoenM.ImageSharp.ImageHash" Version="*" />
+  </ItemGroup>
+
+</Project>
