@@ -36,16 +36,6 @@ jobs:
       - name: Run detekt
         run: ./gradlew detekt --no-daemon
 
-      - name: Upload detekt reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        continue-on-error: true
-        with:
-          name: detekt-reports
-          path: |
-            **/build/reports/detekt/
-          retention-days: 7
-
   ktlint:
     name: ktlint Code Formatting
     runs-on: ubuntu-latest
@@ -71,13 +61,3 @@ jobs:
 
       - name: Run ktlint
         run: ./gradlew ktlintCheck --no-daemon
-
-      - name: Upload ktlint reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        continue-on-error: true
-        with:
-          name: ktlint-reports
-          path: |
-            **/build/reports/ktlint/
-          retention-days: 7
