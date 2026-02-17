@@ -838,11 +838,17 @@ private fun GalleryEmojiFilterRail(
         val showFavoritesChip = uiState.favoritesCount > 0
         val isFavoritesActive = uiState.filter is GalleryFilter.Favorites
 
+        val activeEmojiFilter = remember(uiState.searchState.query, uniqueEmojis) {
+            val query = uiState.searchState.query.trim()
+            if (uniqueEmojis.any { it.first == query }) query else null
+        }
+
         if (uniqueEmojis.isNotEmpty() || showFavoritesChip) {
             EmojiFilterRail(
                 emojis = uniqueEmojis,
-                activeFilter = null,
+                activeFilter = activeEmojiFilter,
                 onEmojiSelected = { emoji -> onIntent(GalleryIntent.UpdateSearchQuery(emoji)) },
+                onClearFilter = { onIntent(GalleryIntent.ClearSearch) },
                 leadingContent = if (showFavoritesChip) {
                     {
                         item(key = "favorites_chip") {
