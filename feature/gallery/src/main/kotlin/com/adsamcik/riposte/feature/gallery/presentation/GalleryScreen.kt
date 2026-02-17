@@ -168,10 +168,10 @@ fun GalleryScreen(
         }
     }
 
-    // Handle emoji filter passed from detail screen
+    // Handle emoji filter passed from detail screen (now as search query)
     LaunchedEffect(initialEmojiFilter) {
         if (initialEmojiFilter != null) {
-            viewModel.onIntent(GalleryIntent.SetEmojiFilter(initialEmojiFilter))
+            viewModel.onIntent(GalleryIntent.UpdateSearchQuery(initialEmojiFilter))
             onEmojiFilterConsumed()
         }
     }
@@ -692,8 +692,8 @@ private fun GalleryScreenContent(
                             uiState.suggestions.map { it.id }.toSet()
                         }
                     val nonSuggestionMemes =
-                        remember(uiState.filteredMemes, suggestionIds) {
-                            uiState.filteredMemes.filter { it.id !in suggestionIds }
+                        remember(uiState.memes, suggestionIds) {
+                            uiState.memes.filter { it.id !in suggestionIds }
                         }
 
                     GalleryContent(
@@ -817,8 +817,7 @@ private fun GalleryEmojiFilterRail(
     uniqueEmojis: List<Pair<String, Int>>,
     onIntent: (GalleryIntent) -> Unit,
 ) {
-    val showEmojiRail = !uiState.isSelectionMode &&
-        (uiState.screenMode == ScreenMode.Searching || uiState.isSearchFocused)
+    val showEmojiRail = !uiState.isSelectionMode
 
     if (showEmojiRail) {
         val showFavoritesChip = uiState.favoritesCount > 0
@@ -827,9 +826,8 @@ private fun GalleryEmojiFilterRail(
         if (uniqueEmojis.isNotEmpty() || showFavoritesChip) {
             EmojiFilterRail(
                 emojis = uniqueEmojis,
-                activeFilter = uiState.activeEmojiFilter,
-                onEmojiSelected = { emoji -> onIntent(GalleryIntent.SetEmojiFilter(emoji)) },
-                onClearFilter = { onIntent(GalleryIntent.ClearEmojiFilter) },
+                activeFilter = null,
+                onEmojiSelected = { emoji -> onIntent(GalleryIntent.UpdateSearchQuery(emoji)) },
                 leadingContent = if (showFavoritesChip) {
                     {
                         item(key = "favorites_chip") {
@@ -901,10 +899,9 @@ private fun FloatingSearchBar(
     ) {
         // Navigation icon (close for active filters when not searching)
         if (uiState.screenMode != ScreenMode.Searching &&
-            (uiState.filter !is GalleryFilter.All || uiState.activeEmojiFilter != null)
+            uiState.filter !is GalleryFilter.All
         ) {
             IconButton(onClick = {
-                onIntent(GalleryIntent.ClearEmojiFilter)
                 onIntent(GalleryIntent.SetFilter(GalleryFilter.All))
             }) {
                 Icon(
