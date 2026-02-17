@@ -13,6 +13,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.adsamcik.riposte.core.ui.R
 import com.adsamcik.riposte.core.ui.theme.RiposteTheme
+import java.util.Locale
+
+private const val MILLIS_PER_SECOND = 1000.0
 
 /**
  * Header component for search results display.
@@ -26,6 +29,7 @@ import com.adsamcik.riposte.core.ui.theme.RiposteTheme
  * @param durationMs Search duration in milliseconds. If 0, not displayed.
  * @param modifier Modifier to be applied to the component.
  */
+@Suppress("detekt:UnusedParameter")
 @Composable
 fun SearchResultsHeader(
     query: String,
@@ -41,8 +45,8 @@ fun SearchResultsHeader(
     ) {
         val countText = pluralStringResource(R.plurals.ui_search_results_count, resultCount, resultCount)
         val headerText = if (durationMs > 0) {
-            val seconds = durationMs / 1000.0
-            stringResource(R.string.ui_search_results_duration, countText, String.format("%.1f", seconds))
+            val seconds = durationMs / MILLIS_PER_SECOND
+            stringResource(R.string.ui_search_results_duration, countText, String.format(Locale.US, "%.1f", seconds))
         } else {
             countText
         }

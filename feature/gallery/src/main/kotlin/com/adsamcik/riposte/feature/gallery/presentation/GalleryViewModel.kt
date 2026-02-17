@@ -252,7 +252,7 @@ class GalleryViewModel
             }
         }
 
-        private fun loadPreferences(){
+        private fun loadPreferences() {
             viewModelScope.launch {
                 preferencesDataStore.appPreferences.collectLatest { prefs ->
                     _uiState.update { it.copy(densityPreference = prefs.userDensityPreference) }
@@ -542,9 +542,5 @@ class GalleryViewModel
 
         companion object {
             private const val NOTIFICATION_AUTO_DISMISS_MS = 5000L
-
-            /** Lightweight engagement score matching TriSignalScorer formula. */
-            private fun memeEngagementScore(meme: Meme): Double =
-                (meme.useCount * 3.0) + (meme.viewCount * 0.5) + (if (meme.isFavorite) 5.0 else 0.0)
         }
     }

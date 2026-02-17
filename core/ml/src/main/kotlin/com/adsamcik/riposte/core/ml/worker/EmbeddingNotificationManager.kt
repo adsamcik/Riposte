@@ -17,79 +17,79 @@ import javax.inject.Inject
  * Used by [EmbeddingGenerationWorker] when it needs to promote to a foreground service.
  */
 class EmbeddingNotificationManager
-    @Inject
-    constructor(
-        @param:ApplicationContext private val context: Context,
-    ) {
-        /** Creates the embedding notification channel. Safe to call multiple times. */
-        fun createChannel() {
-            val channel =
-                NotificationChannel(
-                    CHANNEL_ID,
-                    CHANNEL_NAME,
-                    NotificationManager.IMPORTANCE_LOW,
-                ).apply {
-                    description = "Shows progress when indexing memes for search in the background"
-                    setShowBadge(false)
-                }
-            val manager = context.getSystemService(NotificationManager::class.java)
-            manager.createNotificationChannel(channel)
-        }
-
-        /** Builds a progress notification for the foreground service. */
-        fun buildProgressNotification(
-            current: Int,
-            total: Int,
-        ): Notification {
-            return NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(android.R.drawable.ic_menu_search)
-                .setContentTitle("Indexing memes")
-                .setContentText("$current of $total")
-                .setProgress(total, current, false)
-                .setOngoing(true)
-                .setSilent(true)
-                .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
-                .build()
-        }
-
-        /** Builds a completion notification. */
-        fun buildCompleteNotification(
-            successCount: Int,
-            failedCount: Int,
-        ): Notification {
-            val text =
-                when {
-                    failedCount == 0 -> "$successCount memes indexed for search"
-                    successCount == 0 -> "Indexing failed for $failedCount memes"
-                    else -> "$successCount indexed, $failedCount failed"
-                }
-            return NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(android.R.drawable.ic_menu_search)
-                .setContentTitle("Indexing complete")
-                .setContentText(text)
-                .setAutoCancel(true)
-                .build()
-        }
-
-        /** Posts a completion notification if the app has notification permission. */
-        fun showCompleteNotification(
-            successCount: Int,
-            failedCount: Int,
-        ) {
-            if (ContextCompat.checkSelfPermission(
-                    context,
-                    Manifest.permission.POST_NOTIFICATIONS,
-                ) == PackageManager.PERMISSION_GRANTED
-            ) {
-                val notification = buildCompleteNotification(successCount, failedCount)
-                NotificationManagerCompat.from(context).notify(COMPLETE_NOTIFICATION_ID, notification)
+@Inject
+constructor(
+    @param:ApplicationContext private val context: Context,
+) {
+    /** Creates the embedding notification channel. Safe to call multiple times. */
+    fun createChannel() {
+        val channel =
+            NotificationChannel(
+                CHANNEL_ID,
+                CHANNEL_NAME,
+                NotificationManager.IMPORTANCE_LOW,
+            ).apply {
+                description = "Shows progress when indexing memes for search in the background"
+                setShowBadge(false)
             }
-        }
+        val manager = context.getSystemService(NotificationManager::class.java)
+        manager.createNotificationChannel(channel)
+    }
 
-        companion object {
-            const val CHANNEL_ID = "embedding_indexing"
-            const val NOTIFICATION_ID = 2001
-            const val COMPLETE_NOTIFICATION_ID = 2002
-            private const val CHANNEL_NAME = "Indexing Progress"
+    /** Builds a progress notification for the foreground service. */
+    fun buildProgressNotification(
+        current: Int,
+        total: Int,
+    ): Notification {
+        return NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.ic_menu_search)
+            .setContentTitle("Indexing memes")
+            .setContentText("$current of $total")
+            .setProgress(total, current, false)
+            .setOngoing(true)
+            .setSilent(true)
+            .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
+            .build()
+    }
+
+    /** Builds a completion notification. */
+    fun buildCompleteNotification(
+        successCount: Int,
+        failedCount: Int,
+    ): Notification {
+        val text =
+            when {
+                failedCount == 0 -> "$successCount memes indexed for search"
+                successCount == 0 -> "Indexing failed for $failedCount memes"
+                else -> "$successCount indexed, $failedCount failed"
+            }
+        return NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.ic_menu_search)
+            .setContentTitle("Indexing complete")
+            .setContentText(text)
+            .setAutoCancel(true)
+            .build()
+    }
+
+    /** Posts a completion notification if the app has notification permission. */
+    fun showCompleteNotification(
+        successCount: Int,
+        failedCount: Int,
+    ) {
+        if (ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS,
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            val notification = buildCompleteNotification(successCount, failedCount)
+            NotificationManagerCompat.from(context).notify(COMPLETE_NOTIFICATION_ID, notification)
         }
     }
+
+    companion object {
+        const val CHANNEL_ID = "embedding_indexing"
+        const val NOTIFICATION_ID = 2001
+        const val COMPLETE_NOTIFICATION_ID = 2002
+        private const val CHANNEL_NAME = "Indexing Progress"
+    }
+}

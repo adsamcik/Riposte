@@ -84,21 +84,7 @@ fun SearchBar(
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         },
-        trailingIcon = {
-            AnimatedVisibility(
-                visible = query.isNotEmpty(),
-                enter = fadeIn(),
-                exit = fadeOut(),
-            ) {
-                IconButton(onClick = { onQueryChange("") }) {
-                    Icon(
-                        imageVector = Icons.Default.Clear,
-                        contentDescription = stringResource(R.string.ui_search_clear_description),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-        },
+        trailingIcon = { SearchBarClearButton(query = query, onClear = { onQueryChange("") }) },
         singleLine = true,
         shape = RiposteShapes.SearchBar,
         colors =
@@ -120,6 +106,26 @@ fun SearchBar(
                 },
             ),
     )
+}
+
+@Composable
+private fun SearchBarClearButton(
+    query: String,
+    onClear: () -> Unit,
+) {
+    AnimatedVisibility(
+        visible = query.isNotEmpty(),
+        enter = fadeIn(),
+        exit = fadeOut(),
+    ) {
+        IconButton(onClick = onClear) {
+            Icon(
+                imageVector = Icons.Default.Clear,
+                contentDescription = stringResource(R.string.ui_search_clear_description),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
 }
 
 /**

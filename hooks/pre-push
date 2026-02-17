@@ -1,0 +1,85 @@
+#!/bin/sh
+command -v git-lfs >/dev/null 2>&1 || { printf >&2 "\n%s\n\n" "This repository is configured for Git LFS but 'git-lfs' was not found on your path. If you no longer wish to use Git LFS, remove this hook by deleting the 'pre-push' file in the hooks directory (set by 'core.hookspath'; usually '.git/hooks')."; exit 2; }
+git lfs pre-push "$@"
+
+# --- Lint guard: prevent pushing code with ktlint or detekt violations ---
+# Only checks Kotlin files changed between HEAD and the remote tracking branch.
+# Skip with: git push --no-verify
+
+# Detect OS and use the right Gradle wrapper
+if [ -f "./gradlew.bat" ] && command -v cmd.exe >/dev/null 2>&1; then
+    GRADLE="./gradlew.bat"
+else
+    GRADLE="./gradlew"
+fi
+
+# Determine which .kt files changed vs the remote branch being pushed to.
+# stdin provides: <local ref> <local sha> <remote ref> <remote sha>
+CHANGED_KT=""
+while read -r _ LOCAL_SHA _ REMOTE_SHA; do
+    if [ "$REMOTE_SHA" = "0000000000000000000000000000000000000000" ]; then
+        # New branch — compare against default branch
+        REMOTE_SHA="origin/main"
+    fi
+    FILES=$(git diff --name-only --diff-filter=ACMR "$REMOTE_SHA" "$LOCAL_SHA" -- '*.kt' 2>/dev/null)
+    CHANGED_KT="$CHANGED_KT $FILES"
+done
+
+# Deduplicate and trim
+CHANGED_KT=$(echo "$CHANGED_KT" | tr ' ' '\n' | sort -u | grep -v '^$')
+
+if [ -z "$CHANGED_KT" ]; then
+    echo "✅ No Kotlin files changed — skipping lint checks."
+    exit 0
+fi
+
+FILE_COUNT=$(echo "$CHANGED_KT" | wc -l | tr -d ' ')
+echo "Running pre-push lint checks on $FILE_COUNT changed Kotlin file(s)..."
+
+FAILED=0
+
+# --- detekt: full project analysis (uses Gradle-configured source sets) ---
+$GRADLE detekt --no-daemon -q 2>&1
+if [ $? -ne 0 ]; then
+    FAILED=1
+fi
+
+# --- ktlint: resolve affected Gradle modules and run per-module tasks ---
+KTLINT_TASKS=""
+for FILE in $CHANGED_KT; do
+    # Map file paths to Gradle module paths:
+    #   app/src/... -> :app
+    #   core/database/src/... -> :core:database
+    #   feature/gallery/src/... -> :feature:gallery
+    MODULE=""
+    case "$FILE" in
+        app/*)           MODULE=":app" ;;
+        core/*/*)        MODULE=":core:$(echo "$FILE" | cut -d/ -f2)" ;;
+        feature/*/*)     MODULE=":feature:$(echo "$FILE" | cut -d/ -f2)" ;;
+        baselineprofile/*) MODULE=":baselineprofile" ;;
+    esac
+    if [ -n "$MODULE" ]; then
+        KTLINT_TASKS="$KTLINT_TASKS ${MODULE}:ktlintCheck"
+    fi
+done
+
+# Deduplicate module tasks
+KTLINT_TASKS=$(echo "$KTLINT_TASKS" | tr ' ' '\n' | sort -u | grep -v '^$' | tr '\n' ' ')
+
+if [ -n "$KTLINT_TASKS" ]; then
+    $GRADLE $KTLINT_TASKS --no-daemon -q 2>&1
+    if [ $? -ne 0 ]; then
+        FAILED=1
+    fi
+fi
+
+if [ $FAILED -ne 0 ]; then
+    echo ""
+    echo "❌ Push rejected: lint checks failed on changed files."
+    echo "   Run './gradlew ktlintFormat' to auto-fix formatting."
+    echo "   Run './gradlew detekt' to see remaining issues."
+    echo "   Use 'git push --no-verify' to bypass this check."
+    exit 1
+fi
+
+echo "✅ Lint checks passed."
