@@ -19,7 +19,10 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -27,7 +30,9 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -51,6 +56,15 @@ fun SearchBar(
     val keyboardController = LocalSoftwareKeyboardController.current
     val defaultPlaceholder = stringResource(R.string.ui_search_placeholder)
 
+    var textFieldValue by remember {
+        mutableStateOf(TextFieldValue(text = query, selection = TextRange(query.length)))
+    }
+
+    // Sync external query changes (e.g. emoji chip tap) with cursor at end.
+    if (textFieldValue.text != query) {
+        textFieldValue = TextFieldValue(text = query, selection = TextRange(query.length))
+    }
+
     LaunchedEffect(autoFocus) {
         if (autoFocus) {
             focusRequester.requestFocus()
@@ -58,8 +72,11 @@ fun SearchBar(
     }
 
     OutlinedTextField(
-        value = query,
-        onValueChange = onQueryChange,
+        value = textFieldValue,
+        onValueChange = { newValue ->
+            textFieldValue = newValue
+            onQueryChange(newValue.text)
+        },
         modifier =
             modifier
                 .fillMaxWidth()
