@@ -29,7 +29,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -57,22 +56,9 @@ class GalleryViewModel
 
         /**
          * Paged memes flow for the "All" filter.
-         * Reacts to emoji filter changes — when a filter is active, a filtered
-         * PagingSource is used so filtering happens at the SQL level instead of
-         * O(n) iteration during Compose recomposition.
          */
-        @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
         val pagedMemes: Flow<PagingData<Meme>> =
-            _uiState
-                .map { it.activeEmojiFilter }
-                .distinctUntilChanged()
-                .flatMapLatest { emojiFilter ->
-                    if (emojiFilter == null) {
-                        galleryRepository.getPagedMemes("emoji")
-                    } else {
-                        galleryRepository.getPagedMemesByEmojis(setOf(emojiFilter))
-                    }
-                }
+            galleryRepository.getPagedMemes("emoji")
                 .cachedIn(viewModelScope)
 
         private val _effects = Channel<GalleryEffect>(Channel.BUFFERED)
@@ -117,8 +103,6 @@ class GalleryViewModel
                 is GalleryIntent.ShareSelected -> shareSelected()
                 is GalleryIntent.NavigateToImport -> navigateToImport()
                 is GalleryIntent.QuickShare -> quickShare(intent.memeId)
-                is GalleryIntent.SetEmojiFilter -> setEmojiFilter(intent.emoji)
-                is GalleryIntent.ClearEmojiFilter -> clearEmojiFilter()
                 is GalleryIntent.DismissNotification -> dismissNotification()
                 is GalleryIntent.SearchFieldFocusChanged -> setSearchFocused(intent.isFocused)
                 // Search intents — delegate
@@ -127,11 +111,8 @@ class GalleryViewModel
                 is GalleryIntent.SelectSuggestion,
                 is GalleryIntent.DeleteRecentSearch,
                 is GalleryIntent.ClearRecentSearches,
-                -> searchDelegate.onIntent(intent, viewModelScope, _uiState.value.activeEmojiFilter)
-                is GalleryIntent.ClearSearch -> {
-                    clearEmojiFilter()
-                    searchDelegate.onIntent(intent, viewModelScope, null)
-                }
+                is GalleryIntent.ClearSearch,
+                -> searchDelegate.onIntent(intent, viewModelScope)
             }
         }
 
@@ -188,8 +169,8 @@ class GalleryViewModel
         private fun observeImportWork() {
             viewModelScope.launch {
                 try {
-                    androidx.work.WorkManager.getInstance(context)
-                        .getWorkInfosForUniqueWorkFlow(com.adsamcik.riposte.core.common.AppConstants.IMPORT_WORK_NAME)
+                    val wm = androidx.work.WorkManager.getInstance(context)
+                    wm.getWorkInfosForUniqueWorkFlow(com.adsamcik.riposte.core.common.AppConstants.IMPORT_WORK_NAME)
                         .collectLatest { workInfos ->
                             val workInfo = workInfos.firstOrNull()
                             when (workInfo?.state) {
@@ -215,6 +196,8 @@ class GalleryViewModel
                                             notification = GalleryNotification.ImportComplete(completed, failed),
                                         )
                                     }
+                                    // Prune finished work so notification doesn't reappear on next startup
+                                    wm.pruneWork()
                                     delay(NOTIFICATION_AUTO_DISMISS_MS)
                                     dismissNotification()
                                 }
@@ -225,6 +208,7 @@ class GalleryViewModel
                                             notification = GalleryNotification.ImportFailed(),
                                         )
                                     }
+                                    wm.pruneWork()
                                     delay(NOTIFICATION_AUTO_DISMISS_MS)
                                     dismissNotification()
                                 }
@@ -243,8 +227,8 @@ class GalleryViewModel
         private fun observeEmbeddingWork() {
             viewModelScope.launch {
                 try {
-                    androidx.work.WorkManager.getInstance(context)
-                        .getWorkInfosForUniqueWorkFlow(
+                    val wm = androidx.work.WorkManager.getInstance(context)
+                    wm.getWorkInfosForUniqueWorkFlow(
                             com.adsamcik.riposte.core.common.AppConstants.EMBEDDING_WORK_NAME,
                         )
                         .collectLatest { workInfos ->
@@ -255,6 +239,8 @@ class GalleryViewModel
                                     _uiState.update {
                                         it.copy(notification = GalleryNotification.IndexingComplete(processedCount))
                                     }
+                                    // Prune finished work so notification doesn't reappear on next startup
+                                    wm.pruneWork()
                                     delay(NOTIFICATION_AUTO_DISMISS_MS)
                                     dismissNotification()
                                 }
@@ -335,20 +321,13 @@ class GalleryViewModel
                         )
                     }
                 }
-                is GalleryFilter.Favorites, is GalleryFilter.ByEmoji -> {
+                is GalleryFilter.Favorites -> {
                     // For filtered views, use regular list (typically smaller datasets)
                     memesJob =
                         viewModelScope.launch {
                             _uiState.update { it.copy(isLoading = true, usePaging = false, error = null) }
 
-                            val flow =
-                                when (filter) {
-                                    is GalleryFilter.Favorites -> useCases.getFavorites()
-                                    is GalleryFilter.ByEmoji -> useCases.getMemesByEmoji(filter.emoji)
-                                    else -> return@launch // Should not happen
-                                }
-
-                            flow.collectLatest { memes ->
+                            useCases.getFavorites().collectLatest { memes ->
                                 _uiState.update {
                                     it.copy(
                                         memes = memes,
@@ -356,7 +335,6 @@ class GalleryViewModel
                                         error = null,
                                     )
                                 }
-                                recomputeDerivedState()
                             }
                         }
                 }
@@ -562,74 +540,7 @@ class GalleryViewModel
             _uiState.update { it.copy(isSearchFocused = isFocused) }
         }
 
-        private fun setEmojiFilter(emoji: String) {
-            _uiState.update { state ->
-                val newFilter = if (state.activeEmojiFilter == emoji) null else emoji
-                state.copy(activeEmojiFilter = newFilter)
-            }
-            recomputeDerivedState()
-            if (_uiState.value.screenMode == ScreenMode.Searching) {
-                searchDelegate.refilter(viewModelScope, _uiState.value.activeEmojiFilter)
-            }
-        }
-
-        private fun clearEmojiFilter() {
-            _uiState.update { it.copy(activeEmojiFilter = null) }
-            recomputeDerivedState()
-            if (_uiState.value.screenMode == ScreenMode.Searching) {
-                searchDelegate.refilter(viewModelScope, null)
-            }
-        }
-
-        /**
-         * Recomputes derived state (filteredMemes) from the current memes list.
-         * Called whenever memes or emoji filters change.
-         */
-        private fun recomputeDerivedState() {
-            val state = _uiState.value
-            val memes = state.memes
-
-            val filtered =
-                if (state.activeEmojiFilter == null) {
-                    memes
-                } else {
-                    memes.filter { meme ->
-                        meme.emojiTags.any { it.emoji == state.activeEmojiFilter }
-                    }
-                }
-
-            _uiState.update {
-                it.copy(
-                    filteredMemes = sortByEmojiGroup(filtered),
-                )
-            }
-        }
-
-        /**
-         * Groups memes by primary emoji, orders groups by aggregate engagement score
-         * (most-used groups first), and sorts memes within each group by individual
-         * engagement score. Uncategorized memes (no emoji tags) go last.
-         */
-        private fun sortByEmojiGroup(memes: List<Meme>): List<Meme> {
-            val grouped =
-                memes.groupBy { meme ->
-                    meme.emojiTags.firstOrNull()?.emoji ?: UNCATEGORIZED_GROUP
-                }
-            return grouped.entries
-                .sortedWith(
-                    compareByDescending<Map.Entry<String, List<Meme>>> { (emoji, _) ->
-                        if (emoji == UNCATEGORIZED_GROUP) -1.0 else 0.0
-                    }.thenByDescending { (_, groupMemes) ->
-                        groupMemes.sumOf { memeEngagementScore(it) }
-                    },
-                )
-                .flatMap { (_, groupMemes) ->
-                    groupMemes.sortedByDescending { memeEngagementScore(it) }
-                }
-        }
-
         companion object {
-            private const val UNCATEGORIZED_GROUP = "❓"
             private const val NOTIFICATION_AUTO_DISMISS_MS = 5000L
 
             /** Lightweight engagement score matching TriSignalScorer formula. */
