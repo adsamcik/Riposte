@@ -446,8 +446,8 @@ private fun GalleryScreenContent(
                             }
                         }
 
-                        if (uiState.searchState.isSearching) {
-                            // Loading indicator
+                        if (uiState.searchState.isSearching && uiState.searchState.results.isEmpty()) {
+                            // Loading indicator — only when no results to show yet
                             item(span = { GridItemSpan(maxLineSpan) }, key = "search_loading") {
                                 val searchingDescription = stringResource(R.string.gallery_cd_searching)
                                 Box(
