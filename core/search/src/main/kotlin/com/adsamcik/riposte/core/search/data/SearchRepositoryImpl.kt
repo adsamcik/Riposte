@@ -4,7 +4,6 @@ import com.adsamcik.riposte.core.database.dao.EmojiTagDao
 import com.adsamcik.riposte.core.database.dao.MemeDao
 import com.adsamcik.riposte.core.database.dao.MemeEmbeddingDao
 import com.adsamcik.riposte.core.database.dao.MemeSearchDao
-import com.adsamcik.riposte.core.database.dao.MemeWithRank
 import com.adsamcik.riposte.core.database.mapper.MemeMapper
 import com.adsamcik.riposte.core.database.util.FtsQuerySanitizer
 import com.adsamcik.riposte.core.datastore.PreferencesDataStore
@@ -16,7 +15,6 @@ import com.adsamcik.riposte.core.model.SearchResult
 import com.adsamcik.riposte.core.search.domain.repository.SearchRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import timber.log.Timber
@@ -38,10 +36,18 @@ class SearchRepositoryImpl
             }
 
             val ftsQuery = prepareFtsQuery(query)
-            return flow {
-                val rankedEntities = memeSearchDao.searchMemesRanked(ftsQuery)
-                val results = normalizeRankedResults(rankedEntities, query)
-                emit(prioritizeFavorites(results))
+            return memeSearchDao.searchMemes(ftsQuery).map { entities ->
+                val results =
+                    entities.map { entity ->
+                        val relevanceScore = computeFieldScore(entity, query)
+                        val matchType = determineMatchType(entity, query)
+                        SearchResult(
+                            meme = entity.toDomain(),
+                            relevanceScore = relevanceScore,
+                            matchType = matchType,
+                        )
+                    }.sortedByDescending { it.relevanceScore }
+                prioritizeFavorites(results)
             }
         }
 
@@ -326,71 +332,35 @@ class SearchRepositoryImpl
             }
         }
 
-        private fun normalizeRankedResults(
-            rankedEntities: List<MemeWithRank>,
+        /**
+         * Compute a relevance score based on which fields match the query.
+         * Title match scores highest, followed by description, then other fields.
+         */
+        private fun computeFieldScore(
+            entity: com.adsamcik.riposte.core.database.entity.MemeEntity,
             query: String,
-        ): List<SearchResult> {
-            if (rankedEntities.isEmpty()) return emptyList()
-
-            val bestRank = rankedEntities.minOf { it.rank }
-            val worstRank = rankedEntities.maxOf { it.rank }
-            val rankRange = worstRank - bestRank
-
-            return rankedEntities.map { entity ->
-                val relevanceScore =
-                    if (rankedEntities.size == 1 || rankRange == 0.0) {
-                        1.0f
-                    } else {
-                        ((worstRank - entity.rank) / rankRange)
-                            .toFloat()
-                            .coerceAtLeast(0.1f)
-                    }
-                val matchType = determineMatchType(entity, query)
-                SearchResult(
-                    meme = entity.toDomain(),
-                    relevanceScore = relevanceScore,
-                    matchType = matchType,
-                )
+        ): Float {
+            var score = BASE_MATCH_SCORE
+            val lowerQuery = query.lowercase()
+            if (entity.title?.lowercase()?.contains(lowerQuery) == true) {
+                score += TITLE_MATCH_BONUS
             }
-        }
-
-        private fun determineMatchType(
-            entity: MemeWithRank,
-            query: String,
-        ): MatchType {
-            return when {
-                entity.title?.contains(query, ignoreCase = true) == true -> MatchType.TEXT
-                entity.description?.contains(query, ignoreCase = true) == true -> MatchType.TEXT
-                entity.emojiTagsJson.contains(query, ignoreCase = true) -> MatchType.EMOJI
-                entity.textContent?.contains(query, ignoreCase = true) == true -> MatchType.TEXT
-                else -> MatchType.TEXT
+            if (entity.description?.lowercase()?.contains(lowerQuery) == true) {
+                score += DESCRIPTION_MATCH_BONUS
             }
-        }
-
-        private fun com.adsamcik.riposte.core.database.dao.MemeWithRank.toDomain(): Meme {
-            return Meme(
-                id = id,
-                filePath = filePath,
-                fileName = fileName,
-                mimeType = mimeType,
-                width = width,
-                height = height,
-                fileSizeBytes = fileSizeBytes,
-                importedAt = importedAt,
-                title = title,
-                description = description,
-                emojiTags =
-                    MemeMapper.parseEmojiTagsJson(emojiTagsJson),
-                textContent = textContent,
-                isFavorite = isFavorite,
-                createdAt = 0L,
-                useCount = 0,
-            )
+            if (entity.emojiTagsJson.lowercase().contains(lowerQuery)) {
+                score += EMOJI_MATCH_BONUS
+            }
+            return score.coerceAtMost(1.0f)
         }
 
         companion object {
             private const val FTS_WEIGHT = 0.6f
             private const val SEMANTIC_WEIGHT = 0.4f
             private const val FAVORITE_BOOST_THRESHOLD = 0.5f
+            private const val BASE_MATCH_SCORE = 0.5f
+            private const val TITLE_MATCH_BONUS = 0.3f
+            private const val DESCRIPTION_MATCH_BONUS = 0.15f
+            private const val EMOJI_MATCH_BONUS = 0.1f
         }
     }

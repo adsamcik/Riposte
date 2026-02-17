@@ -5,7 +5,6 @@ import com.adsamcik.riposte.core.database.dao.EmojiTagDao
 import com.adsamcik.riposte.core.database.dao.MemeDao
 import com.adsamcik.riposte.core.database.dao.MemeEmbeddingDao
 import com.adsamcik.riposte.core.database.dao.MemeSearchDao
-import com.adsamcik.riposte.core.database.dao.MemeWithRank
 import com.adsamcik.riposte.core.database.entity.MemeEntity
 import com.adsamcik.riposte.core.database.entity.MemeWithEmbeddingData
 import com.adsamcik.riposte.core.datastore.PreferencesDataStore
@@ -46,13 +45,6 @@ class SearchRepositoryImplTest {
             createTestMemeEntity(1, "meme1.jpg", title = "Funny cat"),
             createTestMemeEntity(2, "meme2.jpg", description = "Dog meme"),
             createTestMemeEntity(3, "meme3.jpg", emojiTagsJson = "😂,😀"),
-        )
-
-    private val testMemeWithRanks =
-        listOf(
-            createTestMemeWithRank(1, "meme1.jpg", title = "Funny cat", rank = -10.0),
-            createTestMemeWithRank(2, "meme2.jpg", description = "Dog meme", rank = -5.0),
-            createTestMemeWithRank(3, "meme3.jpg", emojiTagsJson = "😂,😀", rank = -2.0),
         )
 
     private val recentSearches = listOf("funny", "cat", "dog")
@@ -100,7 +92,7 @@ class SearchRepositoryImplTest {
     @Test
     fun `searchMemes returns flow of search results`() =
         runTest {
-            coEvery { memeSearchDao.searchMemesRanked(any()) } returns testMemeWithRanks
+            every { memeSearchDao.searchMemes(any()) } returns flowOf(testMemeEntities)
 
             repository.searchMemes("funny").test {
                 val results = awaitItem()
@@ -133,7 +125,14 @@ class SearchRepositoryImplTest {
     @Test
     fun `searchMemes calculates descending relevance scores`() =
         runTest {
-            coEvery { memeSearchDao.searchMemesRanked(any()) } returns testMemeWithRanks
+            // title match: 0.5 + 0.3 = 0.8, desc match: 0.5 + 0.15 = 0.65, no match: 0.5
+            val entities =
+                listOf(
+                    createTestMemeEntity(1, "meme1.jpg", title = "test content"),
+                    createTestMemeEntity(2, "meme2.jpg", description = "test stuff"),
+                    createTestMemeEntity(3, "meme3.jpg"),
+                )
+            every { memeSearchDao.searchMemes(any()) } returns flowOf(entities)
 
             repository.searchMemes("test").test {
                 val results = awaitItem()
@@ -146,8 +145,8 @@ class SearchRepositoryImplTest {
     @Test
     fun `searchMemes determines TEXT match type for title matches`() =
         runTest {
-            val rankedWithTitle = listOf(createTestMemeWithRank(1, "test.jpg", title = "funny cat", rank = -10.0))
-            coEvery { memeSearchDao.searchMemesRanked(any()) } returns rankedWithTitle
+            val entitiesWithTitle = listOf(createTestMemeEntity(1, "test.jpg", title = "funny cat"))
+            every { memeSearchDao.searchMemes(any()) } returns flowOf(entitiesWithTitle)
 
             repository.searchMemes("funny").test {
                 val results = awaitItem()
@@ -159,8 +158,8 @@ class SearchRepositoryImplTest {
     @Test
     fun `searchMemes determines EMOJI match type for emoji matches`() =
         runTest {
-            val rankedWithEmoji = listOf(createTestMemeWithRank(1, "test.jpg", emojiTagsJson = "😂", rank = -10.0))
-            coEvery { memeSearchDao.searchMemesRanked(any()) } returns rankedWithEmoji
+            val entitiesWithEmoji = listOf(createTestMemeEntity(1, "test.jpg", emojiTagsJson = "😂"))
+            every { memeSearchDao.searchMemes(any()) } returns flowOf(entitiesWithEmoji)
 
             repository.searchMemes("😂").test {
                 val results = awaitItem()
@@ -176,7 +175,7 @@ class SearchRepositoryImplTest {
     @Test
     fun `searchByText returns same results as searchMemes`() =
         runTest {
-            coEvery { memeSearchDao.searchMemesRanked(any()) } returns testMemeWithRanks
+            every { memeSearchDao.searchMemes(any()) } returns flowOf(testMemeEntities)
 
             repository.searchByText("test").test {
                 val results = awaitItem()
@@ -246,8 +245,8 @@ class SearchRepositoryImplTest {
     @Test
     fun `searchHybrid combines FTS and semantic results`() =
         runTest {
-            val rankedEntities = testMemeWithRanks.take(2)
-            coEvery { memeSearchDao.searchMemesRanked(any()) } returns rankedEntities
+            val ftsEntities = testMemeEntities.take(2)
+            every { memeSearchDao.searchMemes(any()) } returns flowOf(ftsEntities)
 
             val embedding = createTestEmbedding(128)
             val testEmbeddingData = testMemeEntities.map { createMemeWithEmbeddingData(it, embedding) }
@@ -286,7 +285,7 @@ class SearchRepositoryImplTest {
                     preferencesDataStore = preferencesDataStore,
                 )
 
-            coEvery { memeSearchDao.searchMemesRanked(any()) } returns testMemeWithRanks
+            every { memeSearchDao.searchMemes(any()) } returns flowOf(testMemeEntities)
 
             val results = repository.searchHybrid("test", 20)
 
@@ -297,9 +296,9 @@ class SearchRepositoryImplTest {
     @Test
     fun `searchHybrid respects limit parameter`() =
         runTest {
-            val manyRankedEntities =
-                (1..30).map { createTestMemeWithRank(it.toLong(), "meme$it.jpg", rank = -30.0 + it) }
-            coEvery { memeSearchDao.searchMemesRanked(any()) } returns manyRankedEntities
+            val manyEntities =
+                (1..30).map { createTestMemeEntity(it.toLong(), "meme$it.jpg") }
+            every { memeSearchDao.searchMemes(any()) } returns flowOf(manyEntities)
 
             val disabledPrefs = defaultPreferences.copy(enableSemanticSearch = false)
             every { preferencesDataStore.appPreferences } returns flowOf(disabledPrefs)
@@ -322,11 +321,10 @@ class SearchRepositoryImplTest {
     @Test
     fun `searchHybrid merges duplicate results with HYBRID match type`() =
         runTest {
-            val singleRankedEntity = listOf(createTestMemeWithRank(1, "test.jpg", rank = -10.0))
-            coEvery { memeSearchDao.searchMemesRanked(any()) } returns singleRankedEntity
+            val singleEntity = listOf(createTestMemeEntity(1, "test.jpg"))
+            every { memeSearchDao.searchMemes(any()) } returns flowOf(singleEntity)
 
             val embedding = createTestEmbedding(128)
-            val singleEntity = listOf(createTestMemeEntity(1, "test.jpg"))
             val testEmbeddingData = singleEntity.map { createMemeWithEmbeddingData(it, embedding) }
             coEvery { memeEmbeddingDao.getMemesWithEmbeddings() } returns testEmbeddingData
 
@@ -494,17 +492,17 @@ class SearchRepositoryImplTest {
     @Test
     fun `searchMemes prioritizes favorited memes above threshold`() =
         runTest {
-            // BM25 ranks: bestRank=-10.0, worstRank=-2.0, range=8.0
-            // id=1 (rank -10.0): score = 8/8 = 1.0
-            // id=2 (rank -9.0): score = 7/8 = 0.875 (above 0.5 threshold, will be boosted)
-            // id=3 (rank -2.0): score = 0/8 → coerced to 0.1
-            val rankedEntities =
+            // Field-based scoring with query "test":
+            // id=1 (title "test normal"): 0.5 + 0.3 = 0.8
+            // id=2 (title "test favorite", favorite): 0.5 + 0.3 = 0.8 (≥0.5 threshold, will be boosted)
+            // id=3 (no matching fields): 0.5
+            val entities =
                 listOf(
-                    createTestMemeWithRank(1, "meme1.jpg", title = "test normal", rank = -10.0),
-                    createTestMemeWithRank(2, "meme2.jpg", title = "test favorite", isFavorite = true, rank = -9.0),
-                    createTestMemeWithRank(3, "meme3.jpg", title = "test also normal", rank = -2.0),
+                    createTestMemeEntity(1, "meme1.jpg", title = "test normal"),
+                    createTestMemeEntity(2, "meme2.jpg", title = "test favorite", isFavorite = true),
+                    createTestMemeEntity(3, "meme3.jpg"),
                 )
-            coEvery { memeSearchDao.searchMemesRanked(any()) } returns rankedEntities
+            every { memeSearchDao.searchMemes(any()) } returns flowOf(entities)
 
             repository.searchMemes("test").test {
                 val results = awaitItem()
@@ -519,19 +517,18 @@ class SearchRepositoryImplTest {
     @Test
     fun `searchMemes prioritizes all favorites since FTS scores are above threshold`() =
         runTest {
-            // With BM25, all equal ranks normalize to 1.0, which meets
-            // the FAVORITE_BOOST_THRESHOLD and should be prioritized
-            val rankedEntities =
+            // With field-based scoring, all entities with title "test content"
+            // get score = 0.5 + 0.3 = 0.8, which meets FAVORITE_BOOST_THRESHOLD
+            val entities =
                 (1..60).map { i ->
-                    createTestMemeWithRank(
+                    createTestMemeEntity(
                         id = i.toLong(),
                         fileName = "meme$i.jpg",
                         title = "test content",
                         isFavorite = i == 60,
-                        rank = -5.0,
                     )
                 }
-            coEvery { memeSearchDao.searchMemesRanked(any()) } returns rankedEntities
+            every { memeSearchDao.searchMemes(any()) } returns flowOf(entities)
 
             repository.searchMemes("test").test {
                 val results = awaitItem()
@@ -544,21 +541,20 @@ class SearchRepositoryImplTest {
     @Test
     fun `searchHybrid does not prioritize favorites with low relevance score`() =
         runTest {
-            // Give most items a good BM25 rank (-10.0) and the favorite (item 60)
-            // a much worse rank (-0.01). With bestRank=-10.0 and worstRank=-0.01,
-            // the favorite's normalized score = (-0.01 - (-0.01)) / (-0.01 - (-10.0)) = 0.0
-            // → coerced to 0.1. After FTS_WEIGHT: 0.1 * 0.6 = 0.06, below 0.5 threshold.
-            val rankedEntities =
+            // Field-based scoring with query "test":
+            // Items 1-59 have title "test content" → score = 0.5 + 0.3 = 0.8
+            // Item 60 (favorite) has NO matching fields → score = 0.5
+            // After FTS_WEIGHT: item 60 score = 0.5 * 0.6 = 0.3, below 0.5 threshold
+            val entities =
                 (1..60).map { i ->
-                    createTestMemeWithRank(
+                    createTestMemeEntity(
                         id = i.toLong(),
                         fileName = "meme$i.jpg",
-                        title = "test content",
+                        title = if (i == 60) "unrelated content" else "test content",
                         isFavorite = i == 60,
-                        rank = if (i == 60) -0.01 else -10.0,
                     )
                 }
-            coEvery { memeSearchDao.searchMemesRanked(any()) } returns rankedEntities
+            every { memeSearchDao.searchMemes(any()) } returns flowOf(entities)
 
             val disabledPrefs = defaultPreferences.copy(enableSemanticSearch = false)
             every { preferencesDataStore.appPreferences } returns flowOf(disabledPrefs)
@@ -575,7 +571,7 @@ class SearchRepositoryImplTest {
 
             val results = repository.searchHybrid("test", 100)
 
-            // The favorite at the end has weighted score 0.1 * 0.6 = 0.06
+            // The favorite at the end has weighted score 0.5 * 0.6 = 0.3
             // which is below FAVORITE_BOOST_THRESHOLD, so it should NOT be boosted
             assertThat(results[0].meme.id).isNotEqualTo(60)
         }
@@ -603,14 +599,16 @@ class SearchRepositoryImplTest {
     @Test
     fun `searchHybrid prioritizes favorited memes above threshold`() =
         runTest {
-            // Equal BM25 ranks → both normalize to 1.0
-            // After FTS_WEIGHT: 1.0 * 0.6 = 0.6, above 0.5 threshold
-            val rankedEntities =
+            // Both have title matching "test" → score = 0.8
+            // After FTS_WEIGHT: 0.8 * 0.6 = 0.48... but wait, that's below 0.5!
+            // Give both title+description to get score = 0.5 + 0.3 + 0.15 = 0.95
+            // After FTS_WEIGHT: 0.95 * 0.6 = 0.57, above 0.5 threshold
+            val entities =
                 listOf(
-                    createTestMemeWithRank(1, "normal.jpg", title = "test", rank = -10.0),
-                    createTestMemeWithRank(2, "favorite.jpg", title = "test", isFavorite = true, rank = -10.0),
+                    createTestMemeEntity(1, "normal.jpg", title = "test", description = "test desc"),
+                    createTestMemeEntity(2, "favorite.jpg", title = "test", description = "test desc", isFavorite = true),
                 )
-            coEvery { memeSearchDao.searchMemesRanked(any()) } returns rankedEntities
+            every { memeSearchDao.searchMemes(any()) } returns flowOf(entities)
 
             val disabledPrefs = defaultPreferences.copy(enableSemanticSearch = false)
             every { preferencesDataStore.appPreferences } returns flowOf(disabledPrefs)
@@ -634,27 +632,27 @@ class SearchRepositoryImplTest {
     @Test
     fun `favorite prioritization preserves relative order within favorites and non-favorites`() =
         runTest {
-            // BM25 ranks: bestRank=-10.0, worstRank=-2.0, range=8.0
-            // id=1 (rank -10.0): score = 8/8 = 1.0 (non-favorite)
-            // id=2 (rank -9.0): score = 7/8 = 0.875 (favorite, above 0.5 threshold)
-            // id=3 (rank -4.0): score = 2/8 = 0.25 (non-favorite)
-            // id=4 (rank -7.0): score = 5/8 = 0.625 (favorite, above 0.5 threshold)
-            val rankedEntities =
+            // Field-based scoring with query "test":
+            // id=1 (title "test first"): 0.5 + 0.3 = 0.8 (non-favorite)
+            // id=2 (title "test fav2", desc "test desc"): 0.5 + 0.3 + 0.15 = 0.95 (favorite, ≥0.5)
+            // id=3 (no match): 0.5 (non-favorite)
+            // id=4 (title "test fav1"): 0.5 + 0.3 = 0.8 (favorite, ≥0.5)
+            val entities =
                 listOf(
-                    createTestMemeWithRank(1, "meme1.jpg", title = "test first", rank = -10.0),
-                    createTestMemeWithRank(2, "meme2.jpg", title = "test fav2", isFavorite = true, rank = -9.0),
-                    createTestMemeWithRank(3, "meme3.jpg", title = "test third", rank = -4.0),
-                    createTestMemeWithRank(4, "meme4.jpg", title = "test fav1", isFavorite = true, rank = -7.0),
+                    createTestMemeEntity(1, "meme1.jpg", title = "test first"),
+                    createTestMemeEntity(2, "meme2.jpg", title = "test fav2", description = "test desc", isFavorite = true),
+                    createTestMemeEntity(3, "meme3.jpg"),
+                    createTestMemeEntity(4, "meme4.jpg", title = "test fav1", isFavorite = true),
                 )
-            coEvery { memeSearchDao.searchMemesRanked(any()) } returns rankedEntities
+            every { memeSearchDao.searchMemes(any()) } returns flowOf(entities)
 
             repository.searchMemes("test").test {
                 val results = awaitItem()
                 assertThat(results).hasSize(4)
-                // Favorites first (in their original relevance order)
+                // Favorites first (in their original relevance order: id=2 at 0.95, id=4 at 0.8)
                 assertThat(results[0].meme.id).isEqualTo(2)
                 assertThat(results[1].meme.id).isEqualTo(4)
-                // Then non-favorites
+                // Then non-favorites (id=1 at 0.8, id=3 at 0.5)
                 assertThat(results[2].meme.id).isEqualTo(1)
                 assertThat(results[3].meme.id).isEqualTo(3)
                 awaitComplete()
@@ -690,36 +688,6 @@ class SearchRepositoryImplTest {
             textContent = textContent,
             embedding = embedding,
             isFavorite = isFavorite,
-        )
-    }
-
-    private fun createTestMemeWithRank(
-        id: Long,
-        fileName: String,
-        title: String? = null,
-        description: String? = null,
-        emojiTagsJson: String = "",
-        textContent: String? = null,
-        embedding: ByteArray? = null,
-        isFavorite: Boolean = false,
-        rank: Double = -5.0,
-    ): MemeWithRank {
-        return MemeWithRank(
-            id = id,
-            filePath = "/test/path/$fileName",
-            fileName = fileName,
-            mimeType = "image/jpeg",
-            width = 1920,
-            height = 1080,
-            fileSizeBytes = 1024L,
-            importedAt = System.currentTimeMillis(),
-            title = title,
-            description = description,
-            emojiTagsJson = emojiTagsJson,
-            textContent = textContent,
-            embedding = embedding,
-            isFavorite = isFavorite,
-            rank = rank,
         )
     }
 
