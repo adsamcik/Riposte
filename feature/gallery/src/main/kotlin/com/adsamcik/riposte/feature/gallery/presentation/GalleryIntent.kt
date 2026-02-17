@@ -84,16 +84,6 @@ sealed interface GalleryIntent {
      */
     data class QuickShare(val memeId: Long) : GalleryIntent
 
-    /**
-     * Set an emoji filter (single-select). Passing the already-active emoji clears it.
-     */
-    data class SetEmojiFilter(val emoji: String) : GalleryIntent
-
-    /**
-     * Clear the active emoji filter.
-     */
-    data object ClearEmojiFilter : GalleryIntent
-
     // ── Search intents (inline search) ──
 
     /**

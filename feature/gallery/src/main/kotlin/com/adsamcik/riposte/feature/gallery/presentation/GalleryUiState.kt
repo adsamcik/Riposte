@@ -70,20 +70,10 @@ data class GalleryUiState(
      */
     val usePaging: Boolean = true,
     /**
-     * Active emoji filter applied on top of the gallery filter (single-select).
-     * Persisted in ViewModel so they survive navigation/recomposition.
-     */
-    val activeEmojiFilter: String? = null,
-    /**
      * Unique emojis with counts, derived from the current meme list.
      * Computed in the ViewModel to avoid expensive recomposition in Compose.
      */
     val uniqueEmojis: List<Pair<String, Int>> = emptyList(),
-    /**
-     * Memes filtered by active emoji filters (non-paged path).
-     * Computed in the ViewModel as derived state.
-     */
-    val filteredMemes: List<Meme> = emptyList(),
     /**
      * Current screen mode: browsing or searching.
      */
@@ -137,8 +127,6 @@ sealed interface GalleryFilter {
     data object All : GalleryFilter
 
     data object Favorites : GalleryFilter
-
-    data class ByEmoji(val emoji: String) : GalleryFilter
 }
 
 /**
