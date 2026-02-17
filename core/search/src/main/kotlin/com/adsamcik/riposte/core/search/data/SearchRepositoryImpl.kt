@@ -4,6 +4,7 @@ import com.adsamcik.riposte.core.database.dao.EmojiTagDao
 import com.adsamcik.riposte.core.database.dao.MemeDao
 import com.adsamcik.riposte.core.database.dao.MemeEmbeddingDao
 import com.adsamcik.riposte.core.database.dao.MemeSearchDao
+import com.adsamcik.riposte.core.database.dao.MemeWithRank
 import com.adsamcik.riposte.core.database.mapper.MemeMapper
 import com.adsamcik.riposte.core.database.util.FtsQuerySanitizer
 import com.adsamcik.riposte.core.datastore.PreferencesDataStore
@@ -15,6 +16,7 @@ import com.adsamcik.riposte.core.model.SearchResult
 import com.adsamcik.riposte.core.search.domain.repository.SearchRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import timber.log.Timber
@@ -32,22 +34,14 @@ class SearchRepositoryImpl
     ) : SearchRepository {
         override fun searchMemes(query: String): Flow<List<SearchResult>> {
             if (query.isBlank()) {
-                return kotlinx.coroutines.flow.flowOf(emptyList())
+                return flowOf(emptyList())
             }
 
             val ftsQuery = prepareFtsQuery(query)
-            return memeSearchDao.searchMemes(ftsQuery).map { entities ->
-                val results =
-                    entities.mapIndexed { index, entity ->
-                        val relevanceScore = 1.0f - (index * 0.01f).coerceAtMost(0.5f)
-                        val matchType = determineMatchType(entity, query)
-                        SearchResult(
-                            meme = entity.toDomain(),
-                            relevanceScore = relevanceScore,
-                            matchType = matchType,
-                        )
-                    }
-                prioritizeFavorites(results)
+            return flow {
+                val rankedEntities = memeSearchDao.searchMemesRanked(ftsQuery)
+                val results = normalizeRankedResults(rankedEntities, query)
+                emit(prioritizeFavorites(results))
             }
         }
 
@@ -305,6 +299,68 @@ class SearchRepositoryImpl
                     )
                 }
             }
+        }
+
+        private fun normalizeRankedResults(
+            rankedEntities: List<MemeWithRank>,
+            query: String,
+        ): List<SearchResult> {
+            if (rankedEntities.isEmpty()) return emptyList()
+
+            val bestRank = rankedEntities.minOf { it.rank }
+            val worstRank = rankedEntities.maxOf { it.rank }
+            val rankRange = worstRank - bestRank
+
+            return rankedEntities.map { entity ->
+                val relevanceScore =
+                    if (rankedEntities.size == 1 || rankRange == 0.0) {
+                        1.0f
+                    } else {
+                        ((worstRank - entity.rank) / rankRange)
+                            .toFloat()
+                            .coerceAtLeast(0.1f)
+                    }
+                val matchType = determineMatchType(entity, query)
+                SearchResult(
+                    meme = entity.toDomain(),
+                    relevanceScore = relevanceScore,
+                    matchType = matchType,
+                )
+            }
+        }
+
+        private fun determineMatchType(
+            entity: MemeWithRank,
+            query: String,
+        ): MatchType {
+            return when {
+                entity.title?.contains(query, ignoreCase = true) == true -> MatchType.TEXT
+                entity.description?.contains(query, ignoreCase = true) == true -> MatchType.TEXT
+                entity.emojiTagsJson.contains(query, ignoreCase = true) -> MatchType.EMOJI
+                entity.textContent?.contains(query, ignoreCase = true) == true -> MatchType.TEXT
+                else -> MatchType.TEXT
+            }
+        }
+
+        private fun com.adsamcik.riposte.core.database.dao.MemeWithRank.toDomain(): Meme {
+            return Meme(
+                id = id,
+                filePath = filePath,
+                fileName = fileName,
+                mimeType = mimeType,
+                width = width,
+                height = height,
+                fileSizeBytes = fileSizeBytes,
+                importedAt = importedAt,
+                title = title,
+                description = description,
+                emojiTags =
+                    MemeMapper.parseEmojiTagsJson(emojiTagsJson),
+                textContent = textContent,
+                isFavorite = isFavorite,
+                createdAt = 0L,
+                useCount = 0,
+            )
         }
 
         companion object {
