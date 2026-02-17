@@ -446,6 +446,8 @@ private fun GalleryScreenContent(
                                     ),
                                     style = MaterialTheme.typography.titleSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
                                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                                 )
                             }
@@ -1200,11 +1202,14 @@ private fun RecentSearchesHeader(
             text = stringResource(com.adsamcik.riposte.core.search.R.string.search_recent_title),
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
         TextButton(onClick = onClearAll) {
             Text(
                 text = stringResource(com.adsamcik.riposte.core.search.R.string.search_recent_clear_all),
                 style = MaterialTheme.typography.labelMedium,
+                maxLines = 1,
             )
         }
     }
@@ -1332,6 +1337,8 @@ private fun ImportProgressBanner(
                     },
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f),
             )
         }

@@ -216,7 +216,13 @@ fun ImportScreen(
         },
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.import_title)) },
+                title = {
+                    Text(
+                        stringResource(R.string.import_title),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
@@ -235,6 +241,8 @@ fun ImportScreen(
                                     uiState.selectedImages.size,
                                 ),
                             style = MaterialTheme.typography.labelLarge,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.padding(end = 16.dp),
                         )
                     }
