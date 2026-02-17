@@ -3,26 +3,18 @@ package com.adsamcik.riposte.core.ui.component
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.adsamcik.riposte.core.model.EmojiTag
-import com.adsamcik.riposte.core.ui.R
 import com.adsamcik.riposte.core.ui.theme.RiposteTheme
 
 /** Maximum number of emojis to process to prevent DoS */
@@ -32,13 +24,11 @@ private const val MAX_EMOJI_COUNT = 200
  * A horizontal rail displaying emoji filter chips with overflow support.
  *
  * Shows the first [maxVisible] emojis as chips, with a "more" chip if additional
- * emojis exist. Tapping the more chip expands to show [EmojiGridOverlay].
- * When a filter is active, shows a clear button to reset it.
+ * emojis exist.
  *
  * @param emojis List of emoji-count pairs, sorted by frequency. Capped at [MAX_EMOJI_COUNT].
  * @param activeFilter Currently selected emoji filter, or null if none.
  * @param onEmojiSelected Callback when an emoji filter is selected (tapping the active one clears it).
- * @param onClearFilter Callback to clear the active filter.
  * @param leadingContent Optional slot for additional chips rendered before the emoji chips.
  * @param maxVisible Maximum number of emojis to show before overflow.
  * @param modifier Modifier to be applied to the component.
@@ -48,7 +38,6 @@ fun EmojiFilterRail(
     emojis: List<Pair<String, Int>>,
     activeFilter: String?,
     onEmojiSelected: (String) -> Unit,
-    onClearFilter: () -> Unit = {},
     leadingContent: (LazyListScope.() -> Unit)? = null,
     maxVisible: Int = 7,
     modifier: Modifier = Modifier,
@@ -67,23 +56,6 @@ fun EmojiFilterRail(
         ) {
             // Leading content slot (e.g., Favorites chip)
             leadingContent?.invoke(this)
-
-            // Clear button when a filter is active
-            if (activeFilter != null) {
-                item(key = "clear_all") {
-                    IconButton(
-                        onClick = onClearFilter,
-                        modifier = Modifier.size(48.dp),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = stringResource(R.string.ui_emoji_filter_clear_all),
-                            modifier = Modifier.size(18.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-            }
 
             items(
                 items = visibleEmojis,

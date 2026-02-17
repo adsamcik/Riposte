@@ -824,7 +824,6 @@ private fun GalleryEmojiFilterRail(
                 emojis = uniqueEmojis,
                 activeFilter = activeEmojiFilter,
                 onEmojiSelected = { emoji -> onIntent(GalleryIntent.UpdateSearchQuery(emoji)) },
-                onClearFilter = { onIntent(GalleryIntent.ClearSearch) },
                 leadingContent = if (showFavoritesChip) {
                     {
                         item(key = "favorites_chip") {
