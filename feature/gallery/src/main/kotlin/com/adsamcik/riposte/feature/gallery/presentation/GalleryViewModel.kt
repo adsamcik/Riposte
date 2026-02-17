@@ -108,7 +108,6 @@ class GalleryViewModel
                 // Search intents — delegate
                 is GalleryIntent.UpdateSearchQuery,
                 is GalleryIntent.SelectRecentSearch,
-                is GalleryIntent.SelectSuggestion,
                 is GalleryIntent.DeleteRecentSearch,
                 is GalleryIntent.ClearRecentSearches,
                 is GalleryIntent.ClearSearch,

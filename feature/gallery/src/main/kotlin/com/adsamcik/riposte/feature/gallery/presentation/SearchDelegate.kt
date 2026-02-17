@@ -58,7 +58,6 @@ class SearchDelegate
                             _state.update {
                                 it.copy(
                                     results = emptyList(),
-                                    suggestions = emptyList(),
                                     hasSearched = false,
                                     isSearching = false,
                                     errorMessage = null,
@@ -68,27 +67,7 @@ class SearchDelegate
                     }
             }
 
-            // Fetch autocomplete suggestions with a shorter debounce
-            scope.launch {
-                queryFlow
-                    .debounce(SUGGESTION_DEBOUNCE_MS)
-                    .distinctUntilChanged()
-                    .collectLatest { query ->
-                        if (query.length >= MIN_SUGGESTION_LENGTH) {
-                            try {
-                                val suggestions = searchUseCases.getSearchSuggestions(query)
-                                _state.update { it.copy(suggestions = suggestions) }
-                            } catch (_: Exception) {
-                                // Suggestions are best-effort; don't show errors
-                                Timber.d("Failed to load search suggestions")
-                            }
-                        } else {
-                            _state.update { it.copy(suggestions = emptyList()) }
-                        }
-                    }
-            }
-
-            // Load recent searches reactively
+                // Load recent searches reactively
             scope.launch {
                 searchUseCases.getRecentSearches()
                     .map { searches -> searches.filterNot { it.isInternalQuerySyntax() } }
@@ -106,7 +85,6 @@ class SearchDelegate
                 is GalleryIntent.UpdateSearchQuery -> updateQuery(intent.query)
                 is GalleryIntent.ClearSearch -> clearSearch()
                 is GalleryIntent.SelectRecentSearch -> selectRecentSearch(intent.query, scope)
-                is GalleryIntent.SelectSuggestion -> selectSuggestion(intent.suggestion, scope)
                 is GalleryIntent.DeleteRecentSearch -> deleteRecentSearch(intent.query, scope)
                 is GalleryIntent.ClearRecentSearches -> clearRecentSearches(scope)
                 else -> {} // Not a search intent
@@ -134,18 +112,6 @@ class SearchDelegate
                 searchUseCases.addRecentSearch(query)
             }
             performSearch(query, scope = scope)
-        }
-
-        private fun selectSuggestion(
-            suggestion: String,
-            scope: CoroutineScope,
-        ) {
-            _state.update { it.copy(suggestions = emptyList()) }
-            updateQuery(suggestion)
-            scope.launch {
-                searchUseCases.addRecentSearch(suggestion)
-            }
-            performSearch(suggestion, scope = scope)
         }
 
         private fun deleteRecentSearch(
@@ -190,7 +156,6 @@ class SearchDelegate
                             searchDurationMs = endTime - startTime,
                             isSearching = false,
                             hasSearched = true,
-                            suggestions = emptyList(),
                             isTextOnly = !hasSemanticResults,
                         )
                     }
@@ -252,10 +217,7 @@ class SearchDelegate
 
         companion object {
             private const val SEARCH_DEBOUNCE_MS = 300L
-            private const val SUGGESTION_DEBOUNCE_MS = 150L
-            private const val MIN_SUGGESTION_LENGTH = 2
-
-            private val INTERNAL_QUERY_REGEX = Regex("^(is|type):", RegexOption.IGNORE_CASE)
+                private val INTERNAL_QUERY_REGEX= Regex("^(is|type):", RegexOption.IGNORE_CASE)
 
             fun String.isInternalQuerySyntax(): Boolean = INTERNAL_QUERY_REGEX.containsMatchIn(this.trim())
         }

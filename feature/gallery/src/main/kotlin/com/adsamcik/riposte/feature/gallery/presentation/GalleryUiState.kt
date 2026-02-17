@@ -19,7 +19,6 @@ data class SearchSliceState(
     val query: String = "",
     val results: List<SearchResult> = emptyList(),
     val recentSearches: List<String> = emptyList(),
-    val suggestions: List<String> = emptyList(),
     val isSearching: Boolean = false,
     val hasSearched: Boolean = false,
     val searchDurationMs: Long = 0L,

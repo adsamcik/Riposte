@@ -444,31 +444,6 @@ private fun GalleryScreenContent(
                                     )
                                 }
                             }
-                        } else if (uiState.searchState.suggestions.isNotEmpty()) {
-                            // Autocomplete suggestions while typing
-                            item(span = { GridItemSpan(maxLineSpan) }, key = "suggestions_header") {
-                                Text(
-                                    text = stringResource(
-                                        com.adsamcik.riposte.core.search.R.string.search_suggestions_title,
-                                    ),
-                                    style = MaterialTheme.typography.titleSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                                )
-                            }
-                            items(
-                                count = uiState.searchState.suggestions.size,
-                                key = { "suggestion_$it" },
-                                span = { GridItemSpan(maxLineSpan) },
-                            ) { index ->
-                                val suggestion = uiState.searchState.suggestions[index]
-                                SuggestionItem(
-                                    suggestion = suggestion,
-                                    onClick = { onIntent(GalleryIntent.SelectSuggestion(suggestion)) },
-                                )
-                            }
                         }
 
                         if (uiState.searchState.isSearching) {
@@ -1271,36 +1246,6 @@ private fun RecentSearchItem(
                 modifier = Modifier.size(18.dp),
             )
         }
-    }
-}
-
-@Composable
-private fun SuggestionItem(
-    suggestion: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .combinedClickable(onClick = onClick)
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Icon(
-            imageVector = Icons.Default.Search,
-            contentDescription = stringResource(com.adsamcik.riposte.core.search.R.string.search_suggestions_icon),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(20.dp),
-        )
-        Text(
-            text = suggestion,
-            style = MaterialTheme.typography.bodyLarge,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
     }
 }
 

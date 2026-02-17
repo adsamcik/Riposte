@@ -107,11 +107,6 @@ sealed interface GalleryIntent {
     data class DeleteRecentSearch(val query: String) : GalleryIntent
 
     /**
-     * Select a search suggestion and perform it.
-     */
-    data class SelectSuggestion(val suggestion: String) : GalleryIntent
-
-    /**
      * Clear all recent search history.
      */
     data object ClearRecentSearches : GalleryIntent
