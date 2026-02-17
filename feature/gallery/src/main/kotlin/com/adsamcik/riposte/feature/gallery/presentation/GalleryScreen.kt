@@ -1429,6 +1429,8 @@ private fun NotificationBanner(
                     text = text,
                     style = MaterialTheme.typography.bodyMedium,
                     color = contentColor,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f),
                 )
                 IconButton(onClick = onDismiss) {

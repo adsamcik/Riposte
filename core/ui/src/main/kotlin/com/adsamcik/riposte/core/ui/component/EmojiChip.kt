@@ -115,7 +115,6 @@ fun EmojiChip(
                         Modifier
                     },
                 )
-                .sizeIn(minWidth = 36.dp)
                 .scale(scale),
         shape = if (isSelected) RiposteShapes.EmojiChipSelected else EmojiChipShape,
         color = bgColor,
