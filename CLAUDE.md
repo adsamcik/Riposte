@@ -37,7 +37,8 @@ riposte/
 │   └── settings/          # App preferences
 ├── baselineprofile/       # Startup performance optimization
 ├── docs/                  # Technical documentation
-└── tools/riposte-cli/ # Python CLI for batch AI annotation
+├── tools/riposte-cli/         # Python CLI for batch AI annotation (legacy)
+└── tools/riposte-cli-dotnet/  # .NET CLI for batch AI annotation
 ```
 
 ## Development Commands
@@ -61,11 +62,10 @@ riposte/
 # Generate baseline profile
 ./gradlew :app:generateBaselineProfile
 
-# CLI tool (requires venv)
-cd tools/riposte-cli
-scripts/setup.ps1  # or setup.sh
-meme-cli annotate <directory> --zip
-meme-cli annotate <directory> --languages en,cs --force
+# CLI tool (.NET)
+cd tools/riposte-cli-dotnet
+dotnet run --project src/RiposteCli -- annotate <directory> --zip
+dotnet run --project src/RiposteCli -- annotate <directory> --languages en,cs --force
 ```
 
 ## Key Patterns
@@ -186,14 +186,16 @@ When working in this codebase:
 
 ## CLI Tool Notes
 
-The Python CLI at `tools/riposte-cli/` annotates images with AI:
+The .NET CLI at `tools/riposte-cli-dotnet/` annotates images with AI:
 
-- Uses GitHub Copilot SDK (`github-copilot-sdk`)
+- Uses GitHub Copilot SDK (`GitHub.Copilot.SDK` NuGet package)
+- .NET 8 — installable via `dotnet tool install` or single-file publish
 - Outputs JSON sidecar files per image (schema v1.3)
-- Rate limited with exponential backoff
+- Rate limited with adaptive backpressure and exponential backoff
 - Supports `--zip` to create importable ZIP bundles
 - Processing modes: `--force` (overwrite), `--continue` (skip existing), `--dry-run`
 - Multilingual: `--languages en,cs,de` for translations
-- No fallback behavior - errors propagate
+- Parallel processing: `--concurrency 4` (default) with adaptive reduction on errors
+- No fallback behavior — errors propagate
 
 See `.github/copilot-instructions.md` for detailed CLI documentation.
