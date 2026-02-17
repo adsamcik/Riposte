@@ -87,6 +87,20 @@ interface MemeSearchDao {
     """,
     )
     suspend fun getSearchSuggestions(prefix: String): List<String>
+
+    /**
+     * Get search suggestions from meme descriptions.
+     * Uses contains match since descriptions are longer text.
+     */
+    @Query(
+        """
+        SELECT DISTINCT description FROM memes
+        WHERE description LIKE '%' || :prefix || '%'
+        AND description IS NOT NULL
+        LIMIT 10
+    """,
+    )
+    suspend fun getDescriptionSuggestions(prefix: String): List<String>
 }
 
 /**

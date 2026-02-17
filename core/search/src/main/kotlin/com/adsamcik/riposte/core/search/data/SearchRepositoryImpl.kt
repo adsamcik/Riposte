@@ -150,7 +150,32 @@ class SearchRepositoryImpl
 
         override suspend fun getSearchSuggestions(prefix: String): List<String> {
             if (prefix.isBlank()) return emptyList()
-            return memeSearchDao.getSearchSuggestions(prefix)
+            val titleSuggestions = memeSearchDao.getSearchSuggestions(prefix)
+            val descriptionSuggestions =
+                memeSearchDao.getDescriptionSuggestions(prefix)
+                    .map { desc -> extractRelevantPhrase(desc, prefix) }
+                    .filter { it.isNotBlank() }
+            return (titleSuggestions + descriptionSuggestions)
+                .distinct()
+                .take(10)
+        }
+
+        private fun extractRelevantPhrase(description: String, prefix: String): String {
+            val lowerDesc = description.lowercase()
+            val lowerPrefix = prefix.lowercase()
+            val index = lowerDesc.indexOf(lowerPrefix)
+            if (index < 0) return description.take(50)
+
+            // Find word boundaries around the match
+            val start = description.lastIndexOf(' ', (index - 1).coerceAtLeast(0)).let {
+                if (it < 0) 0 else it + 1
+            }
+            val endOfMatch = index + prefix.length
+            // Take a few more words after the match (up to ~40 more chars)
+            val end = description.indexOf(' ', (endOfMatch + 40).coerceAtMost(description.length)).let {
+                if (it < 0) description.length else it
+            }
+            return description.substring(start, end).trim()
         }
 
         override fun getRecentSearches(): Flow<List<String>> {

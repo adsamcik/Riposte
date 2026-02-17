@@ -379,6 +379,7 @@ class SearchRepositoryImplTest {
     fun `getSearchSuggestions returns suggestions from dao`() =
         runTest {
             coEvery { memeSearchDao.getSearchSuggestions("fun") } returns suggestions
+            coEvery { memeSearchDao.getDescriptionSuggestions("fun") } returns emptyList()
 
             val result = repository.getSearchSuggestions("fun")
 
