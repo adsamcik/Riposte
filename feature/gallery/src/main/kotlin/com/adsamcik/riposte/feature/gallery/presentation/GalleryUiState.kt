@@ -25,6 +25,7 @@ data class SearchSliceState(
     val searchDurationMs: Long = 0L,
     val totalResultCount: Int = 0,
     val errorMessage: String? = null,
+    val isTextOnly: Boolean = false,
 )
 
 /**

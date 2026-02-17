@@ -1,5 +1,6 @@
 package com.adsamcik.riposte.feature.gallery.presentation
 
+import com.adsamcik.riposte.core.model.MatchType
 import com.adsamcik.riposte.core.search.domain.usecase.SearchUseCases
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -178,6 +179,9 @@ class SearchDelegate
                 try {
                     val results = searchUseCases.hybridSearch(query)
                     val endTime = System.currentTimeMillis()
+                    val hasSemanticResults = results.any {
+                        it.matchType == MatchType.SEMANTIC || it.matchType == MatchType.HYBRID
+                    }
 
                     _state.update {
                         it.copy(
@@ -187,6 +191,7 @@ class SearchDelegate
                             isSearching = false,
                             hasSearched = true,
                             suggestions = emptyList(),
+                            isTextOnly = !hasSemanticResults,
                         )
                     }
 
@@ -229,6 +234,7 @@ class SearchDelegate
                             searchDurationMs = endTime - startTime,
                             isSearching = false,
                             hasSearched = true,
+                            isTextOnly = true,
                         )
                     }
                 }

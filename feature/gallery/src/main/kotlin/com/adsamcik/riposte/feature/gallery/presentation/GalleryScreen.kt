@@ -525,6 +525,7 @@ private fun GalleryScreenContent(
                                     query = uiState.searchState.query,
                                     resultCount = uiState.searchState.totalResultCount,
                                     durationMs = uiState.searchState.searchDurationMs,
+                                    isTextOnly = uiState.searchState.isTextOnly,
                                 )
                             }
                             // Result items - reuse MemeGridItem

@@ -57,4 +57,5 @@
     </plurals>
     <string name="ui_search_results_query">for \"%1$s\"</string>
     <string name="ui_search_results_duration">%1$s in %2$ss</string>
+    <string name="ui_search_text_only_suffix">%1$s (text only)</string>
 </resources>

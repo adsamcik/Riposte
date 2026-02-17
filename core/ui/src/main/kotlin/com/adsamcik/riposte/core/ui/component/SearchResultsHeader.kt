@@ -35,6 +35,7 @@ fun SearchResultsHeader(
     query: String,
     resultCount: Int,
     durationMs: Long = 0L,
+    isTextOnly: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -50,8 +51,13 @@ fun SearchResultsHeader(
         } else {
             countText
         }
+        val displayText = if (isTextOnly) {
+            stringResource(R.string.ui_search_text_only_suffix, headerText)
+        } else {
+            headerText
+        }
         Text(
-            text = headerText,
+            text = displayText,
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -88,6 +94,19 @@ private fun SearchResultsHeaderZeroResultsPreview() {
         SearchResultsHeader(
             query = "nonexistent",
             resultCount = 0,
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Text Only")
+@Composable
+private fun SearchResultsHeaderTextOnlyPreview() {
+    RiposteTheme {
+        SearchResultsHeader(
+            query = "funny cat",
+            resultCount = 12,
+            durationMs = 150L,
+            isTextOnly = true,
         )
     }
 }
