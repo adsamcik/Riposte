@@ -123,7 +123,6 @@ class SearchDelegateTest {
             delegate.onIntent(
                 GalleryIntent.UpdateSearchQuery("cat"),
                 scope,
-                null,
             )
 
             assertThat(delegate.state.value.query).isEqualTo("cat")
@@ -140,7 +139,6 @@ class SearchDelegateTest {
             delegate.onIntent(
                 GalleryIntent.UpdateSearchQuery("funny"),
                 scope,
-                null,
             )
 
             // Before debounce, no search yet
@@ -167,13 +165,13 @@ class SearchDelegateTest {
             advanceUntilIdle()
 
             // Perform a search first
-            delegate.onIntent(GalleryIntent.UpdateSearchQuery("funny"), scope, null)
+            delegate.onIntent(GalleryIntent.UpdateSearchQuery("funny"), scope)
             advanceTimeBy(400)
             advanceUntilIdle()
             assertThat(delegate.state.value.hasSearched).isTrue()
 
             // Clear
-            delegate.onIntent(GalleryIntent.ClearSearch, scope, null)
+            delegate.onIntent(GalleryIntent.ClearSearch, scope)
 
             val state = delegate.state.value
             assertThat(state.query).isEmpty()
@@ -192,7 +190,6 @@ class SearchDelegateTest {
             delegate.onIntent(
                 GalleryIntent.SelectRecentSearch("cat"),
                 scope,
-                null,
             )
             advanceUntilIdle()
 
@@ -214,7 +211,6 @@ class SearchDelegateTest {
             delegate.onIntent(
                 GalleryIntent.DeleteRecentSearch("cat"),
                 scope,
-                null,
             )
             advanceUntilIdle()
 
@@ -231,33 +227,11 @@ class SearchDelegateTest {
             advanceUntilIdle()
             assertThat(delegate.state.value.recentSearches).isNotEmpty()
 
-            delegate.onIntent(GalleryIntent.ClearRecentSearches, scope, null)
+            delegate.onIntent(GalleryIntent.ClearRecentSearches, scope)
             advanceUntilIdle()
 
             assertThat(delegate.state.value.recentSearches).isEmpty()
             coVerify { searchUseCases.clearRecentSearches() }
-            scope.cancel()
-        }
-
-    @Test
-    fun `refilter applies emoji filter to existing results`() =
-        runTest(mainDispatcherRule.testDispatcher) {
-            val scope = createDelegateScope()
-            delegate.init(scope)
-            advanceUntilIdle()
-
-            // Search first
-            delegate.onIntent(GalleryIntent.UpdateSearchQuery("meme"), scope, null)
-            advanceTimeBy(400)
-            advanceUntilIdle()
-            assertThat(delegate.state.value.results).hasSize(3)
-
-            // Refilter with 🔥 — only meme3 has it
-            delegate.refilter(scope, "🔥")
-            advanceUntilIdle()
-
-            assertThat(delegate.state.value.results).hasSize(1)
-            assertThat(delegate.state.value.results[0].meme.id).isEqualTo(3)
             scope.cancel()
         }
 
@@ -270,7 +244,7 @@ class SearchDelegateTest {
             delegate.init(scope)
             advanceUntilIdle()
 
-            delegate.onIntent(GalleryIntent.UpdateSearchQuery("fail"), scope, null)
+            delegate.onIntent(GalleryIntent.UpdateSearchQuery("fail"), scope)
             advanceTimeBy(400)
             advanceUntilIdle()
 
@@ -291,7 +265,7 @@ class SearchDelegateTest {
             delegate.init(scope)
             advanceUntilIdle()
 
-            delegate.onIntent(GalleryIntent.UpdateSearchQuery("cat"), scope, null)
+            delegate.onIntent(GalleryIntent.UpdateSearchQuery("cat"), scope)
             advanceTimeBy(400)
             advanceUntilIdle()
 
@@ -313,7 +287,7 @@ class SearchDelegateTest {
             delegate.init(scope)
             advanceUntilIdle()
 
-            delegate.onIntent(GalleryIntent.UpdateSearchQuery("cat"), scope, null)
+            delegate.onIntent(GalleryIntent.UpdateSearchQuery("cat"), scope)
 
             // Advance past suggestion debounce (150ms) but not search debounce (300ms)
             advanceTimeBy(200)
@@ -334,7 +308,7 @@ class SearchDelegateTest {
             delegate.init(scope)
             advanceUntilIdle()
 
-            delegate.onIntent(GalleryIntent.UpdateSearchQuery("c"), scope, null)
+            delegate.onIntent(GalleryIntent.UpdateSearchQuery("c"), scope)
             advanceTimeBy(400)
             advanceUntilIdle()
 
@@ -351,7 +325,7 @@ class SearchDelegateTest {
             delegate.init(scope)
             advanceUntilIdle()
 
-            delegate.onIntent(GalleryIntent.UpdateSearchQuery("funny"), scope, null)
+            delegate.onIntent(GalleryIntent.UpdateSearchQuery("funny"), scope)
 
             // After full search debounce (300ms) — performSearch clears suggestions
             advanceTimeBy(400)
@@ -369,7 +343,7 @@ class SearchDelegateTest {
             delegate.init(scope)
             advanceUntilIdle()
 
-            delegate.onIntent(GalleryIntent.SelectSuggestion("funny cat"), scope, null)
+            delegate.onIntent(GalleryIntent.SelectSuggestion("funny cat"), scope)
             advanceUntilIdle()
 
             val state = delegate.state.value
@@ -389,12 +363,12 @@ class SearchDelegateTest {
             advanceUntilIdle()
 
             // Type to get into search mode, then clear
-            delegate.onIntent(GalleryIntent.UpdateSearchQuery("cat"), scope, null)
+            delegate.onIntent(GalleryIntent.UpdateSearchQuery("cat"), scope)
             advanceTimeBy(400)
             advanceUntilIdle()
 
             // Clear the query — should clear suggestions
-            delegate.onIntent(GalleryIntent.UpdateSearchQuery(""), scope, null)
+            delegate.onIntent(GalleryIntent.UpdateSearchQuery(""), scope)
             advanceTimeBy(400)
             advanceUntilIdle()
 
@@ -413,13 +387,13 @@ class SearchDelegateTest {
             advanceUntilIdle()
 
             // Search first
-            delegate.onIntent(GalleryIntent.UpdateSearchQuery("funny"), scope, null)
+            delegate.onIntent(GalleryIntent.UpdateSearchQuery("funny"), scope)
             advanceTimeBy(400)
             advanceUntilIdle()
             assertThat(delegate.state.value.hasSearched).isTrue()
 
             // Set blank query
-            delegate.onIntent(GalleryIntent.UpdateSearchQuery(""), scope, null)
+            delegate.onIntent(GalleryIntent.UpdateSearchQuery(""), scope)
             advanceTimeBy(400)
             advanceUntilIdle()
 

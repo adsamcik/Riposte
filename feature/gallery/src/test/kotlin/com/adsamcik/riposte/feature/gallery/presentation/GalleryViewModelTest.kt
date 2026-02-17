@@ -533,22 +533,6 @@ class GalleryViewModelTest {
             assertThat(viewModel.uiState.value.memes).hasSize(1)
         }
 
-    @Test
-    fun `SetFilter to ByEmoji loads memes by emoji`() =
-        runTest {
-            val emojiMemes = listOf(createTestMeme(5, "emoji.jpg"))
-            every { getMemesByEmojiUseCase("😂") } returns flowOf(emojiMemes)
-            viewModel = createViewModel()
-            advanceUntilIdle()
-
-            viewModel.onIntent(GalleryIntent.SetFilter(GalleryFilter.ByEmoji("😂")))
-            advanceUntilIdle()
-
-            verify { getMemesByEmojiUseCase("😂") }
-            assertThat(viewModel.uiState.value.filter).isEqualTo(GalleryFilter.ByEmoji("😂"))
-            assertThat(viewModel.uiState.value.memes).hasSize(1)
-        }
-
     // endregion
 
     // region Favorites Count Tests
@@ -712,81 +696,18 @@ class GalleryViewModelTest {
 
     // endregion
 
-    // region Emoji Filter Tests (p2-7)
+    // region Emoji Search Tests
 
     @Test
-    fun `SetEmojiFilter sets active emoji filter`() =
+    fun `emoji tap dispatches UpdateSearchQuery to search delegate`() =
         runTest {
             viewModel = createViewModel()
             advanceUntilIdle()
 
-            // Switch to favorites to get non-paged path with memes
-            viewModel.onIntent(GalleryIntent.SetFilter(GalleryFilter.Favorites))
+            viewModel.onIntent(GalleryIntent.UpdateSearchQuery("😂"))
             advanceUntilIdle()
 
-            viewModel.onIntent(GalleryIntent.SetEmojiFilter("😂"))
-            advanceUntilIdle()
-
-            assertThat(viewModel.uiState.value.activeEmojiFilter).isEqualTo("😂")
-        }
-
-    @Test
-    fun `SetEmojiFilter clears emoji when already active`() =
-        runTest {
-            viewModel = createViewModel()
-            advanceUntilIdle()
-
-            viewModel.onIntent(GalleryIntent.SetEmojiFilter("😂"))
-            viewModel.onIntent(GalleryIntent.SetEmojiFilter("😂"))
-            advanceUntilIdle()
-
-            assertThat(viewModel.uiState.value.activeEmojiFilter).isNull()
-        }
-
-    @Test
-    fun `ClearEmojiFilter resets active filter`() =
-        runTest {
-            viewModel = createViewModel()
-            advanceUntilIdle()
-
-            viewModel.onIntent(GalleryIntent.SetEmojiFilter("😂"))
-            advanceUntilIdle()
-            assertThat(viewModel.uiState.value.activeEmojiFilter).isNotNull()
-
-            viewModel.onIntent(GalleryIntent.ClearEmojiFilter)
-            advanceUntilIdle()
-
-            assertThat(viewModel.uiState.value.activeEmojiFilter).isNull()
-        }
-
-    @Test
-    fun `SetEmojiFilter replaces previous filter with new emoji`() =
-        runTest {
-            viewModel = createViewModel()
-            advanceUntilIdle()
-
-            viewModel.onIntent(GalleryIntent.SetEmojiFilter("😂"))
-            viewModel.onIntent(GalleryIntent.SetEmojiFilter("🔥"))
-            advanceUntilIdle()
-
-            assertThat(viewModel.uiState.value.activeEmojiFilter).isEqualTo("🔥")
-        }
-
-    @Test
-    fun `emoji filter survives in UiState across intents`() =
-        runTest {
-            viewModel = createViewModel()
-            advanceUntilIdle()
-
-            viewModel.onIntent(GalleryIntent.SetEmojiFilter("😂"))
-            advanceUntilIdle()
-
-            // Trigger another unrelated intent
-            viewModel.onIntent(GalleryIntent.LoadMemes)
-            advanceUntilIdle()
-
-            // Emoji filter should still be present
-            assertThat(viewModel.uiState.value.activeEmojiFilter).isEqualTo("😂")
+            verify { searchDelegate.onIntent(GalleryIntent.UpdateSearchQuery("😂"), any()) }
         }
 
     // endregion
@@ -823,55 +744,6 @@ class GalleryViewModelTest {
             assertThat(emojis.last().second).isEqualTo(1)
         }
 
-    @Test
-    fun `filteredMemes excludes non-matching emoji when filter active`() =
-        runTest {
-            val memesWithEmojis =
-                listOf(
-                    createTestMeme(1, "a.jpg", emojiTags = listOf(EmojiTag.fromEmoji("😂"))),
-                    createTestMeme(2, "b.jpg", emojiTags = listOf(EmojiTag.fromEmoji("🔥"))),
-                    createTestMeme(
-                        3,
-                        "c.jpg",
-                        isFavorite = true,
-                        emojiTags = listOf(EmojiTag.fromEmoji("😂"), EmojiTag.fromEmoji("🔥")),
-                    ),
-                )
-            every { getMemesUseCase() } returns flowOf(memesWithEmojis)
-            every { getFavoritesUseCase() } returns flowOf(memesWithEmojis)
-            viewModel = createViewModel()
-            advanceUntilIdle()
-
-            viewModel.onIntent(GalleryIntent.SetFilter(GalleryFilter.Favorites))
-            advanceUntilIdle()
-
-            viewModel.onIntent(GalleryIntent.SetEmojiFilter("🔥"))
-            advanceUntilIdle()
-
-            val filtered = viewModel.uiState.value.filteredMemes
-            assertThat(filtered.map { it.id }).containsExactly(2L, 3L)
-        }
-
-    @Test
-    fun `filteredMemes returns all memes when no emoji filter active`() =
-        runTest {
-            val allMemes =
-                listOf(
-                    createTestMeme(1, "a.jpg"),
-                    createTestMeme(2, "b.jpg"),
-                )
-            every { getMemesUseCase() } returns flowOf(allMemes)
-            every { getFavoritesUseCase() } returns flowOf(allMemes)
-            viewModel = createViewModel()
-            advanceUntilIdle()
-
-            viewModel.onIntent(GalleryIntent.SetFilter(GalleryFilter.Favorites))
-            advanceUntilIdle()
-
-            val filtered = viewModel.uiState.value.filteredMemes
-            assertThat(filtered).hasSize(2)
-        }
-
     // endregion
 
     // region Regression: Filter State and Selection Mode (p2-ux)
@@ -889,20 +761,6 @@ class GalleryViewModelTest {
             assertThat(state.filter).isEqualTo(GalleryFilter.Favorites)
             // Favorites filter uses non-paged path
             assertThat(state.usePaging).isFalse()
-        }
-
-    @Test
-    fun `when emoji filter is active then filter indicator is shown`() =
-        runTest {
-            viewModel = createViewModel()
-            advanceUntilIdle()
-
-            viewModel.onIntent(GalleryIntent.SetEmojiFilter("😂"))
-            advanceUntilIdle()
-
-            val state = viewModel.uiState.value
-            assertThat(state.activeEmojiFilter).isNotNull()
-            assertThat(state.activeEmojiFilter).isEqualTo("😂")
         }
 
     @Test
@@ -933,7 +791,7 @@ class GalleryViewModelTest {
             viewModel.onIntent(GalleryIntent.SelectSuggestion("funny cat"))
             advanceUntilIdle()
 
-            verify { searchDelegate.onIntent(GalleryIntent.SelectSuggestion("funny cat"), any(), any()) }
+            verify { searchDelegate.onIntent(GalleryIntent.SelectSuggestion("funny cat"), any()) }
         }
 
     // endregion
