@@ -185,6 +185,7 @@ def create_sidecar_metadata(
         "emojis": emojis,
         "createdAt": datetime.now(timezone.utc).isoformat(),
         "appVersion": f"cli-{__version__}",
+        "cliVersion": __version__,
     }
     
     if title:

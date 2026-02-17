@@ -250,7 +250,8 @@ my-memes/
   "basedOn": "Programmer humor",
   "textContent": "When the code works but you don't know why",
   "createdAt": "2026-01-25T12:00:00Z",
-  "appVersion": "cli-1.0.0"
+  "appVersion": "cli-1.0.0",
+  "cliVersion": "1.0.0"
 }
 ```
 
