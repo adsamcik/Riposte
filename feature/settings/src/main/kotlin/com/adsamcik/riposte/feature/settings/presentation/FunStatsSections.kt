@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -123,7 +124,7 @@ private fun MemeOMeterCard(uiState: SettingsUiState) {
                 color = MaterialTheme.colorScheme.onSecondaryContainer,
             )
             Text(
-                text = "${uiState.totalMemeCount} memes",
+                text = pluralStringResource(R.plurals.settings_meme_count, uiState.totalMemeCount, uiState.totalMemeCount),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f),
             )
@@ -197,7 +198,7 @@ private fun VibeRow(
         leadingContent = {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = "#$rank",
+                    text = stringResource(R.string.settings_vibe_rank, rank),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

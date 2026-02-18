@@ -158,6 +158,13 @@
     <string name="settings_section_vibe_check">Your Vibes</string>
     <string name="settings_vibe_no_tags">Tag some memes with emojis to see your vibe!</string>
     <string name="settings_vibe_memes">%1$d memes</string>
+    <string name="settings_vibe_rank">#%1$d</string>
+
+    <!-- Meme Count (plurals) -->
+    <plurals name="settings_meme_count">
+        <item quantity="one">%d meme</item>
+        <item quantity="other">%d memes</item>
+    </plurals>
 
     <!-- Fun Fact of the Day -->
     <string name="settings_section_fun_fact">Fun Fact of the Day</string>
