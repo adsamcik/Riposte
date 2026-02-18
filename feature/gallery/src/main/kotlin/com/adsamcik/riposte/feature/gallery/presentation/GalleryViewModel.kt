@@ -135,9 +135,20 @@ class GalleryViewModel
         /** Observe unique emojis from the database for the emoji filter rail. */
         private fun observeUniqueEmojis() {
             viewModelScope.launch {
-                useCases.getAllEmojisWithCounts().collectLatest { emojiCounts ->
-                    _uiState.update { it.copy(uniqueEmojis = emojiCounts) }
-                }
+                // React to the sortEmojisByUsage preference
+                preferencesDataStore.appPreferences
+                    .map { it.sortEmojisByUsage }
+                    .distinctUntilChanged()
+                    .collectLatest { sortByUsage ->
+                        val flow = if (sortByUsage) {
+                            useCases.getAllEmojisWithCounts()
+                        } else {
+                            useCases.getAllEmojisWithTagCounts()
+                        }
+                        flow.collectLatest { emojiCounts ->
+                            _uiState.update { it.copy(uniqueEmojis = emojiCounts) }
+                        }
+                    }
             }
         }
 

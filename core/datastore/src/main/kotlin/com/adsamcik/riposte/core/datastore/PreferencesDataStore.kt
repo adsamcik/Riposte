@@ -57,6 +57,7 @@ class PreferencesDataStore
             val SAVE_SEARCH_HISTORY = booleanPreferencesKey("save_search_history")
             val USER_DENSITY_PREFERENCE = stringPreferencesKey("user_density_preference")
             val HOLD_TO_SHARE_DELAY_MS = longPreferencesKey("hold_to_share_delay_ms")
+            val SORT_EMOJIS_BY_USAGE = booleanPreferencesKey("sort_emojis_by_usage")
 
             // Search preferences - use string key with JSON to preserve order
             val RECENT_SEARCHES = stringPreferencesKey("recent_searches_json")
@@ -134,6 +135,7 @@ class PreferencesDataStore
                                 UserDensityPreference.valueOf(it)
                             } ?: UserDensityPreference.AUTO,
                         holdToShareDelayMs = prefs[PreferencesKeys.HOLD_TO_SHARE_DELAY_MS] ?: 600L,
+                        sortEmojisByUsage = prefs[PreferencesKeys.SORT_EMOJIS_BY_USAGE] ?: true,
                     )
                 }
 
@@ -151,6 +153,7 @@ class PreferencesDataStore
                 prefs[PreferencesKeys.SAVE_SEARCH_HISTORY] = preferences.saveSearchHistory
                 prefs[PreferencesKeys.USER_DENSITY_PREFERENCE] = preferences.userDensityPreference.name
                 prefs[PreferencesKeys.HOLD_TO_SHARE_DELAY_MS] = preferences.holdToShareDelayMs
+                prefs[PreferencesKeys.SORT_EMOJIS_BY_USAGE] = preferences.sortEmojisByUsage
             }
         }
 

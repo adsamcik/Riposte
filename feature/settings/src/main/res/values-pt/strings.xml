@@ -43,6 +43,8 @@
     <string name="settings_search_index_error_failed">Indexação falhou — tente reinstalar o aplicativo</string>
     <string name="settings_search_history_title">Histórico de Pesquisa</string>
     <string name="settings_search_history_subtitle">Salvar pesquisas recentes</string>
+    <string name="settings_sort_emojis_by_usage_title">Ordenar emojis por uso</string>
+    <string name="settings_sort_emojis_by_usage_subtitle">Mostrar categorias de emoji mais compartilhadas primeiro</string>
     
     <!-- Sharing Section -->
     <string name="settings_section_sharing">Compartilhamento</string>
@@ -83,6 +85,16 @@
     <string name="settings_clear_cache_dialog_confirm">Limpar</string>
     <string name="settings_clear_cache_dialog_cancel">Cancelar</string>
     
+    <!-- Export Options Dialog -->
+    <string name="settings_export_options_title">Opções de Exportação</string>
+    <string name="settings_export_option_settings">Configurações</string>
+    <string name="settings_export_option_images">Imagens de Memes</string>
+    <string name="settings_export_option_tags">Tags e Metadados</string>
+    <string name="settings_export_option_images_coming_soon">Imagens de Memes (em breve)</string>
+    <string name="settings_export_option_tags_coming_soon">Tags e Metadados (em breve)</string>
+    <string name="settings_export_button">Exportar</string>
+    <string name="settings_dialog_cancel">Cancelar</string>
+
     <!-- Language Section -->
     <string name="settings_language_title">Idioma</string>
     <string name="settings_language_subtitle">Escolher idioma do app</string>

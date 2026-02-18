@@ -29,6 +29,8 @@ sealed interface SettingsIntent {
 
     data class SetSaveSearchHistory(val save: Boolean) : SettingsIntent
 
+    data class SetSortEmojisByUsage(val enabled: Boolean) : SettingsIntent
+
     // Storage
     data object CalculateCacheSize : SettingsIntent
 

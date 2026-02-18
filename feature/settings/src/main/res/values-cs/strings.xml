@@ -43,6 +43,8 @@
     <string name="settings_search_index_error_failed">Indexování selhalo — zkuste přeinstalovat aplikaci</string>
     <string name="settings_search_history_title">Historie vyhledávání</string>
     <string name="settings_search_history_subtitle">Ukládat poslední hledání</string>
+    <string name="settings_sort_emojis_by_usage_title">Řadit emoji podle použití</string>
+    <string name="settings_sort_emojis_by_usage_subtitle">Zobrazit nejčastěji sdílené emoji kategorie první</string>
     
     <!-- Sharing Section -->
     <string name="settings_section_sharing">Sdílení</string>
@@ -88,6 +90,8 @@
     <string name="settings_export_option_settings">Nastavení</string>
     <string name="settings_export_option_images">Obrázky memů</string>
     <string name="settings_export_option_tags">Štítky a metadata</string>
+    <string name="settings_export_option_images_coming_soon">Obrázky memů (již brzy)</string>
+    <string name="settings_export_option_tags_coming_soon">Štítky a metadata (již brzy)</string>
     <string name="settings_export_button">Exportovat</string>
 
     <!-- Import Confirmation Dialog -->

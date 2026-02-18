@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
@@ -108,6 +109,7 @@ private fun GridDensitySettingItem(
 ) {
     DialogSettingItem(
         title = stringResource(R.string.settings_grid_density_title),
+        subtitle = stringResource(R.string.settings_grid_density_subtitle),
         selectedValue = uiState.gridDensityPreference,
         values = UserDensityPreference.entries,
         onValueChange = { onIntent(SettingsIntent.SetGridDensity(it)) },
@@ -147,6 +149,14 @@ internal fun LazyListScope.searchSection(
                 checked = uiState.saveSearchHistory,
                 onCheckedChange = { onIntent(SettingsIntent.SetSaveSearchHistory(it)) },
                 icon = Icons.Default.History,
+            )
+
+            SwitchSettingItem(
+                title = stringResource(R.string.settings_sort_emojis_by_usage_title),
+                subtitle = stringResource(R.string.settings_sort_emojis_by_usage_subtitle),
+                checked = uiState.sortEmojisByUsage,
+                onCheckedChange = { onIntent(SettingsIntent.SetSortEmojisByUsage(it)) },
+                icon = Icons.Default.TrendingUp,
             )
         }
     }

@@ -16,6 +16,7 @@ data class AppPreferences(
     val saveSearchHistory: Boolean = true,
     val userDensityPreference: UserDensityPreference = UserDensityPreference.AUTO,
     val holdToShareDelayMs: Long = 600L,
+    val sortEmojisByUsage: Boolean = true,
 )
 
 /**

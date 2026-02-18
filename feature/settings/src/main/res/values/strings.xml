@@ -45,6 +45,8 @@
     <string name="settings_search_index_error_failed">Indexing failed — try reinstalling the app</string>
     <string name="settings_search_history_title">Search History</string>
     <string name="settings_search_history_subtitle">Save recent searches</string>
+    <string name="settings_sort_emojis_by_usage_title">Sort Emojis by Usage</string>
+    <string name="settings_sort_emojis_by_usage_subtitle">Show most-shared emoji categories first</string>
     
     <!-- Sharing Section -->
     <string name="settings_share_format_title">Image Format</string>
@@ -96,6 +98,8 @@
     <string name="settings_export_option_settings">Settings</string>
     <string name="settings_export_option_images">Meme Images</string>
     <string name="settings_export_option_tags">Tags &amp; Metadata</string>
+    <string name="settings_export_option_images_coming_soon">Meme Images (coming soon)</string>
+    <string name="settings_export_option_tags_coming_soon">Tags &amp; Metadata (coming soon)</string>
     <string name="settings_export_button">Export</string>
     <string name="settings_dialog_cancel">Cancel</string>
     

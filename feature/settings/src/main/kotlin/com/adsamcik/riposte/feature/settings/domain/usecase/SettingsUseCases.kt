@@ -142,6 +142,17 @@ class SetGridDensityUseCase
     }
 
 /**
+ * Use case for updating sort emojis by usage preference.
+ */
+class SetSortEmojisByUsageUseCase
+    @Inject
+    constructor(
+        private val repository: SettingsRepository,
+    ) {
+        suspend operator fun invoke(enabled: Boolean) = repository.setSortEmojisByUsage(enabled)
+    }
+
+/**
  * Use case for exporting preferences to JSON.
  */
 class ExportPreferencesUseCase

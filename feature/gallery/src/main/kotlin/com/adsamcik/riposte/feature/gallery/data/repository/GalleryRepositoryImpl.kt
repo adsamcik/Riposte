@@ -217,6 +217,12 @@ class GalleryRepositoryImpl
                 .flowOn(ioDispatcher)
         }
 
+        override fun getAllEmojisWithTagCounts(): Flow<List<Pair<String, Int>>> {
+            return emojiTagDao.getAllEmojisWithCounts()
+                .map { stats -> stats.map { it.emoji to it.count } }
+                .flowOn(ioDispatcher)
+        }
+
         override suspend fun getEmbeddingsExcluding(memeId: Long): List<MemeEmbeddingData> =
             withContext(ioDispatcher) {
                 memeEmbeddingDao.getMemesWithEmbeddings()

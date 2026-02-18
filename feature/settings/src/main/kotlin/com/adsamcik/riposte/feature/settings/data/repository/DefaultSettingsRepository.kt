@@ -82,6 +82,11 @@ class DefaultSettingsRepository
             preferencesDataStore.updateAppPreferences(current.copy(userDensityPreference = preference))
         }
 
+        override suspend fun setSortEmojisByUsage(enabled: Boolean) {
+            val current = preferencesDataStore.appPreferences.first()
+            preferencesDataStore.updateAppPreferences(current.copy(sortEmojisByUsage = enabled))
+        }
+
         override suspend fun exportPreferences(): String {
             val sharingPrefs = preferencesDataStore.sharingPreferences.first()
             val appPrefs = preferencesDataStore.appPreferences.first()
@@ -106,6 +111,7 @@ class DefaultSettingsRepository
                                 "dynamicColors" to JsonPrimitive(appPrefs.dynamicColors),
                                 "enableSemanticSearch" to JsonPrimitive(appPrefs.enableSemanticSearch),
                                 "saveSearchHistory" to JsonPrimitive(appPrefs.saveSearchHistory),
+                                "sortEmojisByUsage" to JsonPrimitive(appPrefs.sortEmojisByUsage),
                             ),
                         ),
                 )
@@ -170,6 +176,9 @@ class DefaultSettingsRepository
                             saveSearchHistory =
                                 (appPrefsJson["saveSearchHistory"] as? JsonPrimitive)?.booleanOrNull
                                     ?: currentApp.saveSearchHistory,
+                            sortEmojisByUsage =
+                                (appPrefsJson["sortEmojisByUsage"] as? JsonPrimitive)?.booleanOrNull
+                                    ?: currentApp.sortEmojisByUsage,
                         ),
                     )
                 }

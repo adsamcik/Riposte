@@ -164,6 +164,17 @@ class GetAllEmojisWithCountsUseCase
     }
 
 /**
+ * Use case for getting all unique emojis with their tag counts (number of memes per emoji).
+ */
+class GetAllEmojisWithTagCountsUseCase
+    @Inject
+    constructor(
+        private val repository: GalleryRepository,
+    ) {
+        operator fun invoke(): Flow<List<Pair<String, Int>>> = repository.getAllEmojisWithTagCounts()
+    }
+
+/**
  * Bundle of use cases consumed by
  * [GalleryViewModel][com.adsamcik.riposte.feature.gallery.presentation.GalleryViewModel].
  */
@@ -179,5 +190,6 @@ data class GalleryViewModelUseCases
         val toggleFavorite: ToggleFavoriteUseCase,
         val getAllMemeIds: GetAllMemeIdsUseCase,
         val getAllEmojisWithCounts: GetAllEmojisWithCountsUseCase,
+        val getAllEmojisWithTagCounts: GetAllEmojisWithTagCountsUseCase,
         val getLibraryStats: GetLibraryStatsUseCase,
     )

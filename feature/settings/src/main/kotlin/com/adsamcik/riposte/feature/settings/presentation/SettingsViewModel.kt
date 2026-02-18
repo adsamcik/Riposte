@@ -27,6 +27,7 @@ import com.adsamcik.riposte.feature.settings.domain.usecase.SetDynamicColorsUseC
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetEnableSemanticSearchUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetGridDensityUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetSaveSearchHistoryUseCase
+import com.adsamcik.riposte.feature.settings.domain.usecase.SetSortEmojisByUsageUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetStripMetadataUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -62,6 +63,7 @@ class SettingsViewModel
         private val setDynamicColorsUseCase: SetDynamicColorsUseCase,
         private val setEnableSemanticSearchUseCase: SetEnableSemanticSearchUseCase,
         private val setSaveSearchHistoryUseCase: SetSaveSearchHistoryUseCase,
+        private val setSortEmojisByUsageUseCase: SetSortEmojisByUsageUseCase,
         private val setDefaultFormatUseCase: SetDefaultFormatUseCase,
         private val setDefaultQualityUseCase: SetDefaultQualityUseCase,
         private val setDefaultMaxDimensionUseCase: SetDefaultMaxDimensionUseCase,
@@ -168,6 +170,7 @@ class SettingsViewModel
                         stripMetadata = sharingPrefs.stripMetadata,
                         enableSemanticSearch = appPrefs.enableSemanticSearch,
                         saveSearchHistory = appPrefs.saveSearchHistory,
+                        sortEmojisByUsage = appPrefs.sortEmojisByUsage,
                         appVersion = getAppVersion(),
                         isLoading = false,
                     )
@@ -207,6 +210,7 @@ class SettingsViewModel
                 // Search
                 is SettingsIntent.SetEnableSemanticSearch -> setEnableSemanticSearch(intent.enabled)
                 is SettingsIntent.SetSaveSearchHistory -> setSaveSearchHistory(intent.save)
+                is SettingsIntent.SetSortEmojisByUsage -> setSortEmojisByUsage(intent.enabled)
 
                 // Storage
                 is SettingsIntent.CalculateCacheSize -> calculateCacheSize()
@@ -277,6 +281,12 @@ class SettingsViewModel
         private fun setSaveSearchHistory(save: Boolean) {
             viewModelScope.launch {
                 setSaveSearchHistoryUseCase(save)
+            }
+        }
+
+        private fun setSortEmojisByUsage(enabled: Boolean) {
+            viewModelScope.launch {
+                setSortEmojisByUsageUseCase(enabled)
             }
         }
 

@@ -53,6 +53,7 @@ data class SettingsUiState(
     // Search
     val enableSemanticSearch: Boolean = true,
     val saveSearchHistory: Boolean = true,
+    val sortEmojisByUsage: Boolean = true,
     val embeddingSearchState: EmbeddingSearchState? = null,
     // Library
     val totalMemeCount: Int = 0,

@@ -72,6 +72,11 @@ interface SettingsRepository {
     suspend fun setGridDensity(preference: UserDensityPreference)
 
     /**
+     * Updates the sort emojis by usage preference.
+     */
+    suspend fun setSortEmojisByUsage(enabled: Boolean)
+
+    /**
      * Exports preferences to a JSON string.
      */
     suspend fun exportPreferences(): String
