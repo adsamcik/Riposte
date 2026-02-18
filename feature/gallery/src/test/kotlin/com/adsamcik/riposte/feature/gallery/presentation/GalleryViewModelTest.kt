@@ -16,6 +16,7 @@ import com.adsamcik.riposte.core.testing.MainDispatcherRule
 import com.adsamcik.riposte.feature.gallery.domain.usecase.DeleteMemesUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GalleryViewModelUseCases
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GetAllEmojisWithCountsUseCase
+import com.adsamcik.riposte.feature.gallery.domain.usecase.GetAllEmojisWithTagCountsUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GetAllMemeIdsUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GetFavoritesUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GetLibraryStatsUseCase
@@ -54,6 +55,7 @@ class GalleryViewModelTest {
     private lateinit var toggleFavoriteUseCase: ToggleFavoriteUseCase
     private lateinit var getAllMemeIdsUseCase: GetAllMemeIdsUseCase
     private lateinit var getAllEmojisWithCountsUseCase: GetAllEmojisWithCountsUseCase
+    private lateinit var getAllEmojisWithTagCountsUseCase: GetAllEmojisWithTagCountsUseCase
     private lateinit var getLibraryStatsUseCase: GetLibraryStatsUseCase
     private lateinit var getSuggestionsUseCase: GetSuggestionsUseCase
     private lateinit var shareMemeUseCase: ShareMemeUseCase
@@ -82,6 +84,8 @@ class GalleryViewModelTest {
             saveSearchHistory = true,
         )
 
+    private val preferencesFlow = MutableStateFlow(defaultPreferences)
+
     @Before
     fun setup() {
         context = mockk(relaxed = true)
@@ -96,6 +100,7 @@ class GalleryViewModelTest {
         toggleFavoriteUseCase = mockk()
         getAllMemeIdsUseCase = mockk()
         getAllEmojisWithCountsUseCase = mockk()
+        getAllEmojisWithTagCountsUseCase = mockk()
         getLibraryStatsUseCase = mockk()
         getSuggestionsUseCase = GetSuggestionsUseCase()
         shareMemeUseCase = mockk()
@@ -111,13 +116,14 @@ class GalleryViewModelTest {
         every { getMemesUseCase() } returns flowOf(testMemes)
         every { getFavoritesUseCase() } returns flowOf(testMemes.filter { it.isFavorite })
         every { getMemesByEmojiUseCase(any()) } returns flowOf(emptyList())
-        every { preferencesDataStore.appPreferences } returns flowOf(defaultPreferences)
+        every { preferencesDataStore.appPreferences } returns preferencesFlow
         every { preferencesDataStore.lastSessionSuggestionIds } returns flowOf(emptySet())
         every { preferencesDataStore.hasShownShareTip } returns flowOf(true)
         coEvery { preferencesDataStore.updateLastSessionSuggestionIds(any()) } returns Unit
         coEvery { preferencesDataStore.setShareTipShown() } returns Unit
         coEvery { getAllMemeIdsUseCase() } returns testMemes.map { it.id }
         every { getAllEmojisWithCountsUseCase() } returns flowOf(emptyList())
+        every { getAllEmojisWithTagCountsUseCase() } returns flowOf(emptyList())
         every { getLibraryStatsUseCase() } returns flowOf(LibraryStatistics(totalMemes = 3, favoriteMemes = 1))
     }
 
@@ -133,6 +139,7 @@ class GalleryViewModelTest {
                 toggleFavorite = toggleFavoriteUseCase,
                 getAllMemeIds = getAllMemeIdsUseCase,
                 getAllEmojisWithCounts = getAllEmojisWithCountsUseCase,
+                getAllEmojisWithTagCounts = getAllEmojisWithTagCountsUseCase,
                 getLibraryStats = getLibraryStatsUseCase,
             )
         return GalleryViewModel(
@@ -841,6 +848,138 @@ class GalleryViewModelTest {
         val notification = GalleryNotification.IndexingComplete(count = 42)
         assertThat(notification.count).isEqualTo(42)
     }
+
+    // endregion
+
+    // region Emoji Usage Sorting Tests
+
+    @Test
+    fun `default preference uses usage-ordered emojis`() =
+        runTest {
+            val usageEmojis = listOf("🔥" to 30, "😂" to 15)
+            every { getAllEmojisWithCountsUseCase() } returns flowOf(usageEmojis)
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.uniqueEmojis).isEqualTo(usageEmojis)
+            verify { getAllEmojisWithCountsUseCase() }
+        }
+
+    @Test
+    fun `when sortEmojisByUsage is false uses tag-count-ordered emojis`() =
+        runTest {
+            val tagCountEmojis = listOf("😂" to 5, "🔥" to 3)
+            every { getAllEmojisWithTagCountsUseCase() } returns flowOf(tagCountEmojis)
+            preferencesFlow.value = defaultPreferences.copy(sortEmojisByUsage = false)
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.uniqueEmojis).isEqualTo(tagCountEmojis)
+            verify { getAllEmojisWithTagCountsUseCase() }
+        }
+
+    @Test
+    fun `switching preference from true to false changes emoji source`() =
+        runTest {
+            val usageEmojis = listOf("🔥" to 30, "😂" to 15)
+            val tagCountEmojis = listOf("😂" to 5, "🔥" to 3)
+            every { getAllEmojisWithCountsUseCase() } returns flowOf(usageEmojis)
+            every { getAllEmojisWithTagCountsUseCase() } returns flowOf(tagCountEmojis)
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            // Initially uses usage-ordered
+            assertThat(viewModel.uiState.value.uniqueEmojis).isEqualTo(usageEmojis)
+
+            // Switch to count-ordered
+            preferencesFlow.value = defaultPreferences.copy(sortEmojisByUsage = false)
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.uniqueEmojis).isEqualTo(tagCountEmojis)
+        }
+
+    @Test
+    fun `switching preference from false to true changes emoji source back`() =
+        runTest {
+            val usageEmojis = listOf("🔥" to 30, "😂" to 15)
+            val tagCountEmojis = listOf("😂" to 5, "🔥" to 3)
+            every { getAllEmojisWithCountsUseCase() } returns flowOf(usageEmojis)
+            every { getAllEmojisWithTagCountsUseCase() } returns flowOf(tagCountEmojis)
+
+            preferencesFlow.value = defaultPreferences.copy(sortEmojisByUsage = false)
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.uniqueEmojis).isEqualTo(tagCountEmojis)
+
+            // Switch back to usage-ordered
+            preferencesFlow.value = defaultPreferences.copy(sortEmojisByUsage = true)
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.uniqueEmojis).isEqualTo(usageEmojis)
+        }
+
+    @Test
+    fun `emojis update when underlying data changes while using usage sort`() =
+        runTest {
+            val emojiFlow = MutableStateFlow(listOf("🔥" to 10))
+            every { getAllEmojisWithCountsUseCase() } returns emojiFlow
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.uniqueEmojis).hasSize(1)
+
+            emojiFlow.value = listOf("🔥" to 20, "😂" to 5)
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.uniqueEmojis).hasSize(2)
+            assertThat(viewModel.uiState.value.uniqueEmojis[0]).isEqualTo("🔥" to 20)
+        }
+
+    @Test
+    fun `emojis update when underlying data changes while using tag count sort`() =
+        runTest {
+            val emojiFlow = MutableStateFlow(listOf("😂" to 3))
+            every { getAllEmojisWithTagCountsUseCase() } returns emojiFlow
+            preferencesFlow.value = defaultPreferences.copy(sortEmojisByUsage = false)
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.uniqueEmojis).hasSize(1)
+
+            emojiFlow.value = listOf("😂" to 4, "🔥" to 2)
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.uniqueEmojis).hasSize(2)
+        }
+
+    @Test
+    fun `empty emoji list when sortEmojisByUsage is true and no usage data`() =
+        runTest {
+            every { getAllEmojisWithCountsUseCase() } returns flowOf(emptyList())
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.uniqueEmojis).isEmpty()
+        }
+
+    @Test
+    fun `empty emoji list when sortEmojisByUsage is false and no tag data`() =
+        runTest {
+            every { getAllEmojisWithTagCountsUseCase() } returns flowOf(emptyList())
+            preferencesFlow.value = defaultPreferences.copy(sortEmojisByUsage = false)
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.uniqueEmojis).isEmpty()
+        }
 
     // endregion
 

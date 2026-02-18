@@ -349,6 +349,59 @@ class GalleryUseCasesTest {
 
     // endregion
 
+    // region GetAllEmojisWithTagCountsUseCase Tests
+
+    @Test
+    fun `GetAllEmojisWithTagCountsUseCase returns emojis with tag counts from repository`() =
+        runTest {
+            val emojiCounts = listOf("😂" to 5, "🔥" to 3, "❤️" to 1)
+            every { repository.getAllEmojisWithTagCounts() } returns flowOf(emojiCounts)
+            val useCase = GetAllEmojisWithTagCountsUseCase(repository)
+
+            useCase().test {
+                val result = awaitItem()
+                assertThat(result).hasSize(3)
+                assertThat(result[0]).isEqualTo("😂" to 5)
+                assertThat(result[1]).isEqualTo("🔥" to 3)
+                assertThat(result[2]).isEqualTo("❤️" to 1)
+                awaitComplete()
+            }
+
+            verify { repository.getAllEmojisWithTagCounts() }
+        }
+
+    @Test
+    fun `GetAllEmojisWithTagCountsUseCase returns empty list when no emojis`() =
+        runTest {
+            every { repository.getAllEmojisWithTagCounts() } returns flowOf(emptyList())
+            val useCase = GetAllEmojisWithTagCountsUseCase(repository)
+
+            useCase().test {
+                val result = awaitItem()
+                assertThat(result).isEmpty()
+                awaitComplete()
+            }
+        }
+
+    @Test
+    fun `GetAllEmojisWithTagCountsUseCase emits updated list when repository updates`() =
+        runTest {
+            val mutableFlow = kotlinx.coroutines.flow.MutableStateFlow(
+                listOf("😂" to 2),
+            )
+            every { repository.getAllEmojisWithTagCounts() } returns mutableFlow
+            val useCase = GetAllEmojisWithTagCountsUseCase(repository)
+
+            useCase().test {
+                assertThat(awaitItem()).hasSize(1)
+
+                mutableFlow.value = listOf("😂" to 3, "🔥" to 1)
+                assertThat(awaitItem()).hasSize(2)
+            }
+        }
+
+    // endregion
+
     // region Helper Functions
 
     private fun createTestMeme(

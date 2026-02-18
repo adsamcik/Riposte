@@ -2,6 +2,8 @@ package com.adsamcik.riposte.feature.gallery.data.repository
 
 import app.cash.turbine.test
 import com.adsamcik.riposte.core.database.dao.EmojiTagDao
+import com.adsamcik.riposte.core.database.dao.EmojiUsageBySharing
+import com.adsamcik.riposte.core.database.dao.EmojiUsageStats
 import com.adsamcik.riposte.core.database.dao.MemeDao
 import com.adsamcik.riposte.core.database.dao.MemeEmbeddingDao
 import com.adsamcik.riposte.core.database.entity.MemeEntity
@@ -483,6 +485,99 @@ class GalleryRepositoryImplTest {
             repository.recordMemeView(999L)
 
             coVerify { memeDao.recordView(999L, any()) }
+        }
+
+    // endregion
+
+    // region getAllEmojisWithCounts (Usage-ordered) Tests
+
+    @Test
+    fun `getAllEmojisWithCounts returns usage-ordered emojis from dao`() =
+        runTest(testDispatcher) {
+            val daoResult = listOf(
+                EmojiUsageBySharing("🔥", "fire", 30),
+                EmojiUsageBySharing("😂", "face_with_tears_of_joy", 15),
+            )
+            every { emojiTagDao.getEmojisOrderedByUsage() } returns flowOf(daoResult)
+
+            repository.getAllEmojisWithCounts().test {
+                val result = awaitItem()
+                assertThat(result).hasSize(2)
+                assertThat(result[0]).isEqualTo("🔥" to 30)
+                assertThat(result[1]).isEqualTo("😂" to 15)
+                awaitComplete()
+            }
+        }
+
+    @Test
+    fun `getAllEmojisWithCounts returns empty list when dao returns empty`() =
+        runTest(testDispatcher) {
+            every { emojiTagDao.getEmojisOrderedByUsage() } returns flowOf(emptyList())
+
+            repository.getAllEmojisWithCounts().test {
+                val result = awaitItem()
+                assertThat(result).isEmpty()
+                awaitComplete()
+            }
+        }
+
+    // endregion
+
+    // region getAllEmojisWithTagCounts (Count-ordered) Tests
+
+    @Test
+    fun `getAllEmojisWithTagCounts returns count-ordered emojis from dao`() =
+        runTest(testDispatcher) {
+            val daoResult = listOf(
+                EmojiUsageStats("😂", "face_with_tears_of_joy", 5),
+                EmojiUsageStats("🔥", "fire", 3),
+            )
+            every { emojiTagDao.getAllEmojisWithCounts() } returns flowOf(daoResult)
+
+            repository.getAllEmojisWithTagCounts().test {
+                val result = awaitItem()
+                assertThat(result).hasSize(2)
+                assertThat(result[0]).isEqualTo("😂" to 5)
+                assertThat(result[1]).isEqualTo("🔥" to 3)
+                awaitComplete()
+            }
+        }
+
+    @Test
+    fun `getAllEmojisWithTagCounts returns empty list when dao returns empty`() =
+        runTest(testDispatcher) {
+            every { emojiTagDao.getAllEmojisWithCounts() } returns flowOf(emptyList())
+
+            repository.getAllEmojisWithTagCounts().test {
+                val result = awaitItem()
+                assertThat(result).isEmpty()
+                awaitComplete()
+            }
+        }
+
+    @Test
+    fun `getAllEmojisWithCounts and getAllEmojisWithTagCounts use different dao methods`() =
+        runTest(testDispatcher) {
+            val usageResult = listOf(
+                EmojiUsageBySharing("🔥", "fire", 30),
+            )
+            val countResult = listOf(
+                EmojiUsageStats("😂", "face_with_tears_of_joy", 5),
+            )
+            every { emojiTagDao.getEmojisOrderedByUsage() } returns flowOf(usageResult)
+            every { emojiTagDao.getAllEmojisWithCounts() } returns flowOf(countResult)
+
+            repository.getAllEmojisWithCounts().test {
+                val result = awaitItem()
+                assertThat(result[0].first).isEqualTo("🔥")
+                awaitComplete()
+            }
+
+            repository.getAllEmojisWithTagCounts().test {
+                val result = awaitItem()
+                assertThat(result[0].first).isEqualTo("😂")
+                awaitComplete()
+            }
         }
 
     // endregion

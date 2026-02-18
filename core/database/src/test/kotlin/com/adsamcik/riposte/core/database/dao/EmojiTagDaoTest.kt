@@ -571,5 +571,76 @@ class EmojiTagDaoTest {
             }
         }
 
+    @Test
+    fun `getEmojisOrderedByUsage returns single emoji correctly`() =
+        runTest {
+            val memeId = memeDao.insertMeme(createMeme(filePath = "/storage/single.png", useCount = 7))
+
+            emojiTagDao.insertEmojiTags(
+                listOf(createEmojiTag(memeId, "🎉", "party_popper")),
+            )
+
+            emojiTagDao.getEmojisOrderedByUsage().test {
+                val result = awaitItem()
+
+                assertThat(result).hasSize(1)
+                assertThat(result[0].emoji).isEqualTo("🎉")
+                assertThat(result[0].totalUsage).isEqualTo(7)
+                assertThat(result[0].emojiName).isEqualTo("party_popper")
+
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `getEmojisOrderedByUsage with all zero usage sorts alphabetically`() =
+        runTest {
+            // All memes have useCount=0, all emojis have 1 meme each
+            val meme1Id = memeDao.insertMeme(createMeme(filePath = "/storage/a.png", useCount = 0))
+            val meme2Id = memeDao.insertMeme(createMeme(filePath = "/storage/b.png", useCount = 0))
+            val meme3Id = memeDao.insertMeme(createMeme(filePath = "/storage/c.png", useCount = 0))
+
+            emojiTagDao.insertEmojiTags(
+                listOf(
+                    createEmojiTag(meme1Id, "🔥", "fire"),
+                    createEmojiTag(meme2Id, "❤️", "red_heart"),
+                    createEmojiTag(meme3Id, "😂", "face_with_tears_of_joy"),
+                ),
+            )
+
+            emojiTagDao.getEmojisOrderedByUsage().test {
+                val result = awaitItem()
+
+                assertThat(result).hasSize(3)
+                // All have 0 usage, 1 tag each - should sort alphabetically by emoji
+                assertThat(result.map { it.emoji }).isInOrder()
+
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `getEmojisOrderedByUsage updates reactively when meme useCount changes`() =
+        runTest {
+            val meme1Id = memeDao.insertMeme(createMeme(filePath = "/storage/meme1.png", useCount = 5))
+            val meme2Id = memeDao.insertMeme(createMeme(filePath = "/storage/meme2.png", useCount = 10))
+
+            emojiTagDao.insertEmojiTags(
+                listOf(
+                    createEmojiTag(meme1Id, "😂", "face_with_tears_of_joy"),
+                    createEmojiTag(meme2Id, "🔥", "fire"),
+                ),
+            )
+
+            emojiTagDao.getEmojisOrderedByUsage().test {
+                val initial = awaitItem()
+                // 🔥 has usage 10, 😂 has usage 5
+                assertThat(initial[0].emoji).isEqualTo("🔥")
+                assertThat(initial[1].emoji).isEqualTo("😂")
+
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
     // endregion
 }

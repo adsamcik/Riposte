@@ -180,6 +180,33 @@ class DefaultSettingsRepositoryTest {
             assertThat(prefsSlot.captured.holdToShareDelayMs).isEqualTo(2000L)
         }
 
+    @Test
+    fun `setSortEmojisByUsage updates app preferences with false`() =
+        runTest {
+            val prefsSlot = slot<AppPreferences>()
+            coEvery { preferencesDataStore.updateAppPreferences(capture(prefsSlot)) } returns Unit
+
+            repository.setSortEmojisByUsage(false)
+
+            coVerify { preferencesDataStore.updateAppPreferences(any()) }
+            assertThat(prefsSlot.captured.sortEmojisByUsage).isFalse()
+            // Verify other values are preserved
+            assertThat(prefsSlot.captured.darkMode).isEqualTo(DarkMode.SYSTEM)
+            assertThat(prefsSlot.captured.saveSearchHistory).isTrue()
+        }
+
+    @Test
+    fun `setSortEmojisByUsage updates app preferences with true`() =
+        runTest {
+            val prefsSlot = slot<AppPreferences>()
+            coEvery { preferencesDataStore.updateAppPreferences(capture(prefsSlot)) } returns Unit
+
+            repository.setSortEmojisByUsage(true)
+
+            coVerify { preferencesDataStore.updateAppPreferences(any()) }
+            assertThat(prefsSlot.captured.sortEmojisByUsage).isTrue()
+        }
+
     // endregion
 
     // region Sharing Preferences Update Tests
@@ -238,6 +265,24 @@ class DefaultSettingsRepositoryTest {
             assertThat(json).contains("\"appPreferences\"")
             assertThat(json).contains("\"darkMode\":\"SYSTEM\"")
             assertThat(json).contains("\"defaultFormat\":\"JPEG\"")
+        }
+
+    @Test
+    fun `exportPreferences includes sortEmojisByUsage field`() =
+        runTest {
+            val json = repository.exportPreferences()
+
+            assertThat(json).contains("\"sortEmojisByUsage\":true")
+        }
+
+    @Test
+    fun `exportPreferences includes sortEmojisByUsage false when disabled`() =
+        runTest {
+            appPreferencesFlow.value = createDefaultAppPreferences().copy(sortEmojisByUsage = false)
+
+            val json = repository.exportPreferences()
+
+            assertThat(json).contains("\"sortEmojisByUsage\":false")
         }
 
     @Test
@@ -307,6 +352,53 @@ class DefaultSettingsRepositoryTest {
             // These should be preserved from current preferences
             assertThat(prefsSlot.captured.defaultQuality).isEqualTo(85)
             assertThat(prefsSlot.captured.maxWidth).isEqualTo(1080)
+        }
+
+    @Test
+    fun `importPreferences imports sortEmojisByUsage when present`() =
+        runTest {
+            val appPrefsSlot = slot<AppPreferences>()
+            coEvery { preferencesDataStore.updateAppPreferences(capture(appPrefsSlot)) } returns Unit
+
+            val json =
+                """
+                {
+                    "version": 1,
+                    "appPreferences": {
+                        "darkMode": "SYSTEM",
+                        "sortEmojisByUsage": false
+                    }
+                }
+                """.trimIndent()
+
+            val result = repository.importPreferences(json)
+
+            assertThat(result.isSuccess).isTrue()
+            assertThat(appPrefsSlot.captured.sortEmojisByUsage).isFalse()
+        }
+
+    @Test
+    fun `importPreferences preserves sortEmojisByUsage when field is missing`() =
+        runTest {
+            val appPrefsSlot = slot<AppPreferences>()
+            coEvery { preferencesDataStore.updateAppPreferences(capture(appPrefsSlot)) } returns Unit
+
+            val json =
+                """
+                {
+                    "version": 1,
+                    "appPreferences": {
+                        "darkMode": "DARK"
+                    }
+                }
+                """.trimIndent()
+
+            val result = repository.importPreferences(json)
+
+            assertThat(result.isSuccess).isTrue()
+            // sortEmojisByUsage should be preserved from current value (true by default)
+            assertThat(appPrefsSlot.captured.sortEmojisByUsage).isTrue()
+            assertThat(appPrefsSlot.captured.darkMode).isEqualTo(DarkMode.DARK)
         }
 
     // endregion

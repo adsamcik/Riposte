@@ -26,6 +26,7 @@ import com.adsamcik.riposte.feature.settings.domain.usecase.SetDynamicColorsUseC
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetEnableSemanticSearchUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetGridDensityUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetSaveSearchHistoryUseCase
+import com.adsamcik.riposte.feature.settings.domain.usecase.SetSortEmojisByUsageUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetStripMetadataUseCase
 import com.google.common.truth.Truth.assertThat
 import io.mockk.coEvery
@@ -64,6 +65,7 @@ class SettingsViewModelTest {
     private lateinit var setDynamicColorsUseCase: SetDynamicColorsUseCase
     private lateinit var setEnableSemanticSearchUseCase: SetEnableSemanticSearchUseCase
     private lateinit var setSaveSearchHistoryUseCase: SetSaveSearchHistoryUseCase
+    private lateinit var setSortEmojisByUsageUseCase: SetSortEmojisByUsageUseCase
     private lateinit var setDefaultFormatUseCase: SetDefaultFormatUseCase
     private lateinit var setDefaultQualityUseCase: SetDefaultQualityUseCase
     private lateinit var setDefaultMaxDimensionUseCase: SetDefaultMaxDimensionUseCase
@@ -105,6 +107,7 @@ class SettingsViewModelTest {
         setDynamicColorsUseCase = mockk(relaxed = true)
         setEnableSemanticSearchUseCase = mockk(relaxed = true)
         setSaveSearchHistoryUseCase = mockk(relaxed = true)
+        setSortEmojisByUsageUseCase = mockk(relaxed = true)
         setDefaultFormatUseCase = mockk(relaxed = true)
         setDefaultQualityUseCase = mockk(relaxed = true)
         setDefaultMaxDimensionUseCase = mockk(relaxed = true)
@@ -136,6 +139,7 @@ class SettingsViewModelTest {
             setDynamicColorsUseCase = setDynamicColorsUseCase,
             setEnableSemanticSearchUseCase = setEnableSemanticSearchUseCase,
             setSaveSearchHistoryUseCase = setSaveSearchHistoryUseCase,
+            setSortEmojisByUsageUseCase = setSortEmojisByUsageUseCase,
             setDefaultFormatUseCase = setDefaultFormatUseCase,
             setDefaultQualityUseCase = setDefaultQualityUseCase,
             setDefaultMaxDimensionUseCase = setDefaultMaxDimensionUseCase,
@@ -393,6 +397,7 @@ class SettingsViewModelTest {
                 is SettingsIntent.SetDefaultMaxDimension,
                 is SettingsIntent.SetEnableSemanticSearch,
                 is SettingsIntent.SetSaveSearchHistory,
+                is SettingsIntent.SetSortEmojisByUsage,
                 is SettingsIntent.CalculateCacheSize,
                 is SettingsIntent.ShowClearCacheDialog,
                 is SettingsIntent.DismissDialog,
@@ -928,6 +933,69 @@ class SettingsViewModelTest {
         // No showSharingSection, no sharingSection — just direct fields.
         // If a "showSharingSection" were re-added, this would need updating.
     }
+
+    // endregion
+
+    // region Sort Emojis By Usage Tests
+
+    @Test
+    fun `sortEmojisByUsage default state is true`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertThat(state.sortEmojisByUsage).isTrue()
+        }
+
+    @Test
+    fun `sortEmojisByUsage state reflects preference value`() =
+        runTest {
+            appPreferencesFlow.value = createDefaultAppPreferences().copy(sortEmojisByUsage = false)
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertThat(state.sortEmojisByUsage).isFalse()
+        }
+
+    @Test
+    fun `SetSortEmojisByUsage delegates to use case with true`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onIntent(SettingsIntent.SetSortEmojisByUsage(true))
+            advanceUntilIdle()
+
+            coVerify { setSortEmojisByUsageUseCase(true) }
+        }
+
+    @Test
+    fun `SetSortEmojisByUsage delegates to use case with false`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onIntent(SettingsIntent.SetSortEmojisByUsage(false))
+            advanceUntilIdle()
+
+            coVerify { setSortEmojisByUsageUseCase(false) }
+        }
+
+    @Test
+    fun `sortEmojisByUsage state updates when preference flow emits`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.sortEmojisByUsage).isTrue()
+
+            appPreferencesFlow.value = createDefaultAppPreferences().copy(sortEmojisByUsage = false)
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.sortEmojisByUsage).isFalse()
+        }
 
     // endregion
 }
