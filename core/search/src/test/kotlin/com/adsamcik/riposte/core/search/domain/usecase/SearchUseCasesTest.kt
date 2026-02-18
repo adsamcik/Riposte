@@ -395,6 +395,56 @@ class SearchUseCasesTest {
 
     // endregion
 
+    // region getEmojiCounts Tests
+
+    @Test
+    fun `SearchUseCases getEmojiCounts returns flow from repository`() =
+        runTest {
+            val emojiCounts = listOf("🔥" to 30, "😂" to 15)
+            every { repository.getEmojiCounts() } returns flowOf(emojiCounts)
+            val useCases = SearchUseCases(repository)
+
+            useCases.getEmojiCounts().test {
+                val result = awaitItem()
+                assertThat(result).hasSize(2)
+                assertThat(result[0]).isEqualTo("🔥" to 30)
+                assertThat(result[1]).isEqualTo("😂" to 15)
+                awaitComplete()
+            }
+
+            verify { repository.getEmojiCounts() }
+        }
+
+    @Test
+    fun `SearchUseCases getEmojiCounts returns empty list when no emojis`() =
+        runTest {
+            every { repository.getEmojiCounts() } returns flowOf(emptyList())
+            val useCases = SearchUseCases(repository)
+
+            useCases.getEmojiCounts().test {
+                val result = awaitItem()
+                assertThat(result).isEmpty()
+                awaitComplete()
+            }
+        }
+
+    @Test
+    fun `SearchUseCases getEmojiCounts emits updates reactively`() =
+        runTest {
+            val emojiFlow = MutableStateFlow(listOf("🔥" to 10))
+            every { repository.getEmojiCounts() } returns emojiFlow
+            val useCases = SearchUseCases(repository)
+
+            useCases.getEmojiCounts().test {
+                assertThat(awaitItem()).hasSize(1)
+
+                emojiFlow.value = listOf("🔥" to 20, "😂" to 5)
+                assertThat(awaitItem()).hasSize(2)
+            }
+        }
+
+    // endregion
+
     // region Helper Functions
 
     private fun createTestMeme(

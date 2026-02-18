@@ -2,6 +2,7 @@ package com.adsamcik.riposte.core.search.data.repository
 
 import app.cash.turbine.test
 import com.adsamcik.riposte.core.database.dao.EmojiTagDao
+import com.adsamcik.riposte.core.database.dao.EmojiUsageBySharing
 import com.adsamcik.riposte.core.database.dao.MemeDao
 import com.adsamcik.riposte.core.database.dao.MemeEmbeddingDao
 import com.adsamcik.riposte.core.database.dao.MemeSearchDao
@@ -728,6 +729,79 @@ class SearchRepositoryImplTest {
             }
 
             assertThat(caughtError).isInstanceOf(UnsatisfiedLinkError::class.java)
+        }
+
+    // endregion
+
+    // region getEmojiCounts Tests
+
+    @Test
+    fun `getEmojiCounts returns usage-ordered emojis from dao`() =
+        runTest {
+            val daoResult = listOf(
+                EmojiUsageBySharing("🔥", "fire", 30),
+                EmojiUsageBySharing("😂", "face_with_tears_of_joy", 15),
+                EmojiUsageBySharing("❤️", "red_heart", 5),
+            )
+            every { emojiTagDao.getEmojisOrderedByUsage() } returns flowOf(daoResult)
+
+            repository.getEmojiCounts().test {
+                val result = awaitItem()
+                assertThat(result).hasSize(3)
+                assertThat(result[0]).isEqualTo("🔥" to 30)
+                assertThat(result[1]).isEqualTo("😂" to 15)
+                assertThat(result[2]).isEqualTo("❤️" to 5)
+                awaitComplete()
+            }
+
+            verify { emojiTagDao.getEmojisOrderedByUsage() }
+        }
+
+    @Test
+    fun `getEmojiCounts returns empty list when no emojis exist`() =
+        runTest {
+            every { emojiTagDao.getEmojisOrderedByUsage() } returns flowOf(emptyList())
+
+            repository.getEmojiCounts().test {
+                val result = awaitItem()
+                assertThat(result).isEmpty()
+                awaitComplete()
+            }
+        }
+
+    @Test
+    fun `getEmojiCounts maps totalUsage not tag count`() =
+        runTest {
+            // Verify we get totalUsage (share count), not plain count
+            val daoResult = listOf(
+                EmojiUsageBySharing("🔥", "fire", 100),
+            )
+            every { emojiTagDao.getEmojisOrderedByUsage() } returns flowOf(daoResult)
+
+            repository.getEmojiCounts().test {
+                val result = awaitItem()
+                assertThat(result[0].second).isEqualTo(100)
+                awaitComplete()
+            }
+        }
+
+    @Test
+    fun `getEmojiCounts preserves usage-based ordering from dao`() =
+        runTest {
+            // The DAO returns usage-ordered: highest first
+            val daoResult = listOf(
+                EmojiUsageBySharing("🎉", "party_popper", 50),
+                EmojiUsageBySharing("🔥", "fire", 25),
+                EmojiUsageBySharing("😂", "face_with_tears_of_joy", 10),
+            )
+            every { emojiTagDao.getEmojisOrderedByUsage() } returns flowOf(daoResult)
+
+            repository.getEmojiCounts().test {
+                val result = awaitItem()
+                // Order should be preserved: highest usage first
+                assertThat(result.map { it.first }).containsExactly("🎉", "🔥", "😂").inOrder()
+                awaitComplete()
+            }
         }
 
     // endregion
