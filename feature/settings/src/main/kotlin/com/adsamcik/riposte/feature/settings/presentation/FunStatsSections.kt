@@ -301,6 +301,7 @@ internal fun LazyListScope.momentumSection(uiState: SettingsUiState) {
                 )
 
                 // Week labels
+                Spacer(Modifier.height(4.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -311,11 +312,11 @@ internal fun LazyListScope.momentumSection(uiState: SettingsUiState) {
                         stringResource(R.string.settings_momentum_week_1),
                         stringResource(R.string.settings_momentum_week_now),
                     )
-                    labels.take(uiState.weeklyImportCounts.size).forEach { label ->
+                    labels.forEach { label ->
                         Text(
                             text = label,
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
