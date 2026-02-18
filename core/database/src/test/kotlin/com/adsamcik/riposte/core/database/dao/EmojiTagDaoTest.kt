@@ -48,6 +48,7 @@ class EmojiTagDaoTest {
         id: Long = 0,
         filePath: String = "/storage/memes/meme.png",
         fileName: String = "meme.png",
+        useCount: Int = 0,
     ) = MemeEntity(
         id = id,
         filePath = filePath,
@@ -58,6 +59,7 @@ class EmojiTagDaoTest {
         fileSizeBytes = 102400,
         importedAt = System.currentTimeMillis(),
         emojiTagsJson = "[]",
+        useCount = useCount,
     )
 
     private fun createEmojiTag(
@@ -488,6 +490,83 @@ class EmojiTagDaoTest {
                 emojiTagDao.deleteEmojiTagsForMeme(memeId)
                 assertThat(awaitItem()).isEmpty()
 
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    // endregion
+
+    // region Usage Ordering Tests
+
+    @Test
+    fun `getEmojisOrderedByUsage returns emojis sorted by total useCount`() =
+        runTest {
+            // Meme1 has useCount=10, tagged with 😂 and 🔥
+            // Meme2 has useCount=5, tagged with 😂
+            // Meme3 has useCount=20, tagged with 🔥
+            // Expected: 🔥 (10+20=30), 😂 (10+5=15)
+            val meme1Id = memeDao.insertMeme(createMeme(filePath = "/storage/meme1.png", useCount = 10))
+            val meme2Id = memeDao.insertMeme(createMeme(filePath = "/storage/meme2.png", useCount = 5))
+            val meme3Id = memeDao.insertMeme(createMeme(filePath = "/storage/meme3.png", useCount = 20))
+
+            emojiTagDao.insertEmojiTags(
+                listOf(
+                    createEmojiTag(meme1Id, "😂", "face_with_tears_of_joy"),
+                    createEmojiTag(meme1Id, "🔥", "fire"),
+                    createEmojiTag(meme2Id, "😂", "face_with_tears_of_joy"),
+                    createEmojiTag(meme3Id, "🔥", "fire"),
+                ),
+            )
+
+            emojiTagDao.getEmojisOrderedByUsage().test {
+                val result = awaitItem()
+
+                assertThat(result).hasSize(2)
+                // 🔥 has total usage 30 (10+20), 😂 has 15 (10+5)
+                assertThat(result[0].emoji).isEqualTo("🔥")
+                assertThat(result[0].totalUsage).isEqualTo(30)
+                assertThat(result[1].emoji).isEqualTo("😂")
+                assertThat(result[1].totalUsage).isEqualTo(15)
+
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `getEmojisOrderedByUsage falls back to tag count for equal usage`() =
+        runTest {
+            // Meme1 has useCount=0, tagged with 😂 and 🔥
+            // Meme2 has useCount=0, tagged with 😂
+            // Both emojis have totalUsage=0, but 😂 has 2 tags vs 🔥 has 1
+            val meme1Id = memeDao.insertMeme(createMeme(filePath = "/storage/meme1.png", useCount = 0))
+            val meme2Id = memeDao.insertMeme(createMeme(filePath = "/storage/meme2.png", useCount = 0))
+
+            emojiTagDao.insertEmojiTags(
+                listOf(
+                    createEmojiTag(meme1Id, "😂", "face_with_tears_of_joy"),
+                    createEmojiTag(meme1Id, "🔥", "fire"),
+                    createEmojiTag(meme2Id, "😂", "face_with_tears_of_joy"),
+                ),
+            )
+
+            emojiTagDao.getEmojisOrderedByUsage().test {
+                val result = awaitItem()
+
+                assertThat(result).hasSize(2)
+                // Both have 0 usage, but 😂 has 2 memes vs 🔥 has 1
+                assertThat(result[0].emoji).isEqualTo("😂")
+                assertThat(result[1].emoji).isEqualTo("🔥")
+
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `getEmojisOrderedByUsage returns empty when no tags exist`() =
+        runTest {
+            emojiTagDao.getEmojisOrderedByUsage().test {
+                val result = awaitItem()
+                assertThat(result).isEmpty()
                 cancelAndIgnoreRemainingEvents()
             }
         }

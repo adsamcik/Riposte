@@ -50,6 +50,22 @@ interface EmojiTagDao {
     fun getAllEmojisWithCounts(): Flow<List<EmojiUsageStats>>
 
     /**
+     * Get all unique emojis ordered by the total usage (share count) of their tagged memes.
+     * Emojis whose memes are shared/used most often appear first.
+     * Falls back to tag count, then alphabetical order for ties.
+     */
+    @Query(
+        """
+        SELECT e.emoji, e.emojiName, COALESCE(SUM(m.useCount), 0) as totalUsage
+        FROM emoji_tags e
+        INNER JOIN memes m ON e.memeId = m.id
+        GROUP BY e.emoji
+        ORDER BY totalUsage DESC, COUNT(*) DESC, e.emoji ASC
+    """,
+    )
+    fun getEmojisOrderedByUsage(): Flow<List<EmojiUsageBySharing>>
+
+    /**
      * Get meme IDs that have a specific emoji.
      */
     @Query("SELECT memeId FROM emoji_tags WHERE emoji = :emoji")
@@ -85,4 +101,13 @@ data class EmojiUsageStats(
     val emoji: String,
     val emojiName: String,
     val count: Int,
+)
+
+/**
+ * Data class for emoji usage ranked by total share/use count of tagged memes.
+ */
+data class EmojiUsageBySharing(
+    val emoji: String,
+    val emojiName: String,
+    val totalUsage: Int,
 )

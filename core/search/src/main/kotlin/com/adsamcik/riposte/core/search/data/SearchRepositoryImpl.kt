@@ -297,8 +297,8 @@ class SearchRepositoryImpl
         }
 
         override fun getEmojiCounts(): Flow<List<Pair<String, Int>>> {
-            return emojiTagDao.getAllEmojisWithCounts().map { stats ->
-                stats.map { it.emoji to it.count }
+            return emojiTagDao.getEmojisOrderedByUsage().map { stats ->
+                stats.map { it.emoji to it.totalUsage }
             }
         }
 
