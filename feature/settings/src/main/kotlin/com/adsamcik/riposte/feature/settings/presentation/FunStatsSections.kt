@@ -35,6 +35,8 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -54,12 +56,6 @@ internal fun LazyListScope.memeOMeterSection(uiState: SettingsUiState) {
     item(key = "meme_o_meter") {
         SettingsSection(title = stringResource(R.string.settings_section_meme_o_meter)) {
             MemeOMeterCard(uiState)
-
-            ListItem(
-                headlineContent = { Text(stringResource(R.string.settings_library_total_memes_title)) },
-                leadingContent = { Text("📊", style = MaterialTheme.typography.titleMedium) },
-                trailingContent = { Text(uiState.totalMemeCount.toString()) },
-            )
 
             if (uiState.favoriteMemeCount > 0) {
                 ListItem(
@@ -107,6 +103,7 @@ private fun MemeOMeterCard(uiState: SettingsUiState) {
             Text(
                 text =
                     when {
+                        uiState.totalMemeCount == 1337 -> "🏴\u200D☠️"
                         uiState.totalMemeCount >= 1001 -> "👑"
                         uiState.totalMemeCount >= 501 -> "🐉"
                         uiState.totalMemeCount >= 251 -> "⚔️"
@@ -278,13 +275,46 @@ internal fun LazyListScope.momentumSection(uiState: SettingsUiState) {
                     )
                 }
                 Spacer(Modifier.height(8.dp))
+
+                val trendDescription = when (uiState.momentumTrend) {
+                    MomentumTrend.GROWING -> stringResource(R.string.settings_momentum_growing)
+                    MomentumTrend.STABLE -> stringResource(R.string.settings_momentum_stable)
+                    MomentumTrend.DECLINING -> stringResource(R.string.settings_momentum_declining)
+                }
+                val accessibilityDescription = stringResource(
+                    R.string.settings_momentum_sparkline_description,
+                    uiState.weeklyImportCounts.joinToString(", "),
+                    trendDescription,
+                )
+
                 MomentumSparkline(
                     data = uiState.weeklyImportCounts,
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .height(48.dp),
+                            .height(64.dp)
+                            .semantics { contentDescription = accessibilityDescription },
                 )
+
+                // Week labels
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    val labels = listOf(
+                        stringResource(R.string.settings_momentum_week_3),
+                        stringResource(R.string.settings_momentum_week_2),
+                        stringResource(R.string.settings_momentum_week_1),
+                        stringResource(R.string.settings_momentum_week_now),
+                    )
+                    labels.take(uiState.weeklyImportCounts.size).forEach { label ->
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                        )
+                    }
+                }
             }
         }
     }
@@ -297,6 +327,7 @@ private fun MomentumSparkline(
 ) {
     val lineColor = MaterialTheme.colorScheme.primary
     val dotColor = MaterialTheme.colorScheme.primary
+    val currentDotColor = MaterialTheme.colorScheme.tertiary
     val gridColor = MaterialTheme.colorScheme.outlineVariant
 
     Canvas(modifier = modifier) {
@@ -318,7 +349,7 @@ private fun MomentumSparkline(
         if (pointCount < 2) {
             // Single dot
             val y = size.height - padding - (data[0] / maxVal * (size.height - 2 * padding))
-            drawCircle(dotColor, radius = 3.dp.toPx(), center = Offset(size.width / 2, y))
+            drawCircle(currentDotColor, radius = 4.dp.toPx(), center = Offset(size.width / 2, y))
             return@Canvas
         }
 
@@ -346,9 +377,14 @@ private fun MomentumSparkline(
                 ),
         )
 
-        // Dots
-        points.forEach { point ->
-            drawCircle(dotColor, radius = 3.dp.toPx(), center = point)
+        // Dots — highlight the last one (current week)
+        points.forEachIndexed { index, point ->
+            val isCurrentWeek = index == points.lastIndex
+            drawCircle(
+                color = if (isCurrentWeek) currentDotColor else dotColor,
+                radius = if (isCurrentWeek) 4.dp.toPx() else 3.dp.toPx(),
+                center = point,
+            )
         }
     }
 }

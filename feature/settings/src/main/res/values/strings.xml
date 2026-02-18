@@ -177,10 +177,15 @@
     <!-- Momentum -->
     <string name="settings_section_momentum">Momentum</string>
     <string name="settings_momentum_this_week">%1$d this week</string>
-    <string name="settings_momentum_growing">📈 Growing</string>
-    <string name="settings_momentum_stable">➡️ Stable</string>
-    <string name="settings_momentum_declining">📉 Slowing down</string>
+    <string name="settings_momentum_growing">📈 Meme machine</string>
+    <string name="settings_momentum_stable">➡️ Cruising</string>
+    <string name="settings_momentum_declining">📉 Recharging</string>
     <string name="settings_momentum_no_data">Import some memes to see your momentum!</string>
+    <string name="settings_momentum_week_3">3w</string>
+    <string name="settings_momentum_week_2">2w</string>
+    <string name="settings_momentum_week_1">1w</string>
+    <string name="settings_momentum_week_now">Now</string>
+    <string name="settings_momentum_sparkline_description">Weekly meme imports: %1$s. Trend: %2$s</string>
 
     <!-- Milestones -->
     <string name="settings_section_milestones">Milestones</string>
