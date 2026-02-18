@@ -137,4 +137,80 @@
     <string name="settings_snackbar_export_failed">Export failed: %1$s</string>
     <string name="settings_snackbar_import_failed">Import failed: %1$s</string>
     <string name="settings_snackbar_import_success">Settings imported successfully</string>
+
+    <!-- Fun Statistics -->
+    <string name="settings_section_meme_o_meter">Your Collection</string>
+    <string name="settings_meme_o_meter_storage">Total library size</string>
+    <string name="settings_meme_o_meter_memes_imported">Memes imported</string>
+
+    <!-- Collection Titles -->
+    <string name="settings_title_meme_peasant">Meme Peasant</string>
+    <string name="settings_title_meme_squire">Meme Squire</string>
+    <string name="settings_title_meme_knight">Meme Knight</string>
+    <string name="settings_title_meme_lord">Meme Lord</string>
+    <string name="settings_title_meme_warlord">Meme Warlord</string>
+    <string name="settings_title_meme_dragon">Meme Dragon</string>
+    <string name="settings_title_meme_deity">Meme Deity</string>
+    <string name="settings_title_meme_h4x0r">Meme H4x0r</string>
+    <string name="settings_title_empty">Meme Apprentice</string>
+
+    <!-- Vibe Check -->
+    <string name="settings_section_vibe_check">Your Vibes</string>
+    <string name="settings_vibe_no_tags">Tag some memes with emojis to see your vibe!</string>
+    <string name="settings_vibe_memes">%1$d memes</string>
+
+    <!-- Fun Fact of the Day -->
+    <string name="settings_section_fun_fact">Fun Fact of the Day</string>
+    <string name="settings_fun_fact_total_views">Your memes have been viewed %1$d times total. Popular collection!</string>
+    <string name="settings_fun_fact_max_views">Your most viewed meme has been opened %1$d times. Obsessed much?</string>
+    <string name="settings_fun_fact_never_viewed">You have %1$d memes that have never been viewed. Show them some love!</string>
+    <string name="settings_fun_fact_favorites_pct">Your favorites make up %1$d%% of your library. Picky!</string>
+    <string name="settings_fun_fact_emoji_count">You use %1$d different emoji tags. Diverse taste!</string>
+    <string name="settings_fun_fact_formats">Your library has %1$d different image formats. Format diplomat!</string>
+    <string name="settings_fun_fact_total_shares">Your memes have been shared %1$d times. Spreading the culture!</string>
+    <string name="settings_fun_fact_avg_size">Your average meme is %1$s. That\'s a lot of pixels!</string>
+    <string name="settings_fun_fact_collection_age">Your oldest meme was imported %1$d days ago. Practically vintage!</string>
+    <string name="settings_fun_fact_fresh_drop">Your newest meme is only %1$d hours old. Fresh drop!</string>
+    <string name="settings_fun_fact_fav_viewers">%1$d of your favorites have been viewed at least once. Great taste!</string>
+    <string name="settings_fun_fact_not_enough">Import more memes to unlock fun facts!</string>
+
+    <!-- Momentum -->
+    <string name="settings_section_momentum">Momentum</string>
+    <string name="settings_momentum_this_week">%1$d this week</string>
+    <string name="settings_momentum_growing">📈 Growing</string>
+    <string name="settings_momentum_stable">➡️ Stable</string>
+    <string name="settings_momentum_declining">📉 Slowing down</string>
+    <string name="settings_momentum_no_data">Import some memes to see your momentum!</string>
+
+    <!-- Milestones -->
+    <string name="settings_section_milestones">Milestones</string>
+    <string name="settings_milestones_count">%1$d / %2$d</string>
+    <string name="settings_milestone_locked">???</string>
+    <string name="settings_milestone_first_steps">First Steps</string>
+    <string name="settings_milestone_first_steps_desc">Import your first meme</string>
+    <string name="settings_milestone_getting_started">Getting Started</string>
+    <string name="settings_milestone_getting_started_desc">Reach 10 memes</string>
+    <string name="settings_milestone_half_century">Half Century</string>
+    <string name="settings_milestone_half_century_desc">Reach 50 memes</string>
+    <string name="settings_milestone_century_club">Century Club</string>
+    <string name="settings_milestone_century_club_desc">Reach 100 memes</string>
+    <string name="settings_milestone_the_archivist">The Archivist</string>
+    <string name="settings_milestone_the_archivist_desc">Reach 500 memes</string>
+    <string name="settings_milestone_meme_hoarder">Meme Hoarder</string>
+    <string name="settings_milestone_meme_hoarder_desc">Reach 1,000 memes</string>
+    <string name="settings_milestone_loyal_fan">Loyal Fan</string>
+    <string name="settings_milestone_loyal_fan_desc">Favorite 25 memes</string>
+    <string name="settings_milestone_emoji_rainbow">Emoji Rainbow</string>
+    <string name="settings_milestone_emoji_rainbow_desc">Use 15 different emoji tags</string>
+    <string name="settings_milestone_format_diplomat">Format Diplomat</string>
+    <string name="settings_milestone_format_diplomat_desc">Have memes in 3+ formats</string>
+    <string name="settings_milestone_deep_diver">Deep Diver</string>
+    <string name="settings_milestone_deep_diver_desc">View a single meme 25+ times</string>
+    <string name="settings_milestone_social_butterfly">Social Butterfly</string>
+    <string name="settings_milestone_social_butterfly_desc">Share memes 100 times</string>
+    <string name="settings_milestone_night_owl">Night Owl</string>
+    <string name="settings_milestone_night_owl_desc">Import a meme between midnight and 4 AM</string>
+    <string name="settings_milestone_leet">1337</string>
+    <string name="settings_milestone_leet_desc">Have exactly 1,337 memes</string>
+
 </resources>

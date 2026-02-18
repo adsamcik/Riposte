@@ -58,6 +58,7 @@ class PreferencesDataStoreTest {
                 assertThat(prefs.enableSemanticSearch).isTrue()
                 assertThat(prefs.autoExtractText).isTrue()
                 assertThat(prefs.saveSearchHistory).isTrue()
+                assertThat(prefs.sortEmojisByUsage).isTrue()
 
                 cancelAndIgnoreRemainingEvents()
             }
@@ -75,6 +76,7 @@ class PreferencesDataStoreTest {
                     enableSemanticSearch = false,
                     autoExtractText = false,
                     saveSearchHistory = false,
+                    sortEmojisByUsage = false,
                 )
 
             preferencesDataStore.updateAppPreferences(customPrefs)
@@ -89,6 +91,7 @@ class PreferencesDataStoreTest {
                 assertThat(prefs.enableSemanticSearch).isFalse()
                 assertThat(prefs.autoExtractText).isFalse()
                 assertThat(prefs.saveSearchHistory).isFalse()
+                assertThat(prefs.sortEmojisByUsage).isFalse()
 
                 cancelAndIgnoreRemainingEvents()
             }
@@ -122,6 +125,61 @@ class PreferencesDataStoreTest {
             preferencesDataStore.appPreferences.test {
                 val prefs = awaitItem()
                 assertThat(prefs.gridColumns).isEqualTo(4)
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `sortEmojisByUsage defaults to true`() =
+        runTest {
+            preferencesDataStore.appPreferences.test {
+                val prefs = awaitItem()
+                assertThat(prefs.sortEmojisByUsage).isTrue()
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `sortEmojisByUsage persists false through updateAppPreferences`() =
+        runTest {
+            val prefs = AppPreferences(sortEmojisByUsage = false)
+            preferencesDataStore.updateAppPreferences(prefs)
+
+            preferencesDataStore.appPreferences.test {
+                val stored = awaitItem()
+                assertThat(stored.sortEmojisByUsage).isFalse()
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `sortEmojisByUsage can be toggled back to true`() =
+        runTest {
+            // Set to false
+            preferencesDataStore.updateAppPreferences(AppPreferences(sortEmojisByUsage = false))
+
+            preferencesDataStore.appPreferences.test {
+                assertThat(awaitItem().sortEmojisByUsage).isFalse()
+                cancelAndIgnoreRemainingEvents()
+            }
+
+            // Set back to true
+            preferencesDataStore.updateAppPreferences(AppPreferences(sortEmojisByUsage = true))
+
+            preferencesDataStore.appPreferences.test {
+                assertThat(awaitItem().sortEmojisByUsage).isTrue()
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `clearAll resets sortEmojisByUsage to default`() =
+        runTest {
+            preferencesDataStore.updateAppPreferences(AppPreferences(sortEmojisByUsage = false))
+            preferencesDataStore.clearAll()
+
+            preferencesDataStore.appPreferences.test {
+                assertThat(awaitItem().sortEmojisByUsage).isTrue()
                 cancelAndIgnoreRemainingEvents()
             }
         }

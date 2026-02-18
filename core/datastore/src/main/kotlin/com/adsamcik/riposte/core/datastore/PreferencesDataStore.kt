@@ -69,6 +69,9 @@ class PreferencesDataStore
             val HAS_SHOWN_EMOJI_TIP = booleanPreferencesKey("has_shown_emoji_tip")
             val HAS_SHOWN_SEARCH_TIP = booleanPreferencesKey("has_shown_search_tip")
             val HAS_SHOWN_SHARE_TIP = booleanPreferencesKey("has_shown_share_tip")
+
+            // Milestone preferences
+            val UNLOCKED_MILESTONES = stringPreferencesKey("unlocked_milestones_json")
         }
 
         /**
@@ -342,6 +345,53 @@ class PreferencesDataStore
         suspend fun setShareTipShown() {
             context.dataStore.edit { prefs ->
                 prefs[PreferencesKeys.HAS_SHOWN_SHARE_TIP] = true
+            }
+        }
+
+        // endregion
+
+        // region Milestones
+
+        /**
+         * Flow of unlocked milestone IDs with their unlock timestamps.
+         */
+        val unlockedMilestones: Flow<Map<String, Long>> =
+            context.dataStore.data
+                .catch { exception ->
+                    if (exception is IOException) {
+                        emit(emptyPreferences())
+                    } else {
+                        throw exception
+                    }
+                }
+                .map { prefs ->
+                    prefs[PreferencesKeys.UNLOCKED_MILESTONES]?.let { json ->
+                        try {
+                            Json.decodeFromString<Map<String, Long>>(json)
+                        } catch (e: Exception) {
+                            emptyMap()
+                        }
+                    } ?: emptyMap()
+                }
+
+        /**
+         * Marks a milestone as unlocked with the current timestamp.
+         */
+        suspend fun unlockMilestone(milestoneId: String) {
+            context.dataStore.edit { prefs ->
+                val currentJson = prefs[PreferencesKeys.UNLOCKED_MILESTONES]
+                val current =
+                    currentJson?.let {
+                        try {
+                            Json.decodeFromString<Map<String, Long>>(it).toMutableMap()
+                        } catch (e: Exception) {
+                            mutableMapOf()
+                        }
+                    } ?: mutableMapOf()
+                if (milestoneId !in current) {
+                    current[milestoneId] = System.currentTimeMillis()
+                    prefs[PreferencesKeys.UNLOCKED_MILESTONES] = Json.encodeToString(current)
+                }
             }
         }
 

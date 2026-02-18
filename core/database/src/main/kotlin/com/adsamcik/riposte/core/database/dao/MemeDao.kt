@@ -226,4 +226,101 @@ interface MemeDao {
      */
     @Query("SELECT * FROM memes WHERE lastViewedAt IS NOT NULL ORDER BY lastViewedAt DESC LIMIT :limit")
     fun getRecentlyViewedMemes(limit: Int = 20): Flow<List<MemeEntity>>
+
+    // region Fun Statistics
+
+    /**
+     * Get total storage used by all memes in bytes.
+     */
+    @Query("SELECT COALESCE(SUM(fileSizeBytes), 0) FROM memes")
+    suspend fun getTotalStorageBytes(): Long
+
+    /**
+     * Get the average file size across all memes in bytes.
+     */
+    @Query("SELECT COALESCE(AVG(fileSizeBytes), 0) FROM memes")
+    suspend fun getAverageFileSize(): Long
+
+    /**
+     * Get the largest meme file size in bytes.
+     */
+    @Query("SELECT COALESCE(MAX(fileSizeBytes), 0) FROM memes")
+    suspend fun getLargestFileSize(): Long
+
+    /**
+     * Get the total use count (shares) across all memes.
+     */
+    @Query("SELECT COALESCE(SUM(useCount), 0) FROM memes")
+    suspend fun getTotalUseCount(): Int
+
+    /**
+     * Get the total view count across all memes.
+     */
+    @Query("SELECT COALESCE(SUM(viewCount), 0) FROM memes")
+    suspend fun getTotalViewCount(): Int
+
+    /**
+     * Get the highest view count for any single meme.
+     */
+    @Query("SELECT COALESCE(MAX(viewCount), 0) FROM memes")
+    suspend fun getMaxViewCount(): Int
+
+    /**
+     * Get the number of distinct MIME types in the collection.
+     */
+    @Query("SELECT COUNT(DISTINCT mimeType) FROM memes")
+    suspend fun getDistinctMimeTypeCount(): Int
+
+    /**
+     * Get the oldest import timestamp.
+     */
+    @Query("SELECT MIN(importedAt) FROM memes")
+    suspend fun getOldestImportTimestamp(): Long?
+
+    /**
+     * Get the newest import timestamp.
+     */
+    @Query("SELECT MAX(importedAt) FROM memes")
+    suspend fun getNewestImportTimestamp(): Long?
+
+    /**
+     * Count memes that have never been viewed or favorited.
+     */
+    @Query("SELECT COUNT(*) FROM memes WHERE viewCount = 0 AND isFavorite = 0")
+    suspend fun getNeverInteractedCount(): Int
+
+    /**
+     * Count favorites that have also been viewed.
+     */
+    @Query("SELECT COUNT(*) FROM memes WHERE isFavorite = 1 AND viewCount > 0")
+    suspend fun getFavoritesWithViews(): Int
+
+    /**
+     * Get weekly import counts for the last N weeks.
+     * Returns how many memes were imported in each week bucket.
+     */
+    @Query(
+        """
+        SELECT CAST((:nowMillis - importedAt) / 604800000 AS INTEGER) AS weekAgo,
+               COUNT(*) AS count
+        FROM memes
+        WHERE importedAt >= :sinceMillis
+        GROUP BY weekAgo
+        ORDER BY weekAgo ASC
+    """,
+    )
+    suspend fun getWeeklyImportCounts(
+        nowMillis: Long,
+        sinceMillis: Long,
+    ): List<WeeklyCount>
+
+    // endregion
 }
+
+/**
+ * Weekly import count for momentum statistics.
+ */
+data class WeeklyCount(
+    val weekAgo: Int,
+    val count: Int,
+)

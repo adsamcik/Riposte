@@ -92,6 +92,12 @@ interface EmojiTagDao {
         emojis: List<String>,
         count: Int,
     ): List<Long>
+
+    /**
+     * Get the number of distinct emoji tags used across all memes.
+     */
+    @Query("SELECT COUNT(DISTINCT emoji) FROM emoji_tags")
+    suspend fun getUniqueEmojiCount(): Int
 }
 
 /**

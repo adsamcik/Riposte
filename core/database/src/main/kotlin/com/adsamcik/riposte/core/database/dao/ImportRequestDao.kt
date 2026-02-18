@@ -63,4 +63,22 @@ interface ImportRequestDao {
             )""",
     )
     suspend fun cleanupOldRequestItems(before: Long)
+
+    /**
+     * Get the number of completed import requests.
+     */
+    @Query("SELECT COUNT(*) FROM import_requests WHERE status = 'completed'")
+    suspend fun getCompletedImportCount(): Int
+
+    /**
+     * Get the timestamp of the most recent completed import.
+     */
+    @Query("SELECT MAX(updatedAt) FROM import_requests WHERE status = 'completed'")
+    suspend fun getLastCompletedImportTimestamp(): Long?
+
+    /**
+     * Get the total number of memes imported across all requests.
+     */
+    @Query("SELECT COALESCE(SUM(completedCount), 0) FROM import_requests")
+    suspend fun getTotalImportedMemeCount(): Int
 }
