@@ -131,6 +131,38 @@ Located in `core/ml/src/androidTest/`:
 - `MediaPipeEmbeddingGeneratorTest` - Requires Android runtime
 - `MlIntegrationTest` - Full integration tests
 
+## Error Handling — No Silent Fallback
+
+### Design Decision
+
+When the semantic search index is unavailable (model not compatible, files missing, initialization failure), the app **does not silently fall back to text-only search**. Instead, errors are surfaced to the user immediately.
+
+**Rationale:**
+- Silent fallback hides real problems from the user. If the embedding model can't load, the user sees degraded search quality with no explanation and no way to act on it.
+- Showing "0 of X memes indexed" with a progress bar when indexing will never complete is misleading. The user waits for progress that will never happen.
+- Explicit error messages ("Indexing not supported on this device", "Indexing failed — try reinstalling the app") give users actionable information.
+
+### What happens when the model is unavailable
+
+| Layer | Behavior |
+|-------|----------|
+| **Settings** | Shows error message immediately on first failure (not after confirmed threshold). Displays root-cause-specific text in red: "not supported", "not included", or "failed". No progress bar shown. |
+| **Search** | `UnsatisfiedLinkError` → "Semantic search not supported on this device". `ExceptionInInitializerError` → "Search index failed to load". Both surface as `errorMessage` in the search UI. |
+| **Background indexing** | `EmbeddingManager` skips scheduling when `initializationError != null`. No wasted work. |
+
+### Error categories
+
+| Raw error string | User-facing message (Settings) | Root cause |
+|------------------|-------------------------------|------------|
+| `"Model not compatible with this device"` | Indexing not supported on this device | Native library missing or unsupported ABI |
+| `"Model files not found"` | Search model not included in this build | Lite flavor or missing assets |
+| `"Model failed to load"` | Indexing failed — try reinstalling the app | Static init error |
+| `"Model initialization failed"` | Indexing failed — try reinstalling the app | GPU + CPU both failed |
+
+### Previous behavior (removed)
+
+Previously, `SearchDelegate.performSearch()` caught `UnsatisfiedLinkError` and `ExceptionInInitializerError` and silently fell back to FTS-only text search via `fallbackToTextSearch()`. The settings screen also required 2 confirmed failures on the same app version before showing an error, displaying the misleading "0 of X memes indexed" progress bar in the interim.
+
 ## Troubleshooting
 
 ### Model Not Loading
