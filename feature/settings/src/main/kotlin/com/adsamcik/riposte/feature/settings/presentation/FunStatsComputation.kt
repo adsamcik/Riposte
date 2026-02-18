@@ -83,9 +83,9 @@ internal fun computeVibeTagline(topEmojis: List<EmojiUsageStats>): String {
         topEmoji == "😭" -> "$topPct% tears. It's a coping mechanism."
         topEmoji in listOf("😤", "💪") -> "$topPct% determination. Sigma energy."
         topEmoji == "🤡" -> "$topPct% clown. Self-aware chaos."
-        topPct >= 60 -> "$topPct% ${topEmojis[0].emojiName}. Very committed."
-        topPct >= 40 -> "$topPct% ${topEmojis[0].emojiName}, ${100 - topPct}% everything else."
-        else -> "A balanced diet of ${topEmojis[0].emojiName} and ${topEmojis[1].emojiName}."
+        topPct >= 60 -> "$topPct% ${topEmojis[0].emoji}. Very committed."
+        topPct >= 40 -> "$topPct% ${topEmojis[0].emoji}, ${100 - topPct}% everything else."
+        else -> "A balanced diet of ${topEmojis[0].emoji} and ${topEmojis[1].emoji}."
     }
 }
 

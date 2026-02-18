@@ -185,7 +185,8 @@
     <!-- Milestones -->
     <string name="settings_section_milestones">Milestones</string>
     <string name="settings_milestones_count">%1$d / %2$d</string>
-    <string name="settings_milestone_locked">???</string>
+    <string name="settings_milestone_locked">\?\?\?</string>
+    <string name="settings_milestones_locked_remaining">%1$d more to discover…</string>
     <string name="settings_milestone_first_steps">First Steps</string>
     <string name="settings_milestone_first_steps_desc">Import your first meme</string>
     <string name="settings_milestone_getting_started">Getting Started</string>

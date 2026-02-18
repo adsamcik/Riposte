@@ -97,7 +97,7 @@ private fun MemeOMeterCard(uiState: SettingsUiState) {
                 .padding(horizontal = 16.dp, vertical = 8.dp),
         colors =
             CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
             ),
     ) {
         Column(
@@ -123,12 +123,12 @@ private fun MemeOMeterCard(uiState: SettingsUiState) {
                 text = uiState.collectionTitle,
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
             )
             Text(
                 text = "${uiState.totalMemeCount} memes",
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
+                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f),
             )
         }
     }
@@ -177,12 +177,6 @@ private fun VibeRow(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text(
-                    text = vibe.emojiName,
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.weight(1f),
-                )
-                Spacer(Modifier.width(8.dp))
                 LinearProgressIndicator(
                     progress = { vibe.count.toFloat() / maxCount },
                     modifier =
@@ -230,7 +224,7 @@ internal fun LazyListScope.funFactSection(uiState: SettingsUiState) {
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                 colors =
                     CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     ),
             ) {
                 Row(
@@ -245,7 +239,7 @@ internal fun LazyListScope.funFactSection(uiState: SettingsUiState) {
                     Text(
                         text = fact,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onTertiaryContainer,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
                     )
                 }
             }
@@ -380,8 +374,26 @@ internal fun LazyListScope.milestonesSection(uiState: SettingsUiState) {
                             uiState.totalMilestoneCount,
                         ),
             ) {
-                uiState.milestones.forEach { milestone ->
+                val unlocked = uiState.milestones.filter { it.isUnlocked }
+                val lockedCount = uiState.milestones.size - unlocked.size
+
+                unlocked.forEach { milestone ->
                     MilestoneRow(milestone)
+                }
+
+                if (lockedCount > 0) {
+                    ListItem(
+                        headlineContent = {
+                            Text(
+                                text = stringResource(R.string.settings_milestones_locked_remaining, lockedCount),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                            )
+                        },
+                        leadingContent = {
+                            Text("🔒", style = MaterialTheme.typography.titleMedium)
+                        },
+                    )
                 }
             }
         }
