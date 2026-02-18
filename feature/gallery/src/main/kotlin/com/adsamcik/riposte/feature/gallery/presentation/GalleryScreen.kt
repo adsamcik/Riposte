@@ -406,13 +406,10 @@ private fun GalleryScreenContent(
                     .fillMaxSize()
                     .padding(paddingValues),
         ) {
-            // Content area with top space for floating search bar
+            // Content area — no top padding so images scroll behind the floating search bar
             val floatingBarSpace = if (uiState.isSelectionMode) 0.dp else 64.dp
             Box(
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .padding(top = floatingBarSpace),
+                modifier = Modifier.fillMaxSize(),
             ) {
                 when {
                     uiState.screenMode == ScreenMode.Searching -> {
@@ -422,8 +419,8 @@ private fun GalleryScreenContent(
                         onIntent = onIntent,
                         columns = columns,
                         gridState = gridState,
+                        topPadding = floatingBarSpace,
                     ) {
-                        // Recent searches (when query is empty and not searched yet)
                         if (uiState.searchState.query.isBlank() && !uiState.searchState.hasSearched) {
                             if (uiState.searchState.recentSearches.isNotEmpty()) {
                                 item(span = { GridItemSpan(maxLineSpan) }, key = "recent_header") {
@@ -610,6 +607,7 @@ private fun GalleryScreenContent(
                                 onIntent = onIntent,
                                 columns = columns,
                                 gridState = gridState,
+                                topPadding = floatingBarSpace,
                             ) {
                                 // Suggestions first
                                 items(
@@ -709,6 +707,7 @@ private fun GalleryScreenContent(
                         onIntent = onIntent,
                         columns = columns,
                         gridState = gridState,
+                        topPadding = floatingBarSpace,
                     ) {
                         // Suggestions first
                         items(
@@ -788,37 +787,36 @@ private fun GalleryContent(
     onIntent: (GalleryIntent) -> Unit,
     columns: Int,
     gridState: LazyGridState = rememberLazyGridState(),
+    topPadding: Dp = 0.dp,
     gridContent: LazyGridScope.() -> Unit,
 ) {
     val isSearching = uiState.screenMode == ScreenMode.Searching
     val isScrollingUp = gridState.isScrollingUp()
 
-    Column {
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyVerticalGrid(
+            state = gridState,
+            columns = GridCells.Fixed(columns),
+            contentPadding = PaddingValues(
+                start = 8.dp,
+                end = 8.dp,
+                top = topPadding + 4.dp,
+                bottom = when {
+                    uiState.screenMode == ScreenMode.Searching -> 24.dp
+                    else -> 120.dp
+                },
+            ),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            content = gridContent,
+        )
+
         GalleryEmojiFilterRail(
             uiState = uiState,
             uniqueEmojis = uniqueEmojis,
             onIntent = onIntent,
             visible = isSearching || isScrollingUp,
         )
-
-        Box {
-            LazyVerticalGrid(
-                state = gridState,
-                columns = GridCells.Fixed(columns),
-                contentPadding = PaddingValues(
-                    start = 8.dp,
-                    end = 8.dp,
-                    top = 4.dp,
-                    bottom = when {
-                        uiState.screenMode == ScreenMode.Searching -> 24.dp
-                        else -> 120.dp
-                    },
-                ),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                content = gridContent,
-            )
-        }
     }
 }
 
