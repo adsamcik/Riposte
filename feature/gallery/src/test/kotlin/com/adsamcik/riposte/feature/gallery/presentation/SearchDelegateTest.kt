@@ -358,6 +358,93 @@ class SearchDelegateTest {
             scope.cancel()
         }
 
+    @Test
+    fun `ExceptionInInitializerError does not save search to recent history`() =
+        runTest(mainDispatcherRule.testDispatcher) {
+            coEvery {
+                searchUseCases.hybridSearch(any(), any())
+            } throws ExceptionInInitializerError(RuntimeException("init failed"))
+
+            val scope = createDelegateScope()
+            delegate.init(scope)
+            advanceUntilIdle()
+
+            delegate.onIntent(GalleryIntent.UpdateSearchQuery("cat"), scope)
+            advanceTimeBy(400)
+            advanceUntilIdle()
+
+            coVerify(exactly = 0) { searchUseCases.addRecentSearch(any()) }
+            scope.cancel()
+        }
+
+    @Test
+    fun `generic RuntimeException does not save search to recent history`() =
+        runTest(mainDispatcherRule.testDispatcher) {
+            coEvery { searchUseCases.hybridSearch(any(), any()) } throws RuntimeException("boom")
+
+            val scope = createDelegateScope()
+            delegate.init(scope)
+            advanceUntilIdle()
+
+            delegate.onIntent(GalleryIntent.UpdateSearchQuery("cat"), scope)
+            advanceTimeBy(400)
+            advanceUntilIdle()
+
+            coVerify(exactly = 0) { searchUseCases.addRecentSearch(any()) }
+            scope.cancel()
+        }
+
+    @Test
+    fun `error state is cleared when performing a new successful search`() =
+        runTest(mainDispatcherRule.testDispatcher) {
+            coEvery { searchUseCases.hybridSearch(any(), any()) } throws UnsatisfiedLinkError("ML not available")
+
+            val scope = createDelegateScope()
+            delegate.init(scope)
+            advanceUntilIdle()
+
+            // First search fails
+            delegate.onIntent(GalleryIntent.UpdateSearchQuery("cat"), scope)
+            advanceTimeBy(400)
+            advanceUntilIdle()
+            assertThat(delegate.state.value.errorMessage).isNotNull()
+
+            // Fix the search mock and search again
+            coEvery { searchUseCases.hybridSearch(any(), any()) } returns testSearchResults
+
+            delegate.onIntent(GalleryIntent.UpdateSearchQuery("dog"), scope)
+            advanceTimeBy(400)
+            advanceUntilIdle()
+
+            val state = delegate.state.value
+            assertThat(state.errorMessage).isNull()
+            assertThat(state.results).isNotEmpty()
+            assertThat(state.hasSearched).isTrue()
+            scope.cancel()
+        }
+
+    @Test
+    fun `error state is cleared when clearing search`() =
+        runTest(mainDispatcherRule.testDispatcher) {
+            coEvery { searchUseCases.hybridSearch(any(), any()) } throws UnsatisfiedLinkError("ML not available")
+
+            val scope = createDelegateScope()
+            delegate.init(scope)
+            advanceUntilIdle()
+
+            // Search fails
+            delegate.onIntent(GalleryIntent.UpdateSearchQuery("cat"), scope)
+            advanceTimeBy(400)
+            advanceUntilIdle()
+            assertThat(delegate.state.value.errorMessage).isNotNull()
+
+            // Clear search
+            delegate.onIntent(GalleryIntent.ClearSearch, scope)
+
+            assertThat(delegate.state.value.errorMessage).isNull()
+            scope.cancel()
+        }
+
     // endregion
 
     // region Suggestion Tests
