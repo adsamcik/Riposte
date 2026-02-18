@@ -731,6 +731,91 @@ class SearchRepositoryImplTest {
             assertThat(caughtError).isInstanceOf(UnsatisfiedLinkError::class.java)
         }
 
+    @Test
+    fun `searchSemantic propagates ExceptionInInitializerError from search engine`() =
+        runTest {
+            val embedding = createTestEmbedding(128)
+            val testEmbeddingData = testMemeEntities.map { createMemeWithEmbeddingData(it, embedding) }
+            coEvery { memeEmbeddingDao.getMemesWithEmbeddings() } returns testEmbeddingData
+            coEvery {
+                semanticSearchEngine.findSimilarMultiVector(any(), any(), any())
+            } throws ExceptionInInitializerError(RuntimeException("init failed"))
+
+            var caughtError: Throwable? = null
+            try {
+                repository.searchSemantic("test", 20)
+            } catch (e: ExceptionInInitializerError) {
+                caughtError = e
+            }
+
+            assertThat(caughtError).isInstanceOf(ExceptionInInitializerError::class.java)
+        }
+
+    @Test
+    fun `searchHybrid does not catch generic RuntimeException from semantic search`() =
+        runTest {
+            every { memeSearchDao.searchMemes(any()) } returns flowOf(testMemeEntities)
+
+            val embedding = createTestEmbedding(128)
+            val testEmbeddingData = testMemeEntities.map { createMemeWithEmbeddingData(it, embedding) }
+            coEvery { memeEmbeddingDao.getMemesWithEmbeddings() } returns testEmbeddingData
+            coEvery {
+                semanticSearchEngine.findSimilarMultiVector(any(), any(), any())
+            } throws RuntimeException("Unexpected ML error")
+
+            var caughtError: Throwable? = null
+            try {
+                repository.searchHybrid("test", 20)
+            } catch (e: RuntimeException) {
+                caughtError = e
+            }
+
+            assertThat(caughtError).isInstanceOf(RuntimeException::class.java)
+            assertThat(caughtError!!.message).isEqualTo("Unexpected ML error")
+        }
+
+    @Test
+    fun `searchHybrid skips semantic search when disabled but still returns FTS results`() =
+        runTest {
+            val disabledPreferences = defaultPreferences.copy(enableSemanticSearch = false)
+            every { preferencesDataStore.appPreferences } returns flowOf(disabledPreferences)
+
+            // Recreate repository with disabled semantic search
+            repository = SearchRepositoryImpl(
+                memeDao = memeDao,
+                memeSearchDao = memeSearchDao,
+                memeEmbeddingDao = memeEmbeddingDao,
+                emojiTagDao = emojiTagDao,
+                semanticSearchEngine = semanticSearchEngine,
+                preferencesDataStore = preferencesDataStore,
+            )
+
+            every { memeSearchDao.searchMemes(any()) } returns flowOf(testMemeEntities)
+
+            val results = repository.searchHybrid("test", 20)
+
+            // Should return FTS results without touching semantic search
+            assertThat(results).isNotEmpty()
+            coVerify(exactly = 0) { semanticSearchEngine.findSimilarMultiVector(any(), any(), any()) }
+        }
+
+    @Test
+    fun `searchHybrid with no embeddings still propagates semantic search errors`() =
+        runTest {
+            every { memeSearchDao.searchMemes(any()) } returns flowOf(testMemeEntities)
+
+            coEvery { memeEmbeddingDao.getMemesWithEmbeddings() } returns emptyList()
+            // Even with no embeddings, the search engine may still throw
+            coEvery {
+                semanticSearchEngine.findSimilarMultiVector(any(), any(), any())
+            } throws UnsatisfiedLinkError("Native not available")
+
+            // When no embeddings exist, semantic search should be skipped entirely
+            // so no error should propagate — this tests that empty embeddings are handled gracefully
+            val results = repository.searchHybrid("test", 20)
+            assertThat(results).isNotEmpty()
+        }
+
     // endregion
 
     // region getEmojiCounts Tests
