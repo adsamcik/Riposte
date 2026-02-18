@@ -14,7 +14,10 @@ import com.adsamcik.riposte.core.testing.MainDispatcherRule
 import com.adsamcik.riposte.feature.settings.R
 import com.adsamcik.riposte.feature.settings.domain.usecase.ExportPreferencesUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.GetAppPreferencesUseCase
+import com.adsamcik.riposte.feature.settings.domain.usecase.GetFunStatisticsUseCase
+import com.adsamcik.riposte.feature.settings.domain.usecase.GetMilestonesUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.GetSharingPreferencesUseCase
+import com.adsamcik.riposte.feature.settings.domain.usecase.EmbeddingStatusInfo
 import com.adsamcik.riposte.feature.settings.domain.usecase.ImportPreferencesUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.ObserveEmbeddingStatisticsUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.ObserveLibraryStatsUseCase
@@ -61,6 +64,8 @@ class SettingsViewModelTest {
     // Use case mocks
     private lateinit var getAppPreferencesUseCase: GetAppPreferencesUseCase
     private lateinit var getSharingPreferencesUseCase: GetSharingPreferencesUseCase
+    private lateinit var getFunStatisticsUseCase: GetFunStatisticsUseCase
+    private lateinit var getMilestonesUseCase: GetMilestonesUseCase
     private lateinit var setDarkModeUseCase: SetDarkModeUseCase
     private lateinit var setDynamicColorsUseCase: SetDynamicColorsUseCase
     private lateinit var setEnableSemanticSearchUseCase: SetEnableSemanticSearchUseCase
@@ -117,6 +122,8 @@ class SettingsViewModelTest {
         importPreferencesUseCase = mockk(relaxed = true)
         observeEmbeddingStatisticsUseCase = mockk(relaxed = true)
         observeLibraryStatsUseCase = mockk(relaxed = true)
+        getFunStatisticsUseCase = mockk(relaxed = true)
+        getMilestonesUseCase = mockk(relaxed = true)
         crashLogManager = mockk(relaxed = true)
 
         every { getAppPreferencesUseCase() } returns appPreferencesFlow
@@ -135,6 +142,8 @@ class SettingsViewModelTest {
             context = context,
             getAppPreferencesUseCase = getAppPreferencesUseCase,
             getSharingPreferencesUseCase = getSharingPreferencesUseCase,
+            getFunStatisticsUseCase = getFunStatisticsUseCase,
+            getMilestonesUseCase = getMilestonesUseCase,
             setDarkModeUseCase = setDarkModeUseCase,
             setDynamicColorsUseCase = setDynamicColorsUseCase,
             setEnableSemanticSearchUseCase = setEnableSemanticSearchUseCase,
@@ -837,6 +846,51 @@ class SettingsViewModelTest {
         }
 
     @Test
+    fun `NavigateToLicenses is a navigation effect not a snackbar`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.effects.test {
+                viewModel.onIntent(SettingsIntent.OpenLicenses)
+                advanceUntilIdle()
+
+                val effect = awaitItem()
+                assertThat(effect).isNotInstanceOf(SettingsEffect.ShowSnackbar::class.java)
+                assertThat(effect).isInstanceOf(SettingsEffect.NavigateToLicenses::class.java)
+
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `NavigateToLicenses effect exists in sealed interface`() {
+        // Compile-time regression: exhaustive when ensures NavigateToLicenses
+        // cannot be removed without a compilation error.
+        val effect: SettingsEffect = SettingsEffect.NavigateToLicenses
+        val isNavigation =
+            when (effect) {
+                is SettingsEffect.ShowSnackbar -> false
+                is SettingsEffect.NavigateToLicenses -> true
+                is SettingsEffect.OpenUrl -> false
+                is SettingsEffect.LaunchExportPicker -> false
+                is SettingsEffect.LaunchImportPicker -> false
+                is SettingsEffect.ExportComplete -> false
+                is SettingsEffect.ImportComplete -> false
+                is SettingsEffect.ShowError -> false
+                is SettingsEffect.ShareText -> false
+            }
+        assertThat(isNavigation).isTrue()
+    }
+
+    @Test
+    fun `OpenLicenses intent exists in sealed interface`() {
+        // Compile-time regression: ensures OpenLicenses intent is not removed.
+        val intent: SettingsIntent = SettingsIntent.OpenLicenses
+        assertThat(intent).isInstanceOf(SettingsIntent.OpenLicenses::class.java)
+    }
+
+    @Test
     fun `OpenPrivacyPolicy emits OpenUrl effect with correct URL`() =
         runTest {
             viewModel = createViewModel()
@@ -995,6 +1049,146 @@ class SettingsViewModelTest {
             advanceUntilIdle()
 
             assertThat(viewModel.uiState.value.sortEmojisByUsage).isFalse()
+        }
+
+    // endregion
+
+    // region Embedding Error Surfacing Regression Tests
+    //
+    // These tests verify that model errors from EmbeddingManager.getStatistics()
+    // propagate to the UI state immediately, showing error messages instead of
+    // misleading "0 of X memes indexed" progress. See docs/SEMANTIC_SEARCH.md.
+
+    @Test
+    fun `embedding model error propagates to embeddingSearchState`() =
+        runTest {
+            val statsFlow = MutableStateFlow(
+                EmbeddingStatusInfo(
+                    statistics = com.adsamcik.riposte.core.ml.EmbeddingStatistics(
+                        validEmbeddingCount = 0,
+                        pendingEmbeddingCount = 50,
+                        regenerationNeededCount = 0,
+                        currentModelVersion = "embeddinggemma:1.0.0",
+                        embeddingsByVersion = emptyMap(),
+                        modelError = "Model not compatible with this device",
+                    ),
+                    modelInfo = com.adsamcik.riposte.core.ml.EmbeddingModelInfo(
+                        version = "embeddinggemma:1.0.0",
+                        name = "EmbeddingGemma",
+                        dimension = 768,
+                        description = "test",
+                    ),
+                ),
+            )
+            every { observeEmbeddingStatisticsUseCase() } returns statsFlow
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value.embeddingSearchState
+            assertThat(state).isNotNull()
+            assertThat(state!!.modelError).isEqualTo("Model not compatible with this device")
+        }
+
+    @Test
+    fun `embedding model error not supported shows in UI state`() =
+        runTest {
+            val statsFlow = MutableStateFlow(
+                EmbeddingStatusInfo(
+                    statistics = com.adsamcik.riposte.core.ml.EmbeddingStatistics(
+                        validEmbeddingCount = 0,
+                        pendingEmbeddingCount = 10,
+                        regenerationNeededCount = 0,
+                        currentModelVersion = "embeddinggemma:1.0.0",
+                        embeddingsByVersion = emptyMap(),
+                        modelError = "Model files not found",
+                    ),
+                    modelInfo = com.adsamcik.riposte.core.ml.EmbeddingModelInfo(
+                        version = "embeddinggemma:1.0.0",
+                        name = "EmbeddingGemma",
+                        dimension = 768,
+                        description = "test",
+                    ),
+                ),
+            )
+            every { observeEmbeddingStatisticsUseCase() } returns statsFlow
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value.embeddingSearchState
+            assertThat(state).isNotNull()
+            assertThat(state!!.modelError).isEqualTo("Model files not found")
+            assertThat(state.indexedCount).isEqualTo(0)
+        }
+
+    @Test
+    fun `healthy embedding statistics show no model error`() =
+        runTest {
+            val statsFlow = MutableStateFlow(
+                EmbeddingStatusInfo(
+                    statistics = com.adsamcik.riposte.core.ml.EmbeddingStatistics(
+                        validEmbeddingCount = 100,
+                        pendingEmbeddingCount = 0,
+                        regenerationNeededCount = 0,
+                        currentModelVersion = "embeddinggemma:1.0.0",
+                        embeddingsByVersion = mapOf("embeddinggemma:1.0.0" to 100),
+                        modelError = null,
+                    ),
+                    modelInfo = com.adsamcik.riposte.core.ml.EmbeddingModelInfo(
+                        version = "embeddinggemma:1.0.0",
+                        name = "EmbeddingGemma",
+                        dimension = 768,
+                        description = "test",
+                    ),
+                ),
+            )
+            every { observeEmbeddingStatisticsUseCase() } returns statsFlow
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value.embeddingSearchState
+            assertThat(state).isNotNull()
+            assertThat(state!!.modelError).isNull()
+            assertThat(state.isFullyIndexed).isTrue()
+            assertThat(state.indexedCount).isEqualTo(100)
+        }
+
+    @Test
+    fun `embedding state with pending work and no error shows correct counts`() =
+        runTest {
+            val statsFlow = MutableStateFlow(
+                EmbeddingStatusInfo(
+                    statistics = com.adsamcik.riposte.core.ml.EmbeddingStatistics(
+                        validEmbeddingCount = 80,
+                        pendingEmbeddingCount = 20,
+                        regenerationNeededCount = 5,
+                        currentModelVersion = "embeddinggemma:1.0.0",
+                        embeddingsByVersion = mapOf("embeddinggemma:1.0.0" to 80),
+                        modelError = null,
+                    ),
+                    modelInfo = com.adsamcik.riposte.core.ml.EmbeddingModelInfo(
+                        version = "embeddinggemma:1.0.0",
+                        name = "EmbeddingGemma",
+                        dimension = 768,
+                        description = "test",
+                    ),
+                ),
+            )
+            every { observeEmbeddingStatisticsUseCase() } returns statsFlow
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value.embeddingSearchState
+            assertThat(state).isNotNull()
+            assertThat(state!!.modelError).isNull()
+            assertThat(state.isFullyIndexed).isFalse()
+            assertThat(state.indexedCount).isEqualTo(80)
+            assertThat(state.totalCount).isEqualTo(105) // 80 + 20 + 5
+            assertThat(state.pendingCount).isEqualTo(20)
+            assertThat(state.regenerationCount).isEqualTo(5)
         }
 
     // endregion
