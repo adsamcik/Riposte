@@ -179,7 +179,7 @@ internal fun computeMomentumTrend(weeklyData: List<Int>): MomentumTrend {
     }
 }
 
-private fun formatFileSize(bytes: Long): String =
+internal fun formatFileSize(bytes: Long): String =
     when {
         bytes >= 1_073_741_824 -> "%.1f GB".format(bytes / 1_073_741_824.0)
         bytes >= 1_048_576 -> "%.1f MB".format(bytes / 1_048_576.0)

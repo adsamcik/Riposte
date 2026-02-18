@@ -2,21 +2,14 @@
 
 package com.adsamcik.riposte.feature.settings.presentation
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material3.Card
@@ -29,7 +22,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
@@ -39,7 +31,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.adsamcik.riposte.core.database.dao.EmojiUsageStats
 import com.adsamcik.riposte.feature.settings.R
@@ -76,7 +67,7 @@ internal fun LazyListScope.memeOMeterSection(uiState: SettingsUiState) {
                             null
                         },
                     leadingContent = { Text("💾", style = MaterialTheme.typography.titleMedium) },
-                    trailingContent = { Text(formatStorageSize(uiState.totalStorageBytes)) },
+                    trailingContent = { Text(formatFileSize(uiState.totalStorageBytes)) },
                 )
             }
         }
@@ -136,7 +127,6 @@ private fun MemeOMeterCard(uiState: SettingsUiState) {
 
 // region Vibe Check
 
-@OptIn(ExperimentalLayoutApi::class)
 internal fun LazyListScope.vibeCheckSection(uiState: SettingsUiState) {
     if (uiState.topVibes.isEmpty()) return
 
@@ -403,46 +393,40 @@ internal fun LazyListScope.milestonesSection(uiState: SettingsUiState) {
     if (uiState.milestones.isEmpty() || uiState.unlockedMilestoneCount == 0) return
 
     item(key = "milestones") {
-        AnimatedVisibility(
-            visible = uiState.unlockedMilestoneCount > 0,
-            enter = fadeIn() + expandVertically(),
+        SettingsSection(
+            title =
+                stringResource(R.string.settings_section_milestones) + " " +
+                    stringResource(
+                        R.string.settings_milestones_count,
+                        uiState.unlockedMilestoneCount,
+                        uiState.totalMilestoneCount,
+                    ),
         ) {
-            SettingsSection(
-                title =
-                    stringResource(R.string.settings_section_milestones) + " " +
-                        stringResource(
-                            R.string.settings_milestones_count,
-                            uiState.unlockedMilestoneCount,
-                            uiState.totalMilestoneCount,
-                        ),
-            ) {
-                val unlocked = uiState.milestones.filter { it.isUnlocked }
-                val lockedCount = uiState.milestones.size - unlocked.size
+            val unlocked = uiState.milestones.filter { it.isUnlocked }
+            val lockedCount = uiState.milestones.size - unlocked.size
 
-                unlocked.forEach { milestone ->
-                    MilestoneRow(milestone)
-                }
+            unlocked.forEach { milestone ->
+                MilestoneRow(milestone)
+            }
 
-                if (lockedCount > 0) {
-                    ListItem(
-                        headlineContent = {
-                            Text(
-                                text = stringResource(R.string.settings_milestones_locked_remaining, lockedCount),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                            )
-                        },
-                        leadingContent = {
-                            Text("🔒", style = MaterialTheme.typography.titleMedium)
-                        },
-                    )
-                }
+            if (lockedCount > 0) {
+                ListItem(
+                    headlineContent = {
+                        Text(
+                            text = stringResource(R.string.settings_milestones_locked_remaining, lockedCount),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    },
+                    leadingContent = {
+                        Text("🔒", style = MaterialTheme.typography.titleMedium)
+                    },
+                )
             }
         }
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun MilestoneRow(milestone: MilestoneState) {
     ListItem(
@@ -456,7 +440,7 @@ private fun MilestoneRow(milestone: MilestoneState) {
                 Text(
                     text = stringResource(R.string.settings_milestone_locked),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f),
                 )
             }
         },
@@ -528,18 +512,6 @@ private fun milestoneDescription(id: String): String =
         "night_owl" -> stringResource(R.string.settings_milestone_night_owl_desc)
         "leet" -> stringResource(R.string.settings_milestone_leet_desc)
         else -> ""
-    }
-
-// endregion
-
-// region Utils
-
-private fun formatStorageSize(bytes: Long): String =
-    when {
-        bytes >= 1_073_741_824 -> "%.1f GB".format(bytes / 1_073_741_824.0)
-        bytes >= 1_048_576 -> "%.1f MB".format(bytes / 1_048_576.0)
-        bytes >= 1024 -> "%.1f KB".format(bytes / 1024.0)
-        else -> "$bytes B"
     }
 
 // endregion
