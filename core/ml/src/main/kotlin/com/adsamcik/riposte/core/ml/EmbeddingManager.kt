@@ -177,8 +177,8 @@ class EmbeddingManager
 
         /**
          * Get embedding statistics.
-         * The [EmbeddingStatistics.modelError] is only populated when the error
-         * has been confirmed (multiple failures on the same app version).
+         * The [EmbeddingStatistics.modelError] is populated immediately from the
+         * generator's initialization error, without waiting for confirmation.
          */
         suspend fun getStatistics(): EmbeddingStatistics {
             val validCount = memeEmbeddingDao.countValidEmbeddings()

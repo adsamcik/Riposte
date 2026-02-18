@@ -223,25 +223,91 @@ class EmbeddingManagerTest {
             coVerify(exactly = 0) { versionManager.updateToCurrentVersion() }
         }
 
+    // region No-Fallback Regression Tests
+    //
+    // These tests guard the design decision that model errors are surfaced
+    // immediately in statistics, not deferred until "confirmed".
+    // See docs/SEMANTIC_SEARCH.md "Error Handling — No Silent Fallback".
+
     @Test
-    fun `getStatistics includes model error when initialization failed`() =
+    fun `getStatistics surfaces model error immediately without confirmation`() =
         runTest {
-            // Given
+            // Given — model has error but NOT yet confirmed
             every { embeddingGenerator.initializationError } returns "Model not compatible with this device"
             coEvery { memeEmbeddingDao.countValidEmbeddings() } returns 0
             coEvery { memeEmbeddingDao.countMemesWithoutEmbeddings() } returns 33
             coEvery { memeEmbeddingDao.countEmbeddingsNeedingRegeneration() } returns 0
             coEvery { memeEmbeddingDao.getEmbeddingCountByModelVersion() } returns emptyList()
-            coEvery { versionManager.isErrorConfirmedForVersion(any()) } returns true
+
+            // When
+            val stats = embeddingManager.getStatistics()
+
+            // Then — error is surfaced immediately
+            assertThat(stats.modelError).isEqualTo("Model not compatible with this device")
+            assertThat(stats.validEmbeddingCount).isEqualTo(0)
+            assertThat(stats.pendingEmbeddingCount).isEqualTo(33)
+        }
+
+    @Test
+    fun `getStatistics does not call isErrorConfirmedForVersion`() =
+        runTest {
+            // Given
+            every { embeddingGenerator.initializationError } returns "Model files not found"
+            coEvery { memeEmbeddingDao.countValidEmbeddings() } returns 0
+            coEvery { memeEmbeddingDao.countMemesWithoutEmbeddings() } returns 10
+            coEvery { memeEmbeddingDao.countEmbeddingsNeedingRegeneration() } returns 0
+            coEvery { memeEmbeddingDao.getEmbeddingCountByModelVersion() } returns emptyList()
+
+            // When
+            embeddingManager.getStatistics()
+
+            // Then — confirmation check must not be called (immediate surfacing)
+            coVerify(exactly = 0) { versionManager.isErrorConfirmedForVersion(any()) }
+        }
+
+    @Test
+    fun `getStatistics returns null modelError when no initialization error`() =
+        runTest {
+            // Given — model is healthy
+            every { embeddingGenerator.initializationError } returns null
+            coEvery { memeEmbeddingDao.countValidEmbeddings() } returns 50
+            coEvery { memeEmbeddingDao.countMemesWithoutEmbeddings() } returns 0
+            coEvery { memeEmbeddingDao.countEmbeddingsNeedingRegeneration() } returns 0
+            coEvery { memeEmbeddingDao.getEmbeddingCountByModelVersion() } returns emptyList()
 
             // When
             val stats = embeddingManager.getStatistics()
 
             // Then
-            assertThat(stats.modelError).isEqualTo("Model not compatible with this device")
-            assertThat(stats.validEmbeddingCount).isEqualTo(0)
-            assertThat(stats.pendingEmbeddingCount).isEqualTo(33)
+            assertThat(stats.modelError).isNull()
+            coVerify(exactly = 0) { versionManager.isErrorConfirmedForVersion(any()) }
         }
+
+    @Test
+    fun `getStatistics surfaces each error type correctly`() =
+        runTest {
+            val errorTypes = listOf(
+                "Model not compatible with this device",
+                "Model files not found",
+                "Model failed to load",
+                "Model initialization failed",
+            )
+
+            coEvery { memeEmbeddingDao.countValidEmbeddings() } returns 0
+            coEvery { memeEmbeddingDao.countMemesWithoutEmbeddings() } returns 10
+            coEvery { memeEmbeddingDao.countEmbeddingsNeedingRegeneration() } returns 0
+            coEvery { memeEmbeddingDao.getEmbeddingCountByModelVersion() } returns emptyList()
+
+            for (errorType in errorTypes) {
+                every { embeddingGenerator.initializationError } returns errorType
+
+                val stats = embeddingManager.getStatistics()
+
+                assertThat(stats.modelError).isEqualTo(errorType)
+            }
+        }
+
+    // endregion
 
     // region Foreground Resume Tests
 

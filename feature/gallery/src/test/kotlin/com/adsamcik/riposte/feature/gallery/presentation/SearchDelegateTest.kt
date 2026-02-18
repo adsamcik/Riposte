@@ -255,6 +255,12 @@ class SearchDelegateTest {
             scope.cancel()
         }
 
+    // region No-Fallback Regression Tests
+    //
+    // These tests guard the design decision that semantic search errors are
+    // surfaced to the user instead of silently falling back to text-only search.
+    // See docs/SEMANTIC_SEARCH.md "Error Handling — No Silent Fallback".
+
     @Test
     fun `UnsatisfiedLinkError surfaces error instead of falling back`() =
         runTest(mainDispatcherRule.testDispatcher) {
@@ -298,6 +304,61 @@ class SearchDelegateTest {
             assertThat(state.results).isEmpty()
             scope.cancel()
         }
+
+    @Test
+    fun `UnsatisfiedLinkError does not call text-only search fallback`() =
+        runTest(mainDispatcherRule.testDispatcher) {
+            coEvery { searchUseCases.hybridSearch(any(), any()) } throws UnsatisfiedLinkError("ML not available")
+
+            val scope = createDelegateScope()
+            delegate.init(scope)
+            advanceUntilIdle()
+
+            delegate.onIntent(GalleryIntent.UpdateSearchQuery("cat"), scope)
+            advanceTimeBy(400)
+            advanceUntilIdle()
+
+            coVerify(exactly = 0) { searchUseCases.search(any()) }
+            scope.cancel()
+        }
+
+    @Test
+    fun `ExceptionInInitializerError does not call text-only search fallback`() =
+        runTest(mainDispatcherRule.testDispatcher) {
+            coEvery {
+                searchUseCases.hybridSearch(any(), any())
+            } throws ExceptionInInitializerError(RuntimeException("init failed"))
+
+            val scope = createDelegateScope()
+            delegate.init(scope)
+            advanceUntilIdle()
+
+            delegate.onIntent(GalleryIntent.UpdateSearchQuery("cat"), scope)
+            advanceTimeBy(400)
+            advanceUntilIdle()
+
+            coVerify(exactly = 0) { searchUseCases.search(any()) }
+            scope.cancel()
+        }
+
+    @Test
+    fun `UnsatisfiedLinkError does not save search to recent history`() =
+        runTest(mainDispatcherRule.testDispatcher) {
+            coEvery { searchUseCases.hybridSearch(any(), any()) } throws UnsatisfiedLinkError("ML not available")
+
+            val scope = createDelegateScope()
+            delegate.init(scope)
+            advanceUntilIdle()
+
+            delegate.onIntent(GalleryIntent.UpdateSearchQuery("cat"), scope)
+            advanceTimeBy(400)
+            advanceUntilIdle()
+
+            coVerify(exactly = 0) { searchUseCases.addRecentSearch(any()) }
+            scope.cancel()
+        }
+
+    // endregion
 
     // region Suggestion Tests
 
