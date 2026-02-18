@@ -38,6 +38,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
+import java.io.IOException
 
 /**
  * Edge case tests for [ImportViewModel] covering cancellation, concurrency,
@@ -895,6 +896,225 @@ class ImportViewModelEdgeCasesTest {
                 assertThat(state.duplicatesWithChangedMetadata).isEmpty()
                 assertThat(state.duplicateMemeIds).isEmpty()
                 assertThat(state.showDuplicateDialog).isFalse()
+            }
+        }
+
+    // ==================== Duplicate Detection Edge Cases ====================
+
+    @Test
+    fun `StartImport proceeds with import when duplicate check throws exception`() =
+        runTest {
+            val uri = mockk<Uri> { every { lastPathSegment } returns "meme.jpg" }
+
+            coEvery { suggestEmojisUseCase(any()) } returns emptyList()
+            coEvery { extractTextUseCase(any()) } returns null
+            coEvery { findDuplicateMemeIdUseCase(any()) } throws RuntimeException("Hash failed")
+
+            viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uri)))
+            advanceUntilIdle()
+
+            viewModel.onIntent(ImportIntent.StartImport)
+            advanceUntilIdle()
+
+            // Should proceed with import rather than showing duplicate dialog
+            viewModel.uiState.test {
+                val state = awaitItem()
+                assertThat(state.showDuplicateDialog).isFalse()
+            }
+            // Import should have been triggered (staging called)
+            coVerify { importStagingManager.stageImages(any()) }
+        }
+
+    @Test
+    fun `SkipDuplicates with all images as duplicates does not trigger import`() =
+        runTest {
+            val uri1 = mockk<Uri> { every { lastPathSegment } returns "dupe1.jpg" }
+            val uri2 = mockk<Uri> { every { lastPathSegment } returns "dupe2.jpg" }
+
+            coEvery { suggestEmojisUseCase(any()) } returns emptyList()
+            coEvery { extractTextUseCase(any()) } returns null
+            coEvery { findDuplicateMemeIdUseCase(uri1) } returns 10L
+            coEvery { findDuplicateMemeIdUseCase(uri2) } returns 20L
+
+            viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uri1, uri2)))
+            advanceUntilIdle()
+
+            viewModel.onIntent(ImportIntent.StartImport)
+            advanceUntilIdle()
+
+            // All are duplicates — skip them
+            viewModel.onIntent(ImportIntent.SkipDuplicates)
+            advanceUntilIdle()
+
+            // Should NOT have staged anything for import
+            coVerify(exactly = 0) { importStagingManager.stageImages(any()) }
+
+            // Selected images should be empty
+            viewModel.uiState.test {
+                val state = awaitItem()
+                assertThat(state.selectedImages).isEmpty()
+                assertThat(state.showDuplicateDialog).isFalse()
+            }
+        }
+
+    @Test
+    fun `DismissDuplicateDialog hides dialog without importing`() =
+        runTest {
+            val uri = mockk<Uri> { every { lastPathSegment } returns "dupe.jpg" }
+
+            coEvery { suggestEmojisUseCase(any()) } returns emptyList()
+            coEvery { extractTextUseCase(any()) } returns null
+            coEvery { findDuplicateMemeIdUseCase(uri) } returns 42L
+
+            viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uri)))
+            advanceUntilIdle()
+
+            viewModel.onIntent(ImportIntent.StartImport)
+            advanceUntilIdle()
+
+            // Dialog should be shown
+            viewModel.uiState.test {
+                assertThat(awaitItem().showDuplicateDialog).isTrue()
+            }
+
+            // Dismiss it
+            viewModel.onIntent(ImportIntent.DismissDuplicateDialog)
+            advanceUntilIdle()
+
+            viewModel.uiState.test {
+                val state = awaitItem()
+                assertThat(state.showDuplicateDialog).isFalse()
+                assertThat(state.isImporting).isFalse()
+            }
+
+            // Import should NOT have been triggered
+            coVerify(exactly = 0) { importStagingManager.stageImages(any()) }
+        }
+
+    @Test
+    fun `StartImport with mixed duplicates and non-duplicates shows correct counts`() =
+        runTest {
+            val uriDupe1 = mockk<Uri> { every { lastPathSegment } returns "dupe1.jpg" }
+            val uriNew1 = mockk<Uri> { every { lastPathSegment } returns "new1.jpg" }
+            val uriDupe2 = mockk<Uri> { every { lastPathSegment } returns "dupe2.jpg" }
+            val uriNew2 = mockk<Uri> { every { lastPathSegment } returns "new2.jpg" }
+
+            coEvery { suggestEmojisUseCase(any()) } returns emptyList()
+            coEvery { extractTextUseCase(any()) } returns null
+            coEvery { findDuplicateMemeIdUseCase(uriDupe1) } returns 10L
+            coEvery { findDuplicateMemeIdUseCase(uriNew1) } returns null
+            coEvery { findDuplicateMemeIdUseCase(uriDupe2) } returns 20L
+            coEvery { findDuplicateMemeIdUseCase(uriNew2) } returns null
+
+            viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uriDupe1, uriNew1, uriDupe2, uriNew2)))
+            advanceUntilIdle()
+
+            viewModel.onIntent(ImportIntent.StartImport)
+            advanceUntilIdle()
+
+            viewModel.uiState.test {
+                val state = awaitItem()
+                assertThat(state.showDuplicateDialog).isTrue()
+                assertThat(state.duplicateIndices).containsExactly(0, 2)
+                assertThat(state.duplicateMemeIds).hasSize(2)
+                assertThat(state.duplicateMemeIds[0]).isEqualTo(10L)
+                assertThat(state.duplicateMemeIds[2]).isEqualTo(20L)
+                // No metadata changes since no emojis/title/description were set
+                assertThat(state.duplicatesWithChangedMetadata).isEmpty()
+            }
+        }
+
+    @Test
+    fun `UpdateDuplicateMetadata skips duplicates without metadata changes`() =
+        runTest {
+            val uriWithMeta = mockk<Uri> { every { lastPathSegment } returns "dupe_with.jpg" }
+            val uriWithoutMeta = mockk<Uri> { every { lastPathSegment } returns "dupe_without.jpg" }
+
+            coEvery { suggestEmojisUseCase(any()) } returns emptyList()
+            coEvery { extractTextUseCase(any()) } returns null
+            coEvery { findDuplicateMemeIdUseCase(uriWithMeta) } returns 10L
+            coEvery { findDuplicateMemeIdUseCase(uriWithoutMeta) } returns 20L
+            coEvery { updateMemeMetadataUseCase(any(), any()) } returns Result.success(Unit)
+
+            viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uriWithMeta, uriWithoutMeta)))
+            advanceUntilIdle()
+
+            // Only give the first image emojis
+            viewModel.onIntent(ImportIntent.EditImage(0))
+            advanceUntilIdle()
+            viewModel.onIntent(ImportIntent.AddEmoji(EmojiTag("🔥", "fire")))
+            viewModel.onIntent(ImportIntent.CloseEditor)
+            advanceUntilIdle()
+
+            viewModel.onIntent(ImportIntent.StartImport)
+            advanceUntilIdle()
+
+            viewModel.onIntent(ImportIntent.UpdateDuplicateMetadata)
+            advanceUntilIdle()
+
+            // Only the first image should have had its metadata updated
+            coVerify(exactly = 1) { updateMemeMetadataUseCase(10L, any()) }
+            // The second image (no metadata changes) should NOT be updated
+            coVerify(exactly = 0) { updateMemeMetadataUseCase(20L, any()) }
+        }
+
+    @Test
+    fun `UpdateDuplicateMetadata handles metadata update failure gracefully`() =
+        runTest {
+            val uri = mockk<Uri> { every { lastPathSegment } returns "dupe.jpg" }
+
+            coEvery { suggestEmojisUseCase(any()) } returns emptyList()
+            coEvery { extractTextUseCase(any()) } returns null
+            coEvery { findDuplicateMemeIdUseCase(uri) } returns 42L
+            coEvery { updateMemeMetadataUseCase(any(), any()) } returns
+                Result.failure(RuntimeException("DB error"))
+
+            viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uri)))
+            advanceUntilIdle()
+            viewModel.onIntent(ImportIntent.EditImage(0))
+            advanceUntilIdle()
+            viewModel.onIntent(ImportIntent.AddEmoji(EmojiTag("😂", "face_with_tears_of_joy")))
+            viewModel.onIntent(ImportIntent.CloseEditor)
+            advanceUntilIdle()
+
+            viewModel.onIntent(ImportIntent.StartImport)
+            advanceUntilIdle()
+
+            viewModel.effects.test {
+                viewModel.onIntent(ImportIntent.UpdateDuplicateMetadata)
+                advanceUntilIdle()
+
+                // When update fails, should still navigate to gallery (only dupe, no remaining)
+                val effect = awaitItem()
+                assertThat(effect).isEqualTo(ImportEffect.NavigateToGallery)
+            }
+        }
+
+    @Test
+    fun `duplicate check exception for one image does not block other checks`() =
+        runTest {
+            val uri1 = mockk<Uri> { every { lastPathSegment } returns "error.jpg" }
+            val uri2 = mockk<Uri> { every { lastPathSegment } returns "dupe.jpg" }
+
+            coEvery { suggestEmojisUseCase(any()) } returns emptyList()
+            coEvery { extractTextUseCase(any()) } returns null
+            // First image throws, second is a duplicate
+            coEvery { findDuplicateMemeIdUseCase(uri1) } throws IOException("Stream failed")
+            coEvery { findDuplicateMemeIdUseCase(uri2) } returns 42L
+
+            viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uri1, uri2)))
+            advanceUntilIdle()
+
+            viewModel.onIntent(ImportIntent.StartImport)
+            advanceUntilIdle()
+
+            // Should show duplicate dialog for the second image
+            viewModel.uiState.test {
+                val state = awaitItem()
+                assertThat(state.showDuplicateDialog).isTrue()
+                // Only the second image (index 1) is flagged as duplicate
+                assertThat(state.duplicateIndices).containsExactly(1)
+                assertThat(state.duplicateMemeIds[1]).isEqualTo(42L)
             }
         }
 }

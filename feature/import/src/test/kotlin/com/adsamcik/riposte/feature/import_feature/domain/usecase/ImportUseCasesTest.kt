@@ -251,6 +251,45 @@ class ImportUseCasesTest {
             assertThat(result).isNull()
         }
 
+    // CheckDuplicateUseCase tests
+
+    @Test
+    fun `CheckDuplicateUseCase returns true when repository detects duplicate`() =
+        runTest {
+            val uri = mockk<Uri>()
+            coEvery { repository.isDuplicate(uri) } returns true
+
+            val checkDuplicateUseCase = CheckDuplicateUseCase(repository)
+            val result = checkDuplicateUseCase(uri)
+
+            assertThat(result).isTrue()
+            coVerify { repository.isDuplicate(uri) }
+        }
+
+    @Test
+    fun `CheckDuplicateUseCase returns false when not a duplicate`() =
+        runTest {
+            val uri = mockk<Uri>()
+            coEvery { repository.isDuplicate(uri) } returns false
+
+            val checkDuplicateUseCase = CheckDuplicateUseCase(repository)
+            val result = checkDuplicateUseCase(uri)
+
+            assertThat(result).isFalse()
+        }
+
+    @Test
+    fun `CheckDuplicateUseCase delegates to repository isDuplicate`() =
+        runTest {
+            val uri = mockk<Uri>()
+            coEvery { repository.isDuplicate(uri) } returns false
+
+            val checkDuplicateUseCase = CheckDuplicateUseCase(repository)
+            checkDuplicateUseCase(uri)
+
+            coVerify(exactly = 1) { repository.isDuplicate(uri) }
+        }
+
     // UpdateMemeMetadataUseCase tests
 
     @Test
