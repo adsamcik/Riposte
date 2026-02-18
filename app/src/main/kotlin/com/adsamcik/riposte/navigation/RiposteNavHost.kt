@@ -14,6 +14,8 @@ import com.adsamcik.riposte.feature.gallery.navigation.memeDetailScreen
 import com.adsamcik.riposte.feature.gallery.navigation.navigateToMemeDetail
 import com.adsamcik.riposte.feature.import_feature.navigation.importScreen
 import com.adsamcik.riposte.feature.import_feature.navigation.navigateToImport
+import com.adsamcik.riposte.feature.settings.navigation.licensesScreen
+import com.adsamcik.riposte.feature.settings.navigation.navigateToLicenses
 import com.adsamcik.riposte.feature.settings.navigation.navigateToSettings
 import com.adsamcik.riposte.feature.settings.navigation.settingsScreen
 
@@ -76,6 +78,16 @@ fun RiposteNavHost(
 
         // Settings screen
         settingsScreen(
+            onNavigateBack = {
+                navController.popBackStack()
+            },
+            onNavigateToLicenses = {
+                navController.navigateToLicenses()
+            },
+        )
+
+        // Licenses screen
+        licensesScreen(
             onNavigateBack = {
                 navController.popBackStack()
             },

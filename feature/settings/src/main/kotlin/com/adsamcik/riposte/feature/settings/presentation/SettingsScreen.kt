@@ -43,6 +43,7 @@ import kotlinx.coroutines.flow.collectLatest
 @Composable
 fun SettingsScreen(
     onNavigateBack: () -> Unit,
+    onNavigateToLicenses: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -79,9 +80,7 @@ fun SettingsScreen(
                     snackbarHostState.showSnackbar(effect.message)
                 }
                 is SettingsEffect.NavigateToLicenses -> {
-                    snackbarHostState.showSnackbar(
-                        context.getString(R.string.settings_licenses_not_available),
-                    )
+                    onNavigateToLicenses()
                 }
                 is SettingsEffect.OpenUrl -> {
                     uriHandler.openUri(effect.url)

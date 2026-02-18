@@ -20,3 +20,6 @@ object ImportRoute
 // Settings Feature Routes
 @Serializable
 object SettingsRoute
+
+@Serializable
+object LicensesRoute

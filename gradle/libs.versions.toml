@@ -84,6 +84,9 @@ appcompat = "1.7.0"
 # Logging
 timber = "5.0.1"
 
+# Open Source Licenses
+aboutlibraries = "14.0.0-b02"
+
 # Code Quality Tools
 detekt = "1.23.8"
 ktlint = "1.5.0"
@@ -212,6 +215,9 @@ appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "a
 # Logging
 timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
 
+# Open Source Licenses
+aboutlibraries-compose-m3 = { group = "com.mikepenz", name = "aboutlibraries-compose-m3", version.ref = "aboutlibraries" }
+
 # Code Quality Tools
 detekt-formatting = { group = "io.gitlab.arturbosch.detekt", name = "detekt-formatting", version.ref = "detekt" }
 
@@ -242,5 +248,6 @@ ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 room = { id = "androidx.room", version.ref = "room" }
 baselineprofile = { id = "androidx.baselineprofile", version = "1.4.1" }
+aboutlibraries = { id = "com.mikepenz.aboutlibraries.plugin", version.ref = "aboutlibraries" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version = "14.0.1" }

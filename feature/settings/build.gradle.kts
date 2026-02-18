@@ -53,6 +53,9 @@ dependencies {
     // AppCompat for per-app language API
     implementation(libs.appcompat)
 
+    // Open Source Licenses
+    implementation(libs.aboutlibraries.compose.m3)
+
     // Testing
     testImplementation(libs.bundles.testing)
     testImplementation(libs.robolectric)
