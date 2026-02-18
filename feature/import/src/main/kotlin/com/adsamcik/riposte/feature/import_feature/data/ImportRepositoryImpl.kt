@@ -81,6 +81,9 @@ class ImportRepositoryImpl
                     val imageFile = File(memesDir, fileName)
                     val thumbnailFile = File(thumbnailsDir, "thumb_$fileName")
 
+                    // Hash original source bytes for deterministic duplicate detection
+                    val fileHash = calculateUriHash(uri)
+
                     // Copy and process image
                     val bitmap =
                         loadAndResizeBitmap(uri)
@@ -118,9 +121,6 @@ class ImportRepositoryImpl
                             null
                         }
                     xmpMetadata?.let { mlServices.xmpMetadataHandler.writeMetadata(imageFile.absolutePath, it) }
-
-                    // Calculate file hash for duplicate detection
-                    val fileHash = calculateFileHash(imageFile)
 
                     // Create database entity (embedding stored separately in meme_embeddings table)
                     val now = System.currentTimeMillis()
@@ -338,17 +338,8 @@ class ImportRepositoryImpl
         override suspend fun isDuplicate(uri: Uri): Boolean =
             withContext(Dispatchers.IO) {
                 try {
-                    val bitmap = loadAndResizeBitmap(uri) ?: return@withContext false
-                    val tempFile = File.createTempFile("dup_check_", ".jpg", context.cacheDir)
-                    try {
-                        FileOutputStream(tempFile).use { out ->
-                            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
-                        }
-                        val hash = calculateFileHash(tempFile)
-                        memeDao.memeExistsByHash(hash)
-                    } finally {
-                        tempFile.delete()
-                    }
+                    val hash = calculateUriHash(uri) ?: return@withContext false
+                    memeDao.memeExistsByHash(hash)
                 } catch (e: Exception) {
                     false
                 }
@@ -357,17 +348,8 @@ class ImportRepositoryImpl
         override suspend fun findDuplicateMemeId(uri: Uri): Long? =
             withContext(Dispatchers.IO) {
                 try {
-                    val bitmap = loadAndResizeBitmap(uri) ?: return@withContext null
-                    val tempFile = File.createTempFile("dup_check_", ".jpg", context.cacheDir)
-                    try {
-                        FileOutputStream(tempFile).use { out ->
-                            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
-                        }
-                        val hash = calculateFileHash(tempFile)
-                        memeDao.getMemeByHash(hash)?.id
-                    } finally {
-                        tempFile.delete()
-                    }
+                    val hash = calculateUriHash(uri) ?: return@withContext null
+                    memeDao.getMemeByHash(hash)?.id
                 } catch (e: Exception) {
                     null
                 }
@@ -517,6 +499,24 @@ class ImportRepositoryImpl
                     digest.update(buffer, 0, read)
                 }
             }
+            return digest.digest().joinToString("") { "%02x".format(it) }
+        }
+
+        /**
+         * Hash the raw bytes from a content URI for deterministic duplicate detection.
+         * Unlike [calculateFileHash], this hashes the original source bytes before any
+         * bitmap decode/re-encode, ensuring the same source file always produces the
+         * same hash regardless of image format or device-specific decoding behavior.
+         */
+        private fun calculateUriHash(uri: Uri): String? {
+            val digest = MessageDigest.getInstance("SHA-256")
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                val buffer = ByteArray(8192)
+                var read: Int
+                while (input.read(buffer).also { read = it } != -1) {
+                    digest.update(buffer, 0, read)
+                }
+            } ?: return null
             return digest.digest().joinToString("") { "%02x".format(it) }
         }
 

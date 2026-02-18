@@ -14,6 +14,7 @@ import com.adsamcik.riposte.core.model.MemeMetadata
 import com.google.common.truth.Truth.assertThat
 import io.mockk.MockKAnnotations
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.mockk
@@ -151,7 +152,7 @@ class ImportRepositoryImplEdgeCasesTest {
             val result = repoWithMock.importImage(uri, null)
 
             assertThat(result.isFailure).isTrue()
-            assertThat(result.exceptionOrNull()?.message).contains("Failed to load image")
+            assertThat(result.exceptionOrNull()).isInstanceOf(SecurityException::class.java)
         }
 
     @Test
@@ -486,6 +487,250 @@ class ImportRepositoryImplEdgeCasesTest {
             val result = repoWithMock.suggestEmojis(uri)
 
             assertThat(result).isEmpty()
+        }
+
+    // ==================== Duplicate Detection Tests ====================
+
+    @Test
+    fun `isDuplicate returns true when same file bytes already imported`() =
+        runTest {
+            val uri = createTestImageUri()
+
+            coEvery { memeDao.memeExistsByHash(any()) } returns true
+
+            val result = repository.isDuplicate(uri)
+
+            assertThat(result).isTrue()
+            coVerify { memeDao.memeExistsByHash(any()) }
+        }
+
+    @Test
+    fun `isDuplicate returns false when file bytes are new`() =
+        runTest {
+            val uri = createTestImageUri()
+
+            coEvery { memeDao.memeExistsByHash(any()) } returns false
+
+            val result = repository.isDuplicate(uri)
+
+            assertThat(result).isFalse()
+        }
+
+    @Test
+    fun `isDuplicate returns false when URI stream is null`() =
+        runTest {
+            val mockContext = mockk<Context>(relaxed = true)
+            val mockContentResolver = mockk<ContentResolver>()
+
+            every { mockContext.contentResolver } returns mockContentResolver
+            every { mockContext.filesDir } returns tempFolder.newFolder("dup_null")
+            every { mockContentResolver.openInputStream(any()) } returns null
+
+            val repoWithMock =
+                ImportRepositoryImpl(
+                    context = mockContext,
+                    memeDao = memeDao,
+                    emojiTagDao = emojiTagDao,
+                    importRequestDao = importRequestDao,
+                    mlServices =
+                        ImportMlServices(
+                            textRecognizer = textRecognizer,
+                            embeddingManager = embeddingManager,
+                            xmpMetadataHandler = xmpMetadataHandler,
+                        ),
+                )
+
+            val uri = mockk<Uri>()
+            val result = repoWithMock.isDuplicate(uri)
+
+            assertThat(result).isFalse()
+        }
+
+    @Test
+    fun `isDuplicate returns false when exception is thrown`() =
+        runTest {
+            val mockContext = mockk<Context>(relaxed = true)
+            val mockContentResolver = mockk<ContentResolver>()
+
+            every { mockContext.contentResolver } returns mockContentResolver
+            every { mockContext.filesDir } returns tempFolder.newFolder("dup_err")
+            every { mockContentResolver.openInputStream(any()) } throws IOException("Stream error")
+
+            val repoWithMock =
+                ImportRepositoryImpl(
+                    context = mockContext,
+                    memeDao = memeDao,
+                    emojiTagDao = emojiTagDao,
+                    importRequestDao = importRequestDao,
+                    mlServices =
+                        ImportMlServices(
+                            textRecognizer = textRecognizer,
+                            embeddingManager = embeddingManager,
+                            xmpMetadataHandler = xmpMetadataHandler,
+                        ),
+                )
+
+            val uri = mockk<Uri>()
+            val result = repoWithMock.isDuplicate(uri)
+
+            assertThat(result).isFalse()
+        }
+
+    @Test
+    fun `findDuplicateMemeId returns meme ID when duplicate exists`() =
+        runTest {
+            val uri = createTestImageUri()
+            val existingMeme =
+                com.adsamcik.riposte.core.database.entity.MemeEntity(
+                    id = 42L,
+                    filePath = "/fake/path.jpg",
+                    fileName = "test.jpg",
+                    mimeType = "image/jpeg",
+                    width = 100,
+                    height = 100,
+                    fileSizeBytes = 1000,
+                    importedAt = System.currentTimeMillis(),
+                    emojiTagsJson = "[]",
+                    fileHash = "abc123",
+                )
+
+            coEvery { memeDao.getMemeByHash(any()) } returns existingMeme
+
+            val result = repository.findDuplicateMemeId(uri)
+
+            assertThat(result).isEqualTo(42L)
+        }
+
+    @Test
+    fun `findDuplicateMemeId returns null when no duplicate exists`() =
+        runTest {
+            val uri = createTestImageUri()
+
+            coEvery { memeDao.getMemeByHash(any()) } returns null
+
+            val result = repository.findDuplicateMemeId(uri)
+
+            assertThat(result).isNull()
+        }
+
+    @Test
+    fun `findDuplicateMemeId returns null when URI stream is null`() =
+        runTest {
+            val mockContext = mockk<Context>(relaxed = true)
+            val mockContentResolver = mockk<ContentResolver>()
+
+            every { mockContext.contentResolver } returns mockContentResolver
+            every { mockContext.filesDir } returns tempFolder.newFolder("dup_find_null")
+            every { mockContentResolver.openInputStream(any()) } returns null
+
+            val repoWithMock =
+                ImportRepositoryImpl(
+                    context = mockContext,
+                    memeDao = memeDao,
+                    emojiTagDao = emojiTagDao,
+                    importRequestDao = importRequestDao,
+                    mlServices =
+                        ImportMlServices(
+                            textRecognizer = textRecognizer,
+                            embeddingManager = embeddingManager,
+                            xmpMetadataHandler = xmpMetadataHandler,
+                        ),
+                )
+
+            val uri = mockk<Uri>()
+            val result = repoWithMock.findDuplicateMemeId(uri)
+
+            assertThat(result).isNull()
+        }
+
+    @Test
+    fun `isDuplicate produces consistent hash for identical content`() =
+        runTest {
+            // Create two URIs with identical bytes
+            val file1 = File(context.cacheDir, "dup_test_a_${System.currentTimeMillis()}.jpg")
+            file1.writeBytes(validJpegBytes)
+            val uri1 = Uri.fromFile(file1)
+
+            val file2 = File(context.cacheDir, "dup_test_b_${System.currentTimeMillis()}.jpg")
+            file2.writeBytes(validJpegBytes)
+            val uri2 = Uri.fromFile(file2)
+
+            // Capture the hashes passed to the DAO for both calls
+            val capturedHashes = mutableListOf<String>()
+            coEvery { memeDao.memeExistsByHash(capture(capturedHashes)) } returns false
+
+            repository.isDuplicate(uri1)
+            repository.isDuplicate(uri2)
+
+            assertThat(capturedHashes).hasSize(2)
+            assertThat(capturedHashes[0]).isEqualTo(capturedHashes[1])
+        }
+
+    @Test
+    fun `isDuplicate produces different hash for different content`() =
+        runTest {
+            val file1 = File(context.cacheDir, "dup_diff_a_${System.currentTimeMillis()}.dat")
+            file1.writeBytes(byteArrayOf(1, 2, 3, 4, 5))
+            val uri1 = Uri.fromFile(file1)
+
+            val file2 = File(context.cacheDir, "dup_diff_b_${System.currentTimeMillis()}.dat")
+            file2.writeBytes(byteArrayOf(6, 7, 8, 9, 10))
+            val uri2 = Uri.fromFile(file2)
+
+            val capturedHashes = mutableListOf<String>()
+            coEvery { memeDao.memeExistsByHash(capture(capturedHashes)) } returns false
+
+            repository.isDuplicate(uri1)
+            repository.isDuplicate(uri2)
+
+            assertThat(capturedHashes).hasSize(2)
+            assertThat(capturedHashes[0]).isNotEqualTo(capturedHashes[1])
+        }
+
+    @Test
+    fun `importImage stores hash derived from original source bytes`() =
+        runTest {
+            val uri = createTestImageUri()
+            val memeEntitySlot = io.mockk.slot<com.adsamcik.riposte.core.database.entity.MemeEntity>()
+
+            coEvery { memeDao.insertMeme(capture(memeEntitySlot)) } returns 1L
+            coEvery { textRecognizer.recognizeText(any<Bitmap>()) } returns null
+
+            repository.importImage(uri, null)
+
+            // Verify the stored hash is not null and looks like a valid SHA-256 hex string
+            val storedHash = memeEntitySlot.captured.fileHash
+            assertThat(storedHash).isNotNull()
+            assertThat(storedHash).hasLength(64) // SHA-256 = 64 hex chars
+            assertThat(storedHash).matches("[0-9a-f]{64}")
+        }
+
+    @Test
+    fun `importImage and isDuplicate use same hash for same source`() =
+        runTest {
+            // First, import an image and capture the hash stored in the DB
+            val uri = createTestImageUri()
+            val memeEntitySlot = io.mockk.slot<com.adsamcik.riposte.core.database.entity.MemeEntity>()
+
+            coEvery { memeDao.insertMeme(capture(memeEntitySlot)) } returns 1L
+            coEvery { textRecognizer.recognizeText(any<Bitmap>()) } returns null
+
+            repository.importImage(uri, null)
+            val importHash = memeEntitySlot.captured.fileHash
+
+            // Now check duplicate for the same file and capture the hash used for lookup
+            val lookupHash = io.mockk.slot<String>()
+            coEvery { memeDao.memeExistsByHash(capture(lookupHash)) } returns false
+
+            // Re-create the URI with the same bytes to simulate the same file
+            val file2 = File(context.cacheDir, "dup_match_${System.currentTimeMillis()}.jpg")
+            file2.writeBytes(validJpegBytes)
+            val uri2 = Uri.fromFile(file2)
+
+            repository.isDuplicate(uri2)
+
+            // The hash used for lookup must match the hash stored during import
+            assertThat(lookupHash.captured).isEqualTo(importHash)
         }
 
     // ==================== Helper Methods ====================
