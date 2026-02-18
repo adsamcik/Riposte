@@ -642,5 +642,101 @@ class EmojiTagDaoTest {
             }
         }
 
+    @Test
+    fun `getEmojisOrderedByUsage sums usage across multiple memes for same emoji`() =
+        runTest {
+            val meme1Id = memeDao.insertMeme(createMeme(filePath = "/storage/m1.png", useCount = 3))
+            val meme2Id = memeDao.insertMeme(createMeme(filePath = "/storage/m2.png", useCount = 7))
+            val meme3Id = memeDao.insertMeme(createMeme(filePath = "/storage/m3.png", useCount = 2))
+
+            emojiTagDao.insertEmojiTags(
+                listOf(
+                    createEmojiTag(meme1Id, "😂", "face_with_tears_of_joy"),
+                    createEmojiTag(meme2Id, "😂", "face_with_tears_of_joy"),
+                    createEmojiTag(meme3Id, "🔥", "fire"),
+                ),
+            )
+
+            emojiTagDao.getEmojisOrderedByUsage().test {
+                val result = awaitItem()
+                assertThat(result).hasSize(2)
+                // 😂 appears on meme1(3) + meme2(7) = 10 total, 🔥 on meme3(2)
+                assertThat(result[0].emoji).isEqualTo("😂")
+                assertThat(result[0].totalUsage).isEqualTo(10)
+                assertThat(result[1].emoji).isEqualTo("🔥")
+                assertThat(result[1].totalUsage).isEqualTo(2)
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `getEmojisOrderedByUsage includes emoji name in results`() =
+        runTest {
+            val memeId = memeDao.insertMeme(createMeme(filePath = "/storage/m1.png", useCount = 5))
+
+            emojiTagDao.insertEmojiTags(
+                listOf(createEmojiTag(memeId, "🎉", "party_popper")),
+            )
+
+            emojiTagDao.getEmojisOrderedByUsage().test {
+                val result = awaitItem()
+                assertThat(result).hasSize(1)
+                assertThat(result[0].emoji).isEqualTo("🎉")
+                assertThat(result[0].emojiName).isEqualTo("party_popper")
+                assertThat(result[0].totalUsage).isEqualTo(5)
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `getEmojisOrderedByUsage with mixed zero and nonzero usage orders correctly`() =
+        runTest {
+            val meme1Id = memeDao.insertMeme(createMeme(filePath = "/storage/m1.png", useCount = 0))
+            val meme2Id = memeDao.insertMeme(createMeme(filePath = "/storage/m2.png", useCount = 1))
+            val meme3Id = memeDao.insertMeme(createMeme(filePath = "/storage/m3.png", useCount = 0))
+
+            emojiTagDao.insertEmojiTags(
+                listOf(
+                    createEmojiTag(meme1Id, "😂", "face_with_tears_of_joy"),
+                    createEmojiTag(meme2Id, "🔥", "fire"),
+                    createEmojiTag(meme3Id, "🎉", "party_popper"),
+                ),
+            )
+
+            emojiTagDao.getEmojisOrderedByUsage().test {
+                val result = awaitItem()
+                assertThat(result).hasSize(3)
+                // 🔥 has usage 1, others have 0
+                assertThat(result[0].emoji).isEqualTo("🔥")
+                assertThat(result[0].totalUsage).isEqualTo(1)
+                // Zero-usage emojis follow (order among them is secondary)
+                assertThat(result[1].totalUsage).isEqualTo(0)
+                assertThat(result[2].totalUsage).isEqualTo(0)
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `getEmojisOrderedByUsage with same emoji on many memes aggregates all`() =
+        runTest {
+            val memeIds = (1..5).map { i ->
+                memeDao.insertMeme(createMeme(filePath = "/storage/m$i.png", useCount = i))
+            }
+
+            // Tag all memes with the same emoji
+            emojiTagDao.insertEmojiTags(
+                memeIds.map { createEmojiTag(it, "😂", "face_with_tears_of_joy") },
+            )
+
+            emojiTagDao.getEmojisOrderedByUsage().test {
+                val result = awaitItem()
+                assertThat(result).hasSize(1)
+                // Sum of 1+2+3+4+5 = 15
+                assertThat(result[0].emoji).isEqualTo("😂")
+                assertThat(result[0].totalUsage).isEqualTo(15)
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
     // endregion
 }

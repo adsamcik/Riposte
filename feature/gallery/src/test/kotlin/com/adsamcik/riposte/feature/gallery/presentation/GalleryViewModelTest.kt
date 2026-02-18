@@ -981,6 +981,46 @@ class GalleryViewModelTest {
             assertThat(viewModel.uiState.value.uniqueEmojis).isEmpty()
         }
 
+    @Test
+    fun `rapid preference toggles settle on final value`() =
+        runTest {
+            val usageEmojis = listOf("🔥" to 30, "😂" to 15)
+            val tagCountEmojis = listOf("😂" to 5, "🔥" to 3)
+            every { getAllEmojisWithCountsUseCase() } returns flowOf(usageEmojis)
+            every { getAllEmojisWithTagCountsUseCase() } returns flowOf(tagCountEmojis)
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            // Rapidly toggle preferences
+            preferencesFlow.value = defaultPreferences.copy(sortEmojisByUsage = false)
+            preferencesFlow.value = defaultPreferences.copy(sortEmojisByUsage = true)
+            preferencesFlow.value = defaultPreferences.copy(sortEmojisByUsage = false)
+            advanceUntilIdle()
+
+            // Should settle on last value (false = tag count)
+            assertThat(viewModel.uiState.value.uniqueEmojis).isEqualTo(tagCountEmojis)
+        }
+
+    @Test
+    fun `emoji sort preference does not affect other state fields`() =
+        runTest {
+            val usageEmojis = listOf("🔥" to 10)
+            every { getAllEmojisWithCountsUseCase() } returns flowOf(usageEmojis)
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            val stateBefore = viewModel.uiState.value
+            preferencesFlow.value = defaultPreferences.copy(sortEmojisByUsage = false)
+            advanceUntilIdle()
+
+            val stateAfter = viewModel.uiState.value
+            // Core state fields should be unaffected by emoji sort toggle
+            assertThat(stateAfter.isLoading).isEqualTo(stateBefore.isLoading)
+            assertThat(stateAfter.filter).isEqualTo(stateBefore.filter)
+        }
+
     // endregion
 
     // region Helper Functions

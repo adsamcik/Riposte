@@ -401,5 +401,49 @@ class DefaultSettingsRepositoryTest {
             assertThat(appPrefsSlot.captured.darkMode).isEqualTo(DarkMode.DARK)
         }
 
+    @Test
+    fun `export then import round-trip preserves sortEmojisByUsage true`() =
+        runTest {
+            appPreferencesFlow.value =
+                AppPreferences(
+                    darkMode = DarkMode.SYSTEM,
+                    dynamicColors = true,
+                    saveSearchHistory = true,
+                    sortEmojisByUsage = true,
+                )
+
+            val exported = repository.exportPreferences()
+
+            val appPrefsSlot = slot<AppPreferences>()
+            coEvery { preferencesDataStore.updateAppPreferences(capture(appPrefsSlot)) } returns Unit
+
+            val result = repository.importPreferences(exported)
+
+            assertThat(result.isSuccess).isTrue()
+            assertThat(appPrefsSlot.captured.sortEmojisByUsage).isTrue()
+        }
+
+    @Test
+    fun `export then import round-trip preserves sortEmojisByUsage false`() =
+        runTest {
+            appPreferencesFlow.value =
+                AppPreferences(
+                    darkMode = DarkMode.SYSTEM,
+                    dynamicColors = true,
+                    saveSearchHistory = true,
+                    sortEmojisByUsage = false,
+                )
+
+            val exported = repository.exportPreferences()
+
+            val appPrefsSlot = slot<AppPreferences>()
+            coEvery { preferencesDataStore.updateAppPreferences(capture(appPrefsSlot)) } returns Unit
+
+            val result = repository.importPreferences(exported)
+
+            assertThat(result.isSuccess).isTrue()
+            assertThat(appPrefsSlot.captured.sortEmojisByUsage).isFalse()
+        }
+
     // endregion
 }
