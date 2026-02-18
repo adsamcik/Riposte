@@ -256,10 +256,9 @@ class SearchDelegateTest {
         }
 
     @Test
-    fun `falls back to text search on UnsatisfiedLinkError`() =
+    fun `UnsatisfiedLinkError surfaces error instead of falling back`() =
         runTest(mainDispatcherRule.testDispatcher) {
             coEvery { searchUseCases.hybridSearch(any(), any()) } throws UnsatisfiedLinkError("ML not available")
-            every { searchUseCases.search("cat") } returns flowOf(testSearchResults.take(1))
 
             val scope = createDelegateScope()
             delegate.init(scope)
@@ -271,7 +270,32 @@ class SearchDelegateTest {
 
             val state = delegate.state.value
             assertThat(state.hasSearched).isTrue()
-            assertThat(state.results).hasSize(1)
+            assertThat(state.isSearching).isFalse()
+            assertThat(state.errorMessage).isEqualTo("Semantic search not supported on this device")
+            assertThat(state.results).isEmpty()
+            scope.cancel()
+        }
+
+    @Test
+    fun `ExceptionInInitializerError surfaces error instead of falling back`() =
+        runTest(mainDispatcherRule.testDispatcher) {
+            coEvery {
+                searchUseCases.hybridSearch(any(), any())
+            } throws ExceptionInInitializerError(RuntimeException("init failed"))
+
+            val scope = createDelegateScope()
+            delegate.init(scope)
+            advanceUntilIdle()
+
+            delegate.onIntent(GalleryIntent.UpdateSearchQuery("cat"), scope)
+            advanceTimeBy(400)
+            advanceUntilIdle()
+
+            val state = delegate.state.value
+            assertThat(state.hasSearched).isTrue()
+            assertThat(state.isSearching).isFalse()
+            assertThat(state.errorMessage).isEqualTo("Search index failed to load")
+            assertThat(state.results).isEmpty()
             scope.cancel()
         }
 

@@ -187,13 +187,6 @@ class EmbeddingManager
             val versionCounts = memeEmbeddingDao.getEmbeddingCountByModelVersion()
 
             val rawError = embeddingGenerator.initializationError
-            val confirmedError =
-                if (rawError != null) {
-                    val confirmed = versionManager.isErrorConfirmedForVersion(getAppVersionCode())
-                    if (confirmed) rawError else null
-                } else {
-                    null
-                }
 
             return EmbeddingStatistics(
                 validEmbeddingCount = validCount,
@@ -201,7 +194,7 @@ class EmbeddingManager
                 regenerationNeededCount = regenerationCount,
                 currentModelVersion = versionManager.currentModelVersion,
                 embeddingsByVersion = versionCounts.associate { it.modelVersion to it.count },
-                modelError = confirmedError,
+                modelError = rawError,
             )
         }
 

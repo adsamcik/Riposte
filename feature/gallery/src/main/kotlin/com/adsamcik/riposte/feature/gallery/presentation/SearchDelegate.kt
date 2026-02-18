@@ -161,16 +161,24 @@ class SearchDelegate
                     }
 
                     searchUseCases.addRecentSearch(query)
-                } catch (
-                    @Suppress("SwallowedException") e: UnsatisfiedLinkError,
-                ) {
-                    Timber.w(e, "Native library not available, falling back to text search")
-                    fallbackToTextSearch(query, startTime, searchScope)
-                } catch (
-                    @Suppress("SwallowedException") e: ExceptionInInitializerError,
-                ) {
-                    Timber.w(e, "Embedding model init failed, falling back to text search")
-                    fallbackToTextSearch(query, startTime, searchScope)
+                } catch (e: UnsatisfiedLinkError) {
+                    Timber.e(e, "Native library not available for semantic search")
+                    _state.update {
+                        it.copy(
+                            isSearching = false,
+                            hasSearched = true,
+                            errorMessage = "Semantic search not supported on this device",
+                        )
+                    }
+                } catch (e: ExceptionInInitializerError) {
+                    Timber.e(e, "Embedding model initialization failed")
+                    _state.update {
+                        it.copy(
+                            isSearching = false,
+                            hasSearched = true,
+                            errorMessage = "Search index failed to load",
+                        )
+                    }
                 } catch (e: Exception) {
                     Timber.e(e, "Search failed")
                     _state.update {
@@ -180,37 +188,6 @@ class SearchDelegate
                             errorMessage = e.message ?: "Search failed",
                         )
                     }
-                }
-            }
-        }
-
-        private suspend fun fallbackToTextSearch(
-            query: String,
-            startTime: Long,
-            scope: CoroutineScope,
-        ) {
-            try {
-                searchUseCases.search(query).collectLatest { results ->
-                    val endTime = System.currentTimeMillis()
-                    _state.update {
-                        it.copy(
-                            results = results,
-                            totalResultCount = results.size,
-                            searchDurationMs = endTime - startTime,
-                            isSearching = false,
-                            hasSearched = true,
-                            isTextOnly = true,
-                        )
-                    }
-                }
-            } catch (e: Exception) {
-                Timber.e(e, "Fallback text search also failed")
-                _state.update {
-                    it.copy(
-                        isSearching = false,
-                        hasSearched = true,
-                        errorMessage = e.message ?: "Search failed",
-                    )
                 }
             }
         }
