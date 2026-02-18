@@ -307,6 +307,54 @@ class EmbeddingManagerTest {
             }
         }
 
+    @Test
+    fun `getStatistics with empty error string surfaces as non-null modelError`() =
+        runTest {
+            // Edge case: empty string error should still be surfaced, not treated as null
+            every { embeddingGenerator.initializationError } returns ""
+            coEvery { memeEmbeddingDao.countValidEmbeddings() } returns 0
+            coEvery { memeEmbeddingDao.countMemesWithoutEmbeddings() } returns 10
+            coEvery { memeEmbeddingDao.countEmbeddingsNeedingRegeneration() } returns 0
+            coEvery { memeEmbeddingDao.getEmbeddingCountByModelVersion() } returns emptyList()
+
+            val stats = embeddingManager.getStatistics()
+
+            assertThat(stats.modelError).isEqualTo("")
+        }
+
+    @Test
+    fun `getStatistics with error still returns correct embedding counts`() =
+        runTest {
+            // When model has error, existing embedding counts should still be accurate
+            every { embeddingGenerator.initializationError } returns "Model failed to load"
+            coEvery { memeEmbeddingDao.countValidEmbeddings() } returns 42
+            coEvery { memeEmbeddingDao.countMemesWithoutEmbeddings() } returns 8
+            coEvery { memeEmbeddingDao.countEmbeddingsNeedingRegeneration() } returns 3
+            coEvery { memeEmbeddingDao.getEmbeddingCountByModelVersion() } returns emptyList()
+
+            val stats = embeddingManager.getStatistics()
+
+            assertThat(stats.modelError).isEqualTo("Model failed to load")
+            assertThat(stats.validEmbeddingCount).isEqualTo(42)
+            assertThat(stats.pendingEmbeddingCount).isEqualTo(8)
+        }
+
+    @Test
+    fun `getStatistics called multiple times returns consistent error`() =
+        runTest {
+            every { embeddingGenerator.initializationError } returns "Model not compatible with this device"
+            coEvery { memeEmbeddingDao.countValidEmbeddings() } returns 0
+            coEvery { memeEmbeddingDao.countMemesWithoutEmbeddings() } returns 10
+            coEvery { memeEmbeddingDao.countEmbeddingsNeedingRegeneration() } returns 0
+            coEvery { memeEmbeddingDao.getEmbeddingCountByModelVersion() } returns emptyList()
+
+            val stats1 = embeddingManager.getStatistics()
+            val stats2 = embeddingManager.getStatistics()
+
+            assertThat(stats1.modelError).isEqualTo(stats2.modelError)
+            assertThat(stats1.modelError).isEqualTo("Model not compatible with this device")
+        }
+
     // endregion
 
     // region Foreground Resume Tests
