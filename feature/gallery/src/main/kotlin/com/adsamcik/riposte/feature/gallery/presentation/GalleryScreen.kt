@@ -538,14 +538,22 @@ private fun GalleryScreenContent(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center,
                     ) {
-                        EmptyState(
-                            icon = "🖼️",
-                            title = stringResource(R.string.gallery_empty_title),
-                            message = stringResource(R.string.gallery_empty_message),
-                            actionLabel = stringResource(R.string.gallery_button_import_memes),
-                            onAction = { onIntent(GalleryIntent.NavigateToImport) },
-                            primaryAction = true,
-                        )
+                        if (uiState.filter is GalleryFilter.Favorites) {
+                            EmptyState(
+                                icon = "❤️",
+                                title = stringResource(R.string.gallery_favorites_empty_title),
+                                message = stringResource(R.string.gallery_favorites_empty_message),
+                            )
+                        } else {
+                            EmptyState(
+                                icon = "🖼️",
+                                title = stringResource(R.string.gallery_empty_title),
+                                message = stringResource(R.string.gallery_empty_message),
+                                actionLabel = stringResource(R.string.gallery_button_import_memes),
+                                onAction = { onIntent(GalleryIntent.NavigateToImport) },
+                                primaryAction = true,
+                            )
+                        }
                     }
                 }
                 uiState.usePaging && pagedMemes != null -> {
@@ -572,14 +580,22 @@ private fun GalleryScreenContent(
                                 modifier = Modifier.fillMaxSize(),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                EmptyState(
-                                    icon = "🖼️",
-                                    title = stringResource(R.string.gallery_empty_title),
-                                    message = stringResource(R.string.gallery_empty_message),
-                                    actionLabel = stringResource(R.string.gallery_button_import_memes),
-                                    onAction = { onIntent(GalleryIntent.NavigateToImport) },
-                                    primaryAction = true,
-                                )
+                                if (uiState.filter is GalleryFilter.Favorites) {
+                                    EmptyState(
+                                        icon = "❤️",
+                                        title = stringResource(R.string.gallery_favorites_empty_title),
+                                        message = stringResource(R.string.gallery_favorites_empty_message),
+                                    )
+                                } else {
+                                    EmptyState(
+                                        icon = "🖼️",
+                                        title = stringResource(R.string.gallery_empty_title),
+                                        message = stringResource(R.string.gallery_empty_message),
+                                        actionLabel = stringResource(R.string.gallery_button_import_memes),
+                                        onAction = { onIntent(GalleryIntent.NavigateToImport) },
+                                        primaryAction = true,
+                                    )
+                                }
                             }
                         }
                         else -> {
@@ -774,11 +790,15 @@ private fun GalleryContent(
     gridState: LazyGridState = rememberLazyGridState(),
     gridContent: LazyGridScope.() -> Unit,
 ) {
+    val isSearching = uiState.screenMode == ScreenMode.Searching
+    val isScrollingUp = gridState.isScrollingUp()
+
     Column {
         GalleryEmojiFilterRail(
             uiState = uiState,
             uniqueEmojis = uniqueEmojis,
             onIntent = onIntent,
+            visible = isSearching || isScrollingUp,
         )
 
         Box {
@@ -807,6 +827,7 @@ private fun GalleryEmojiFilterRail(
     uiState: GalleryUiState,
     uniqueEmojis: List<Pair<String, Int>>,
     onIntent: (GalleryIntent) -> Unit,
+    visible: Boolean = true,
 ) {
     val showEmojiRail = !uiState.isSelectionMode
 
@@ -819,7 +840,11 @@ private fun GalleryEmojiFilterRail(
             if (uniqueEmojis.any { it.first == query }) query else null
         }
 
-        if (uniqueEmojis.isNotEmpty() || showFavoritesChip) {
+        AnimatedVisibility(
+            visible = visible && (uniqueEmojis.isNotEmpty() || showFavoritesChip),
+            enter = slideInVertically(animationSpec = tween(durationMillis = 200)) { -it } + fadeIn(animationSpec = tween(durationMillis = 200)),
+            exit = slideOutVertically(animationSpec = tween(durationMillis = 200)) { -it } + fadeOut(animationSpec = tween(durationMillis = 200)),
+        ) {
             EmojiFilterRail(
                 emojis = uniqueEmojis,
                 activeFilter = activeEmojiFilter,
@@ -1442,6 +1467,28 @@ private val previewMemes =
         ),
         previewMeme.copy(id = 3L, title = "Drake meme", isFavorite = false),
     )
+
+/**
+ * Returns whether the user is scrolling up or the list is at the top.
+ * Used to auto-hide the emoji filter rail when scrolling down in the gallery.
+ */
+@Composable
+private fun LazyGridState.isScrollingUp(): Boolean {
+    var previousIndex by remember(this) { mutableStateOf(firstVisibleItemIndex) }
+    var previousScrollOffset by remember(this) { mutableStateOf(firstVisibleItemScrollOffset) }
+    return remember(this) {
+        derivedStateOf {
+            if (previousIndex != firstVisibleItemIndex) {
+                previousIndex > firstVisibleItemIndex
+            } else {
+                previousScrollOffset >= firstVisibleItemScrollOffset
+            }.also {
+                previousIndex = firstVisibleItemIndex
+                previousScrollOffset = firstVisibleItemScrollOffset
+            }
+        }
+    }.value
+}
 
 @Preview(name = "Loading", showBackground = true)
 @Composable
