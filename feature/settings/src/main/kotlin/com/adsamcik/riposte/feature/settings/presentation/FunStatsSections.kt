@@ -329,7 +329,6 @@ private fun MomentumSparkline(
     modifier: Modifier = Modifier,
 ) {
     val lineColor = MaterialTheme.colorScheme.primary
-    val dotColor = MaterialTheme.colorScheme.primary
     val currentDotColor = MaterialTheme.colorScheme.tertiary
     val gridColor = MaterialTheme.colorScheme.outlineVariant
 
@@ -338,8 +337,10 @@ private fun MomentumSparkline(
 
         val maxVal = (data.maxOrNull() ?: 1).coerceAtLeast(1).toFloat()
         val pointCount = data.size
-        val stepX = size.width / (pointCount - 1).coerceAtLeast(1)
+        val dotRadius = 4.dp.toPx()
         val padding = 4.dp.toPx()
+        val plotWidth = size.width - 2 * dotRadius
+        val stepX = plotWidth / (pointCount - 1).coerceAtLeast(1)
 
         // Grid line
         drawLine(
@@ -351,16 +352,16 @@ private fun MomentumSparkline(
 
         if (pointCount < 2) {
             // Single dot
-            val y = size.height - padding - (data[0] / maxVal * (size.height - 2 * padding))
-            drawCircle(currentDotColor, radius = 4.dp.toPx(), center = Offset(size.width / 2, y))
+            val y = size.height - padding - (data[0].toFloat() / maxVal * (size.height - 2 * padding))
+            drawCircle(currentDotColor, radius = dotRadius, center = Offset(size.width / 2, y))
             return@Canvas
         }
 
         val path = Path()
         val points =
             data.mapIndexed { index, value ->
-                val x = index * stepX
-                val y = size.height - padding - (value / maxVal * (size.height - 2 * padding))
+                val x = dotRadius + index * stepX
+                val y = size.height - padding - (value.toFloat() / maxVal * (size.height - 2 * padding))
                 Offset(x, y)
             }
 
@@ -384,8 +385,8 @@ private fun MomentumSparkline(
         points.forEachIndexed { index, point ->
             val isCurrentWeek = index == points.lastIndex
             drawCircle(
-                color = if (isCurrentWeek) currentDotColor else dotColor,
-                radius = if (isCurrentWeek) 4.dp.toPx() else 3.dp.toPx(),
+                color = if (isCurrentWeek) currentDotColor else lineColor,
+                radius = if (isCurrentWeek) dotRadius else 3.dp.toPx(),
                 center = point,
             )
         }
