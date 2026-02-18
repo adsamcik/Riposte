@@ -181,7 +181,10 @@ private fun VibeRow(
                             .weight(1f)
                             .height(8.dp),
                     color = MaterialTheme.colorScheme.primary,
-                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                    trackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    strokeCap = StrokeCap.Butt,
+                    gapSize = 0.dp,
+                    drawStopIndicator = {},
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(
