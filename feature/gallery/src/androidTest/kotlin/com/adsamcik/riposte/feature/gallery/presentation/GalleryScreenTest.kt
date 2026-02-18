@@ -584,7 +584,7 @@ class GalleryScreenTest {
     }
 
     @Test
-    fun galleryScreen_hidesEmojiFilterRail_whenSearchNotFocusedAndBrowsing() {
+    fun galleryScreen_showsEmojiFilterRail_whenBrowsingAndNotScrolled() {
         composeTestRule.setContent {
             RiposteTheme {
                 GalleryScreen(
@@ -604,10 +604,8 @@ class GalleryScreenTest {
             }
         }
 
-        composeTestRule.onAllNodesWithTag("EmojiFilterRail")
-            .fetchSemanticsNodes().let { nodes ->
-                assertThat(nodes).isEmpty()
-            }
+        // Emoji rail should be visible in browsing mode when not scrolled
+        composeTestRule.onNodeWithTag("EmojiFilterRail").assertIsDisplayed()
     }
 
     @Test
@@ -634,6 +632,188 @@ class GalleryScreenTest {
 
         assertThat(receivedIntent).isInstanceOf(GalleryIntent.SearchFieldFocusChanged::class.java)
         assertThat((receivedIntent as GalleryIntent.SearchFieldFocusChanged).isFocused).isTrue()
+    }
+
+    // ============ Emoji Rail Scroll-Hide / Transparent Top Bar Tests ============
+
+    @Test
+    fun galleryScreen_showsEmojiFilterRail_inSearchMode() {
+        composeTestRule.setContent {
+            RiposteTheme {
+                GalleryScreen(
+                    uiState =
+                        GalleryUiState(
+                            memes = testMemes,
+                            isLoading = false,
+                            screenMode = ScreenMode.Searching,
+                            uniqueEmojis = listOf("😂" to 5, "🔥" to 3),
+                        ),
+                    onIntent = {},
+                    onNavigateToMeme = {},
+                    onNavigateToImport = {},
+                    onNavigateToSettings = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("EmojiFilterRail").assertIsDisplayed()
+    }
+
+    @Test
+    fun galleryScreen_hidesEmojiFilterRail_inSelectionMode() {
+        composeTestRule.setContent {
+            RiposteTheme {
+                GalleryScreen(
+                    uiState =
+                        GalleryUiState(
+                            memes = testMemes,
+                            isLoading = false,
+                            isSelectionMode = true,
+                            selectedMemeIds = setOf(1L),
+                            uniqueEmojis = listOf("😂" to 5),
+                        ),
+                    onIntent = {},
+                    onNavigateToMeme = {},
+                    onNavigateToImport = {},
+                    onNavigateToSettings = {},
+                )
+            }
+        }
+
+        composeTestRule.onAllNodesWithTag("EmojiFilterRail")
+            .fetchSemanticsNodes().let { nodes ->
+                assertThat(nodes).isEmpty()
+            }
+    }
+
+    @Test
+    fun galleryScreen_hidesEmojiFilterRail_whenNoEmojis() {
+        composeTestRule.setContent {
+            RiposteTheme {
+                GalleryScreen(
+                    uiState =
+                        GalleryUiState(
+                            memes = testMemes,
+                            isLoading = false,
+                            screenMode = ScreenMode.Browsing,
+                            uniqueEmojis = emptyList(),
+                            favoritesCount = 0,
+                        ),
+                    onIntent = {},
+                    onNavigateToMeme = {},
+                    onNavigateToImport = {},
+                    onNavigateToSettings = {},
+                )
+            }
+        }
+
+        composeTestRule.onAllNodesWithTag("EmojiFilterRail")
+            .fetchSemanticsNodes().let { nodes ->
+                assertThat(nodes).isEmpty()
+            }
+    }
+
+    @Test
+    fun galleryScreen_showsSearchBar_aboveContent() {
+        composeTestRule.setContent {
+            RiposteTheme {
+                GalleryScreen(
+                    uiState =
+                        GalleryUiState(
+                            memes = testMemes,
+                            isLoading = false,
+                            screenMode = ScreenMode.Browsing,
+                        ),
+                    onIntent = {},
+                    onNavigateToMeme = {},
+                    onNavigateToImport = {},
+                    onNavigateToSettings = {},
+                )
+            }
+        }
+
+        // Search bar should always be visible (floating overlay)
+        composeTestRule.onNodeWithTag("SearchBar").assertIsDisplayed()
+    }
+
+    @Test
+    fun galleryScreen_showsMemeCards_belowSearchBar() {
+        composeTestRule.setContent {
+            RiposteTheme {
+                GalleryScreen(
+                    uiState =
+                        GalleryUiState(
+                            memes = testMemes,
+                            isLoading = false,
+                            screenMode = ScreenMode.Browsing,
+                        ),
+                    onIntent = {},
+                    onNavigateToMeme = {},
+                    onNavigateToImport = {},
+                    onNavigateToSettings = {},
+                )
+            }
+        }
+
+        // Both the search bar and meme cards should be present simultaneously
+        composeTestRule.onNodeWithTag("SearchBar").assertIsDisplayed()
+        composeTestRule.onAllNodesWithTag("MemeCard").fetchSemanticsNodes()
+            .let { nodes ->
+                assertThat(nodes.size).isGreaterThan(0)
+            }
+    }
+
+    @Test
+    fun galleryScreen_showsFavoritesChip_inBrowsingModeWhenFavoritesExist() {
+        composeTestRule.setContent {
+            RiposteTheme {
+                GalleryScreen(
+                    uiState =
+                        GalleryUiState(
+                            memes = testMemes,
+                            isLoading = false,
+                            screenMode = ScreenMode.Browsing,
+                            uniqueEmojis = listOf("😂" to 5),
+                            favoritesCount = 2,
+                        ),
+                    onIntent = {},
+                    onNavigateToMeme = {},
+                    onNavigateToImport = {},
+                    onNavigateToSettings = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("EmojiFilterRail").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Favorites").assertIsDisplayed()
+    }
+
+    @Test
+    fun galleryScreen_emojiFilterRailSelectsEmoji_inSearchMode() {
+        var receivedIntent: GalleryIntent? = null
+
+        composeTestRule.setContent {
+            RiposteTheme {
+                GalleryScreen(
+                    uiState =
+                        GalleryUiState(
+                            memes = testMemes,
+                            isLoading = false,
+                            screenMode = ScreenMode.Searching,
+                            uniqueEmojis = listOf("😂" to 5, "🔥" to 3),
+                        ),
+                    onIntent = { receivedIntent = it },
+                    onNavigateToMeme = {},
+                    onNavigateToImport = {},
+                    onNavigateToSettings = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("EmojiFilterRail").assertIsDisplayed()
+        composeTestRule.onNodeWithText("😂").performClick()
+
+        assertThat(receivedIntent).isInstanceOf(GalleryIntent.UpdateSearchQuery::class.java)
     }
 
     // ============ Helper Functions ============
