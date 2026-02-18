@@ -9,7 +9,8 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performLongClick
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.longClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.adsamcik.riposte.core.model.EmojiTag
 import com.adsamcik.riposte.core.model.Meme
@@ -246,7 +247,7 @@ class GalleryScreenTest {
 
         composeTestRule.onAllNodesWithTag("MemeCard")
             .onFirst()
-            .performLongClick()
+            .performTouchInput { longClick() }
 
         assertThat(receivedIntent).isInstanceOf(GalleryIntent.StartSelection::class.java)
     }
@@ -518,7 +519,6 @@ class GalleryScreenTest {
                             isLoading = false,
                             isSelectionMode = true,
                             selectedMemeIds = setOf(1L, 2L),
-                            showDeleteConfirmation = true,
                         ),
                     onIntent = {},
                     onNavigateToMeme = {},
@@ -528,8 +528,9 @@ class GalleryScreenTest {
             }
         }
 
-        composeTestRule.onNodeWithText("Delete Memes").assertIsDisplayed()
-        composeTestRule.onNodeWithText("2 memes", substring = true).assertIsDisplayed()
+        // Delete confirmation is triggered via effects, not state.
+        // Verify the delete button is available in selection mode.
+        composeTestRule.onNodeWithContentDescription("Delete selected").assertIsDisplayed()
     }
 
     // ============ Error State Tests ============
@@ -814,6 +815,227 @@ class GalleryScreenTest {
         composeTestRule.onNodeWithText("😂").performClick()
 
         assertThat(receivedIntent).isInstanceOf(GalleryIntent.UpdateSearchQuery::class.java)
+    }
+
+    @Test
+    fun galleryScreen_showsEmojiFilterRail_inSearchModeWithFavoritesOnly() {
+        composeTestRule.setContent {
+            RiposteTheme {
+                GalleryScreen(
+                    uiState =
+                        GalleryUiState(
+                            memes = testMemes,
+                            isLoading = false,
+                            screenMode = ScreenMode.Searching,
+                            uniqueEmojis = emptyList(),
+                            favoritesCount = 5,
+                        ),
+                    onIntent = {},
+                    onNavigateToMeme = {},
+                    onNavigateToImport = {},
+                    onNavigateToSettings = {},
+                )
+            }
+        }
+
+        // Rail should be visible with just the favorites chip, even when no emojis exist
+        composeTestRule.onNodeWithTag("EmojiFilterRail").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Favorites").assertIsDisplayed()
+    }
+
+    @Test
+    fun galleryScreen_hidesEmojiFilterRail_inSearchModeWhenNoEmojisAndNoFavorites() {
+        composeTestRule.setContent {
+            RiposteTheme {
+                GalleryScreen(
+                    uiState =
+                        GalleryUiState(
+                            memes = testMemes,
+                            isLoading = false,
+                            screenMode = ScreenMode.Searching,
+                            uniqueEmojis = emptyList(),
+                            favoritesCount = 0,
+                        ),
+                    onIntent = {},
+                    onNavigateToMeme = {},
+                    onNavigateToImport = {},
+                    onNavigateToSettings = {},
+                )
+            }
+        }
+
+        composeTestRule.onAllNodesWithTag("EmojiFilterRail")
+            .fetchSemanticsNodes().let { nodes ->
+                assertThat(nodes).isEmpty()
+            }
+    }
+
+    @Test
+    fun galleryScreen_hidesEmojiFilterRail_inSelectionModeEvenWithEmojis() {
+        composeTestRule.setContent {
+            RiposteTheme {
+                GalleryScreen(
+                    uiState =
+                        GalleryUiState(
+                            memes = testMemes,
+                            isLoading = false,
+                            isSelectionMode = true,
+                            selectedMemeIds = setOf(1L, 2L),
+                            screenMode = ScreenMode.Searching,
+                            uniqueEmojis = listOf("😂" to 5, "🔥" to 3),
+                            favoritesCount = 2,
+                        ),
+                    onIntent = {},
+                    onNavigateToMeme = {},
+                    onNavigateToImport = {},
+                    onNavigateToSettings = {},
+                )
+            }
+        }
+
+        // Selection mode takes priority — rail is hidden even with emojis and search mode
+        composeTestRule.onAllNodesWithTag("EmojiFilterRail")
+            .fetchSemanticsNodes().let { nodes ->
+                assertThat(nodes).isEmpty()
+            }
+    }
+
+    @Test
+    fun galleryScreen_favoritesChipTogglesFilter_inBrowsingMode() {
+        var receivedIntent: GalleryIntent? = null
+
+        composeTestRule.setContent {
+            RiposteTheme {
+                GalleryScreen(
+                    uiState =
+                        GalleryUiState(
+                            memes = testMemes,
+                            isLoading = false,
+                            screenMode = ScreenMode.Browsing,
+                            uniqueEmojis = listOf("😂" to 5),
+                            favoritesCount = 2,
+                        ),
+                    onIntent = { receivedIntent = it },
+                    onNavigateToMeme = {},
+                    onNavigateToImport = {},
+                    onNavigateToSettings = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Favorites").performClick()
+
+        assertThat(receivedIntent).isInstanceOf(GalleryIntent.SetFilter::class.java)
+        assertThat((receivedIntent as GalleryIntent.SetFilter).filter)
+            .isInstanceOf(GalleryFilter.Favorites::class.java)
+    }
+
+    @Test
+    fun galleryScreen_favoritesChipDeselectsFilter_whenAlreadyActive() {
+        var receivedIntent: GalleryIntent? = null
+
+        composeTestRule.setContent {
+            RiposteTheme {
+                GalleryScreen(
+                    uiState =
+                        GalleryUiState(
+                            memes = testMemes,
+                            isLoading = false,
+                            screenMode = ScreenMode.Browsing,
+                            uniqueEmojis = listOf("😂" to 5),
+                            favoritesCount = 2,
+                            filter = GalleryFilter.Favorites,
+                        ),
+                    onIntent = { receivedIntent = it },
+                    onNavigateToMeme = {},
+                    onNavigateToImport = {},
+                    onNavigateToSettings = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Favorites").performClick()
+
+        assertThat(receivedIntent).isInstanceOf(GalleryIntent.SetFilter::class.java)
+        assertThat((receivedIntent as GalleryIntent.SetFilter).filter)
+            .isInstanceOf(GalleryFilter.All::class.java)
+    }
+
+    @Test
+    fun galleryScreen_emojiChipFiresUpdateSearchQuery_inBrowsingMode() {
+        var receivedIntent: GalleryIntent? = null
+
+        composeTestRule.setContent {
+            RiposteTheme {
+                GalleryScreen(
+                    uiState =
+                        GalleryUiState(
+                            memes = testMemes,
+                            isLoading = false,
+                            screenMode = ScreenMode.Browsing,
+                            uniqueEmojis = listOf("😂" to 5, "🔥" to 3),
+                        ),
+                    onIntent = { receivedIntent = it },
+                    onNavigateToMeme = {},
+                    onNavigateToImport = {},
+                    onNavigateToSettings = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("🔥").performClick()
+
+        assertThat(receivedIntent).isInstanceOf(GalleryIntent.UpdateSearchQuery::class.java)
+        assertThat((receivedIntent as GalleryIntent.UpdateSearchQuery).query).isEqualTo("🔥")
+    }
+
+    @Test
+    fun galleryScreen_hidesSearchBar_inSelectionMode() {
+        composeTestRule.setContent {
+            RiposteTheme {
+                GalleryScreen(
+                    uiState =
+                        GalleryUiState(
+                            memes = testMemes,
+                            isLoading = false,
+                            isSelectionMode = true,
+                            selectedMemeIds = setOf(1L),
+                        ),
+                    onIntent = {},
+                    onNavigateToMeme = {},
+                    onNavigateToImport = {},
+                    onNavigateToSettings = {},
+                )
+            }
+        }
+
+        // Search bar is hidden in selection mode, replaced by selection top bar
+        composeTestRule.onAllNodesWithTag("SearchBar")
+            .fetchSemanticsNodes().let { nodes ->
+                assertThat(nodes).isEmpty()
+            }
+    }
+
+    @Test
+    fun galleryScreen_showsSearchBar_inSearchMode() {
+        composeTestRule.setContent {
+            RiposteTheme {
+                GalleryScreen(
+                    uiState =
+                        GalleryUiState(
+                            memes = testMemes,
+                            isLoading = false,
+                            screenMode = ScreenMode.Searching,
+                        ),
+                    onIntent = {},
+                    onNavigateToMeme = {},
+                    onNavigateToImport = {},
+                    onNavigateToSettings = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("SearchBar").assertIsDisplayed()
     }
 
     // ============ Helper Functions ============
