@@ -116,8 +116,8 @@ object RiposteShapes {
     val ShareButton = CloverShape
 
     // ── Emoji Chips ────────────────────────────────
-    val EmojiChipDefault = RoundedCornerShape(20.dp)
-    val EmojiChipSelected = CloverShape
+    val EmojiChipDefault = RoundedCornerShape(12.dp) // squircle
+    val EmojiChipSelected = CircleShape
 
     // ── Functional Standard ────────────────────────
     val SearchBar = RoundedCornerShape(28.dp)
