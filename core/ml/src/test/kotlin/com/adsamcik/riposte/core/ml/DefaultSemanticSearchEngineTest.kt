@@ -574,7 +574,7 @@ class DefaultSemanticSearchEngineTest {
     // ==================== State and Lifecycle Tests ====================
 
     @Test
-    fun `findSimilar returns empty list when UnsatisfiedLinkError is thrown`() =
+    fun `findSimilar propagates UnsatisfiedLinkError`() =
         runTest {
             coEvery { mockEmbeddingGenerator.generateFromText("test") } throws
                 UnsatisfiedLinkError("libgemma_embedding_model_jni.so not found")
@@ -584,18 +584,22 @@ class DefaultSemanticSearchEngineTest {
                     createMemeWithEmbedding(1L, floatArrayOf(1f, 0f, 0f)),
                 )
 
-            val results =
+            var caughtError: Throwable? = null
+            try {
                 searchEngine.findSimilar(
                     query = "test",
                     candidates = candidates,
                     threshold = 0f,
                 )
+            } catch (e: UnsatisfiedLinkError) {
+                caughtError = e
+            }
 
-            assertThat(results).isEmpty()
+            assertThat(caughtError).isInstanceOf(UnsatisfiedLinkError::class.java)
         }
 
     @Test
-    fun `findSimilar returns empty list when ExceptionInInitializerError is thrown`() =
+    fun `findSimilar propagates ExceptionInInitializerError`() =
         runTest {
             coEvery { mockEmbeddingGenerator.generateFromText("test") } throws
                 ExceptionInInitializerError(UnsatisfiedLinkError("libgemma_embedding_model_jni.so not found"))
@@ -605,18 +609,22 @@ class DefaultSemanticSearchEngineTest {
                     createMemeWithEmbedding(1L, floatArrayOf(1f, 0f, 0f)),
                 )
 
-            val results =
+            var caughtError: Throwable? = null
+            try {
                 searchEngine.findSimilar(
                     query = "test",
                     candidates = candidates,
                     threshold = 0f,
                 )
+            } catch (e: ExceptionInInitializerError) {
+                caughtError = e
+            }
 
-            assertThat(results).isEmpty()
+            assertThat(caughtError).isInstanceOf(ExceptionInInitializerError::class.java)
         }
 
     @Test
-    fun `findSimilar returns empty list when general exception is thrown during embedding`() =
+    fun `findSimilar propagates general exception during embedding`() =
         runTest {
             coEvery { mockEmbeddingGenerator.generateFromText("test") } throws
                 RuntimeException("Model initialization failed")
@@ -626,14 +634,18 @@ class DefaultSemanticSearchEngineTest {
                     createMemeWithEmbedding(1L, floatArrayOf(1f, 0f, 0f)),
                 )
 
-            val results =
+            var caughtError: Throwable? = null
+            try {
                 searchEngine.findSimilar(
                     query = "test",
                     candidates = candidates,
                     threshold = 0f,
                 )
+            } catch (e: RuntimeException) {
+                caughtError = e
+            }
 
-            assertThat(results).isEmpty()
+            assertThat(caughtError).isInstanceOf(RuntimeException::class.java)
         }
 
     @Test

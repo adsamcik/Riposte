@@ -43,15 +43,9 @@ class DefaultSemanticSearchEngine
                             ?: embeddingGenerator.generateFromText(query).also {
                                 queryEmbeddingCache[query] = it
                             }
-                    } catch (e: UnsatisfiedLinkError) {
-                        Timber.w(e, "Native library not available for semantic search")
-                        return@withContext emptyList()
-                    } catch (e: ExceptionInInitializerError) {
-                        Timber.w(e, "Embedding model failed to initialize")
-                        return@withContext emptyList()
                     } catch (e: Exception) {
                         Timber.w(e, "Failed to generate query embedding")
-                        return@withContext emptyList()
+                        throw e
                     }
 
                 // Calculate similarities and filter
@@ -86,7 +80,7 @@ class DefaultSemanticSearchEngine
                             }
                     } catch (e: Exception) {
                         Timber.w(e, "Failed to generate query embedding for multi-vector search")
-                        return@withContext emptyList()
+                        throw e
                     }
 
                 candidates
