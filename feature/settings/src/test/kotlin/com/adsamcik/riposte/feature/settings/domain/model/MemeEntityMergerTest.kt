@@ -138,6 +138,144 @@ class MemeEntityMergerTest {
         assertThat(result.emojiTagsJson).isEqualTo("[]")
     }
 
+    @Test
+    fun `equal resolution and equal file size picks meme1 as winner`() {
+        val meme1 = testMeme(id = 1, width = 100, height = 100, fileSizeBytes = 1000)
+        val meme2 = testMeme(id = 2, width = 100, height = 100, fileSizeBytes = 1000)
+
+        val result = merger.merge(meme1, meme2)
+
+        assertThat(result.winnerId).isEqualTo(1)
+        assertThat(result.loserId).isEqualTo(2)
+    }
+
+    @Test
+    fun `both null titles result in null`() {
+        val meme1 = testMeme(id = 1, title = null)
+        val meme2 = testMeme(id = 2, title = null)
+
+        val result = merger.merge(meme1, meme2)
+
+        assertThat(result.title).isNull()
+    }
+
+    @Test
+    fun `both null descriptions result in null`() {
+        val meme1 = testMeme(id = 1, description = null)
+        val meme2 = testMeme(id = 2, description = null)
+
+        val result = merger.merge(meme1, meme2)
+
+        assertThat(result.description).isNull()
+    }
+
+    @Test
+    fun `malformed emoji JSON treated as empty list`() {
+        val meme1 = testMeme(id = 1, emojiTagsJson = "not valid json")
+        val meme2 = testMeme(id = 2, emojiTagsJson = """["😂"]""")
+
+        val result = merger.merge(meme1, meme2)
+
+        assertThat(result.emojiTagsJson).contains("😂")
+    }
+
+    @Test
+    fun `malformed search phrases JSON treated as empty`() {
+        val meme1 = testMeme(id = 1, searchPhrasesJson = "{bad}")
+        val meme2 = testMeme(id = 2, searchPhrasesJson = """["good"]""")
+
+        val result = merger.merge(meme1, meme2)
+
+        assertThat(result.searchPhrasesJson).isNotNull()
+        assertThat(result.searchPhrasesJson!!).contains("good")
+    }
+
+    @Test
+    fun `both null search phrases result in null`() {
+        val meme1 = testMeme(id = 1, searchPhrasesJson = null)
+        val meme2 = testMeme(id = 2, searchPhrasesJson = null)
+
+        val result = merger.merge(meme1, meme2)
+
+        assertThat(result.searchPhrasesJson).isNull()
+    }
+
+    @Test
+    fun `loser file path is from the losing meme`() {
+        val highRes = testMeme(id = 1, width = 1920, height = 1080)
+        val lowRes = testMeme(id = 2, width = 640, height = 480)
+
+        val result = merger.merge(highRes, lowRes)
+
+        assertThat(result.loserFilePath).isEqualTo("/path/2.jpg")
+    }
+
+    @Test
+    fun `merge is not symmetric for equal titles`() {
+        val meme1 = testMeme(id = 1, title = "AAAA")
+        val meme2 = testMeme(id = 2, title = "BBBB")
+
+        val result = merger.merge(meme1, meme2)
+
+        // Equal length, longerOrFirst returns first (a) because b.length > a.length is false
+        assertThat(result.title).isEqualTo("AAAA")
+    }
+
+    @Test
+    fun `neither favorite results in not favorite`() {
+        val meme1 = testMeme(id = 1, isFavorite = false)
+        val meme2 = testMeme(id = 2, isFavorite = false)
+
+        val result = merger.merge(meme1, meme2)
+
+        assertThat(result.isFavorite).isFalse()
+    }
+
+    @Test
+    fun `zero use and view counts sum to zero`() {
+        val meme1 = testMeme(id = 1, useCount = 0, viewCount = 0)
+        val meme2 = testMeme(id = 2, useCount = 0, viewCount = 0)
+
+        val result = merger.merge(meme1, meme2)
+
+        assertThat(result.useCount).isEqualTo(0)
+        assertThat(result.viewCount).isEqualTo(0)
+    }
+
+    @Test
+    fun `large pixel counts use long arithmetic correctly`() {
+        // width * height could overflow Int if not careful
+        val meme1 = testMeme(id = 1, width = 50000, height = 50000, fileSizeBytes = 100)
+        val meme2 = testMeme(id = 2, width = 40000, height = 40000, fileSizeBytes = 200)
+
+        val result = merger.merge(meme1, meme2)
+
+        assertThat(result.winnerId).isEqualTo(1)
+    }
+
+    @Test
+    fun `single emoji tag with no overlap`() {
+        val meme1 = testMeme(id = 1, emojiTagsJson = """["😂"]""")
+        val meme2 = testMeme(id = 2, emojiTagsJson = """["🔥"]""")
+
+        val result = merger.merge(meme1, meme2)
+
+        assertThat(result.emojiTagsJson).contains("😂")
+        assertThat(result.emojiTagsJson).contains("🔥")
+    }
+
+    @Test
+    fun `meme2 wins when it has higher resolution`() {
+        val lowRes = testMeme(id = 1, width = 100, height = 100)
+        val highRes = testMeme(id = 2, width = 1000, height = 1000)
+
+        val result = merger.merge(lowRes, highRes)
+
+        assertThat(result.winnerId).isEqualTo(2)
+        assertThat(result.loserId).isEqualTo(1)
+        assertThat(result.loserFilePath).isEqualTo("/path/1.jpg")
+    }
+
     // region Helpers
 
     @Suppress("LongParameterList")

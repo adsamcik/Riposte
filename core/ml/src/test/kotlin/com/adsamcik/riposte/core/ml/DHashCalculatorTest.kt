@@ -173,6 +173,118 @@ class DHashCalculatorTest {
         scaled.recycle()
     }
 
+    @Test
+    fun `uniform color bitmap produces valid hash`() {
+        val white = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888)
+        Canvas(white).drawColor(Color.WHITE)
+        val black = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888)
+        Canvas(black).drawColor(Color.BLACK)
+
+        val hashWhite = calculator.calculate(white)
+        val hashBlack = calculator.calculate(black)
+
+        // Both uniform → all adjacent pixels same → hash is 0 for both
+        assertThat(hashWhite).isNotNull()
+        assertThat(hashBlack).isNotNull()
+        assertThat(hashWhite).isEqualTo(hashBlack)
+        white.recycle()
+        black.recycle()
+    }
+
+    @Test
+    fun `wide aspect ratio bitmap produces valid hash`() {
+        val wide = Bitmap.createBitmap(1000, 10, Bitmap.Config.ARGB_8888)
+        Canvas(wide).drawColor(Color.CYAN)
+
+        val hash = calculator.calculate(wide)
+
+        assertThat(hash).isNotNull()
+        wide.recycle()
+    }
+
+    @Test
+    fun `tall aspect ratio bitmap produces valid hash`() {
+        val tall = Bitmap.createBitmap(10, 1000, Bitmap.Config.ARGB_8888)
+        Canvas(tall).drawColor(Color.MAGENTA)
+
+        val hash = calculator.calculate(tall)
+
+        assertThat(hash).isNotNull()
+        tall.recycle()
+    }
+
+    @Test
+    fun `hammingDistance with single bit difference is 1`() {
+        val hash1 = 0L
+        val hash2 = 1L
+
+        assertThat(DHashCalculator.hammingDistance(hash1, hash2)).isEqualTo(1)
+    }
+
+    @Test
+    fun `hammingDistance with two bits different is 2`() {
+        val hash1 = 0L
+        val hash2 = 3L // binary 11
+
+        assertThat(DHashCalculator.hammingDistance(hash1, hash2)).isEqualTo(2)
+    }
+
+    @Test
+    fun `MAX_HAMMING_DISTANCE constant is 64`() {
+        assertThat(DHashCalculator.MAX_HAMMING_DISTANCE).isEqualTo(64)
+    }
+
+    @Test
+    fun `very small bitmap produces valid hash`() {
+        val tiny = Bitmap.createBitmap(2, 2, Bitmap.Config.ARGB_8888)
+        tiny.setPixel(0, 0, Color.RED)
+        tiny.setPixel(1, 0, Color.GREEN)
+        tiny.setPixel(0, 1, Color.BLUE)
+        tiny.setPixel(1, 1, Color.WHITE)
+
+        val hash = calculator.calculate(tiny)
+
+        assertThat(hash).isNotNull()
+        tiny.recycle()
+    }
+
+    @Test
+    fun `cropped image has somewhat similar hash to original`() {
+        val original = createGradientBitmap(200, 200)
+        // Crop to center 100x100
+        val cropped = Bitmap.createBitmap(original, 50, 50, 100, 100)
+
+        val hash1 = calculator.calculate(original)!!
+        val hash2 = calculator.calculate(cropped)!!
+
+        // Cropping changes the image significantly but some structure remains
+        val distance = DHashCalculator.hammingDistance(hash1, hash2)
+        // Not identical, but not maximally different
+        assertThat(distance).isLessThan(DHashCalculator.MAX_HAMMING_DISTANCE)
+        original.recycle()
+        cropped.recycle()
+    }
+
+    @Test
+    fun `mirrored image produces different hash`() {
+        val original = createGradientBitmap(100, 100)
+        // Create horizontal mirror manually
+        val mirror = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888)
+        for (y in 0 until 100) {
+            for (x in 0 until 100) {
+                mirror.setPixel(99 - x, y, original.getPixel(x, y))
+            }
+        }
+
+        val hash1 = calculator.calculate(original)!!
+        val hash2 = calculator.calculate(mirror)!!
+
+        // A horizontal mirror of a gradient reverses the differences
+        assertThat(hash1).isNotEqualTo(hash2)
+        original.recycle()
+        mirror.recycle()
+    }
+
     // region Helpers
 
     private fun createGradientBitmap(
