@@ -30,12 +30,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items as lazyItems
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -109,9 +111,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
+import com.adsamcik.riposte.core.model.EmojiTag
 import com.adsamcik.riposte.core.model.MatchType
 import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.core.model.SearchResult
+import com.adsamcik.riposte.core.ui.component.EmojiChip
 import com.adsamcik.riposte.core.ui.component.EmojiFilterRail
 import com.adsamcik.riposte.core.ui.component.EmptyState
 import com.adsamcik.riposte.core.ui.component.ErrorState
@@ -407,7 +411,20 @@ private fun GalleryScreenContent(
                     .padding(paddingValues),
         ) {
             // Content area — no top padding so images scroll behind the floating search bar
-            val floatingBarSpace = if (uiState.isSelectionMode) 0.dp else 64.dp
+            val showInlineEmojis = !uiState.isSelectionMode &&
+                uiState.isSearchFocused &&
+                uiState.searchState.query.isBlank() &&
+                uiState.uniqueEmojis.isNotEmpty()
+
+            val floatingBarSpace by animateDpAsState(
+                targetValue = when {
+                    uiState.isSelectionMode -> 0.dp
+                    showInlineEmojis -> 120.dp
+                    else -> 64.dp
+                },
+                animationSpec = spring(dampingRatio = 0.8f, stiffness = 600f),
+                label = "floatingBarSpace",
+            )
             Box(
                 modifier = Modifier.fillMaxSize(),
             ) {
@@ -759,6 +776,7 @@ private fun GalleryScreenContent(
                     uiState = uiState,
                     isScrolled = isScrolled,
                     showMenu = showMenu,
+                    topEmojis = uiState.uniqueEmojis,
                     onIntent = onIntent,
                     onShowMenuChange = onShowMenuChange,
                     onNavigateToSettings = onNavigateToSettings,
@@ -804,8 +822,13 @@ private fun GalleryContent(
     val isSearching = uiState.screenMode == ScreenMode.Searching
     val isScrollingUp = gridState.isScrollingUp()
 
+    // Hide full rail when FindStrip inline emojis are visible
+    val inlineEmojisActive = uiState.isSearchFocused &&
+        uiState.searchState.query.isBlank() &&
+        uniqueEmojis.isNotEmpty()
+
     // Extra padding when the emoji rail is present so grid items start below it
-    val hasEmojiRail = !uiState.isSelectionMode &&
+    val hasEmojiRail = !uiState.isSelectionMode && !inlineEmojisActive &&
         (uniqueEmojis.isNotEmpty() || uiState.favoritesCount > 0)
     val emojiRailSpace = if (hasEmojiRail) 52.dp else 0.dp
 
@@ -831,7 +854,7 @@ private fun GalleryContent(
             uiState = uiState,
             uniqueEmojis = uniqueEmojis,
             onIntent = onIntent,
-            visible = isSearching || isScrollingUp,
+            visible = !inlineEmojisActive && (isSearching || isScrollingUp),
             modifier = Modifier.padding(top = topPadding),
         )
     }
@@ -908,8 +931,9 @@ private fun GalleryEmojiFilterRail(
 }
 
 /**
- * Floating search bar overlay with animated menu icon background.
- * The three-dots icon shows a circle background when the user scrolls.
+ * Floating search bar overlay with animated menu icon background and inline emoji quick-filters.
+ * When focused with empty query, shows top emoji chips as quick-filter suggestions
+ * (Find Flow Fusion — unified search + emoji surface).
  */
 @Suppress("LongMethod", "LongParameterList")
 @Composable
@@ -917,6 +941,7 @@ private fun FloatingSearchBar(
     uiState: GalleryUiState,
     isScrolled: Boolean,
     showMenu: Boolean,
+    topEmojis: List<Pair<String, Int>>,
     onIntent: (GalleryIntent) -> Unit,
     onShowMenuChange: (Boolean) -> Unit,
     onNavigateToSettings: () -> Unit,
@@ -928,75 +953,118 @@ private fun FloatingSearchBar(
         label = "menuBgAlpha",
     )
 
-    Row(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .height(64.dp)
-                .padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    val showInlineEmojis = uiState.isSearchFocused &&
+        uiState.searchState.query.isBlank() &&
+        topEmojis.isNotEmpty()
+
+    Column(
+        modifier = modifier.fillMaxWidth(),
     ) {
-        // Navigation icon (close for active filters when not searching)
-        if (uiState.screenMode != ScreenMode.Searching &&
-            uiState.filter !is GalleryFilter.All
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(64.dp)
+                    .padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            IconButton(onClick = {
-                onIntent(GalleryIntent.SetFilter(GalleryFilter.All))
-            }) {
-                Icon(
-                    Icons.Default.Close,
-                    contentDescription = stringResource(R.string.gallery_cd_clear_filter),
-                )
+            // Navigation icon (close for active filters when not searching)
+            if (uiState.screenMode != ScreenMode.Searching &&
+                uiState.filter !is GalleryFilter.All
+            ) {
+                IconButton(onClick = {
+                    onIntent(GalleryIntent.SetFilter(GalleryFilter.All))
+                }) {
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = stringResource(R.string.gallery_cd_clear_filter),
+                    )
+                }
+            }
+
+            // Search bar
+            com.adsamcik.riposte.core.ui.component.SearchBar(
+                query = uiState.searchState.query,
+                onQueryChange = { onIntent(GalleryIntent.UpdateSearchQuery(it)) },
+                onSearch = { /* debounce handles it */ },
+                placeholder = stringResource(com.adsamcik.riposte.core.search.R.string.search_placeholder),
+                onFocusChanged = { focused -> onIntent(GalleryIntent.SearchFieldFocusChanged(focused)) },
+                modifier = Modifier.weight(1f),
+            )
+
+            // More options with animated circle background
+            Box {
+                IconButton(
+                    onClick = { onShowMenuChange(true) },
+                    modifier =
+                        Modifier
+                            .background(
+                                color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = menuBgAlpha),
+                                shape = CircleShape,
+                            ),
+                ) {
+                    Icon(
+                        Icons.Default.MoreVert,
+                        contentDescription = stringResource(R.string.gallery_cd_more_options),
+                        tint = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+                DropdownMenu(
+                    expanded = showMenu,
+                    onDismissRequest = { onShowMenuChange(false) },
+                ) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.gallery_menu_select)) },
+                        leadingIcon = { Icon(Icons.Default.SelectAll, null) },
+                        onClick = {
+                            onIntent(GalleryIntent.EnterSelectionMode)
+                            onShowMenuChange(false)
+                        },
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.gallery_menu_settings)) },
+                        onClick = {
+                            onNavigateToSettings()
+                            onShowMenuChange(false)
+                        },
+                    )
+                }
             }
         }
 
-        // Search bar
-        com.adsamcik.riposte.core.ui.component.SearchBar(
-            query = uiState.searchState.query,
-            onQueryChange = { onIntent(GalleryIntent.UpdateSearchQuery(it)) },
-            onSearch = { /* debounce handles it */ },
-            placeholder = stringResource(com.adsamcik.riposte.core.search.R.string.search_placeholder),
-            onFocusChanged = { focused -> onIntent(GalleryIntent.SearchFieldFocusChanged(focused)) },
-            modifier = Modifier.weight(1f),
-        )
-
-        // More options with animated circle background
-        Box {
-            IconButton(
-                onClick = { onShowMenuChange(true) },
-                modifier =
-                    Modifier
-                        .background(
-                            color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = menuBgAlpha),
-                            shape = CircleShape,
-                        ),
+        // Inline emoji quick-filters (Find Flow Fusion)
+        AnimatedVisibility(
+            visible = showInlineEmojis,
+            enter = slideInVertically(
+                animationSpec = spring(dampingRatio = 0.8f, stiffness = 600f),
+            ) { -it } + fadeIn(
+                animationSpec = spring(dampingRatio = 0.8f, stiffness = 600f),
+            ),
+            exit = slideOutVertically(
+                animationSpec = tween(durationMillis = 150),
+            ) { -it } + fadeOut(
+                animationSpec = tween(durationMillis = 150),
+            ),
+        ) {
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                    .padding(vertical = 6.dp),
             ) {
-                Icon(
-                    Icons.Default.MoreVert,
-                    contentDescription = stringResource(R.string.gallery_cd_more_options),
-                    tint = MaterialTheme.colorScheme.onSurface,
-                )
-            }
-            DropdownMenu(
-                expanded = showMenu,
-                onDismissRequest = { onShowMenuChange(false) },
-            ) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.gallery_menu_select)) },
-                    leadingIcon = { Icon(Icons.Default.SelectAll, null) },
-                    onClick = {
-                        onIntent(GalleryIntent.EnterSelectionMode)
-                        onShowMenuChange(false)
-                    },
-                )
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.gallery_menu_settings)) },
-                    onClick = {
-                        onNavigateToSettings()
-                        onShowMenuChange(false)
-                    },
-                )
+                lazyItems(
+                    items = topEmojis.take(7),
+                    key = { it.first },
+                ) { (emoji, _) ->
+                    EmojiChip(
+                        emojiTag = EmojiTag.fromEmoji(emoji),
+                        onClick = { onIntent(GalleryIntent.UpdateSearchQuery(emoji)) },
+                        isSelected = false,
+                    )
+                }
             }
         }
     }
