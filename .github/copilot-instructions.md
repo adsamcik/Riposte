@@ -189,6 +189,16 @@ JUnit 4 + MockK + Turbine (Flow testing) + Truth (assertions). Test utilities an
 
 Coverage thresholds: 60% overall, 50% branch (enforced by `verifyCoverage` task).
 
+### Emulator Testing
+
+When testing on the Android emulator and the app needs meme data:
+
+1. **Use existing meme bundles on the emulator.** The emulator has pre-loaded `.meme.zip` bundles (e.g., `Adolin Mood.meme.zip`) available in the device's file storage.
+2. **Import via the app:** Gallery → Import Memes → Import Meme Bundle → pick a `.meme.zip` from the file picker.
+3. **Do NOT try to create fake test data or push random images.** The app's import flow validates images and metadata — use real bundles.
+4. **After clearing app data** (e.g., for DB schema changes), re-import a bundle to repopulate the collection.
+5. **Navigation to Settings:** Gallery → ⋮ (More options) → Settings → scroll down to find feature-specific sections.
+
 ### Key Files
 
 | File | Purpose |
