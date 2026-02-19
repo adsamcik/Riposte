@@ -15,9 +15,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -110,14 +114,13 @@ private fun MemeOMeterCard(uiState: FunStatsUiState) {
                     },
                 fontSize = 48.sp,
             )
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(4.dp))
             Text(
                 text = uiState.collectionTitle,
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
             )
-            Spacer(Modifier.height(2.dp))
             Text(
                 text = pluralStringResource(R.plurals.settings_meme_count, uiState.totalMemeCount, uiState.totalMemeCount),
                 style = MaterialTheme.typography.titleMedium,
@@ -149,7 +152,7 @@ private fun MemeOMeterCard(uiState: FunStatsUiState) {
                 Text(
                     text = uiState.storageFunFact,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f),
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.75f),
                     textAlign = TextAlign.Center,
                 )
             }
@@ -249,7 +252,7 @@ private fun VibeRow(
                     .height(10.dp)
                     .clip(RoundedCornerShape(5.dp)),
             color = barColor,
-            trackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+            trackColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f),
             strokeCap = StrokeCap.Round,
             gapSize = 0.dp,
             drawStopIndicator = {},
@@ -345,17 +348,24 @@ internal fun LazyListScope.momentumSection(uiState: FunStatsUiState) {
                             modifier = Modifier.padding(bottom = 6.dp),
                         )
                         Spacer(Modifier.weight(1f))
-                        Text(
-                            text =
-                                when (uiState.momentumTrend) {
-                                    MomentumTrend.GROWING -> stringResource(R.string.settings_momentum_growing)
-                                    MomentumTrend.STABLE -> stringResource(R.string.settings_momentum_stable)
-                                    MomentumTrend.DECLINING -> stringResource(R.string.settings_momentum_declining)
-                                },
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(bottom = 6.dp),
-                        )
+                        Row(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                                .padding(horizontal = 10.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text =
+                                    when (uiState.momentumTrend) {
+                                        MomentumTrend.GROWING -> stringResource(R.string.settings_momentum_growing)
+                                        MomentumTrend.STABLE -> stringResource(R.string.settings_momentum_stable)
+                                        MomentumTrend.DECLINING -> stringResource(R.string.settings_momentum_declining)
+                                    },
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     }
                     Spacer(Modifier.height(16.dp))
 
@@ -410,7 +420,7 @@ private fun MomentumSparkline(
     modifier: Modifier = Modifier,
 ) {
     val lineColor = MaterialTheme.colorScheme.primary
-    val fillColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+    val fillColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
     val currentDotColor = MaterialTheme.colorScheme.tertiary
     val gridColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
 
@@ -633,7 +643,20 @@ private fun MilestoneRow(milestone: MilestoneState) {
             }
         }
         if (milestone.isUnlocked) {
-            Text("✅", fontSize = 20.sp)
+            Box(
+                modifier = Modifier
+                    .size(28.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.size(18.dp),
+                )
+            }
         }
     }
 }
