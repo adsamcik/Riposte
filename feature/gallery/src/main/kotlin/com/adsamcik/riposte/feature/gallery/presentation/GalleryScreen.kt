@@ -859,8 +859,8 @@ private fun GalleryEmojiFilterRail(
         AnimatedVisibility(
             visible = visible && (uniqueEmojis.isNotEmpty() || showFavoritesChip),
             modifier = modifier,
-            enter = slideInVertically(animationSpec = tween(durationMillis = 200)) { -it } + fadeIn(animationSpec = tween(durationMillis = 200)),
-            exit = slideOutVertically(animationSpec = tween(durationMillis = 200)) { -it } + fadeOut(animationSpec = tween(durationMillis = 200)),
+            enter = slideInVertically(animationSpec = spring(dampingRatio = 0.8f, stiffness = 600f)) { -it } + fadeIn(animationSpec = spring(dampingRatio = 0.8f, stiffness = 600f)),
+            exit = slideOutVertically(animationSpec = tween(durationMillis = 150)) { -it } + fadeOut(animationSpec = tween(durationMillis = 150)),
         ) {
             EmojiFilterRail(
                 emojis = uniqueEmojis,
@@ -898,7 +898,9 @@ private fun GalleryEmojiFilterRail(
                     null
                 },
                 modifier = Modifier
-                    .padding(top = 4.dp)
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                    .padding(top = 4.dp, bottom = 4.dp)
                     .testTag("EmojiFilterRail"),
             )
         }

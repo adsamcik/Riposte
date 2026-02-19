@@ -106,10 +106,10 @@ fun SearchBar(
         shape = RiposteShapes.SearchBar,
         colors =
             OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
                 focusedBorderColor = MaterialTheme.colorScheme.primary,
-                unfocusedBorderColor = MaterialTheme.colorScheme.surfaceContainer,
+                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
             ),
         keyboardOptions =
             KeyboardOptions(
