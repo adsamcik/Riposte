@@ -23,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.adsamcik.riposte.core.ml.EmbeddingGemmaGenerator
 import com.adsamcik.riposte.core.model.DarkMode
 import com.adsamcik.riposte.core.model.UserDensityPreference
 import com.adsamcik.riposte.feature.settings.R
@@ -231,9 +232,9 @@ private fun embeddingIndexSubtitle(embeddingState: EmbeddingSearchState): String
 @Composable
 private fun embeddingErrorMessage(modelError: String): String =
     when (modelError) {
-        "Model not compatible with this device" ->
+        EmbeddingGemmaGenerator.ERROR_NOT_COMPATIBLE ->
             stringResource(R.string.settings_search_index_error_not_supported)
-        "Model files not found" ->
+        EmbeddingGemmaGenerator.ERROR_FILES_NOT_FOUND ->
             stringResource(R.string.settings_search_index_error_not_included)
         else ->
             stringResource(R.string.settings_search_index_error_failed)

@@ -285,13 +285,13 @@ class EmbeddingGemmaGenerator
                     Timber.e("EmbeddingGemma model not found at: $modelPath")
                     Timber.i("Please download the model from HuggingFace: litert-community/embeddinggemma-300m")
                     Timber.i("Or run: tools/download-embeddinggemma.ps1 -AllVariants")
-                    _initializationError = "Model files not found"
+                    _initializationError = ERROR_FILES_NOT_FOUND
                     return
                 }
 
                 if (!File(tokenizerPath).exists()) {
                     Timber.e("SentencePiece tokenizer not found at: $tokenizerPath")
-                    _initializationError = "Model files not found"
+                    _initializationError = ERROR_FILES_NOT_FOUND
                     return
                 }
 
@@ -311,11 +311,11 @@ class EmbeddingGemmaGenerator
             } catch (e: UnsatisfiedLinkError) {
                 Timber.e(e, "Native library not available for EmbeddingGemma (unsupported ABI?)")
                 embeddingModel = null
-                _initializationError = "Model not compatible with this device"
+                _initializationError = ERROR_NOT_COMPATIBLE
             } catch (e: ExceptionInInitializerError) {
                 Timber.e(e, "EmbeddingGemma static initialization failed")
                 embeddingModel = null
-                _initializationError = "Model failed to load"
+                _initializationError = ERROR_FAILED_TO_LOAD
             } catch (e: Exception) {
                 Timber.e(e, "Failed to initialize EmbeddingGemma")
 
@@ -338,19 +338,19 @@ class EmbeddingGemmaGenerator
                     } catch (cpuError: UnsatisfiedLinkError) {
                         Timber.e(cpuError, "CPU fallback failed: native library not available")
                         embeddingModel = null
-                        _initializationError = "Model not compatible with this device"
+                        _initializationError = ERROR_NOT_COMPATIBLE
                     } catch (cpuError: ExceptionInInitializerError) {
                         Timber.e(cpuError, "CPU fallback failed: static initialization error")
                         embeddingModel = null
-                        _initializationError = "Model failed to load"
+                        _initializationError = ERROR_FAILED_TO_LOAD
                     } catch (cpuError: Exception) {
                         Timber.e(cpuError, "CPU fallback also failed")
                         embeddingModel = null
-                        _initializationError = "Model initialization failed"
+                        _initializationError = ERROR_INIT_FAILED
                     }
                 } else {
                     embeddingModel = null
-                    _initializationError = "Model initialization failed"
+                    _initializationError = ERROR_INIT_FAILED
                 }
             }
         }
@@ -556,6 +556,20 @@ class EmbeddingGemmaGenerator
 
             /** Default embedding dimension for EmbeddingGemma (768 dimensions). */
             const val DEFAULT_EMBEDDING_DIMENSION = 768
+
+            // region Initialization Error Constants
+            /** Device does not support the required native libraries (e.g. unsupported ABI). */
+            const val ERROR_NOT_COMPATIBLE = "Model not compatible with this device"
+
+            /** Model asset files are missing (e.g. lite build flavor). */
+            const val ERROR_FILES_NOT_FOUND = "Model files not found"
+
+            /** Model static initializer failed (ExceptionInInitializerError). */
+            const val ERROR_FAILED_TO_LOAD = "Model failed to load"
+
+            /** Both GPU and CPU initialization attempts failed. */
+            const val ERROR_INIT_FAILED = "Model initialization failed"
+            // endregion
 
             /** Minimum confidence threshold for image labels. */
             private const val IMAGE_LABEL_CONFIDENCE_THRESHOLD = 0.5f
