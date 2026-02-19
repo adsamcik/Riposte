@@ -68,6 +68,7 @@ class ImportNotificationManager
                 .setContentTitle("Import complete")
                 .setContentText(text)
                 .setAutoCancel(true)
+                .setTimeoutAfter(AUTO_DISMISS_DURATION_MS)
                 .build()
         }
 
@@ -91,5 +92,6 @@ class ImportNotificationManager
             const val NOTIFICATION_ID = 1001
             const val COMPLETE_NOTIFICATION_ID = 1002
             private const val CHANNEL_NAME = "Import Progress"
+            private const val AUTO_DISMISS_DURATION_MS = 5_000L
         }
     }
