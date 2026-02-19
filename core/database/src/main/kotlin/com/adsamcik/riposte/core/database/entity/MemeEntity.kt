@@ -16,6 +16,7 @@ import androidx.room.PrimaryKey
         Index(value = ["viewCount"]),
         Index(value = ["lastViewedAt"]),
         Index(value = ["fileHash"]),
+        Index(value = ["perceptualHash"]),
     ],
 )
 data class MemeEntity(
@@ -117,6 +118,11 @@ data class MemeEntity(
      * Examples: "Drake Hotline Bling", "The Witcher 3", "Star Wars"
      */
     val basedOn: String? = null,
+    /**
+     * Perceptual hash (dHash) for near-duplicate detection.
+     * 64-bit hash based on visual structure — similar images produce similar hashes.
+     */
+    val perceptualHash: Long? = null,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -152,6 +158,7 @@ data class MemeEntity(
         if (lastViewedAt != other.lastViewedAt) return false
         if (fileHash != other.fileHash) return false
         if (basedOn != other.basedOn) return false
+        if (perceptualHash != other.perceptualHash) return false
 
         return true
     }
@@ -180,6 +187,7 @@ data class MemeEntity(
         result = 31 * result + (lastViewedAt?.hashCode() ?: 0)
         result = 31 * result + (fileHash?.hashCode() ?: 0)
         result = 31 * result + (basedOn?.hashCode() ?: 0)
+        result = 31 * result + (perceptualHash?.hashCode() ?: 0)
         return result
     }
 }

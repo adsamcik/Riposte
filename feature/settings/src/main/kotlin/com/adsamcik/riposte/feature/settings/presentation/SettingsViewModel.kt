@@ -243,6 +243,9 @@ class SettingsViewModel
                 // Crash Logs
                 is SettingsIntent.ShareCrashLogs -> shareCrashLogs()
                 is SettingsIntent.ClearCrashLogs -> clearCrashLogs()
+
+                // Duplicate Detection
+                is SettingsIntent.OpenDuplicateDetection -> openDuplicateDetection()
             }
         }
 
@@ -597,6 +600,12 @@ class SettingsViewModel
         private fun openPrivacyPolicy() {
             viewModelScope.launch {
                 _effects.send(SettingsEffect.OpenUrl("https://riposte.app/privacy"))
+            }
+        }
+
+        private fun openDuplicateDetection() {
+            viewModelScope.launch {
+                _effects.send(SettingsEffect.NavigateToDuplicateDetection)
             }
         }
     }

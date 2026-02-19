@@ -17,6 +17,8 @@ import com.adsamcik.riposte.feature.import_feature.navigation.navigateToImport
 import com.adsamcik.riposte.feature.settings.navigation.funStatsScreen
 import com.adsamcik.riposte.feature.settings.navigation.licensesScreen
 import com.adsamcik.riposte.feature.settings.navigation.navigateToFunStats
+import com.adsamcik.riposte.feature.settings.navigation.duplicateDetectionScreen
+import com.adsamcik.riposte.feature.settings.navigation.navigateToDuplicateDetection
 import com.adsamcik.riposte.feature.settings.navigation.navigateToLicenses
 import com.adsamcik.riposte.feature.settings.navigation.navigateToSettings
 import com.adsamcik.riposte.feature.settings.navigation.settingsScreen
@@ -89,6 +91,9 @@ fun RiposteNavHost(
             onNavigateToFunStats = {
                 navController.navigateToFunStats()
             },
+            onNavigateToDuplicateDetection = {
+                navController.navigateToDuplicateDetection()
+            },
         )
 
         // Fun Statistics screen
@@ -100,6 +105,13 @@ fun RiposteNavHost(
 
         // Licenses screen
         licensesScreen(
+            onNavigateBack = {
+                navController.popBackStack()
+            },
+        )
+
+        // Duplicate detection screen
+        duplicateDetectionScreen(
             onNavigateBack = {
                 navController.popBackStack()
             },

@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 7,
-    "identityHash": "5e69f4bc8c4c3103cd373fe124350ae4",
+    "identityHash": "4d1dd84cf014031695c43b2aa7bbc05f",
     "entities": [
       {
         "tableName": "memes",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `filePath` TEXT NOT NULL, `fileName` TEXT NOT NULL, `mimeType` TEXT NOT NULL, `width` INTEGER NOT NULL, `height` INTEGER NOT NULL, `fileSizeBytes` INTEGER NOT NULL, `importedAt` INTEGER NOT NULL, `emojiTagsJson` TEXT NOT NULL, `title` TEXT, `description` TEXT, `textContent` TEXT, `searchPhrasesJson` TEXT, `embedding` BLOB, `isFavorite` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `useCount` INTEGER NOT NULL, `primaryLanguage` TEXT, `localizationsJson` TEXT, `viewCount` INTEGER NOT NULL, `lastViewedAt` INTEGER, `fileHash` TEXT, `basedOn` TEXT)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `filePath` TEXT NOT NULL, `fileName` TEXT NOT NULL, `mimeType` TEXT NOT NULL, `width` INTEGER NOT NULL, `height` INTEGER NOT NULL, `fileSizeBytes` INTEGER NOT NULL, `importedAt` INTEGER NOT NULL, `emojiTagsJson` TEXT NOT NULL, `title` TEXT, `description` TEXT, `textContent` TEXT, `searchPhrasesJson` TEXT, `embedding` BLOB, `isFavorite` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `useCount` INTEGER NOT NULL, `primaryLanguage` TEXT, `localizationsJson` TEXT, `viewCount` INTEGER NOT NULL, `lastViewedAt` INTEGER, `fileHash` TEXT, `basedOn` TEXT, `perceptualHash` INTEGER)",
         "fields": [
           {
             "fieldPath": "id",
@@ -135,6 +135,11 @@
             "fieldPath": "basedOn",
             "columnName": "basedOn",
             "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "perceptualHash",
+            "columnName": "perceptualHash",
+            "affinity": "INTEGER"
           }
         ],
         "primaryKey": {
@@ -197,6 +202,15 @@
             ],
             "orders": [],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_memes_fileHash` ON `${TABLE_NAME}` (`fileHash`)"
+          },
+          {
+            "name": "index_memes_perceptualHash",
+            "unique": false,
+            "columnNames": [
+              "perceptualHash"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_memes_perceptualHash` ON `${TABLE_NAME}` (`perceptualHash`)"
           }
         ]
       },
@@ -621,11 +635,128 @@
             ]
           }
         ]
+      },
+      {
+        "tableName": "potential_duplicates",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `memeId1` INTEGER NOT NULL, `memeId2` INTEGER NOT NULL, `hammingDistance` INTEGER NOT NULL, `detectionMethod` TEXT NOT NULL, `status` TEXT NOT NULL, `detectedAt` INTEGER NOT NULL, FOREIGN KEY(`memeId1`) REFERENCES `memes`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`memeId2`) REFERENCES `memes`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "memeId1",
+            "columnName": "memeId1",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "memeId2",
+            "columnName": "memeId2",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "hammingDistance",
+            "columnName": "hammingDistance",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "detectionMethod",
+            "columnName": "detectionMethod",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "detectedAt",
+            "columnName": "detectedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_potential_duplicates_memeId1",
+            "unique": false,
+            "columnNames": [
+              "memeId1"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_potential_duplicates_memeId1` ON `${TABLE_NAME}` (`memeId1`)"
+          },
+          {
+            "name": "index_potential_duplicates_memeId2",
+            "unique": false,
+            "columnNames": [
+              "memeId2"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_potential_duplicates_memeId2` ON `${TABLE_NAME}` (`memeId2`)"
+          },
+          {
+            "name": "index_potential_duplicates_status",
+            "unique": false,
+            "columnNames": [
+              "status"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_potential_duplicates_status` ON `${TABLE_NAME}` (`status`)"
+          },
+          {
+            "name": "index_potential_duplicates_memeId1_memeId2",
+            "unique": true,
+            "columnNames": [
+              "memeId1",
+              "memeId2"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_potential_duplicates_memeId1_memeId2` ON `${TABLE_NAME}` (`memeId1`, `memeId2`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "memes",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "memeId1"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "memes",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "memeId2"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
       }
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '5e69f4bc8c4c3103cd373fe124350ae4')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '4d1dd84cf014031695c43b2aa7bbc05f')"
     ]
   }
 }

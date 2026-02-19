@@ -420,6 +420,7 @@ class SettingsViewModelTest {
                 is SettingsIntent.SetStripMetadata,
                 is SettingsIntent.ShareCrashLogs,
                 is SettingsIntent.ClearCrashLogs,
+                is SettingsIntent.OpenDuplicateDetection,
                 -> false
             }
         assertThat(isKeepMetadata).isFalse()
@@ -873,6 +874,7 @@ class SettingsViewModelTest {
                 is SettingsEffect.ImportComplete -> false
                 is SettingsEffect.ShowError -> false
                 is SettingsEffect.ShareText -> false
+                is SettingsEffect.NavigateToDuplicateDetection -> false
             }
         assertThat(isNavigation).isTrue()
     }

@@ -76,4 +76,7 @@ sealed interface SettingsIntent {
     data object ShareCrashLogs : SettingsIntent
 
     data object ClearCrashLogs : SettingsIntent
+
+    // Duplicate Detection
+    data object OpenDuplicateDetection : SettingsIntent
 }

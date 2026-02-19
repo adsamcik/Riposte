@@ -80,7 +80,32 @@
     <string name="settings_export_data_subtitle">Backup your memes and settings</string>
     <string name="settings_import_data_title">Import Data</string>
     <string name="settings_import_data_subtitle">Restore from backup</string>
-    
+
+    <!-- Duplicate Detection -->
+    <string name="settings_find_duplicates_title">Find Duplicates</string>
+    <string name="settings_find_duplicates_subtitle">Scan for similar or identical memes</string>
+    <string name="duplicate_detection_title">Find Duplicates</string>
+    <string name="duplicate_detection_scan_button">Scan Library</string>
+    <string name="duplicate_detection_scanning">Scanning…</string>
+    <string name="duplicate_detection_hashing_progress">Computing visual fingerprints: %1$d / %2$d</string>
+    <string name="duplicate_detection_comparing">Comparing memes…</string>
+    <string name="duplicate_detection_no_duplicates">No duplicates found! Your library is clean 🎉</string>
+    <string name="duplicate_detection_found">Found %1$d potential duplicate groups</string>
+    <string name="duplicate_detection_sensitivity">Sensitivity</string>
+    <string name="duplicate_detection_sensitivity_exact">Exact only</string>
+    <string name="duplicate_detection_sensitivity_similar">Similar</string>
+    <string name="duplicate_detection_sensitivity_loose">Loose</string>
+    <string name="duplicate_detection_merge">Smart Merge</string>
+    <string name="duplicate_detection_dismiss">Not a duplicate</string>
+    <string name="duplicate_detection_merge_all">Merge All</string>
+    <string name="duplicate_detection_dismiss_all">Dismiss All</string>
+    <string name="duplicate_detection_exact_match">Exact match</string>
+    <string name="duplicate_detection_perceptual_match">Visual match (distance: %1$d)</string>
+    <string name="duplicate_detection_merged_success">Merged! Kept best quality, combined metadata</string>
+    <string name="duplicate_detection_dismissed">Dismissed</string>
+    <string name="duplicate_detection_resolution">%1$d × %2$d</string>
+    <string name="duplicate_detection_higher_res">Higher resolution</string>
+
     <!-- About Section -->
     <string name="settings_version_title">Version</string>
     <string name="settings_open_source_licenses_title">Open Source Licenses</string>

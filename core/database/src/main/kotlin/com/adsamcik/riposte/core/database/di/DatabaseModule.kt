@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.adsamcik.riposte.core.database.ALL_MIGRATIONS
 import com.adsamcik.riposte.core.database.MemeDatabase
+import com.adsamcik.riposte.core.database.dao.DuplicateDetectionDao
 import com.adsamcik.riposte.core.database.dao.EmojiTagDao
 import com.adsamcik.riposte.core.database.dao.ImportRequestDao
 import com.adsamcik.riposte.core.database.dao.MemeDao
@@ -61,5 +62,11 @@ object DatabaseModule {
     @Singleton
     fun provideImportRequestDao(database: MemeDatabase): ImportRequestDao {
         return database.importRequestDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideDuplicateDetectionDao(database: MemeDatabase): DuplicateDetectionDao {
+        return database.duplicateDetectionDao()
     }
 }

@@ -277,12 +277,40 @@ val MIGRATION_5_6 =
 /**
  * Migration from version 6 to 7:
  * - Drops share_targets table (share target tracking removed)
+ * - Adds perceptualHash column to memes table for dHash-based near-duplicate detection
+ * - Creates potential_duplicates table for tracking duplicate pairs
  */
 @Suppress("MagicNumber")
 val MIGRATION_6_7 =
     object : Migration(6, 7) {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL("DROP TABLE IF EXISTS share_targets")
+
+            // Add perceptualHash column to memes
+            db.execSQL("ALTER TABLE memes ADD COLUMN perceptualHash INTEGER DEFAULT NULL")
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_memes_perceptualHash ON memes (perceptualHash)")
+
+            // Create potential_duplicates table
+            db.execSQL(
+                """CREATE TABLE IF NOT EXISTS potential_duplicates (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    memeId1 INTEGER NOT NULL,
+                    memeId2 INTEGER NOT NULL,
+                    hammingDistance INTEGER NOT NULL,
+                    detectionMethod TEXT NOT NULL,
+                    status TEXT NOT NULL DEFAULT 'pending',
+                    detectedAt INTEGER NOT NULL,
+                    FOREIGN KEY(memeId1) REFERENCES memes(id) ON DELETE CASCADE,
+                    FOREIGN KEY(memeId2) REFERENCES memes(id) ON DELETE CASCADE
+                )""",
+            )
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_potential_duplicates_memeId1 ON potential_duplicates (memeId1)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_potential_duplicates_memeId2 ON potential_duplicates (memeId2)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_potential_duplicates_status ON potential_duplicates (status)")
+            db.execSQL(
+                "CREATE UNIQUE INDEX IF NOT EXISTS index_potential_duplicates_memeId1_memeId2 " +
+                    "ON potential_duplicates (memeId1, memeId2)",
+            )
         }
     }
 

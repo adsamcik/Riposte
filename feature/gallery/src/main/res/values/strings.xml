@@ -55,9 +55,7 @@
     <!-- Empty State -->
     <string name="gallery_empty_title">Your meme vault is empty! 📂</string>
     <string name="gallery_empty_message">Time to stock up on digital comedy gold ✨</string>
-
-    <!-- Favorites Empty State -->
-    <string name="gallery_favorites_empty_title">No favorites yet</string>
+    <string name="gallery_favorites_empty_title">No favorites yet! ⭐</string>
     <string name="gallery_favorites_empty_message">Tap the heart on any meme to add it here</string>
 
     <!-- Loading State -->

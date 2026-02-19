@@ -20,4 +20,6 @@ sealed interface SettingsEffect {
     data class ShowError(val message: String) : SettingsEffect
 
     data class ShareText(val text: String, val title: String) : SettingsEffect
+
+    data object NavigateToDuplicateDetection : SettingsEffect
 }

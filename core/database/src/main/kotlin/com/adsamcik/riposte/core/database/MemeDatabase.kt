@@ -2,6 +2,7 @@ package com.adsamcik.riposte.core.database
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
+import com.adsamcik.riposte.core.database.dao.DuplicateDetectionDao
 import com.adsamcik.riposte.core.database.dao.EmojiTagDao
 import com.adsamcik.riposte.core.database.dao.ImportRequestDao
 import com.adsamcik.riposte.core.database.dao.MemeDao
@@ -13,6 +14,7 @@ import com.adsamcik.riposte.core.database.entity.ImportRequestItemEntity
 import com.adsamcik.riposte.core.database.entity.MemeEmbeddingEntity
 import com.adsamcik.riposte.core.database.entity.MemeEntity
 import com.adsamcik.riposte.core.database.entity.MemeFtsEntity
+import com.adsamcik.riposte.core.database.entity.PotentialDuplicateEntity
 
 /**
  * Room database for Riposte app.
@@ -25,6 +27,7 @@ import com.adsamcik.riposte.core.database.entity.MemeFtsEntity
         MemeEmbeddingEntity::class,
         ImportRequestEntity::class,
         ImportRequestItemEntity::class,
+        PotentialDuplicateEntity::class,
     ],
     version = 7,
     exportSchema = true,
@@ -62,4 +65,9 @@ abstract class MemeDatabase : RoomDatabase() {
      * DAO for import request persistence.
      */
     abstract fun importRequestDao(): ImportRequestDao
+
+    /**
+     * DAO for duplicate detection operations.
+     */
+    abstract fun duplicateDetectionDao(): DuplicateDetectionDao
 }

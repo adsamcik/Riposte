@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.HighQuality
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Label
+import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.PhotoSizeSelectLarge
 import androidx.compose.material.icons.filled.Policy
 import androidx.compose.material.icons.filled.Upload
@@ -180,6 +181,13 @@ internal fun LazyListScope.storageSection(
                 subtitle = stringResource(R.string.settings_import_data_subtitle),
                 onClick = { onIntent(SettingsIntent.ImportData) },
                 icon = Icons.Default.Download,
+            )
+
+            ClickableSettingItem(
+                title = stringResource(R.string.settings_find_duplicates_title),
+                subtitle = stringResource(R.string.settings_find_duplicates_subtitle),
+                onClick = { onIntent(SettingsIntent.OpenDuplicateDetection) },
+                icon = Icons.Default.Layers,
             )
         }
     }

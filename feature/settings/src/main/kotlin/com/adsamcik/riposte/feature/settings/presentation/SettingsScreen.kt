@@ -45,6 +45,7 @@ fun SettingsScreen(
     onNavigateBack: () -> Unit,
     onNavigateToLicenses: () -> Unit,
     onNavigateToFunStats: () -> Unit,
+    onNavigateToDuplicateDetection: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -85,6 +86,9 @@ fun SettingsScreen(
                 }
                 is SettingsEffect.NavigateToFunStats -> {
                     onNavigateToFunStats()
+                }
+                is SettingsEffect.NavigateToDuplicateDetection -> {
+                    onNavigateToDuplicateDetection()
                 }
                 is SettingsEffect.OpenUrl -> {
                     uriHandler.openUri(effect.url)

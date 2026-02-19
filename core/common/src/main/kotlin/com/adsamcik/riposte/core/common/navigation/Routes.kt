@@ -26,3 +26,6 @@ object FunStatsRoute
 
 @Serializable
 object LicensesRoute
+
+@Serializable
+object DuplicateDetectionRoute

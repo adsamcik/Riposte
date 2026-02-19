@@ -37,6 +37,7 @@ class LicensesRegressionTest {
             SettingsEffect.ImportComplete(5),
             SettingsEffect.ShowError("error"),
             SettingsEffect.ShareText("text", "title"),
+            SettingsEffect.NavigateToDuplicateDetection,
         )
 
         effects.forEach { effect ->
@@ -51,6 +52,7 @@ class LicensesRegressionTest {
                 is SettingsEffect.ImportComplete -> true
                 is SettingsEffect.ShowError -> true
                 is SettingsEffect.ShareText -> true
+                is SettingsEffect.NavigateToDuplicateDetection -> true
             }
             assertThat(handled).isTrue()
         }
