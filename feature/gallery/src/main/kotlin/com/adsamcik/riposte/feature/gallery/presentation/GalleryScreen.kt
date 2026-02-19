@@ -922,7 +922,6 @@ private fun GalleryEmojiFilterRail(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
                     .padding(top = 4.dp, bottom = 4.dp)
                     .testTag("EmojiFilterRail"),
             )
@@ -1052,7 +1051,6 @@ private fun FloatingSearchBar(
                 contentPadding = PaddingValues(horizontal = 16.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
                     .padding(vertical = 6.dp),
             ) {
                 lazyItems(
