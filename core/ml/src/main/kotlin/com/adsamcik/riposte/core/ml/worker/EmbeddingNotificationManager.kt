@@ -68,6 +68,7 @@ constructor(
             .setContentTitle("Indexing complete")
             .setContentText(text)
             .setAutoCancel(true)
+            .setTimeoutAfter(AUTO_DISMISS_DURATION_MS)
             .build()
     }
 
@@ -91,5 +92,6 @@ constructor(
         const val NOTIFICATION_ID = 2001
         const val COMPLETE_NOTIFICATION_ID = 2002
         private const val CHANNEL_NAME = "Indexing Progress"
+        private const val AUTO_DISMISS_DURATION_MS = 5_000L
     }
 }
