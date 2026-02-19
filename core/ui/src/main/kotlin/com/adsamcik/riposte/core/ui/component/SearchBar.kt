@@ -82,7 +82,7 @@ fun SearchBar(
                 .fillMaxWidth()
                 .focusRequester(focusRequester)
                 .onFocusChanged { focusState ->
-                    onFocusChanged?.invoke(focusState.isFocused)
+                    onFocusChanged?.invoke(focusState.hasFocus)
                 }
                 .testTag("SearchBar"),
         textStyle = MaterialTheme.typography.bodyMedium,
