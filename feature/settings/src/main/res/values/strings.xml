@@ -214,6 +214,7 @@
     <!-- Momentum -->
     <string name="settings_section_momentum">Momentum</string>
     <string name="settings_momentum_this_week">%1$d this week</string>
+    <string name="settings_momentum_this_week_label">this week</string>
     <string name="settings_momentum_growing">📈 Meme machine</string>
     <string name="settings_momentum_stable">➡️ Cruising</string>
     <string name="settings_momentum_declining">📉 Recharging</string>
