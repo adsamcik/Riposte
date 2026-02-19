@@ -236,7 +236,7 @@ class SearchDelegateTest {
         }
 
     @Test
-    fun `search error sets errorMessage`() =
+    fun `search error sets searchError`() =
         runTest(mainDispatcherRule.testDispatcher) {
             coEvery { searchUseCases.hybridSearch(any(), any()) } throws RuntimeException("Network error")
 
@@ -251,7 +251,8 @@ class SearchDelegateTest {
             val state = delegate.state.value
             assertThat(state.hasSearched).isTrue()
             assertThat(state.isSearching).isFalse()
-            assertThat(state.errorMessage).isEqualTo("Network error")
+            assertThat(state.searchError).isInstanceOf(SearchError.Generic::class.java)
+            assertThat((state.searchError as SearchError.Generic).message).isEqualTo("Network error")
             scope.cancel()
         }
 
@@ -277,7 +278,7 @@ class SearchDelegateTest {
             val state = delegate.state.value
             assertThat(state.hasSearched).isTrue()
             assertThat(state.isSearching).isFalse()
-            assertThat(state.errorMessage).isEqualTo("Semantic search not supported on this device")
+            assertThat(state.searchError).isEqualTo(SearchError.NotSupported)
             assertThat(state.results).isEmpty()
             scope.cancel()
         }
@@ -300,7 +301,7 @@ class SearchDelegateTest {
             val state = delegate.state.value
             assertThat(state.hasSearched).isTrue()
             assertThat(state.isSearching).isFalse()
-            assertThat(state.errorMessage).isEqualTo("Search index failed to load")
+            assertThat(state.searchError).isEqualTo(SearchError.IndexFailed)
             assertThat(state.results).isEmpty()
             scope.cancel()
         }
@@ -407,7 +408,7 @@ class SearchDelegateTest {
             delegate.onIntent(GalleryIntent.UpdateSearchQuery("cat"), scope)
             advanceTimeBy(400)
             advanceUntilIdle()
-            assertThat(delegate.state.value.errorMessage).isNotNull()
+            assertThat(delegate.state.value.searchError).isNotNull()
 
             // Fix the search mock and search again
             coEvery { searchUseCases.hybridSearch(any(), any()) } returns testSearchResults
@@ -417,7 +418,7 @@ class SearchDelegateTest {
             advanceUntilIdle()
 
             val state = delegate.state.value
-            assertThat(state.errorMessage).isNull()
+            assertThat(state.searchError).isNull()
             assertThat(state.results).isNotEmpty()
             assertThat(state.hasSearched).isTrue()
             scope.cancel()
@@ -436,12 +437,12 @@ class SearchDelegateTest {
             delegate.onIntent(GalleryIntent.UpdateSearchQuery("cat"), scope)
             advanceTimeBy(400)
             advanceUntilIdle()
-            assertThat(delegate.state.value.errorMessage).isNotNull()
+            assertThat(delegate.state.value.searchError).isNotNull()
 
             // Clear search
             delegate.onIntent(GalleryIntent.ClearSearch, scope)
 
-            assertThat(delegate.state.value.errorMessage).isNull()
+            assertThat(delegate.state.value.searchError).isNull()
             scope.cancel()
         }
 

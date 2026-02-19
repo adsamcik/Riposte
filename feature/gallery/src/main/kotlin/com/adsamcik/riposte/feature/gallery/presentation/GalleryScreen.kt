@@ -461,12 +461,23 @@ private fun GalleryScreenContent(
                                     CircularProgressIndicator()
                                 }
                             }
-                        } else if (uiState.searchState.errorMessage != null) {
+                        } else if (uiState.searchState.searchError != null) {
                             // Error state
                             item(span = { GridItemSpan(maxLineSpan) }, key = "search_error") {
+                                val error = uiState.searchState.searchError
                                 ErrorState(
-                                    message = uiState.searchState.errorMessage.orEmpty(),
-                                    onRetry = { onIntent(GalleryIntent.UpdateSearchQuery(uiState.searchState.query)) },
+                                    message = when (error) {
+                                        is SearchError.NotSupported ->
+                                            stringResource(R.string.gallery_error_search_not_supported)
+                                        is SearchError.IndexFailed ->
+                                            stringResource(R.string.gallery_error_search_index_failed)
+                                        is SearchError.Generic -> error.message
+                                    },
+                                    onRetry = if (error.isRetryable) {
+                                        { onIntent(GalleryIntent.UpdateSearchQuery(uiState.searchState.query)) }
+                                    } else {
+                                        null
+                                    },
                                 )
                             }
                         } else if (uiState.searchState.hasSearched && uiState.searchState.results.isEmpty()) {
@@ -793,6 +804,11 @@ private fun GalleryContent(
     val isSearching = uiState.screenMode == ScreenMode.Searching
     val isScrollingUp = gridState.isScrollingUp()
 
+    // Extra padding when the emoji rail is present so grid items start below it
+    val hasEmojiRail = !uiState.isSelectionMode &&
+        (uniqueEmojis.isNotEmpty() || uiState.favoritesCount > 0)
+    val emojiRailSpace = if (hasEmojiRail) 52.dp else 0.dp
+
     Box(modifier = Modifier.fillMaxSize()) {
         LazyVerticalGrid(
             state = gridState,
@@ -800,7 +816,7 @@ private fun GalleryContent(
             contentPadding = PaddingValues(
                 start = 8.dp,
                 end = 8.dp,
-                top = topPadding + 4.dp,
+                top = topPadding + emojiRailSpace + 4.dp,
                 bottom = when {
                     uiState.screenMode == ScreenMode.Searching -> 24.dp
                     else -> 120.dp
@@ -816,6 +832,7 @@ private fun GalleryContent(
             uniqueEmojis = uniqueEmojis,
             onIntent = onIntent,
             visible = isSearching || isScrollingUp,
+            modifier = Modifier.padding(top = topPadding),
         )
     }
 }
@@ -826,6 +843,7 @@ private fun GalleryEmojiFilterRail(
     uniqueEmojis: List<Pair<String, Int>>,
     onIntent: (GalleryIntent) -> Unit,
     visible: Boolean = true,
+    modifier: Modifier = Modifier,
 ) {
     val showEmojiRail = !uiState.isSelectionMode
 
@@ -840,6 +858,7 @@ private fun GalleryEmojiFilterRail(
 
         AnimatedVisibility(
             visible = visible && (uniqueEmojis.isNotEmpty() || showFavoritesChip),
+            modifier = modifier,
             enter = slideInVertically(animationSpec = tween(durationMillis = 200)) { -it } + fadeIn(animationSpec = tween(durationMillis = 200)),
             exit = slideOutVertically(animationSpec = tween(durationMillis = 200)) { -it } + fadeOut(animationSpec = tween(durationMillis = 200)),
         ) {

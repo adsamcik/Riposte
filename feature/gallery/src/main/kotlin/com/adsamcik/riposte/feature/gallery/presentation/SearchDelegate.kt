@@ -60,7 +60,7 @@ class SearchDelegate
                                     results = emptyList(),
                                     hasSearched = false,
                                     isSearching = false,
-                                    errorMessage = null,
+                                    searchError = null,
                                 )
                             }
                         }
@@ -139,7 +139,7 @@ class SearchDelegate
         ) {
             val searchScope = scope ?: return
             searchScope.launch {
-                _state.update { it.copy(isSearching = true, errorMessage = null) }
+                _state.update { it.copy(isSearching = true, searchError = null) }
                 val startTime = System.currentTimeMillis()
 
                 try {
@@ -167,7 +167,7 @@ class SearchDelegate
                         it.copy(
                             isSearching = false,
                             hasSearched = true,
-                            errorMessage = "Semantic search not supported on this device",
+                            searchError = SearchError.NotSupported,
                         )
                     }
                 } catch (e: ExceptionInInitializerError) {
@@ -176,7 +176,7 @@ class SearchDelegate
                         it.copy(
                             isSearching = false,
                             hasSearched = true,
-                            errorMessage = "Search index failed to load",
+                            searchError = SearchError.IndexFailed,
                         )
                     }
                 } catch (e: Exception) {
@@ -185,7 +185,7 @@ class SearchDelegate
                         it.copy(
                             isSearching = false,
                             hasSearched = true,
-                            errorMessage = e.message ?: "Search failed",
+                            searchError = SearchError.Generic(e.message ?: "Search failed"),
                         )
                     }
                 }

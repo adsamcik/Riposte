@@ -13,6 +13,27 @@ enum class ScreenMode {
 }
 
 /**
+ * Typed search error — allows the UI layer to localize messages and
+ * control retry behaviour without coupling to hardcoded English strings.
+ *
+ * @see SearchDelegate.performSearch
+ */
+sealed interface SearchError {
+    /** Device permanently cannot run the ML model (UnsatisfiedLinkError). */
+    data object NotSupported : SearchError
+
+    /** Model static initialiser failed (ExceptionInInitializerError). */
+    data object IndexFailed : SearchError
+
+    /** Any other search error. */
+    data class Generic(val message: String) : SearchError
+
+    /** Whether this error is permanent (retry will never succeed). */
+    val isRetryable: Boolean
+        get() = this is Generic
+}
+
+/**
  * Search-specific state slice, owned by [SearchDelegate].
  */
 data class SearchSliceState(
@@ -23,7 +44,7 @@ data class SearchSliceState(
     val hasSearched: Boolean = false,
     val searchDurationMs: Long = 0L,
     val totalResultCount: Int = 0,
-    val errorMessage: String? = null,
+    val searchError: SearchError? = null,
     val isTextOnly: Boolean = false,
 )
 

@@ -56,6 +56,10 @@
     <string name="gallery_empty_title">Your meme vault is empty! 📂</string>
     <string name="gallery_empty_message">Time to stock up on digital comedy gold ✨</string>
 
+    <!-- Favorites Empty State -->
+    <string name="gallery_favorites_empty_title">No favorites yet</string>
+    <string name="gallery_favorites_empty_message">Tap the heart on any meme to add it here</string>
+
     <!-- Loading State -->
     <string name="gallery_loading_message">Finding your memes…</string>
     <string name="gallery_cd_searching">Searching memes</string>
@@ -103,6 +107,8 @@
     <string name="gallery_error_meme_not_found">Meme not found</string>
     <string name="gallery_error_load_failed">Memes are hiding 🙈</string>
     <string name="gallery_error_share_no_app">Unable to share — app not found</string>
+    <string name="gallery_error_search_not_supported">Semantic search is not supported on this device</string>
+    <string name="gallery_error_search_index_failed">Search index failed to load — try reinstalling</string>
 
     <!-- Snackbar Messages -->
     <string name="gallery_snackbar_deleted">%d meme(s) deleted</string>
