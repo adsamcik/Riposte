@@ -129,7 +129,15 @@ class SearchRepositoryImpl
 
             val semanticResults =
                 if (prefs.enableSemanticSearch) {
-                    searchSemantic(query, limit)
+                    try {
+                        searchSemantic(query, limit)
+                    } catch (e: UnsatisfiedLinkError) {
+                        Timber.w(e, "Semantic search unavailable, returning text-only results")
+                        emptyList()
+                    } catch (e: ExceptionInInitializerError) {
+                        Timber.w(e, "Semantic search init failed, returning text-only results")
+                        emptyList()
+                    }
                 } else {
                     emptyList()
                 }

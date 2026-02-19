@@ -131,23 +131,24 @@ Located in `core/ml/src/androidTest/`:
 - `MediaPipeEmbeddingGeneratorTest` - Requires Android runtime
 - `MlIntegrationTest` - Full integration tests
 
-## Error Handling — No Silent Fallback
+## Error Handling — Graceful Degradation
 
 ### Design Decision
 
-When the semantic search index is unavailable (model not compatible, files missing, initialization failure), the app **does not silently fall back to text-only search**. Instead, errors are surfaced to the user immediately.
+When the semantic search index is unavailable (model not compatible, files missing, initialization failure), the app **degrades gracefully**: hybrid search returns FTS-only results and the settings UI prevents enabling the feature.
 
 **Rationale:**
-- Silent fallback hides real problems from the user. If the embedding model can't load, the user sees degraded search quality with no explanation and no way to act on it.
-- Showing "0 of X memes indexed" with a progress bar when indexing will never complete is misleading. The user waits for progress that will never happen.
-- Explicit error messages ("Indexing not supported on this device", "Indexing failed — try reinstalling the app") give users actionable information.
+- Discarding already-fetched FTS results when semantic search fails gives users zero results instead of useful text matches.
+- The settings toggle should reflect device capability — allowing users to enable a feature that can never work is misleading.
+- Explicit error messages in Settings ("Indexing not supported on this device", "Indexing failed — try reinstalling the app") give users actionable information about *why* smart search is unavailable.
 
 ### What happens when the model is unavailable
 
 | Layer | Behavior |
 |-------|----------|
-| **Settings** | Shows error message immediately on first failure (not after confirmed threshold). Displays root-cause-specific text in red: "not supported", "not included", or "failed". No progress bar shown. |
-| **Search** | `UnsatisfiedLinkError` → "Semantic search not supported on this device". `ExceptionInInitializerError` → "Search index failed to load". Both surface as `errorMessage` in the search UI. |
+| **Settings** | Smart search toggle is **disabled** (grayed out). Error message shown in red below the toggle: "not supported", "not included", or "failed". No progress bar shown. |
+| **Hybrid search** | `searchHybrid()` catches `UnsatisfiedLinkError` / `ExceptionInInitializerError` from the semantic search call, logs the error, and returns FTS-only results. The UI's `isTextOnly` flag indicates no semantic results were found. |
+| **Direct semantic search** | `searchSemantic()` still propagates ML errors — callers that use it directly must handle failures. |
 | **Background indexing** | `EmbeddingManager` skips scheduling when `initializationError != null`. No wasted work. |
 
 ### Error categories
@@ -162,6 +163,8 @@ When the semantic search index is unavailable (model not compatible, files missi
 ### Previous behavior (removed)
 
 Previously, `SearchDelegate.performSearch()` caught `UnsatisfiedLinkError` and `ExceptionInInitializerError` and silently fell back to FTS-only text search via `fallbackToTextSearch()`. The settings screen also required 2 confirmed failures on the same app version before showing an error, displaying the misleading "0 of X memes indexed" progress bar in the interim.
+
+Later, the fallback was removed entirely ("No Silent Fallback") — ML errors propagated through `searchHybrid()` to the UI, but this discarded already-fetched FTS results, giving users zero results plus an error. The current approach catches ML errors only at the `searchHybrid()` boundary, preserving FTS results while surfacing the limitation via Settings and the `isTextOnly` UI flag.
 
 ## Troubleshooting
 

@@ -133,15 +133,18 @@ internal fun LazyListScope.searchSection(
 ) {
     item(key = "search") {
         SettingsSection(title = stringResource(R.string.settings_section_search)) {
+            val isSemanticSearchSupported =
+                uiState.embeddingSearchState == null || uiState.embeddingSearchState.modelError == null
             SwitchSettingItem(
                 title = stringResource(R.string.settings_semantic_search_title),
                 subtitle = stringResource(R.string.settings_semantic_search_subtitle),
                 checked = uiState.enableSemanticSearch,
                 onCheckedChange = { onIntent(SettingsIntent.SetEnableSemanticSearch(it)) },
                 icon = Icons.Default.Psychology,
+                enabled = isSemanticSearchSupported,
             )
 
-            if (uiState.enableSemanticSearch) {
+            if (uiState.enableSemanticSearch || uiState.embeddingSearchState?.modelError != null) {
                 EmbeddingSearchSettings(uiState = uiState)
             }
 

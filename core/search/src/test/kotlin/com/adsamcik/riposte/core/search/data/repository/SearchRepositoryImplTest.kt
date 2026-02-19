@@ -662,13 +662,14 @@ class SearchRepositoryImplTest {
 
     // endregion
 
-    // region No-Fallback Regression Tests
+    // region Graceful Degradation Tests
     //
-    // These tests verify that searchHybrid propagates ML errors instead of
-    // swallowing them. See docs/SEMANTIC_SEARCH.md "Error Handling — No Silent Fallback".
+    // These tests verify that searchHybrid catches ML errors from semantic search
+    // and returns FTS-only results instead of propagating the error. Direct
+    // searchSemantic() calls still propagate errors.
 
     @Test
-    fun `searchHybrid propagates UnsatisfiedLinkError from semantic search`() =
+    fun `searchHybrid returns FTS results when semantic search throws UnsatisfiedLinkError`() =
         runTest {
             every { memeSearchDao.searchMemes(any()) } returns flowOf(testMemeEntities)
 
@@ -679,18 +680,14 @@ class SearchRepositoryImplTest {
                 semanticSearchEngine.findSimilarMultiVector(any(), any(), any())
             } throws UnsatisfiedLinkError("Native lib missing")
 
-            var caughtError: Throwable? = null
-            try {
-                repository.searchHybrid("test", 20)
-            } catch (e: UnsatisfiedLinkError) {
-                caughtError = e
-            }
+            val results = repository.searchHybrid("test", 20)
 
-            assertThat(caughtError).isInstanceOf(UnsatisfiedLinkError::class.java)
+            assertThat(results).isNotEmpty()
+            assertThat(results).hasSize(testMemeEntities.size)
         }
 
     @Test
-    fun `searchHybrid propagates ExceptionInInitializerError from semantic search`() =
+    fun `searchHybrid returns FTS results when semantic search throws ExceptionInInitializerError`() =
         runTest {
             every { memeSearchDao.searchMemes(any()) } returns flowOf(testMemeEntities)
 
@@ -701,14 +698,10 @@ class SearchRepositoryImplTest {
                 semanticSearchEngine.findSimilarMultiVector(any(), any(), any())
             } throws ExceptionInInitializerError(RuntimeException("init failed"))
 
-            var caughtError: Throwable? = null
-            try {
-                repository.searchHybrid("test", 20)
-            } catch (e: ExceptionInInitializerError) {
-                caughtError = e
-            }
+            val results = repository.searchHybrid("test", 20)
 
-            assertThat(caughtError).isInstanceOf(ExceptionInInitializerError::class.java)
+            assertThat(results).isNotEmpty()
+            assertThat(results).hasSize(testMemeEntities.size)
         }
 
     @Test
