@@ -1,7 +1,6 @@
 package com.adsamcik.riposte.core.ml
 
 import android.content.Context
-import androidx.core.content.pm.PackageInfoCompat
 import com.adsamcik.riposte.core.common.lifecycle.AppLifecycleTracker
 import com.adsamcik.riposte.core.database.dao.MemeEmbeddingDao
 import com.adsamcik.riposte.core.database.entity.MemeEmbeddingEntity
@@ -70,11 +69,6 @@ class EmbeddingManager
                     Timber.d("Embedding model warm-up completed")
                 } catch (e: Exception) {
                     Timber.w(e, "Embedding model warm-up failed (non-fatal)")
-                    try {
-                        versionManager.recordInitializationFailure(getAppVersionCode())
-                    } catch (ve: Exception) {
-                        Timber.w(ve, "Failed to record initialization failure")
-                    }
                 }
 
                 // 2. Resume incomplete indexing (runs after warm-up completes)
@@ -297,16 +291,6 @@ class EmbeddingManager
             val hash = digest.digest(text.toByteArray(Charsets.UTF_8))
             // Truncate to 32 chars (128 bits) for storage efficiency while maintaining uniqueness
             return hash.take(16).joinToString("") { "%02x".format(it) }
-        }
-
-        private fun getAppVersionCode(): Long {
-            return try {
-                val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-                PackageInfoCompat.getLongVersionCode(packageInfo)
-            } catch (e: Exception) {
-                Timber.w(e, "Failed to get app version code")
-                0L
-            }
         }
     }
 

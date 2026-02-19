@@ -140,24 +140,6 @@ class EmbeddingModelVersionManager
         }
 
         /**
-         * Record that the embedding model failed to initialize on this app version.
-         * After [CONFIRMED_FAILURE_THRESHOLD] failures on the same app version,
-         * the error is considered confirmed.
-         */
-        suspend fun recordInitializationFailure(appVersionCode: Long) {
-            context.embeddingPrefs.edit { prefs ->
-                val storedVersion = prefs[KEY_ERROR_APP_VERSION_CODE] ?: -1L
-                if (storedVersion == appVersionCode) {
-                    val count = (prefs[KEY_ERROR_ATTEMPT_COUNT] ?: 0) + 1
-                    prefs[KEY_ERROR_ATTEMPT_COUNT] = count
-                } else {
-                    prefs[KEY_ERROR_APP_VERSION_CODE] = appVersionCode
-                    prefs[KEY_ERROR_ATTEMPT_COUNT] = 1
-                }
-            }
-        }
-
-        /**
          * Clear error tracking (e.g., when initialization succeeds).
          */
         suspend fun clearInitializationFailure() {
@@ -167,33 +149,12 @@ class EmbeddingModelVersionManager
             }
         }
 
-        /**
-         * Returns true if the model error is confirmed for the given app version.
-         * An error is confirmed after [CONFIRMED_FAILURE_THRESHOLD] consecutive
-         * failures on the same app version. Resets automatically when a new
-         * app version is installed.
-         */
-        @Suppress("ReturnCount")
-        suspend fun isErrorConfirmedForVersion(appVersionCode: Long): Boolean {
-            val prefs = context.embeddingPrefs.data.first()
-            val storedVersion = prefs[KEY_ERROR_APP_VERSION_CODE] ?: return false
-            if (storedVersion != appVersionCode) return false
-            val count = prefs[KEY_ERROR_ATTEMPT_COUNT] ?: 0
-            return count >= CONFIRMED_FAILURE_THRESHOLD
-        }
-
         companion object {
             /**
              * Current model version.
              * UPDATE THIS when changing the embedding model.
              */
             const val CURRENT_VERSION = "embeddinggemma:1.0.0"
-
-            /**
-             * Number of failed initialization attempts before the error is
-             * considered confirmed for the current app version.
-             */
-            private const val CONFIRMED_FAILURE_THRESHOLD = 2
 
             private val KEY_LAST_MODEL_VERSION = stringPreferencesKey("last_model_version")
             private val KEY_ERROR_APP_VERSION_CODE = longPreferencesKey("error_app_version_code")

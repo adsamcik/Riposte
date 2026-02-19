@@ -249,23 +249,6 @@ class EmbeddingManagerTest {
         }
 
     @Test
-    fun `getStatistics does not call isErrorConfirmedForVersion`() =
-        runTest {
-            // Given
-            every { embeddingGenerator.initializationError } returns "Model files not found"
-            coEvery { memeEmbeddingDao.countValidEmbeddings() } returns 0
-            coEvery { memeEmbeddingDao.countMemesWithoutEmbeddings() } returns 10
-            coEvery { memeEmbeddingDao.countEmbeddingsNeedingRegeneration() } returns 0
-            coEvery { memeEmbeddingDao.getEmbeddingCountByModelVersion() } returns emptyList()
-
-            // When
-            embeddingManager.getStatistics()
-
-            // Then — confirmation check must not be called (immediate surfacing)
-            coVerify(exactly = 0) { versionManager.isErrorConfirmedForVersion(any()) }
-        }
-
-    @Test
     fun `getStatistics returns null modelError when no initialization error`() =
         runTest {
             // Given — model is healthy
@@ -280,7 +263,6 @@ class EmbeddingManagerTest {
 
             // Then
             assertThat(stats.modelError).isNull()
-            coVerify(exactly = 0) { versionManager.isErrorConfirmedForVersion(any()) }
         }
 
     @Test
@@ -370,7 +352,6 @@ class EmbeddingManagerTest {
             coEvery { memeEmbeddingDao.countMemesWithoutEmbeddings() } returns 5
             coEvery { memeEmbeddingDao.countEmbeddingsNeedingRegeneration() } returns 0
             coEvery { memeEmbeddingDao.getEmbeddingCountByModelVersion() } returns emptyList()
-            coEvery { versionManager.isErrorConfirmedForVersion(any()) } returns false
 
             val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler) + SupervisorJob())
             try {
@@ -403,7 +384,6 @@ class EmbeddingManagerTest {
             coEvery { memeEmbeddingDao.countMemesWithoutEmbeddings() } returns 0
             coEvery { memeEmbeddingDao.countEmbeddingsNeedingRegeneration() } returns 0
             coEvery { memeEmbeddingDao.getEmbeddingCountByModelVersion() } returns emptyList()
-            coEvery { versionManager.isErrorConfirmedForVersion(any()) } returns false
 
             val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler) + SupervisorJob())
             try {
@@ -432,7 +412,6 @@ class EmbeddingManagerTest {
             coEvery { versionManager.clearInitializationFailure() } returns Unit
             coEvery { versionManager.hasModelBeenUpgraded() } returns false
             every { embeddingGenerator.initializationError } returns "Model error"
-            coEvery { versionManager.isErrorConfirmedForVersion(any()) } returns true
             coEvery { memeEmbeddingDao.countValidEmbeddings() } returns 0
             coEvery { memeEmbeddingDao.countMemesWithoutEmbeddings() } returns 10
             coEvery { memeEmbeddingDao.countEmbeddingsNeedingRegeneration() } returns 0
@@ -470,7 +449,6 @@ class EmbeddingManagerTest {
             coEvery { memeEmbeddingDao.countMemesWithoutEmbeddings() } returns 5
             coEvery { memeEmbeddingDao.countEmbeddingsNeedingRegeneration() } returns 0
             coEvery { memeEmbeddingDao.getEmbeddingCountByModelVersion() } returns emptyList()
-            coEvery { versionManager.isErrorConfirmedForVersion(any()) } returns false
 
             val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler) + SupervisorJob())
             try {
@@ -496,7 +474,6 @@ class EmbeddingManagerTest {
             coEvery { memeEmbeddingDao.countMemesWithoutEmbeddings() } returns 5
             coEvery { memeEmbeddingDao.countEmbeddingsNeedingRegeneration() } returns 0
             coEvery { memeEmbeddingDao.getEmbeddingCountByModelVersion() } returns emptyList()
-            coEvery { versionManager.isErrorConfirmedForVersion(any()) } returns false
 
             val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler) + SupervisorJob())
             try {
@@ -530,7 +507,6 @@ class EmbeddingManagerTest {
             coEvery { memeEmbeddingDao.countMemesWithoutEmbeddings() } returns 0
             coEvery { memeEmbeddingDao.countEmbeddingsNeedingRegeneration() } returns 0
             coEvery { memeEmbeddingDao.getEmbeddingCountByModelVersion() } returns emptyList()
-            coEvery { versionManager.isErrorConfirmedForVersion(any()) } returns false
 
             val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler) + SupervisorJob())
             try {
