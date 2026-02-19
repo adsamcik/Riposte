@@ -46,6 +46,10 @@
     <string name="gallery_empty_title">Nenhum meme ainda</string>
     <string name="gallery_empty_message">Importe alguns memes para começar!</string>
 
+    <!-- Favorites Empty State -->
+    <string name="gallery_favorites_empty_title">Nenhum favorito ainda</string>
+    <string name="gallery_favorites_empty_message">Toque no coração em qualquer meme para adicioná-lo aqui</string>
+
     <!-- Loading State -->
     <string name="gallery_loading_message">Carregando memes…</string>
 

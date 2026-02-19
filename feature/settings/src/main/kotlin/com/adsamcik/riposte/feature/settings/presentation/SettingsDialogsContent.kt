@@ -83,13 +83,13 @@ private fun ExportOptionsDialog(
                     onCheckedChange = { onIntent(SettingsIntent.SetExportSettings(it)) },
                 )
                 ExportOptionRow(
-                    label = stringResource(R.string.settings_export_option_images) + " (coming soon)",
+                    label = stringResource(R.string.settings_export_option_images_coming_soon),
                     checked = false,
                     onCheckedChange = { },
                     enabled = false,
                 )
                 ExportOptionRow(
-                    label = stringResource(R.string.settings_export_option_tags) + " (coming soon)",
+                    label = stringResource(R.string.settings_export_option_tags_coming_soon),
                     checked = false,
                     onCheckedChange = { },
                     enabled = false,

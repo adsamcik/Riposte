@@ -10,3 +10,4 @@ var rootCommand = new RootCommand($"Riposte CLI v{CliVersion.Current} - AI-power
 };
 
 return await rootCommand.Parse(args).InvokeAsync(new InvocationConfiguration(), CancellationToken.None);
+

@@ -55,6 +55,10 @@
     <string name="gallery_empty_title">Zatím žádné memy</string>
     <string name="gallery_empty_message">Importuj nějaké memy a můžeme začít!</string>
 
+    <!-- Favorites Empty State -->
+    <string name="gallery_favorites_empty_title">Zatím žádné oblíbené</string>
+    <string name="gallery_favorites_empty_message">Klepni na srdíčko u libovolného memu a přidej ho sem</string>
+
     <!-- Loading State -->
     <string name="gallery_loading_message">Načítám memy…</string>
 

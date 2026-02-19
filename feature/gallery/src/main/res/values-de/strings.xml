@@ -46,6 +46,10 @@
     <string name="gallery_empty_title">Noch keine Memes</string>
     <string name="gallery_empty_message">Importiere ein paar Memes, um loszulegen!</string>
 
+    <!-- Favorites Empty State -->
+    <string name="gallery_favorites_empty_title">Noch keine Favoriten</string>
+    <string name="gallery_favorites_empty_message">Tippe auf das Herz bei einem Meme, um es hier hinzuzufügen</string>
+
     <!-- Loading State -->
     <string name="gallery_loading_message">Memes werden geladen…</string>
 
