@@ -126,4 +126,36 @@
     <string name="gallery_discard_changes_title">Zahodit změny?</string>
     <string name="gallery_discard_changes_message">Máš neuložené změny, které budou ztraceny.</string>
     <string name="gallery_button_keep_editing">Pokračovat v úpravách</string>
+
+    <!-- Delete Dialog -->
+    <string name="gallery_delete_single_message_named">Smazat „%1$s“? Tuto akci nelze vrátit zpět.</string>
+
+    <!-- Loading State -->
+    <string name="gallery_cd_searching">Vyhledávání memů</string>
+
+    <!-- Error State -->
+    <string name="gallery_action_retry">Zkusit znovu</string>
+
+    <!-- Similar Memes Section -->
+    <string name="gallery_similar_hint_generating">Hledám podobné memy…</string>
+    <string name="gallery_similar_hint_no_candidates">Importujte více memů pro zobrazení doporučení</string>
+    <string name="gallery_similar_hint_none_found">Žádné podobné memy nenalezeny</string>
+    <string name="gallery_similar_hint_error">Nepodařilo se načíst doporučení</string>
+
+    <!-- Error Messages -->
+    <string name="gallery_error_share_no_app">Nelze sdílet — aplikace nenalezena</string>
+    <string name="gallery_error_search_not_supported">Sémantické vyhledávání není na tomto zařízení podporováno</string>
+    <string name="gallery_error_search_index_failed">Index vyhledávání se nepodařilo načíst — zkuste přeinstalovat</string>
+
+    <!-- Import Status Banner -->
+    <string name="gallery_import_in_progress">Importuji memy… %1$d z %2$d</string>
+    <string name="gallery_import_completed">%1$d memů importováno ✓</string>
+    <string name="gallery_import_completed_with_errors">%1$d memů importováno, %2$d selhalo</string>
+    <string name="gallery_import_failed">Import narazil na problém</string>
+
+    <!-- Notification Banner -->
+    <string name="gallery_indexing_complete">Index vyhledávání aktualizován — %1$d memů připraveno 🔍</string>
+    <string name="gallery_cd_dismiss_notification">Zavřít oznámení</string>
+    <string name="gallery_cd_loading_more">Načítám další memy</string>
+
 </resources>

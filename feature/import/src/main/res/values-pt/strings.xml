@@ -43,4 +43,40 @@
     <string name="import_status_extracting">Extraindo pacote…</string>
     <string name="import_error_bundle_failed">Não foi possível importar o pacote</string>
     <string name="import_error_images_failed">Não foi possível importar as imagens</string>
+
+    <!-- Content Descriptions -->
+    <string name="import_content_description_error">Erro de processamento</string>
+    <string name="import_content_description_confirm_import">Confirmar importação</string>
+    <string name="import_content_description_add_photos">Adicionar fotos</string>
+    <string name="import_content_description_add_images">Adicionar imagens</string>
+
+    <!-- Buttons -->
+    <string name="import_button_cancel">Cancelar</string>
+
+    <!-- Status Messages -->
+    <string name="import_status_staging">Preparando imagens…</string>
+    <string name="import_status_zip_extract_errors">%d arquivo(s) não puderam ser extraídos do pacote</string>
+
+    <!-- Duplicate Detection Dialog -->
+    <string name="import_duplicate_dialog_title">Duplicatas encontradas</string>
+    <string name="import_duplicate_dialog_message">%d imagem(ns) já existem na sua biblioteca.</string>
+    <string name="import_duplicate_metadata_changed">%d delas têm metadados atualizados.</string>
+    <string name="import_duplicate_import_anyway">Importar mesmo assim</string>
+    <string name="import_duplicate_skip">Pular duplicatas</string>
+    <string name="import_duplicate_update_metadata">Atualizar metadados</string>
+
+    <!-- Metadata Update -->
+    <string name="import_status_updating_metadata">Atualizando metadados…</string>
+    <string name="import_metadata_updated_count">Metadados atualizados para %d meme(s)</string>
+
+    <!-- Import Result Summary -->
+    <string name="import_result_title">Importação concluída</string>
+    <string name="import_result_summary">%1$d importados, %2$d falharam</string>
+    <string name="import_result_done">Concluído</string>
+    <string name="import_result_retry">Repetir %d com falha</string>
+
+    <!-- Onboarding Tips -->
+    <string name="import_tip_emoji_tagging">A IA adiciona tags de emoji e descrições para você encontrar memes mais rápido ✨</string>
+    <string name="import_hint_max_images">Até 20 imagens de cada vez</string>
+
 </resources>

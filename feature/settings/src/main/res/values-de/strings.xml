@@ -123,4 +123,138 @@
     <string name="settings_crash_share_subtitle_empty">Keine Absturzberichte</string>
     <string name="settings_crash_clear_title">Absturzberichte löschen</string>
     <string name="settings_crash_cleared">Absturzberichte gelöscht</string>
+
+    <!-- Library Section -->
+    <string name="settings_section_library">Bibliothek</string>
+    <string name="settings_library_total_memes_title">Memes insgesamt</string>
+    <string name="settings_library_favorites_title">Favoriten</string>
+
+    <!-- Import Confirmation Dialog -->
+    <string name="settings_import_confirm_title">Backup importieren</string>
+    <string name="settings_import_confirm_message">Aktuelle Einstellungen mit Backup von %1$s ersetzen?</string>
+    <string name="settings_import_confirm_message_unknown">Aktuelle Einstellungen mit diesem Backup ersetzen?</string>
+    <string name="settings_import_confirm_replace">Ersetzen</string>
+
+    <!-- Duplicate Detection -->
+    <string name="settings_find_duplicates_title">Duplikate finden</string>
+    <string name="settings_find_duplicates_subtitle">Nach ähnlichen oder identischen Memes suchen</string>
+    <string name="duplicate_detection_title">Duplikate finden</string>
+    <string name="duplicate_detection_scan_button">Bibliothek durchsuchen</string>
+    <string name="duplicate_detection_scanning">Wird durchsucht…</string>
+    <string name="duplicate_detection_hashing_progress">Visuelle Fingerabdrücke berechnen: %1$d / %2$d</string>
+    <string name="duplicate_detection_comparing">Memes werden verglichen…</string>
+    <string name="duplicate_detection_no_duplicates">Keine Duplikate gefunden! Deine Bibliothek ist sauber 🎉</string>
+    <string name="duplicate_detection_found">%1$d potenzielle Duplikatgruppen gefunden</string>
+    <string name="duplicate_detection_sensitivity">Empfindlichkeit</string>
+    <string name="duplicate_detection_sensitivity_exact">Nur exakte</string>
+    <string name="duplicate_detection_sensitivity_similar">Ähnliche</string>
+    <string name="duplicate_detection_sensitivity_loose">Locker</string>
+    <string name="duplicate_detection_merge">Intelligent zusammenführen</string>
+    <string name="duplicate_detection_dismiss">Kein Duplikat</string>
+    <string name="duplicate_detection_merge_all">Alle zusammenführen</string>
+    <string name="duplicate_detection_dismiss_all">Alle ablehnen</string>
+    <string name="duplicate_detection_exact_match">Exakte Übereinstimmung</string>
+    <string name="duplicate_detection_perceptual_match">Visuelle Übereinstimmung (Distanz: %1$d)</string>
+    <string name="duplicate_detection_merged_success">Zusammengeführt! Beste Qualität beibehalten, Metadaten kombiniert</string>
+    <string name="duplicate_detection_dismissed">Abgelehnt</string>
+    <string name="duplicate_detection_resolution">%1$d × %2$d</string>
+    <string name="duplicate_detection_higher_res">Höhere Auflösung</string>
+
+    <!-- About Section -->
+    <string name="settings_licenses_not_available">Open-Source-Lizenzen werden in einem zukünftigen Update verfügbar sein</string>
+
+    <!-- Fun Statistics -->
+    <string name="settings_section_fun_stats">Spaßstatistiken</string>
+    <string name="settings_fun_stats_title">Spaßstatistiken</string>
+    <string name="settings_fun_stats_summary_title">Sammlungsstatistiken &amp; Meilensteine</string>
+    <string name="settings_fun_stats_summary_subtitle">Deine Vibes, Momentum, Erfolge und mehr</string>
+
+    <string name="settings_section_meme_o_meter">Deine Sammlung</string>
+    <string name="settings_meme_o_meter_storage">Gesamtgröße der Bibliothek</string>
+    <string name="settings_meme_o_meter_memes_imported">Importierte Memes</string>
+
+    <!-- Collection Titles -->
+    <string name="settings_title_meme_peasant">Meme-Bauer</string>
+    <string name="settings_title_meme_squire">Meme-Knappe</string>
+    <string name="settings_title_meme_knight">Meme-Ritter</string>
+    <string name="settings_title_meme_lord">Meme-Lord</string>
+    <string name="settings_title_meme_warlord">Meme-Kriegsherr</string>
+    <string name="settings_title_meme_dragon">Meme-Drache</string>
+    <string name="settings_title_meme_deity">Meme-Gottheit</string>
+    <string name="settings_title_meme_h4x0r">Meme H4x0r</string>
+    <string name="settings_title_empty">Meme-Lehrling</string>
+
+    <!-- Vibe Check -->
+    <string name="settings_section_vibe_check">Deine Vibes</string>
+    <string name="settings_vibe_no_tags">Tagge Memes mit Emojis, um deine Vibes zu sehen!</string>
+    <string name="settings_vibe_memes">%1$d Memes</string>
+    <string name="settings_vibe_rank">#%1$d</string>
+
+    <!-- Meme Count (plurals) -->
+    <plurals name="settings_meme_count">
+        <item quantity="one">%d Meme</item>
+        <item quantity="other">%d Memes</item>
+    </plurals>
+
+    <!-- Fun Fact of the Day -->
+    <string name="settings_section_fun_fact">Fun Fact des Tages</string>
+    <string name="settings_fun_fact_total_views">Deine Memes wurden insgesamt %1$d Mal angesehen. Beliebte Sammlung!</string>
+    <string name="settings_fun_fact_max_views">Dein meistgesehenes Meme wurde %1$d Mal geöffnet. Besessen?</string>
+    <string name="settings_fun_fact_never_viewed">Du hast %1$d Memes, die nie angesehen wurden. Zeig ihnen etwas Liebe!</string>
+    <string name="settings_fun_fact_favorites_pct">Deine Favoriten machen %1$d%% deiner Bibliothek aus. Wählerisch!</string>
+    <string name="settings_fun_fact_emoji_count">Du verwendest %1$d verschiedene Emoji-Tags. Vielfältiger Geschmack!</string>
+    <string name="settings_fun_fact_formats">Deine Bibliothek hat %1$d verschiedene Bildformate. Format-Diplomat!</string>
+    <string name="settings_fun_fact_total_shares">Deine Memes wurden %1$d Mal geteilt. Du verbreitest die Kultur!</string>
+    <string name="settings_fun_fact_avg_size">Dein durchschnittliches Meme ist %1$s. Das sind viele Pixel!</string>
+    <string name="settings_fun_fact_collection_age">Dein ältestes Meme wurde vor %1$d Tagen importiert. Praktisch vintage!</string>
+    <string name="settings_fun_fact_fresh_drop">Dein neuestes Meme ist nur %1$d Stunden alt. Frische Ware!</string>
+    <string name="settings_fun_fact_fav_viewers">%1$d deiner Favoriten wurden mindestens einmal angesehen. Toller Geschmack!</string>
+    <string name="settings_fun_fact_not_enough">Importiere mehr Memes, um Fun Facts freizuschalten!</string>
+
+    <!-- Momentum -->
+    <string name="settings_section_momentum">Momentum</string>
+    <string name="settings_momentum_this_week">%1$d diese Woche</string>
+    <string name="settings_momentum_this_week_label">diese Woche</string>
+    <string name="settings_momentum_growing">📈 Meme-Maschine</string>
+    <string name="settings_momentum_stable">➡️ Auf Kurs</string>
+    <string name="settings_momentum_declining">📉 Aufladen</string>
+    <string name="settings_momentum_no_data">Importiere Memes, um dein Momentum zu sehen!</string>
+    <string name="settings_momentum_week_3">3W</string>
+    <string name="settings_momentum_week_2">2W</string>
+    <string name="settings_momentum_week_1">1W</string>
+    <string name="settings_momentum_week_now">Jetzt</string>
+    <string name="settings_momentum_sparkline_description">Wöchentliche Meme-Importe: %1$s. Trend: %2$s</string>
+
+    <!-- Milestones -->
+    <string name="settings_section_milestones">Meilensteine</string>
+    <string name="settings_milestones_count">%1$d / %2$d</string>
+    <string name="settings_milestone_locked">\?\?\?</string>
+    <string name="settings_milestones_locked_remaining">%1$d weitere zu entdecken…</string>
+    <string name="settings_milestone_first_steps">Erste Schritte</string>
+    <string name="settings_milestone_first_steps_desc">Importiere dein erstes Meme</string>
+    <string name="settings_milestone_getting_started">Los geht's</string>
+    <string name="settings_milestone_getting_started_desc">Erreiche 10 Memes</string>
+    <string name="settings_milestone_half_century">Halbes Jahrhundert</string>
+    <string name="settings_milestone_half_century_desc">Erreiche 50 Memes</string>
+    <string name="settings_milestone_century_club">Century Club</string>
+    <string name="settings_milestone_century_club_desc">Erreiche 100 Memes</string>
+    <string name="settings_milestone_the_archivist">Der Archivar</string>
+    <string name="settings_milestone_the_archivist_desc">Erreiche 500 Memes</string>
+    <string name="settings_milestone_meme_hoarder">Meme-Sammler</string>
+    <string name="settings_milestone_meme_hoarder_desc">Erreiche 1.000 Memes</string>
+    <string name="settings_milestone_loyal_fan">Treuer Fan</string>
+    <string name="settings_milestone_loyal_fan_desc">Markiere 25 Memes als Favoriten</string>
+    <string name="settings_milestone_emoji_rainbow">Emoji-Regenbogen</string>
+    <string name="settings_milestone_emoji_rainbow_desc">Verwende 15 verschiedene Emoji-Tags</string>
+    <string name="settings_milestone_format_diplomat">Format-Diplomat</string>
+    <string name="settings_milestone_format_diplomat_desc">Habe Memes in 3+ Formaten</string>
+    <string name="settings_milestone_deep_diver">Tieftaucher</string>
+    <string name="settings_milestone_deep_diver_desc">Sieh dir ein Meme 25+ Mal an</string>
+    <string name="settings_milestone_social_butterfly">Gesellschaftsschmetterling</string>
+    <string name="settings_milestone_social_butterfly_desc">Teile Memes 100 Mal</string>
+    <string name="settings_milestone_night_owl">Nachteule</string>
+    <string name="settings_milestone_night_owl_desc">Importiere ein Meme zwischen Mitternacht und 4 Uhr morgens</string>
+    <string name="settings_milestone_leet">1337</string>
+    <string name="settings_milestone_leet_desc">Habe genau 1.337 Memes</string>
+
 </resources>

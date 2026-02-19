@@ -43,4 +43,40 @@
     <string name="import_status_extracting">Bundle wird entpackt…</string>
     <string name="import_error_bundle_failed">Bundle konnte nicht importiert werden</string>
     <string name="import_error_images_failed">Bilder konnten nicht importiert werden</string>
+
+    <!-- Content Descriptions -->
+    <string name="import_content_description_error">Verarbeitungsfehler</string>
+    <string name="import_content_description_confirm_import">Import bestätigen</string>
+    <string name="import_content_description_add_photos">Fotos hinzufügen</string>
+    <string name="import_content_description_add_images">Bilder hinzufügen</string>
+
+    <!-- Buttons -->
+    <string name="import_button_cancel">Abbrechen</string>
+
+    <!-- Status Messages -->
+    <string name="import_status_staging">Bilder werden vorbereitet…</string>
+    <string name="import_status_zip_extract_errors">%d Datei(en) konnten nicht aus dem Bundle extrahiert werden</string>
+
+    <!-- Duplicate Detection Dialog -->
+    <string name="import_duplicate_dialog_title">Duplikate gefunden</string>
+    <string name="import_duplicate_dialog_message">%d Bild(er) existieren bereits in deiner Bibliothek.</string>
+    <string name="import_duplicate_metadata_changed">%d davon haben aktualisierte Metadaten.</string>
+    <string name="import_duplicate_import_anyway">Trotzdem importieren</string>
+    <string name="import_duplicate_skip">Duplikate überspringen</string>
+    <string name="import_duplicate_update_metadata">Metadaten aktualisieren</string>
+
+    <!-- Metadata Update -->
+    <string name="import_status_updating_metadata">Metadaten werden aktualisiert…</string>
+    <string name="import_metadata_updated_count">Metadaten für %d Meme(s) aktualisiert</string>
+
+    <!-- Import Result Summary -->
+    <string name="import_result_title">Import abgeschlossen</string>
+    <string name="import_result_summary">%1$d importiert, %2$d fehlgeschlagen</string>
+    <string name="import_result_done">Fertig</string>
+    <string name="import_result_retry">%d fehlgeschlagene wiederholen</string>
+
+    <!-- Onboarding Tips -->
+    <string name="import_tip_emoji_tagging">KI fügt Emoji-Tags und Beschreibungen hinzu, damit du Memes schneller findest ✨</string>
+    <string name="import_hint_max_images">Bis zu 20 Bilder auf einmal</string>
+
 </resources>

@@ -60,4 +60,13 @@
     <!-- Snackbar Messages -->
     <string name="share_snackbar_saved_to_gallery">Guardado en la galería</string>
     <string name="share_snackbar_save_failed">Error al guardar</string>
+
+    <!-- Action Buttons -->
+    <string name="share_button_preparing">Preparando…</string>
+
+    <!-- Error Messages -->
+    <string name="share_error_share_failed">Error al compartir</string>
+    <string name="share_error_load_failed">Error al cargar el meme</string>
+    <string name="share_error_no_apps">No hay aplicaciones disponibles para compartir. Instala una app de mensajería para compartir memes.</string>
+
 </resources>

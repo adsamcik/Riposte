@@ -62,4 +62,21 @@
     <!-- Onboarding Tips -->
     <string name="import_tip_emoji_tagging">Tvé memy budou po importu automaticky oštítkovány pomocí AI ✨</string>
     <string name="import_hint_max_images">Až 20 obrázků najednou</string>
+
+    <!-- Content Descriptions -->
+    <string name="import_content_description_confirm_import">Potvrdit import</string>
+    <string name="import_content_description_add_photos">Přidat fotky</string>
+    <string name="import_content_description_add_images">Přidat obrázky</string>
+
+    <!-- Status Messages -->
+    <string name="import_status_staging">Příprava obrázků…</string>
+
+    <!-- Duplicate Detection Dialog -->
+    <string name="import_duplicate_metadata_changed">%d z nich má aktualizovaná metadata.</string>
+    <string name="import_duplicate_update_metadata">Aktualizovat metadata</string>
+
+    <!-- Metadata Update -->
+    <string name="import_status_updating_metadata">Aktualizuji metadata…</string>
+    <string name="import_metadata_updated_count">Aktualizována metadata pro %d mem(ů)</string>
+
 </resources>

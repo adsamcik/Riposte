@@ -128,4 +128,137 @@
     <string name="settings_crash_share_subtitle_empty">Žádné záznamy o pádech</string>
     <string name="settings_crash_clear_title">Vymazat záznamy o pádech</string>
     <string name="settings_crash_cleared">Záznamy o pádech vymazány</string>
+
+    <!-- Library Section -->
+    <string name="settings_section_library">Knihovna</string>
+    <string name="settings_library_total_memes_title">Celkem memů</string>
+    <string name="settings_library_favorites_title">Oblíbené</string>
+
+    <!-- Duplicate Detection -->
+    <string name="settings_find_duplicates_title">Najít duplikáty</string>
+    <string name="settings_find_duplicates_subtitle">Vyhledat podobné nebo identické memy</string>
+    <string name="duplicate_detection_title">Najít duplikáty</string>
+    <string name="duplicate_detection_scan_button">Prohledat knihovnu</string>
+    <string name="duplicate_detection_scanning">Prohledávám…</string>
+    <string name="duplicate_detection_hashing_progress">Výpočet vizuálních otisků: %1$d / %2$d</string>
+    <string name="duplicate_detection_comparing">Porovnávám memy…</string>
+    <string name="duplicate_detection_no_duplicates">Žádné duplikáty nenalezeny! Tvá knihovna je čistá 🎉</string>
+    <string name="duplicate_detection_found">Nalezeno %1$d potenciálních skupin duplikátů</string>
+    <string name="duplicate_detection_sensitivity">Citlivost</string>
+    <string name="duplicate_detection_sensitivity_exact">Pouze přesné</string>
+    <string name="duplicate_detection_sensitivity_similar">Podobné</string>
+    <string name="duplicate_detection_sensitivity_loose">Volné</string>
+    <string name="duplicate_detection_merge">Chytré sloučení</string>
+    <string name="duplicate_detection_dismiss">Není duplikát</string>
+    <string name="duplicate_detection_merge_all">Sloučit vše</string>
+    <string name="duplicate_detection_dismiss_all">Odmítnout vše</string>
+    <string name="duplicate_detection_exact_match">Přesná shoda</string>
+    <string name="duplicate_detection_perceptual_match">Vizuální shoda (vzdálenost: %1$d)</string>
+    <string name="duplicate_detection_merged_success">Sloučeno! Zachována nejlepší kvalita, sloučena metadata</string>
+    <string name="duplicate_detection_dismissed">Odmítnuto</string>
+    <string name="duplicate_detection_resolution">%1$d × %2$d</string>
+    <string name="duplicate_detection_higher_res">Vyšší rozlišení</string>
+
+    <!-- About Section -->
+    <string name="settings_licenses_not_available">Open source licence budou k dispozici v budoucí aktualizaci</string>
+
+    <!-- Export Options Dialog -->
+    <string name="settings_dialog_cancel">Zrušit</string>
+
+    <!-- Fun Statistics -->
+    <string name="settings_section_fun_stats">Zábavné statistiky</string>
+    <string name="settings_fun_stats_title">Zábavné statistiky</string>
+    <string name="settings_fun_stats_summary_title">Statistiky sbírky a milníky</string>
+    <string name="settings_fun_stats_summary_subtitle">Tvé vibrace, momentum, úspěchy a další</string>
+
+    <string name="settings_section_meme_o_meter">Tvá sbírka</string>
+    <string name="settings_meme_o_meter_storage">Celková velikost knihovny</string>
+    <string name="settings_meme_o_meter_memes_imported">Importovaných memů</string>
+
+    <!-- Collection Titles -->
+    <string name="settings_title_meme_peasant">Meme nováček</string>
+    <string name="settings_title_meme_squire">Meme zbrojnoš</string>
+    <string name="settings_title_meme_knight">Meme rytíř</string>
+    <string name="settings_title_meme_lord">Meme lord</string>
+    <string name="settings_title_meme_warlord">Meme vojevůdce</string>
+    <string name="settings_title_meme_dragon">Meme drak</string>
+    <string name="settings_title_meme_deity">Meme božstvo</string>
+    <string name="settings_title_meme_h4x0r">Meme H4x0r</string>
+    <string name="settings_title_empty">Meme učeň</string>
+
+    <!-- Vibe Check -->
+    <string name="settings_section_vibe_check">Tvé vibrace</string>
+    <string name="settings_vibe_no_tags">Oštítkuj memy emoji, abys viděl své vibrace!</string>
+    <string name="settings_vibe_memes">%1$d memů</string>
+    <string name="settings_vibe_rank">#%1$d</string>
+
+    <!-- Meme Count (plurals) -->
+    <plurals name="settings_meme_count">
+        <item quantity="one">%d meme</item>
+        <item quantity="few">%d memy</item>
+        <item quantity="many">%d memů</item>
+        <item quantity="other">%d memů</item>
+    </plurals>
+
+    <!-- Fun Fact of the Day -->
+    <string name="settings_section_fun_fact">Zajímavost dne</string>
+    <string name="settings_fun_fact_total_views">Tvé memy byly zobrazeny celkem %1$d krát. Populární sbírka!</string>
+    <string name="settings_fun_fact_max_views">Tvůj nejprohlíženější meme byl otevřen %1$d krát. Posedlost?</string>
+    <string name="settings_fun_fact_never_viewed">Máš %1$d memů, které nebyly nikdy zobrazeny. Ukaž jim trochu lásky!</string>
+    <string name="settings_fun_fact_favorites_pct">Tvé oblíbené tvoří %1$d%% tvé knihovny. Vybíravý!</string>
+    <string name="settings_fun_fact_emoji_count">Používáš %1$d různých emoji štítků. Rozmanitý vkus!</string>
+    <string name="settings_fun_fact_formats">Tvá knihovna má %1$d různých formátů obrázků. Formátový diplomat!</string>
+    <string name="settings_fun_fact_total_shares">Tvé memy byly sdíleny %1$d krát. Šíříš kulturu!</string>
+    <string name="settings_fun_fact_avg_size">Tvůj průměrný meme má %1$s. To je hodně pixelů!</string>
+    <string name="settings_fun_fact_collection_age">Tvůj nejstarší meme byl importován před %1$d dny. Prakticky vintage!</string>
+    <string name="settings_fun_fact_fresh_drop">Tvůj nejnovější meme je starý jen %1$d hodin. Čerstvý přírůstek!</string>
+    <string name="settings_fun_fact_fav_viewers">%1$d tvých oblíbených bylo zobrazeno alespoň jednou. Skvělý vkus!</string>
+    <string name="settings_fun_fact_not_enough">Importuj více memů pro odemknutí zajímavostí!</string>
+
+    <!-- Momentum -->
+    <string name="settings_section_momentum">Momentum</string>
+    <string name="settings_momentum_this_week">%1$d tento týden</string>
+    <string name="settings_momentum_this_week_label">tento týden</string>
+    <string name="settings_momentum_growing">📈 Meme mašina</string>
+    <string name="settings_momentum_stable">➡️ Na vlně</string>
+    <string name="settings_momentum_declining">📉 Dobíjím</string>
+    <string name="settings_momentum_no_data">Importuj memy pro zobrazení svého momenta!</string>
+    <string name="settings_momentum_week_3">3t</string>
+    <string name="settings_momentum_week_2">2t</string>
+    <string name="settings_momentum_week_1">1t</string>
+    <string name="settings_momentum_week_now">Teď</string>
+    <string name="settings_momentum_sparkline_description">Týdenní importy memů: %1$s. Trend: %2$s</string>
+
+    <!-- Milestones -->
+    <string name="settings_section_milestones">Milníky</string>
+    <string name="settings_milestones_count">%1$d / %2$d</string>
+    <string name="settings_milestone_locked">\?\?\?</string>
+    <string name="settings_milestones_locked_remaining">%1$d dalších k objevení…</string>
+    <string name="settings_milestone_first_steps">První kroky</string>
+    <string name="settings_milestone_first_steps_desc">Importuj svůj první meme</string>
+    <string name="settings_milestone_getting_started">Začínáme</string>
+    <string name="settings_milestone_getting_started_desc">Dosáhni 10 memů</string>
+    <string name="settings_milestone_half_century">Půl století</string>
+    <string name="settings_milestone_half_century_desc">Dosáhni 50 memů</string>
+    <string name="settings_milestone_century_club">Klub století</string>
+    <string name="settings_milestone_century_club_desc">Dosáhni 100 memů</string>
+    <string name="settings_milestone_the_archivist">Archivář</string>
+    <string name="settings_milestone_the_archivist_desc">Dosáhni 500 memů</string>
+    <string name="settings_milestone_meme_hoarder">Sběratel memů</string>
+    <string name="settings_milestone_meme_hoarder_desc">Dosáhni 1 000 memů</string>
+    <string name="settings_milestone_loyal_fan">Věrný fanoušek</string>
+    <string name="settings_milestone_loyal_fan_desc">Označ 25 memů jako oblíbené</string>
+    <string name="settings_milestone_emoji_rainbow">Emoji duha</string>
+    <string name="settings_milestone_emoji_rainbow_desc">Použij 15 různých emoji štítků</string>
+    <string name="settings_milestone_format_diplomat">Formátový diplomat</string>
+    <string name="settings_milestone_format_diplomat_desc">Měj memy ve 3+ formátech</string>
+    <string name="settings_milestone_deep_diver">Hloubkový potápěč</string>
+    <string name="settings_milestone_deep_diver_desc">Zobraz jeden meme 25+ krát</string>
+    <string name="settings_milestone_social_butterfly">Společenský motýl</string>
+    <string name="settings_milestone_social_butterfly_desc">Sdílej memy 100 krát</string>
+    <string name="settings_milestone_night_owl">Noční sova</string>
+    <string name="settings_milestone_night_owl_desc">Importuj meme mezi půlnocí a 4 hodinou ranní</string>
+    <string name="settings_milestone_leet">1337</string>
+    <string name="settings_milestone_leet_desc">Měj přesně 1 337 memů</string>
+
 </resources>

@@ -62,4 +62,11 @@
     <!-- Snackbar Messages -->
     <string name="share_snackbar_saved_to_gallery">Uloženo do galerie</string>
     <string name="share_snackbar_save_failed">Uložení selhalo</string>
+
+    <!-- Action Buttons -->
+    <string name="share_button_preparing">Připravuji…</string>
+
+    <!-- Error Messages -->
+    <string name="share_error_no_apps">Žádné aplikace pro sdílení nejsou k dispozici. Nainstalujte komunikační aplikaci pro sdílení memů.</string>
+
 </resources>
