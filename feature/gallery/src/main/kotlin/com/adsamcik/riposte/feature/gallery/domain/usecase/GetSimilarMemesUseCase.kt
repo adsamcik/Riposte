@@ -67,7 +67,7 @@ class GetSimilarMemesUseCase
                         }
 
                     SimilarMemesStatus.Found(memes)
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     Timber.w(e, "Failed to find similar memes for meme %d", memeId)
                     SimilarMemesStatus.Error(e.message ?: "Unknown error")
                 }
