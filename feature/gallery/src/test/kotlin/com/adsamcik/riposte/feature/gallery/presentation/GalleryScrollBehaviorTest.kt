@@ -1,6 +1,7 @@
 package com.adsamcik.riposte.feature.gallery.presentation
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -449,6 +450,136 @@ class GalleryScrollBehaviorTest {
         }
 
         composeRule.onNodeWithTag("SearchBar").assertIsDisplayed()
+    }
+
+    // ============ Emoji Rail Positioning (Regression: rail must not be hidden behind search bar) ============
+
+    @Test
+    fun `emoji rail top edge is below search bar bottom edge in browsing mode`() {
+        composeRule.setContent {
+            RiposteTheme(dynamicColor = false) {
+                GalleryScreen(
+                    uiState = GalleryUiState(
+                        memes = manyMemes,
+                        isLoading = false,
+                        screenMode = ScreenMode.Browsing,
+                        uniqueEmojis = emojis,
+                        usePaging = false,
+                    ),
+                    onIntent = {},
+                    onNavigateToMeme = {},
+                    onNavigateToImport = {},
+                    onNavigateToSettings = {},
+                )
+            }
+        }
+
+        composeRule.waitForIdle()
+
+        val searchBarBounds = composeRule.onNodeWithTag("SearchBar").getUnclippedBoundsInRoot()
+        val emojiRailBounds = composeRule.onNodeWithTag("EmojiFilterRail").getUnclippedBoundsInRoot()
+
+        // The emoji rail must start at or below the search bar's bottom edge
+        assertThat(emojiRailBounds.top.value).isAtLeast(searchBarBounds.bottom.value)
+    }
+
+    @Test
+    fun `emoji rail top edge is below search bar bottom edge in search mode`() {
+        composeRule.setContent {
+            RiposteTheme(dynamicColor = false) {
+                GalleryScreen(
+                    uiState = GalleryUiState(
+                        memes = manyMemes,
+                        isLoading = false,
+                        screenMode = ScreenMode.Searching,
+                        uniqueEmojis = emojis,
+                        usePaging = false,
+                        searchState = SearchSliceState(
+                            query = "test",
+                            hasSearched = true,
+                            results = manyMemes.take(5).map {
+                                com.adsamcik.riposte.core.model.SearchResult(
+                                    meme = it,
+                                    relevanceScore = 1.0f,
+                                    matchType = com.adsamcik.riposte.core.model.MatchType.TEXT,
+                                )
+                            },
+                        ),
+                    ),
+                    onIntent = {},
+                    onNavigateToMeme = {},
+                    onNavigateToImport = {},
+                    onNavigateToSettings = {},
+                )
+            }
+        }
+
+        composeRule.waitForIdle()
+
+        val searchBarBounds = composeRule.onNodeWithTag("SearchBar").getUnclippedBoundsInRoot()
+        val emojiRailBounds = composeRule.onNodeWithTag("EmojiFilterRail").getUnclippedBoundsInRoot()
+
+        assertThat(emojiRailBounds.top.value).isAtLeast(searchBarBounds.bottom.value)
+    }
+
+    @Test
+    fun `emoji rail and search bar do not overlap vertically`() {
+        composeRule.setContent {
+            RiposteTheme(dynamicColor = false) {
+                GalleryScreen(
+                    uiState = GalleryUiState(
+                        memes = manyMemes,
+                        isLoading = false,
+                        screenMode = ScreenMode.Browsing,
+                        uniqueEmojis = emojis,
+                        favoritesCount = 5,
+                        usePaging = false,
+                    ),
+                    onIntent = {},
+                    onNavigateToMeme = {},
+                    onNavigateToImport = {},
+                    onNavigateToSettings = {},
+                )
+            }
+        }
+
+        composeRule.waitForIdle()
+
+        val searchBarBounds = composeRule.onNodeWithTag("SearchBar").getUnclippedBoundsInRoot()
+        val emojiRailBounds = composeRule.onNodeWithTag("EmojiFilterRail").getUnclippedBoundsInRoot()
+
+        // No vertical overlap: rail top >= search bar bottom
+        assertThat(emojiRailBounds.top.value).isAtLeast(searchBarBounds.bottom.value)
+    }
+
+    @Test
+    fun `emoji rail positioned below search bar with favorites filter active`() {
+        composeRule.setContent {
+            RiposteTheme(dynamicColor = false) {
+                GalleryScreen(
+                    uiState = GalleryUiState(
+                        memes = manyMemes,
+                        isLoading = false,
+                        screenMode = ScreenMode.Browsing,
+                        uniqueEmojis = emojis,
+                        favoritesCount = 3,
+                        filter = GalleryFilter.Favorites,
+                        usePaging = false,
+                    ),
+                    onIntent = {},
+                    onNavigateToMeme = {},
+                    onNavigateToImport = {},
+                    onNavigateToSettings = {},
+                )
+            }
+        }
+
+        composeRule.waitForIdle()
+
+        val searchBarBounds = composeRule.onNodeWithTag("SearchBar").getUnclippedBoundsInRoot()
+        val emojiRailBounds = composeRule.onNodeWithTag("EmojiFilterRail").getUnclippedBoundsInRoot()
+
+        assertThat(emojiRailBounds.top.value).isAtLeast(searchBarBounds.bottom.value)
     }
 
     // ============ Helpers ============
