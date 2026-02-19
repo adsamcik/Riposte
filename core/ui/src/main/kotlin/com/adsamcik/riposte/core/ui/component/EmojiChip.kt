@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -21,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -33,8 +35,6 @@ import com.adsamcik.riposte.core.ui.theme.EmojiCardBackgrounds
 import com.adsamcik.riposte.core.ui.theme.RiposteMotionScheme
 import com.adsamcik.riposte.core.ui.theme.RiposteShapes
 import com.adsamcik.riposte.core.ui.theme.RiposteTheme
-
-private val EmojiChipShape = RiposteShapes.EmojiChipDefault
 
 /**
  * Chip component for displaying an emoji tag.
@@ -55,15 +55,15 @@ fun EmojiChip(
     showName: Boolean = false,
     backgroundColor: Color? = null,
 ) {
-    val bgColor =
-        backgroundColor ?: if (isSelected) {
-            MaterialTheme.colorScheme.primaryContainer
-        } else {
-            MaterialTheme.colorScheme.surfaceContainerHigh
-        }
-
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
+
+    // Selection morph progress — drives shape, color, and border transitions
+    val selectionProgress by animateFloatAsState(
+        targetValue = if (isSelected) 1f else 0f,
+        animationSpec = RiposteMotionScheme.FastSpatial,
+        label = "EmojiChipMorph",
+    )
 
     val scale by animateFloatAsState(
         targetValue =
@@ -78,22 +78,32 @@ fun EmojiChip(
         label = "EmojiChipScale",
     )
 
+    // Animated background color (gray → primaryContainer)
+    val defaultBg = MaterialTheme.colorScheme.surfaceContainerHigh
+    val selectedBg = MaterialTheme.colorScheme.primaryContainer
+    val bgColor = backgroundColor ?: lerp(defaultBg, selectedBg, selectionProgress)
+
+    // Animated shape morph (20dp → ~17dp corners for typical 48dp chip)
+    val morphedShape = RoundedCornerShape((20f - 3f * selectionProgress).dp)
+
+    // Animated border (width + alpha ramp with progress)
+    val borderColor = MaterialTheme.colorScheme.primary
+    val borderModifier =
+        if (selectionProgress > 0.01f) {
+            Modifier.border(
+                width = (2f * selectionProgress).dp,
+                color = borderColor.copy(alpha = selectionProgress),
+                shape = morphedShape,
+            )
+        } else {
+            Modifier
+        }
+
     val chipDescription =
         if (isSelected) {
             stringResource(R.string.ui_emoji_chip_filter_active, emojiTag.emoji)
         } else {
             stringResource(R.string.ui_emoji_chip_filter_inactive, emojiTag.emoji)
-        }
-
-    val borderModifier =
-        if (isSelected) {
-            Modifier.border(
-                width = 2.dp,
-                color = MaterialTheme.colorScheme.primary,
-                shape = RiposteShapes.EmojiChipSelected,
-            )
-        } else {
-            Modifier
         }
 
     Surface(
@@ -116,7 +126,7 @@ fun EmojiChip(
                     },
                 )
                 .scale(scale),
-        shape = if (isSelected) RiposteShapes.EmojiChipSelected else EmojiChipShape,
+        shape = morphedShape,
         color = bgColor,
     ) {
         if (showName) {
