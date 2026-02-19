@@ -7,6 +7,72 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-02-19
+
+### Added
+
+- Find Flow Fusion — inline emoji quick-filters in search bar with animated chip selection morph
+- Fun statistics screen with milestones, vibe check, sparklines, and M3 Expressive design language
+- Open source licenses screen in settings
+- M3 Expressive design system: Digital Joy color palette, Inter font family, spring physics motion, expressive shapes, and hybrid dynamic color theme
+- Transparent top bar with content scrolling behind it and auto-hiding emoji rail on scroll
+- Emoji usage sorting in filter rail (by share count) with settings toggle
+- Tap emoji in meme detail to search gallery by that emoji
+- Favorited memes prioritized in search results
+- Search UX improvements: autocomplete suggestions, search duration display, actionable no-results state, history icons for recent searches
+- Native Android share sheet replaces intermediate share screen
+- Meme count display in settings
+- Auto-resume incomplete embedding indexing on startup with background ML model warm-up
+- Notification banner system in gallery (replaces welcome message)
+- Text-only indicator when semantic search is unavailable
+- Timber logging for all silent catch blocks
+- Accessibility improvements: gallery loading indicator labels, meme card emoji overlay labels, settings screen enhancements, selection state announcements
+- .NET 8 rewrite of riposte-cli with parallel processing, adaptive 429 handling, dedupe command, and 1000+ image batch optimization
+- Expanded test suite significantly (566+ CLI tests, comprehensive UI regression tests, duplicate detection tests, fun statistics tests, and more)
+
+### Changed
+
+- Emoji filter changed from multi-select to single-select
+- Emoji taps routed through search bar for unified search experience
+- Share flow uses native share sheet directly (removed ShareScreen and QuickShareBottomSheet)
+- Default share format changed from WebP to JPEG
+- Search relevance scoring switched from BM25 to field-based scoring for FTS4
+- Emoji filtering moved from composition to SQL PagingSource for performance
+- Gallery overflow menu simplified to Select and Settings
+- Baseline profile expanded with search and share flows
+- Upgraded to AGP 9.0.0, Gradle 9.3.1, Material 3 1.5.0-alpha13, MediaPipe 0.10.32, LiteRT 2.1.1
+- Updated launcher icon and splash screen
+- CLI default model updated to gpt-5-mini
+
+### Fixed
+
+- ANR caused by infinite EmbeddingGenerationWorker scheduling loop
+- Startup ANR resolved with lazy Hilt injection and deferred OpenCL availability check
+- Import/indexing notifications reappearing on every startup
+- Auto-dismiss import and embedding indexing completion notifications after 5 seconds
+- Duplicate key crash in gallery LazyVerticalGrid
+- Search results blinking when changing filters
+- Back button navigation: two-step exit from search mode, keyboard dismissal, edit mode exit from all entry points
+- Gallery bottom row truncation and grid spacing issues
+- Search placeholder cutoff and emoji rail overlap
+- Duplicate detection reliability improved with original source byte hashing
+- Worker batch continuation and startup race condition
+- Import screen empty state layout and error display on image cards
+- Detail view image scaling and description expand/collapse
+- Progress bar visual artifacts and sparkline dot clipping
+- Hardcoded colors replaced with Material 3 theme tokens in MemeDetailScreen
+- Smart search settings now coordinate with model availability
+- ZIP extract directory recreation after cleanup
+- Search index double-counting memes
+- OpenCL availability proactively detected before enabling GPU
+- CLI ZIP bundling fix for Windows (writestr for OSError)
+
+### Security
+
+- Removed silent fallback from semantic search engine — errors surface immediately instead of degrading silently
+- Embedding dimension validation added
+- Foreign key constraint added to ImportRequestItemEntity
+
 ## [0.2.0] - 2026-02-11
 
 ### Added
@@ -95,6 +161,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Adaptive rate limiting with exponential backoff
 - Schema v1.1 with localization support
 
-[Unreleased]: https://github.com/yourusername/riposte/compare/v0.2.0...HEAD
-[0.2.0]: https://github.com/yourusername/riposte/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/yourusername/riposte/releases/tag/v0.1.0
+[Unreleased]: https://github.com/adsamcik/riposte/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/adsamcik/riposte/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/adsamcik/riposte/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/adsamcik/riposte/releases/tag/v0.1.0

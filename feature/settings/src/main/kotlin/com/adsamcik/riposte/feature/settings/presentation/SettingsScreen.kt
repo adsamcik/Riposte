@@ -73,6 +73,7 @@ fun SettingsScreen(
             }
         }
 
+    @Suppress("LocalContextGetResourceValueCall") // context.getString() needed in coroutine scope
     LaunchedEffect(Unit) {
         viewModel.onIntent(SettingsIntent.CalculateCacheSize)
 

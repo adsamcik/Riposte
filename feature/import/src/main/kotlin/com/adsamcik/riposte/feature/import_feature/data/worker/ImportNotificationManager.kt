@@ -1,6 +1,7 @@
 package com.adsamcik.riposte.feature.import_feature.data.worker
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -83,6 +84,7 @@ class ImportNotificationManager
                 ) == PackageManager.PERMISSION_GRANTED
             ) {
                 val notification = buildCompleteNotification(successCount, failedCount)
+                @SuppressLint("MissingPermission") // Permission checked above
                 NotificationManagerCompat.from(context).notify(COMPLETE_NOTIFICATION_ID, notification)
             }
         }

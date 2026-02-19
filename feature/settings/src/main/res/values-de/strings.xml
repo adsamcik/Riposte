@@ -232,7 +232,7 @@
     <string name="settings_milestones_locked_remaining">%1$d weitere zu entdecken…</string>
     <string name="settings_milestone_first_steps">Erste Schritte</string>
     <string name="settings_milestone_first_steps_desc">Importiere dein erstes Meme</string>
-    <string name="settings_milestone_getting_started">Los geht's</string>
+    <string name="settings_milestone_getting_started">Los geht\'s</string>
     <string name="settings_milestone_getting_started_desc">Erreiche 10 Memes</string>
     <string name="settings_milestone_half_century">Halbes Jahrhundert</string>
     <string name="settings_milestone_half_century_desc">Erreiche 50 Memes</string>

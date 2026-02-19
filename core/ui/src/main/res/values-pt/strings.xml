@@ -16,6 +16,46 @@
     <string name="ui_search_icon_description">Pesquisar</string>
     <string name="ui_search_clear_description">Limpar pesquisa</string>
 
+    <!-- SectionHeader -->
+    <string name="ui_section_header_see_all">Ver tudo</string>
+
+    <!-- QuickAccessSection -->
+    <string name="ui_quick_access_title">Acesso rápido</string>
+    <string name="ui_quick_access_settings">Configurações de acesso rápido</string>
+    <string name="ui_quick_access_item_description">%1$s, sticker. Toque para compartilhar, segure para compartilhar instantaneamente</string>
+
+    <!-- HoldToShareProgress -->
+    <string name="ui_hold_to_share_progress">Segure para compartilhar, %1$d por cento</string>
+    <string name="ui_hold_to_share_action">Compartilhar</string>
+
+    <!-- EmojiGridOverlay -->
+    <string name="ui_emoji_grid_title">Todos os humores</string>
+    <string name="ui_emoji_grid_close">Fechar</string>
+
+    <!-- EmojiFilterRail -->
+    <string name="ui_emoji_filter_clear_all">Limpar todos os filtros</string>
+
+    <!-- EmojiChip -->
+    <string name="ui_emoji_chip_filter_active">Filtro %1$s, ativo</string>
+    <string name="ui_emoji_chip_filter_inactive">Filtro %1$s, inativo</string>
+
+    <!-- MoreChip -->
+    <string name="ui_more_chip_description">%1$d filtros de emoji disponíveis</string>
+
+    <!-- Toggle states -->
+    <string name="ui_toggle_state_on">Ativado</string>
+    <string name="ui_toggle_state_off">Desativado</string>
+    <string name="ui_state_favorited">Favorito</string>
+    <string name="ui_state_not_favorited">Não favorito</string>
+    <string name="ui_state_selected">Selecionado</string>
+    <string name="ui_state_not_selected">Não selecionado</string>
+
     <!-- SearchResultsHeader -->
+    <plurals name="ui_search_results_count">
+        <item quantity="one">%1$d resultado</item>
+        <item quantity="other">%1$d resultados</item>
+    </plurals>
     <string name="ui_search_results_query">para \"%1$s\"</string>
+    <string name="ui_search_results_duration">%1$s em %2$ss</string>
+    <string name="ui_search_text_only_suffix">%1$s (apenas texto)</string>
 </resources>

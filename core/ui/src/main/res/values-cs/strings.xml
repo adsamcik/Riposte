@@ -26,6 +26,7 @@
 
     <!-- Accessibility: HoldToShareProgress -->
     <string name="ui_hold_to_share_progress">Podrž pro sdílení, %1$d procent</string>
+    <string name="ui_hold_to_share_action">Sdílet</string>
 
     <!-- Accessibility: EmojiGridOverlay -->
     <string name="ui_emoji_grid_title">Všechny nálady</string>
@@ -50,5 +51,13 @@
     <string name="ui_state_not_selected">Nevybráno</string>
 
     <!-- SearchResultsHeader -->
+    <plurals name="ui_search_results_count">
+        <item quantity="one">%1$d výsledek</item>
+        <item quantity="few">%1$d výsledky</item>
+        <item quantity="many">%1$d výsledků</item>
+        <item quantity="other">%1$d výsledků</item>
+    </plurals>
     <string name="ui_search_results_query">pro \"%1$s\"</string>
+    <string name="ui_search_results_duration">%1$s za %2$ss</string>
+    <string name="ui_search_text_only_suffix">%1$s (pouze text)</string>
 </resources>

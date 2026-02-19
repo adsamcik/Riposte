@@ -1,5 +1,6 @@
 package com.adsamcik.riposte.core.ml.worker
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.ServiceInfo
 import androidx.hilt.work.HiltWorker
@@ -214,6 +215,7 @@ class EmbeddingGenerationWorker
             }
         }
 
+        @SuppressLint("SpecifyForegroundServiceType") // Declared in app manifest
         private fun createForegroundInfo(
             current: Int,
             total: Int,

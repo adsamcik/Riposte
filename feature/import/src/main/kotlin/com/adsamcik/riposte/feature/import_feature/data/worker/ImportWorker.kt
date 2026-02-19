@@ -1,5 +1,6 @@
 package com.adsamcik.riposte.feature.import_feature.data.worker
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
 import androidx.hilt.work.HiltWorker
@@ -187,6 +188,7 @@ class ImportWorker
             }
         }
 
+        @SuppressLint("SpecifyForegroundServiceType") // Declared in app manifest
         private fun createForegroundInfo(
             current: Int,
             total: Int,

@@ -16,6 +16,46 @@
     <string name="ui_search_icon_description">Buscar</string>
     <string name="ui_search_clear_description">Limpiar búsqueda</string>
 
+    <!-- SectionHeader -->
+    <string name="ui_section_header_see_all">Ver todo</string>
+
+    <!-- QuickAccessSection -->
+    <string name="ui_quick_access_title">Acceso rápido</string>
+    <string name="ui_quick_access_settings">Ajustes de acceso rápido</string>
+    <string name="ui_quick_access_item_description">%1$s, sticker. Toca para compartir, mantén para compartir al instante</string>
+
+    <!-- HoldToShareProgress -->
+    <string name="ui_hold_to_share_progress">Mantén para compartir, %1$d por ciento</string>
+    <string name="ui_hold_to_share_action">Compartir</string>
+
+    <!-- EmojiGridOverlay -->
+    <string name="ui_emoji_grid_title">Todos los ánimos</string>
+    <string name="ui_emoji_grid_close">Cerrar</string>
+
+    <!-- EmojiFilterRail -->
+    <string name="ui_emoji_filter_clear_all">Borrar todos los filtros</string>
+
+    <!-- EmojiChip -->
+    <string name="ui_emoji_chip_filter_active">Filtro %1$s, activo</string>
+    <string name="ui_emoji_chip_filter_inactive">Filtro %1$s, inactivo</string>
+
+    <!-- MoreChip -->
+    <string name="ui_more_chip_description">%1$d filtros de emoji más disponibles</string>
+
+    <!-- Toggle states -->
+    <string name="ui_toggle_state_on">Activado</string>
+    <string name="ui_toggle_state_off">Desactivado</string>
+    <string name="ui_state_favorited">En favoritos</string>
+    <string name="ui_state_not_favorited">No en favoritos</string>
+    <string name="ui_state_selected">Seleccionado</string>
+    <string name="ui_state_not_selected">No seleccionado</string>
+
     <!-- SearchResultsHeader -->
+    <plurals name="ui_search_results_count">
+        <item quantity="one">%1$d resultado</item>
+        <item quantity="other">%1$d resultados</item>
+    </plurals>
     <string name="ui_search_results_query">para \"%1$s\"</string>
+    <string name="ui_search_results_duration">%1$s en %2$ss</string>
+    <string name="ui_search_text_only_suffix">%1$s (solo texto)</string>
 </resources>
