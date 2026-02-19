@@ -1,21 +1,28 @@
 package com.adsamcik.riposte.core.ui.component
 
+import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.adsamcik.riposte.core.model.EmojiTag
+import com.adsamcik.riposte.core.ui.theme.AnimationDurations
+import com.adsamcik.riposte.core.ui.theme.RiposteMotionScheme
 import com.adsamcik.riposte.core.ui.theme.RiposteTheme
+import com.adsamcik.riposte.core.ui.util.LocalReducedMotion
+import kotlinx.coroutines.delay
 
 /** Maximum number of emojis to process to prevent DoS */
 private const val MAX_EMOJI_COUNT = 200
@@ -49,6 +56,8 @@ fun EmojiFilterRail(
     val visibleEmojis = limitedEmojis.take(maxVisible)
     val hiddenCount = (limitedEmojis.size - maxVisible).coerceAtLeast(0)
 
+    val reducedMotion = LocalReducedMotion.current
+
     Column(modifier = modifier) {
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -57,22 +66,51 @@ fun EmojiFilterRail(
             // Leading content slot (e.g., Favorites chip)
             leadingContent?.invoke(this)
 
-            items(
+            itemsIndexed(
                 items = visibleEmojis,
-                key = { it.first },
-            ) { (emoji, _) ->
+                key = { _, item -> item.first },
+            ) { index, (emoji, _) ->
+                val progress = remember { Animatable(if (reducedMotion) 1f else 0f) }
+                if (!reducedMotion) {
+                    LaunchedEffect(Unit) {
+                        delay(index.toLong() * AnimationDurations.FILTER_STAGGER_ITEM)
+                        progress.animateTo(1f, RiposteMotionScheme.EmojiReaction)
+                    }
+                }
+
                 EmojiChip(
                     emojiTag = EmojiTag.fromEmoji(emoji),
                     onClick = { onEmojiSelected(emoji) },
                     isSelected = emoji == activeFilter,
+                    modifier = Modifier.graphicsLayer {
+                        alpha = progress.value
+                        translationY = (1f - progress.value) * 24f
+                    },
                 )
             }
 
             if (hiddenCount > 0) {
                 item(key = "more_chip") {
+                    val progress = remember {
+                        Animatable(if (reducedMotion) 1f else 0f)
+                    }
+                    if (!reducedMotion) {
+                        LaunchedEffect(Unit) {
+                            delay(
+                                visibleEmojis.size.toLong() *
+                                    AnimationDurations.FILTER_STAGGER_ITEM,
+                            )
+                            progress.animateTo(1f, RiposteMotionScheme.EmojiReaction)
+                        }
+                    }
+
                     MoreChip(
                         count = hiddenCount,
                         onClick = { isExpanded = true },
+                        modifier = Modifier.graphicsLayer {
+                            alpha = progress.value
+                            translationY = (1f - progress.value) * 24f
+                        },
                     )
                 }
             }

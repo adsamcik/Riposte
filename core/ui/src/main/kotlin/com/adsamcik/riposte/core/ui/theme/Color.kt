@@ -85,3 +85,49 @@ object EmojiContextColors {
     val Plant = Color(0xFF059669) // 🌱 Forest Green
     val Electric = Color(0xFF06B6D4) // ⚡ Neon Cyan
 }
+
+/** Maps known emojis to their semantic [EmojiContextColors] value. */
+private val emojiContextMap: Map<String, Color> =
+    mapOf(
+        "😂" to EmojiContextColors.Joy,
+        "🤣" to EmojiContextColors.Joy,
+        "😅" to EmojiContextColors.Joy,
+        "😊" to EmojiContextColors.Joy,
+        "😄" to EmojiContextColors.Joy,
+        "🔥" to EmojiContextColors.Fire,
+        "😤" to EmojiContextColors.Fire,
+        "💀" to EmojiContextColors.Skull,
+        "🙃" to EmojiContextColors.Skull,
+        "😏" to EmojiContextColors.Skull,
+        "❤️" to EmojiContextColors.Heart,
+        "🥺" to EmojiContextColors.Heart,
+        "🥹" to EmojiContextColors.Heart,
+        "😭" to EmojiContextColors.Heart,
+        "😩" to EmojiContextColors.Heart,
+        "💎" to EmojiContextColors.Gem,
+        "✨" to EmojiContextColors.Gem,
+        "⭐" to EmojiContextColors.Gem,
+        "🌊" to EmojiContextColors.Water,
+        "💧" to EmojiContextColors.Water,
+        "🌱" to EmojiContextColors.Plant,
+        "🌿" to EmojiContextColors.Plant,
+        "☕" to EmojiContextColors.Plant,
+        "😌" to EmojiContextColors.Plant,
+        "⚡" to EmojiContextColors.Electric,
+        "🧑" to EmojiContextColors.Electric,
+        "🌧️" to EmojiContextColors.Water,
+    )
+
+/**
+ * Returns an expressive context color for the given emoji.
+ *
+ * Known emojis get their semantic color from [EmojiContextColors].
+ * Unknown emojis get a deterministic color from [EmojiCardBackgrounds].
+ */
+fun getEmojiContextColor(emoji: String): Color =
+    emojiContextMap[emoji]
+        ?: EmojiCardBackgrounds[
+            emoji.hashCode().mod(EmojiCardBackgrounds.size).let {
+                if (it < 0) it + EmojiCardBackgrounds.size else it
+            },
+        ]
