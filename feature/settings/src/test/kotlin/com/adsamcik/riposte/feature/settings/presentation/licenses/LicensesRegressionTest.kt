@@ -43,6 +43,7 @@ class LicensesRegressionTest {
             val handled = when (effect) {
                 is SettingsEffect.ShowSnackbar -> true
                 is SettingsEffect.NavigateToLicenses -> true
+                is SettingsEffect.NavigateToFunStats -> true
                 is SettingsEffect.OpenUrl -> true
                 is SettingsEffect.LaunchExportPicker -> true
                 is SettingsEffect.LaunchImportPicker -> true

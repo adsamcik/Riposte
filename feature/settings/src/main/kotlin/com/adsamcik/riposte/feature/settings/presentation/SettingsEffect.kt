@@ -5,6 +5,8 @@ sealed interface SettingsEffect {
 
     data object NavigateToLicenses : SettingsEffect
 
+    data object NavigateToFunStats : SettingsEffect
+
     data class OpenUrl(val url: String) : SettingsEffect
 
     data object LaunchExportPicker : SettingsEffect

@@ -14,8 +14,6 @@ import com.adsamcik.riposte.core.testing.MainDispatcherRule
 import com.adsamcik.riposte.feature.settings.R
 import com.adsamcik.riposte.feature.settings.domain.usecase.ExportPreferencesUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.GetAppPreferencesUseCase
-import com.adsamcik.riposte.feature.settings.domain.usecase.GetFunStatisticsUseCase
-import com.adsamcik.riposte.feature.settings.domain.usecase.GetMilestonesUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.GetSharingPreferencesUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.EmbeddingStatusInfo
 import com.adsamcik.riposte.feature.settings.domain.usecase.ImportPreferencesUseCase
@@ -64,8 +62,6 @@ class SettingsViewModelTest {
     // Use case mocks
     private lateinit var getAppPreferencesUseCase: GetAppPreferencesUseCase
     private lateinit var getSharingPreferencesUseCase: GetSharingPreferencesUseCase
-    private lateinit var getFunStatisticsUseCase: GetFunStatisticsUseCase
-    private lateinit var getMilestonesUseCase: GetMilestonesUseCase
     private lateinit var setDarkModeUseCase: SetDarkModeUseCase
     private lateinit var setDynamicColorsUseCase: SetDynamicColorsUseCase
     private lateinit var setEnableSemanticSearchUseCase: SetEnableSemanticSearchUseCase
@@ -122,8 +118,6 @@ class SettingsViewModelTest {
         importPreferencesUseCase = mockk(relaxed = true)
         observeEmbeddingStatisticsUseCase = mockk(relaxed = true)
         observeLibraryStatsUseCase = mockk(relaxed = true)
-        getFunStatisticsUseCase = mockk(relaxed = true)
-        getMilestonesUseCase = mockk(relaxed = true)
         crashLogManager = mockk(relaxed = true)
 
         every { getAppPreferencesUseCase() } returns appPreferencesFlow
@@ -142,8 +136,6 @@ class SettingsViewModelTest {
             context = context,
             getAppPreferencesUseCase = getAppPreferencesUseCase,
             getSharingPreferencesUseCase = getSharingPreferencesUseCase,
-            getFunStatisticsUseCase = getFunStatisticsUseCase,
-            getMilestonesUseCase = getMilestonesUseCase,
             setDarkModeUseCase = setDarkModeUseCase,
             setDynamicColorsUseCase = setDynamicColorsUseCase,
             setEnableSemanticSearchUseCase = setEnableSemanticSearchUseCase,
@@ -424,6 +416,7 @@ class SettingsViewModelTest {
                 is SettingsIntent.DismissImportConfirmDialog,
                 is SettingsIntent.OpenLicenses,
                 is SettingsIntent.OpenPrivacyPolicy,
+                is SettingsIntent.OpenFunStats,
                 is SettingsIntent.SetStripMetadata,
                 is SettingsIntent.ShareCrashLogs,
                 is SettingsIntent.ClearCrashLogs,
@@ -872,6 +865,7 @@ class SettingsViewModelTest {
             when (effect) {
                 is SettingsEffect.ShowSnackbar -> false
                 is SettingsEffect.NavigateToLicenses -> true
+                is SettingsEffect.NavigateToFunStats -> true
                 is SettingsEffect.OpenUrl -> false
                 is SettingsEffect.LaunchExportPicker -> false
                 is SettingsEffect.LaunchImportPicker -> false

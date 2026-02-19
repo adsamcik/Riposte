@@ -15,8 +15,6 @@ import com.adsamcik.riposte.core.model.UserDensityPreference
 import com.adsamcik.riposte.feature.settings.R
 import com.adsamcik.riposte.feature.settings.domain.usecase.ExportPreferencesUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.GetAppPreferencesUseCase
-import com.adsamcik.riposte.feature.settings.domain.usecase.GetFunStatisticsUseCase
-import com.adsamcik.riposte.feature.settings.domain.usecase.GetMilestonesUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.GetSharingPreferencesUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.ImportPreferencesUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.ObserveEmbeddingStatisticsUseCase
@@ -61,8 +59,6 @@ class SettingsViewModel
         @param:ApplicationContext private val context: Context,
         private val getAppPreferencesUseCase: GetAppPreferencesUseCase,
         private val getSharingPreferencesUseCase: GetSharingPreferencesUseCase,
-        private val getFunStatisticsUseCase: GetFunStatisticsUseCase,
-        private val getMilestonesUseCase: GetMilestonesUseCase,
         private val setDarkModeUseCase: SetDarkModeUseCase,
         private val setDynamicColorsUseCase: SetDynamicColorsUseCase,
         private val setEnableSemanticSearchUseCase: SetEnableSemanticSearchUseCase,
@@ -103,7 +99,6 @@ class SettingsViewModel
             observeEmbeddingStatistics()
             observeLibraryStats()
             refreshCrashLogCount()
-            loadFunStatistics()
         }
 
         private fun loadCurrentLanguage() {
@@ -156,36 +151,6 @@ class SettingsViewModel
                             )
                         }
                     }
-            }
-        }
-
-        private fun loadFunStatistics() {
-            viewModelScope.launch {
-                try {
-                    val stats = withContext(ioDispatcher) { getFunStatisticsUseCase() }
-                    val milestones = getMilestonesUseCase(stats)
-                    val weeklyData = computeWeeklyData(stats)
-                    val trend = computeMomentumTrend(weeklyData)
-
-                    _uiState.update {
-                        it.copy(
-                            collectionTitle = computeCollectionTitle(context, stats.totalMemes),
-                            totalStorageBytes = stats.totalStorageBytes,
-                            storageFunFact = computeStorageFunFact(stats.totalStorageBytes),
-                            topVibes = stats.topEmojis,
-                            vibeTagline = computeVibeTagline(stats.topEmojis),
-                            funFactOfTheDay = computeFunFactOfTheDay(context, stats),
-                            weeklyImportCounts = weeklyData,
-                            momentumTrend = trend,
-                            memesThisWeek = weeklyData.lastOrNull() ?: 0,
-                            milestones = milestones,
-                            unlockedMilestoneCount = milestones.count { m -> m.isUnlocked },
-                            totalMilestoneCount = milestones.size,
-                        )
-                    }
-                } catch (e: Exception) {
-                    Timber.w(e, "Failed to load fun statistics")
-                }
             }
         }
 
@@ -271,6 +236,9 @@ class SettingsViewModel
                 // About
                 is SettingsIntent.OpenLicenses -> openLicenses()
                 is SettingsIntent.OpenPrivacyPolicy -> openPrivacyPolicy()
+
+                // Fun Statistics
+                is SettingsIntent.OpenFunStats -> openFunStats()
 
                 // Crash Logs
                 is SettingsIntent.ShareCrashLogs -> shareCrashLogs()
@@ -617,6 +585,12 @@ class SettingsViewModel
         private fun openLicenses() {
             viewModelScope.launch {
                 _effects.send(SettingsEffect.NavigateToLicenses)
+            }
+        }
+
+        private fun openFunStats() {
+            viewModelScope.launch {
+                _effects.send(SettingsEffect.NavigateToFunStats)
             }
         }
 

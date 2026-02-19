@@ -44,6 +44,7 @@ import kotlinx.coroutines.flow.collectLatest
 fun SettingsScreen(
     onNavigateBack: () -> Unit,
     onNavigateToLicenses: () -> Unit,
+    onNavigateToFunStats: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -81,6 +82,9 @@ fun SettingsScreen(
                 }
                 is SettingsEffect.NavigateToLicenses -> {
                     onNavigateToLicenses()
+                }
+                is SettingsEffect.NavigateToFunStats -> {
+                    onNavigateToFunStats()
                 }
                 is SettingsEffect.OpenUrl -> {
                     uriHandler.openUri(effect.url)
@@ -175,11 +179,7 @@ fun SettingsScreen(
                 appearanceSection(uiState = uiState, onIntent = onIntent)
                 searchSection(uiState = uiState, onIntent = onIntent)
                 sharingSection(uiState = uiState, onIntent = onIntent)
-                memeOMeterSection(uiState = uiState)
-                vibeCheckSection(uiState = uiState)
-                funFactSection(uiState = uiState)
-                momentumSection(uiState = uiState)
-                milestonesSection(uiState = uiState)
+                funStatsSummarySection(uiState = uiState, onIntent = onIntent)
                 storageSection(uiState = uiState, onIntent = onIntent)
                 diagnosticsSection(uiState = uiState, onIntent = onIntent)
                 aboutSection(uiState = uiState, onIntent = onIntent)
@@ -202,40 +202,6 @@ private fun SettingsScreenPreview() {
                     appVersion = "1.0.0 (42)",
                     totalMemeCount = 247,
                     favoriteMemeCount = 42,
-                    collectionTitle = "Meme Warlord",
-                    totalStorageBytes = 52_428_800,
-                    storageFunFact = "≈ 35 floppy disks of pure culture",
-                    topVibes =
-                        listOf(
-                            com.adsamcik.riposte.core.database.dao.EmojiUsageStats("😂", "face with tears of joy", 147),
-                            com.adsamcik.riposte.core.database.dao.EmojiUsageStats("💀", "skull", 89),
-                            com.adsamcik.riposte.core.database.dao.EmojiUsageStats("🔥", "fire", 62),
-                            com.adsamcik.riposte.core.database.dao.EmojiUsageStats("😭", "loudly crying face", 41),
-                            com.adsamcik.riposte.core.database.dao.EmojiUsageStats("🗿", "moai", 28),
-                        ),
-                    vibeTagline = "40% unhinged humor. Chronically online energy.",
-                    funFactOfTheDay = "Your memes have been viewed 1,234 times total. Popular collection!",
-                    weeklyImportCounts = listOf(5, 12, 8, 15),
-                    momentumTrend = com.adsamcik.riposte.feature.settings.domain.model.MomentumTrend.GROWING,
-                    memesThisWeek = 15,
-                    milestones =
-                        listOf(
-                            com.adsamcik.riposte.feature.settings.domain.model.MilestoneState(
-                                "first_steps",
-                                "👶",
-                                true,
-                                1706140800000,
-                            ),
-                            com.adsamcik.riposte.feature.settings.domain.model.MilestoneState(
-                                "century_club",
-                                "💯",
-                                true,
-                                1707350400000,
-                            ),
-                            com.adsamcik.riposte.feature.settings.domain.model.MilestoneState("the_archivist", "📚", false),
-                        ),
-                    unlockedMilestoneCount = 2,
-                    totalMilestoneCount = 13,
                     embeddingSearchState =
                         EmbeddingSearchState(
                             modelName = "embeddinggemma",

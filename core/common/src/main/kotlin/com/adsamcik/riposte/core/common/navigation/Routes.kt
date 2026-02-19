@@ -22,4 +22,7 @@ object ImportRoute
 object SettingsRoute
 
 @Serializable
+object FunStatsRoute
+
+@Serializable
 object LicensesRoute

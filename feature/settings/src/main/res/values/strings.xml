@@ -139,6 +139,11 @@
     <string name="settings_snackbar_import_success">Settings imported successfully</string>
 
     <!-- Fun Statistics -->
+    <string name="settings_section_fun_stats">Fun Statistics</string>
+    <string name="settings_fun_stats_title">Fun Statistics</string>
+    <string name="settings_fun_stats_summary_title">Collection Stats &amp; Milestones</string>
+    <string name="settings_fun_stats_summary_subtitle">Your vibes, momentum, achievements, and more</string>
+
     <string name="settings_section_meme_o_meter">Your Collection</string>
     <string name="settings_meme_o_meter_storage">Total library size</string>
     <string name="settings_meme_o_meter_memes_imported">Memes imported</string>

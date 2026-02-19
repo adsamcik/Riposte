@@ -28,6 +28,7 @@ import com.adsamcik.riposte.core.model.UserDensityPreference
 import com.adsamcik.riposte.feature.settings.R
 import com.adsamcik.riposte.feature.settings.presentation.component.DialogSettingItem
 import com.adsamcik.riposte.feature.settings.presentation.component.SettingsSection
+import com.adsamcik.riposte.feature.settings.presentation.component.ClickableSettingItem
 import com.adsamcik.riposte.feature.settings.presentation.component.SwitchSettingItem
 
 internal fun LazyListScope.appearanceSection(
@@ -237,3 +238,21 @@ private fun embeddingErrorMessage(modelError: String): String =
         else ->
             stringResource(R.string.settings_search_index_error_failed)
     }
+
+internal fun LazyListScope.funStatsSummarySection(
+    uiState: SettingsUiState,
+    onIntent: (SettingsIntent) -> Unit,
+) {
+    if (uiState.totalMemeCount == 0) return
+
+    item(key = "fun_stats_summary") {
+        SettingsSection(title = stringResource(R.string.settings_section_fun_stats)) {
+            ClickableSettingItem(
+                title = stringResource(R.string.settings_fun_stats_summary_title),
+                subtitle = stringResource(R.string.settings_fun_stats_summary_subtitle),
+                onClick = { onIntent(SettingsIntent.OpenFunStats) },
+                icon = Icons.Default.TrendingUp,
+            )
+        }
+    }
+}

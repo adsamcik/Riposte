@@ -37,12 +37,13 @@ import com.adsamcik.riposte.feature.settings.R
 import com.adsamcik.riposte.feature.settings.domain.model.MilestoneState
 import com.adsamcik.riposte.feature.settings.domain.model.MomentumTrend
 import com.adsamcik.riposte.feature.settings.presentation.component.SettingsSection
+import com.adsamcik.riposte.feature.settings.presentation.funstats.FunStatsUiState
 import java.text.DateFormat
 import java.util.Date
 
 // region Meme-o-Meter
 
-internal fun LazyListScope.memeOMeterSection(uiState: SettingsUiState) {
+internal fun LazyListScope.memeOMeterSection(uiState: FunStatsUiState) {
     if (uiState.totalMemeCount == 0 && uiState.collectionTitle.isEmpty()) return
 
     item(key = "meme_o_meter") {
@@ -75,7 +76,7 @@ internal fun LazyListScope.memeOMeterSection(uiState: SettingsUiState) {
 }
 
 @Composable
-private fun MemeOMeterCard(uiState: SettingsUiState) {
+private fun MemeOMeterCard(uiState: FunStatsUiState) {
     if (uiState.collectionTitle.isEmpty()) return
 
     Card(
@@ -127,7 +128,7 @@ private fun MemeOMeterCard(uiState: SettingsUiState) {
 
 // region Vibe Check
 
-internal fun LazyListScope.vibeCheckSection(uiState: SettingsUiState) {
+internal fun LazyListScope.vibeCheckSection(uiState: FunStatsUiState) {
     if (uiState.topVibes.isEmpty()) return
 
     item(key = "vibe_check") {
@@ -203,7 +204,7 @@ private fun VibeRow(
 
 // region Fun Fact of the Day
 
-internal fun LazyListScope.funFactSection(uiState: SettingsUiState) {
+internal fun LazyListScope.funFactSection(uiState: FunStatsUiState) {
     val fact = uiState.funFactOfTheDay ?: return
 
     item(key = "fun_fact") {
@@ -242,7 +243,7 @@ internal fun LazyListScope.funFactSection(uiState: SettingsUiState) {
 
 // region Momentum
 
-internal fun LazyListScope.momentumSection(uiState: SettingsUiState) {
+internal fun LazyListScope.momentumSection(uiState: FunStatsUiState) {
     if (uiState.weeklyImportCounts.all { it == 0 }) return
 
     item(key = "momentum") {
@@ -389,7 +390,7 @@ private fun MomentumSparkline(
 
 // region Milestones
 
-internal fun LazyListScope.milestonesSection(uiState: SettingsUiState) {
+internal fun LazyListScope.milestonesSection(uiState: FunStatsUiState) {
     if (uiState.milestones.isEmpty() || uiState.unlockedMilestoneCount == 0) return
 
     item(key = "milestones") {

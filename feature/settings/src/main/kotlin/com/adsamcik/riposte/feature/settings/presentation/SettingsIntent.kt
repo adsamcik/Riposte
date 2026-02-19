@@ -69,6 +69,9 @@ sealed interface SettingsIntent {
 
     data object OpenPrivacyPolicy : SettingsIntent
 
+    // Fun Statistics
+    data object OpenFunStats : SettingsIntent
+
     // Crash Logs
     data object ShareCrashLogs : SettingsIntent
 
