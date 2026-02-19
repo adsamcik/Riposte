@@ -57,20 +57,6 @@ internal fun LazyListScope.memeOMeterSection(uiState: FunStatsUiState) {
                     trailingContent = { Text(uiState.favoriteMemeCount.toString()) },
                 )
             }
-
-            if (uiState.totalStorageBytes > 0) {
-                ListItem(
-                    headlineContent = { Text(stringResource(R.string.settings_meme_o_meter_storage)) },
-                    supportingContent =
-                        if (uiState.storageFunFact.isNotEmpty()) {
-                            { Text(uiState.storageFunFact) }
-                        } else {
-                            null
-                        },
-                    leadingContent = { Text("💾", style = MaterialTheme.typography.titleMedium) },
-                    trailingContent = { Text(formatFileSize(uiState.totalStorageBytes)) },
-                )
-            }
         }
     }
 }
@@ -120,6 +106,28 @@ private fun MemeOMeterCard(uiState: FunStatsUiState) {
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f),
             )
+
+            if (uiState.totalStorageBytes > 0) {
+                Spacer(Modifier.height(8.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Text("💾", style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        text = formatFileSize(uiState.totalStorageBytes),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f),
+                    )
+                    if (uiState.storageFunFact.isNotEmpty()) {
+                        Text(
+                            text = "· ${uiState.storageFunFact}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.6f),
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -160,44 +168,39 @@ private fun VibeRow(
     vibe: EmojiUsageStats,
     maxCount: Int,
 ) {
-    ListItem(
-        headlineContent = {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                LinearProgressIndicator(
-                    progress = { vibe.count.toFloat() / maxCount },
-                    modifier =
-                        Modifier
-                            .weight(1f)
-                            .height(8.dp),
-                    color = MaterialTheme.colorScheme.primary,
-                    trackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                    strokeCap = StrokeCap.Butt,
-                    gapSize = 0.dp,
-                    drawStopIndicator = {},
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = stringResource(R.string.settings_vibe_memes, vibe.count),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        },
-        leadingContent = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = stringResource(R.string.settings_vibe_rank, rank),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(Modifier.width(4.dp))
-                Text(text = vibe.emoji, style = MaterialTheme.typography.titleMedium)
-            }
-        },
-    )
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 6.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.settings_vibe_rank, rank),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.width(4.dp))
+        Text(text = vibe.emoji, style = MaterialTheme.typography.titleMedium)
+        Spacer(Modifier.width(8.dp))
+        LinearProgressIndicator(
+            progress = { vibe.count.toFloat() / maxCount },
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .height(8.dp),
+            color = MaterialTheme.colorScheme.primary,
+            trackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+            strokeCap = StrokeCap.Butt,
+            gapSize = 0.dp,
+            drawStopIndicator = {},
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(
+            text = stringResource(R.string.settings_vibe_memes, vibe.count),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
 }
 
 // endregion
@@ -248,7 +251,17 @@ internal fun LazyListScope.momentumSection(uiState: FunStatsUiState) {
 
     item(key = "momentum") {
         SettingsSection(title = stringResource(R.string.settings_section_momentum)) {
-            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+            Card(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                    ),
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -309,6 +322,7 @@ internal fun LazyListScope.momentumSection(uiState: FunStatsUiState) {
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
+                    }
                     }
                 }
             }
@@ -411,13 +425,40 @@ internal fun LazyListScope.milestonesSection(uiState: FunStatsUiState) {
             }
 
             if (lockedCount > 0) {
+                val nextLocked = uiState.milestones.firstOrNull { !it.isUnlocked }
                 ListItem(
                     headlineContent = {
                         Text(
-                            text = stringResource(R.string.settings_milestones_locked_remaining, lockedCount),
+                            text = if (nextLocked != null) {
+                                milestoneTitle(nextLocked.id)
+                            } else {
+                                stringResource(R.string.settings_milestones_locked_remaining, lockedCount)
+                            },
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
+                    },
+                    supportingContent = if (nextLocked != null) {
+                        {
+                            Column {
+                                Text(
+                                    text = milestoneDescription(nextLocked.id),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                )
+                                if (lockedCount > 1) {
+                                    Text(
+                                        text = stringResource(
+                                            R.string.settings_milestones_locked_remaining,
+                                            lockedCount - 1,
+                                        ),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                    )
+                                }
+                            }
+                        }
+                    } else {
+                        null
                     },
                     leadingContent = {
                         Text("🔒", style = MaterialTheme.typography.titleMedium)
