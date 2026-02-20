@@ -833,6 +833,9 @@ private fun GalleryContent(
         (uniqueEmojis.isNotEmpty() || uiState.favoritesCount > 0)
     val emojiRailSpace = if (hasEmojiRail) 52.dp else 0.dp
 
+    // Clamp to non-negative: spring animation can overshoot past 0.dp
+    val safeTopPadding = topPadding.coerceAtLeast(0.dp)
+
     Box(modifier = Modifier.fillMaxSize()) {
         LazyVerticalGrid(
             state = gridState,
@@ -840,7 +843,7 @@ private fun GalleryContent(
             contentPadding = PaddingValues(
                 start = 8.dp,
                 end = 8.dp,
-                top = topPadding + emojiRailSpace + 4.dp,
+                top = safeTopPadding + emojiRailSpace + 4.dp,
                 bottom = when {
                     uiState.screenMode == ScreenMode.Searching -> 24.dp
                     else -> 120.dp
@@ -856,7 +859,7 @@ private fun GalleryContent(
             uniqueEmojis = uniqueEmojis,
             onIntent = onIntent,
             visible = !inlineEmojisActive && (isSearching || isScrollingUp),
-            modifier = Modifier.padding(top = topPadding),
+            modifier = Modifier.padding(top = safeTopPadding),
         )
     }
 }
