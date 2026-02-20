@@ -21,6 +21,7 @@ import com.adsamcik.riposte.core.model.SharingPreferences
  * val tag = TestDataFactory.createEmojiTag(emoji = "😂")
  * ```
  */
+@Suppress("TooManyFunctions")
 object TestDataFactory {
     private var idCounter = 0L
 

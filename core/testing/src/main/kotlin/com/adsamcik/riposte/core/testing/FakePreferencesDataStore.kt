@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.update
  * }
  * ```
  */
+@Suppress("TooManyFunctions")
 class FakePreferencesDataStore {
     private val _appPreferences = MutableStateFlow(DEFAULT_APP_PREFERENCES)
     private val _sharingPreferences = MutableStateFlow(DEFAULT_SHARING_PREFERENCES)

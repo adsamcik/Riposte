@@ -52,6 +52,7 @@ import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 import javax.inject.Inject
 
+@Suppress("TooManyFunctions")
 @HiltViewModel
 class SettingsViewModel
     @Inject

@@ -22,6 +22,7 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
 
+@Suppress("TooManyFunctions")
 @HiltViewModel
 class MemeDetailViewModel
     @Inject

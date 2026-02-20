@@ -17,6 +17,7 @@ import javax.inject.Singleton
  * Note: This is a simplified implementation that stores metadata in a sidecar file.
  * For production, consider using a proper XMP library like Apache XMP Toolkit.
  */
+@Suppress("TooManyFunctions")
 @Singleton
 class XmpMetadataHandler
     @Inject

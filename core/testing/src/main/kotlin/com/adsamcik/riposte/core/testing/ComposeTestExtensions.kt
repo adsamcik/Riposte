@@ -1,3 +1,5 @@
+@file:Suppress("TooManyFunctions")
+
 package com.adsamcik.riposte.core.testing
 
 import androidx.compose.ui.test.SemanticsNodeInteraction

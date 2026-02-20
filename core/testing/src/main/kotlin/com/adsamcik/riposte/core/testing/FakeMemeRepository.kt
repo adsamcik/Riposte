@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.update
  * assertThat(viewModel.uiState.value.error).isNotNull()
  * ```
  */
+@Suppress("TooManyFunctions")
 class FakeMemeRepository {
     @Suppress("ktlint:standard:property-naming")
     private val _memes = MutableStateFlow<List<Meme>>(emptyList())

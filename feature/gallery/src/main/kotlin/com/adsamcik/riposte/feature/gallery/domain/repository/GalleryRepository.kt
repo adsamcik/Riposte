@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.Flow
 /**
  * Repository interface for gallery operations.
  */
+@Suppress("TooManyFunctions")
 interface GalleryRepository {
     /**
      * Get all memes ordered by import date.

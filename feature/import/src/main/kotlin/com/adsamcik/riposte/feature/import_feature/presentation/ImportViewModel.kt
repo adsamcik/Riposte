@@ -30,6 +30,7 @@ import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
 
+@Suppress("TooManyFunctions")
 @HiltViewModel
 class ImportViewModel
     @Inject

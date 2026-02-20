@@ -41,6 +41,7 @@ import javax.inject.Singleton
  * embeddingManager.scheduleBackgroundGeneration()
  * ```
  */
+@Suppress("TooManyFunctions")
 @Singleton
 class EmbeddingManager
     @Inject
