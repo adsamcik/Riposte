@@ -173,7 +173,7 @@ class SlotFiller(
 
     internal fun fillExplore(
         allMemes: List<Meme>,
-        now: Long,
+        _now: Long,
         excludeIds: Set<Long>,
     ): List<Meme> {
         // Find emoji categories the user has never interacted with

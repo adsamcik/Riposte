@@ -28,7 +28,10 @@ detekt {
 }
 
 dependencies {
-    detektPlugins(libs.detekt.formatting)
+    // detekt-formatting intentionally NOT included here.
+    // ktlint (via org.jlleitschuh.gradle.ktlint plugin) is the single source of truth
+    // for code formatting. Including detekt-formatting would duplicate ktlint rules
+    // at potentially different versions, causing false positives.
 }
 
 // Common configuration for all subprojects

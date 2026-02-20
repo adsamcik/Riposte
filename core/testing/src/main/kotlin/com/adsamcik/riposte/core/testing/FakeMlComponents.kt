@@ -81,7 +81,7 @@ class FakeTextRecognizer {
     /**
      * Recognizes text from a bitmap.
      */
-    suspend fun recognizeText(bitmap: Bitmap): Result<String> {
+    suspend fun recognizeText(_bitmap: Bitmap): Result<String> {
         return executeRecognition {
             defaultResult
         }

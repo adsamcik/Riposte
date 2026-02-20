@@ -307,7 +307,7 @@ class EmbeddingGenerationWorker
              */
             fun enqueueRegeneration(
                 context: Context,
-                currentVersion: String,
+                _currentVersion: String,
             ) {
                 val constraints =
                     Constraints.Builder()
