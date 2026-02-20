@@ -185,15 +185,15 @@ fun GalleryScreen(
         uiState = uiState,
         pagedMemes = pagedMemes,
         onIntent = viewModel::onIntent,
-        _onNavigateToMeme = onNavigateToMeme,
-        _onNavigateToImport = onNavigateToImport,
+        onNavigateToMeme = onNavigateToMeme,
+        onNavigateToImport = onNavigateToImport,
         onNavigateToSettings = onNavigateToSettings,
         snackbarHostState = snackbarHostState,
         showDeleteDialog = showDeleteDialog,
         deleteCount = deleteCount,
         showMenu = showMenu,
         onShowDeleteDialogChange = { showDeleteDialog = it },
-        _onDeleteCountChange = { deleteCount = it },
+        onDeleteCountChange = { deleteCount = it },
         onShowMenuChange = { showMenu = it },
     )
 }
@@ -220,15 +220,15 @@ fun GalleryScreen(
         uiState = uiState,
         pagedMemes = pagedMemes,
         onIntent = onIntent,
-        _onNavigateToMeme = onNavigateToMeme,
-        _onNavigateToImport = onNavigateToImport,
+        onNavigateToMeme = onNavigateToMeme,
+        onNavigateToImport = onNavigateToImport,
         onNavigateToSettings = onNavigateToSettings,
         snackbarHostState = snackbarHostState,
         showDeleteDialog = showDeleteDialog,
         deleteCount = deleteCount,
         showMenu = showMenu,
         onShowDeleteDialogChange = { showDeleteDialog = it },
-        _onDeleteCountChange = { deleteCount = it },
+        onDeleteCountChange = { deleteCount = it },
         onShowMenuChange = { showMenu = it },
     )
 }
@@ -239,15 +239,15 @@ private fun GalleryScreenContent(
     uiState: GalleryUiState,
     pagedMemes: LazyPagingItems<Meme>? = null,
     onIntent: (GalleryIntent) -> Unit,
-    _onNavigateToMeme: (Long) -> Unit,
-    _onNavigateToImport: () -> Unit,
+    onNavigateToMeme: (Long) -> Unit,
+    onNavigateToImport: () -> Unit,
     onNavigateToSettings: () -> Unit,
     snackbarHostState: SnackbarHostState,
     showDeleteDialog: Boolean,
     deleteCount: Int,
     showMenu: Boolean,
     onShowDeleteDialogChange: (Boolean) -> Unit,
-    _onDeleteCountChange: (Int) -> Unit,
+    onDeleteCountChange: (Int) -> Unit,
     onShowMenuChange: (Boolean) -> Unit,
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
@@ -883,8 +883,22 @@ private fun GalleryEmojiFilterRail(
         AnimatedVisibility(
             visible = visible && (uniqueEmojis.isNotEmpty() || showFavoritesChip),
             modifier = modifier,
-            enter = slideInVertically(animationSpec = spring(dampingRatio = 0.8f, stiffness = 600f)) { -it } + fadeIn(animationSpec = spring(dampingRatio = 0.8f, stiffness = 600f)),
-            exit = slideOutVertically(animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium)) { -it } + fadeOut(animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium)),
+            enter = slideInVertically(
+                animationSpec = spring(dampingRatio = 0.8f, stiffness = 600f),
+            ) { -it } + fadeIn(
+                animationSpec = spring(dampingRatio = 0.8f, stiffness = 600f),
+            ),
+            exit = slideOutVertically(
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioNoBouncy,
+                    stiffness = Spring.StiffnessMedium,
+                ),
+            ) { -it } + fadeOut(
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioNoBouncy,
+                    stiffness = Spring.StiffnessMedium,
+                ),
+            ),
         ) {
             EmojiFilterRail(
                 emojis = uniqueEmojis,

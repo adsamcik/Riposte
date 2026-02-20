@@ -154,7 +154,7 @@ fun SearchBarWithEmoji(
     onQueryChange: (String) -> Unit,
     onSearch: () -> Unit,
     recentEmojis: List<String>,
-    _onEmojiClick: (String) -> Unit,
+    onEmojiClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Box(modifier = modifier) {
