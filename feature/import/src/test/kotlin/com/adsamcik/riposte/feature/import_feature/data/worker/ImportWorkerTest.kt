@@ -63,7 +63,7 @@ class ImportWorkerTest {
         return TestListenableWorkerBuilder<ImportWorker>(context)
             .setInputData(inputData)
             .setWorkerFactory(TestImportWorkerFactory())
-            .build() as ImportWorker
+            .build()
     }
 
     private inner class TestImportWorkerFactory : androidx.work.WorkerFactory() {
@@ -444,7 +444,7 @@ class ImportWorkerTest {
                 importRepository.importImage(
                     match { it.scheme == "file" },
                     match { metadata ->
-                        metadata!!.emojis == listOf("😂", "🔥") &&
+                        metadata.emojis == listOf("😂", "🔥") &&
                             metadata.title == "Test meme" &&
                             metadata.description == "A test description"
                     },
@@ -497,8 +497,7 @@ class ImportWorkerTest {
                 importRepository.importImage(
                     any(),
                     match { metadata ->
-                        metadata != null &&
-                            metadata.emojis == listOf("🎉", "🚀") &&
+                        metadata.emojis == listOf("🎉", "🚀") &&
                             metadata.searchPhrases == listOf("rocket launch", "celebration") &&
                             metadata.basedOn == "SpaceX" &&
                             metadata.primaryLanguage == "en" &&
@@ -535,8 +534,7 @@ class ImportWorkerTest {
                 importRepository.importImage(
                     any(),
                     match { metadata ->
-                        metadata != null &&
-                            metadata.emojis == listOf("😂") &&
+                        metadata.emojis == listOf("😂") &&
                             metadata.title == "Legacy"
                     },
                 )

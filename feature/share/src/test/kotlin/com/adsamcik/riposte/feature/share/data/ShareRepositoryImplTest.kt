@@ -153,7 +153,7 @@ class ShareRepositoryImplTest {
         val uri = Uri.parse("content://test/image.jpg")
 
         val chooser = repository.createShareIntent(uri, "image/jpeg")
-        val wrapped = chooser.getParcelableExtra<Intent>(Intent.EXTRA_INTENT)!!
+        val wrapped = chooser.getParcelableExtra(Intent.EXTRA_INTENT, Intent::class.java)!!
 
         assertThat(wrapped.action).isEqualTo(Intent.ACTION_SEND)
         assertThat(wrapped.type).isEqualTo("image/jpeg")
@@ -164,9 +164,9 @@ class ShareRepositoryImplTest {
         val uri = Uri.parse("content://test/image.png")
 
         val chooser = repository.createShareIntent(uri, "image/png")
-        val wrapped = chooser.getParcelableExtra<Intent>(Intent.EXTRA_INTENT)!!
+        val wrapped = chooser.getParcelableExtra(Intent.EXTRA_INTENT, Intent::class.java)!!
 
-        assertThat(wrapped.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)).isEqualTo(uri)
+        assertThat(wrapped.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)).isEqualTo(uri)
     }
 
     @Test
@@ -174,7 +174,7 @@ class ShareRepositoryImplTest {
         val uri = Uri.parse("content://test/image.webp")
 
         val chooser = repository.createShareIntent(uri, "image/webp")
-        val wrapped = chooser.getParcelableExtra<Intent>(Intent.EXTRA_INTENT)!!
+        val wrapped = chooser.getParcelableExtra(Intent.EXTRA_INTENT, Intent::class.java)!!
 
         assertThat(wrapped.flags and Intent.FLAG_GRANT_READ_URI_PERMISSION).isNotEqualTo(0)
     }

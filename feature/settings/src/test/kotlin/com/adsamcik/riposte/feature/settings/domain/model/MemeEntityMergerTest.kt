@@ -124,7 +124,7 @@ class MemeEntityMergerTest {
         assertThat(result.searchPhrasesJson!!).contains("funny cat")
         assertThat(result.searchPhrasesJson).contains("sad dog")
         // Verify no duplicates
-        val catCount = result.searchPhrasesJson!!.split("funny cat").size - 1
+        val catCount = result.searchPhrasesJson.split("funny cat").size - 1
         assertThat(catCount).isEqualTo(1)
     }
 

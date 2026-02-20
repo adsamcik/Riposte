@@ -57,7 +57,7 @@ class EmbeddingGenerationWorkerTest {
     private fun createWorker(): EmbeddingGenerationWorker {
         return TestListenableWorkerBuilder<EmbeddingGenerationWorker>(context)
             .setWorkerFactory(TestEmbeddingWorkerFactory())
-            .build() as EmbeddingGenerationWorker
+            .build()
     }
 
     private inner class TestEmbeddingWorkerFactory : androidx.work.WorkerFactory() {
