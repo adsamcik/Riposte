@@ -429,216 +429,211 @@ private fun GalleryScreenContent(
             Box(
                 modifier = Modifier.fillMaxSize(),
             ) {
+                val suggestionIds =
+                    remember(uiState.suggestions) {
+                        uiState.suggestions.map { it.id }.toSet()
+                    }
+                val nonSuggestionMemes =
+                    remember(uiState.memes, suggestionIds) {
+                        uiState.memes.filter { it.id !in suggestionIds }
+                    }
+
                 when {
-                    uiState.screenMode == ScreenMode.Searching -> {
-                        GalleryContent(
-                        uiState = uiState,
-                        uniqueEmojis = uiState.uniqueEmojis,
-                        onIntent = onIntent,
-                        columns = columns,
-                        gridState = gridState,
-                        topPadding = floatingBarSpace,
-                    ) {
-                        if (uiState.searchState.query.isBlank() &&
-                            !uiState.searchState.hasSearched &&
-                            uiState.searchState.recentSearches.isNotEmpty()
+                    uiState.screenMode != ScreenMode.Searching && uiState.isLoading -> {
+                        LoadingScreen(
+                            message = stringResource(R.string.gallery_loading_message),
+                            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                        )
+                    }
+                    uiState.screenMode != ScreenMode.Searching && uiState.error != null -> {
+                        ErrorState(
+                            message = uiState.error.orEmpty(),
+                            onRetry = { onIntent(GalleryIntent.LoadMemes) },
+                            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Assertive },
+                        )
+                    }
+                    uiState.screenMode != ScreenMode.Searching && uiState.isEmpty && !uiState.usePaging -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center,
                         ) {
-                            item(span = { GridItemSpan(maxLineSpan) }, key = "recent_header") {
-                                RecentSearchesHeader(
-                                    onClearAll = { onIntent(GalleryIntent.ClearRecentSearches) },
-                                )
-                            }
-                            items(
-                                count = uiState.searchState.recentSearches.size,
-                                key = { "recent_$it" },
-                                span = { GridItemSpan(maxLineSpan) },
-                            ) { index ->
-                                val search = uiState.searchState.recentSearches[index]
-                                RecentSearchItem(
-                                    query = search,
-                                    onClick = { onIntent(GalleryIntent.SelectRecentSearch(search)) },
-                                    onDelete = { onIntent(GalleryIntent.DeleteRecentSearch(search)) },
-                                )
-                            }
-                        }
-
-                        if (uiState.searchState.isSearching && uiState.searchState.results.isEmpty()) {
-                            // Loading indicator — only when no results to show yet
-                            item(span = { GridItemSpan(maxLineSpan) }, key = "search_loading") {
-                                val searchingDescription = stringResource(R.string.gallery_cd_searching)
-                                Box(
-                                    modifier =
-                                        Modifier
-                                            .fillMaxWidth()
-                                            .padding(32.dp)
-                                            .semantics {
-                                                contentDescription = searchingDescription
-                                                liveRegion = LiveRegionMode.Polite
-                                            },
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    CircularProgressIndicator()
-                                }
-                            }
-                        } else if (uiState.searchState.searchError != null) {
-                            // Error state
-                            item(span = { GridItemSpan(maxLineSpan) }, key = "search_error") {
-                                val error = uiState.searchState.searchError
-                                ErrorState(
-                                    message = when (error) {
-                                        is SearchError.NotSupported ->
-                                            stringResource(R.string.gallery_error_search_not_supported)
-                                        is SearchError.IndexFailed ->
-                                            stringResource(R.string.gallery_error_search_index_failed)
-                                        is SearchError.Generic -> error.message
-                                    },
-                                    onRetry = if (error.isRetryable) {
-                                        { onIntent(GalleryIntent.UpdateSearchQuery(uiState.searchState.query)) }
-                                    } else {
-                                        null
-                                    },
-                                )
-                            }
-                        } else if (uiState.searchState.hasSearched && uiState.searchState.results.isEmpty()) {
-                            // No results
-                            item(span = { GridItemSpan(maxLineSpan) }, key = "search_no_results") {
+                            if (uiState.filter is GalleryFilter.Favorites) {
                                 EmptyState(
-                                    icon = "🔍",
-                                    title =
-                                        stringResource(
-                                            com.adsamcik.riposte.core.search.R.string.search_no_results_title,
-                                        ),
-                                    message =
-                                        stringResource(
-                                            com.adsamcik.riposte.core.search.R.string.search_no_results_description,
-                                            uiState.searchState.query,
-                                        ),
-                                    actionLabel = stringResource(
-                                        com.adsamcik.riposte.core.ui.R.string.ui_loading_no_results_clear,
-                                    ),
-                                    onAction = { onIntent(GalleryIntent.ClearSearch) },
+                                    icon = "❤️",
+                                    title = stringResource(R.string.gallery_favorites_empty_title),
+                                    message = stringResource(R.string.gallery_favorites_empty_message),
                                 )
-                            }
-                        } else if (uiState.searchState.results.isNotEmpty()) {
-                            // Search results
-                            // Results header
-                            item(span = { GridItemSpan(maxLineSpan) }, key = "search_results_header") {
-                                com.adsamcik.riposte.core.ui.component.SearchResultsHeader(
-                                    query = uiState.searchState.query,
-                                    resultCount = uiState.searchState.totalResultCount,
-                                    durationMs = uiState.searchState.searchDurationMs,
-                                    isTextOnly = uiState.searchState.isTextOnly,
-                                )
-                            }
-                            // Result items - reuse MemeGridItem
-                            items(
-                                items = uiState.searchState.results,
-                                key = { "search_${it.meme.id}" },
-                            ) { result ->
-                                val isSelected = result.meme.id in uiState.selectedMemeIds
-                                MemeGridItem(
-                                    meme = result.meme,
-                                    isSelected = isSelected,
-                                    isSelectionMode = uiState.isSelectionMode,
-                                    onIntent = onIntent,
-                                    showEmojis = true,
+                            } else {
+                                EmptyState(
+                                    icon = "🖼️",
+                                    title = stringResource(R.string.gallery_empty_title),
+                                    message = stringResource(R.string.gallery_empty_message),
+                                    actionLabel = stringResource(R.string.gallery_button_import_memes),
+                                    onAction = { onIntent(GalleryIntent.NavigateToImport) },
+                                    primaryAction = true,
                                 )
                             }
                         }
                     }
-                }
-                uiState.isLoading -> {
-                    LoadingScreen(
-                        message = stringResource(R.string.gallery_loading_message),
-                        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
-                    )
-                }
-                uiState.error != null -> {
-                    ErrorState(
-                        message = uiState.error.orEmpty(),
-                        onRetry = { onIntent(GalleryIntent.LoadMemes) },
-                        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Assertive },
-                    )
-                }
-                uiState.isEmpty && !uiState.usePaging -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        if (uiState.filter is GalleryFilter.Favorites) {
-                            EmptyState(
-                                icon = "❤️",
-                                title = stringResource(R.string.gallery_favorites_empty_title),
-                                message = stringResource(R.string.gallery_favorites_empty_message),
-                            )
-                        } else {
-                            EmptyState(
-                                icon = "🖼️",
-                                title = stringResource(R.string.gallery_empty_title),
-                                message = stringResource(R.string.gallery_empty_message),
-                                actionLabel = stringResource(R.string.gallery_button_import_memes),
-                                onAction = { onIntent(GalleryIntent.NavigateToImport) },
-                                primaryAction = true,
-                            )
-                        }
+                    uiState.screenMode != ScreenMode.Searching && uiState.usePaging && pagedMemes != null &&
+                        pagedMemes.loadState.refresh is LoadState.Loading -> {
+                        LoadingScreen(
+                            message = stringResource(R.string.gallery_loading_message),
+                            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                        )
                     }
-                }
-                uiState.usePaging && pagedMemes != null -> {
-                    // Handle paging load states
-                    val loadState = pagedMemes.loadState
-
-                    when {
-                        loadState.refresh is LoadState.Loading -> {
-                            LoadingScreen(
-                                message = stringResource(R.string.gallery_loading_message),
-                                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
-                            )
-                        }
-                        loadState.refresh is LoadState.Error -> {
-                            val error = (loadState.refresh as LoadState.Error).error
-                            ErrorState(
-                                message = error.message ?: stringResource(R.string.gallery_error_load_failed),
-                                onRetry = { pagedMemes.retry() },
-                                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Assertive },
-                            )
-                        }
+                    uiState.screenMode != ScreenMode.Searching && uiState.usePaging && pagedMemes != null &&
+                        pagedMemes.loadState.refresh is LoadState.Error -> {
+                        val error = (pagedMemes.loadState.refresh as LoadState.Error).error
+                        ErrorState(
+                            message = error.message ?: stringResource(R.string.gallery_error_load_failed),
+                            onRetry = { pagedMemes.retry() },
+                            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Assertive },
+                        )
+                    }
+                    uiState.screenMode != ScreenMode.Searching && uiState.usePaging && pagedMemes != null &&
                         pagedMemes.itemCount == 0 -> {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                if (uiState.filter is GalleryFilter.Favorites) {
-                                    EmptyState(
-                                        icon = "❤️",
-                                        title = stringResource(R.string.gallery_favorites_empty_title),
-                                        message = stringResource(R.string.gallery_favorites_empty_message),
-                                    )
-                                } else {
-                                    EmptyState(
-                                        icon = "🖼️",
-                                        title = stringResource(R.string.gallery_empty_title),
-                                        message = stringResource(R.string.gallery_empty_message),
-                                        actionLabel = stringResource(R.string.gallery_button_import_memes),
-                                        onAction = { onIntent(GalleryIntent.NavigateToImport) },
-                                        primaryAction = true,
-                                    )
-                                }
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            if (uiState.filter is GalleryFilter.Favorites) {
+                                EmptyState(
+                                    icon = "❤️",
+                                    title = stringResource(R.string.gallery_favorites_empty_title),
+                                    message = stringResource(R.string.gallery_favorites_empty_message),
+                                )
+                            } else {
+                                EmptyState(
+                                    icon = "🖼️",
+                                    title = stringResource(R.string.gallery_empty_title),
+                                    message = stringResource(R.string.gallery_empty_message),
+                                    actionLabel = stringResource(R.string.gallery_button_import_memes),
+                                    onAction = { onIntent(GalleryIntent.NavigateToImport) },
+                                    primaryAction = true,
+                                )
                             }
                         }
-                        else -> {
-                            val suggestionIds =
-                                remember(uiState.suggestions) {
-                                    uiState.suggestions.map { it.id }.toSet()
+                    }
+                    else -> {
+                        GalleryContent(
+                            uiState = uiState,
+                            uniqueEmojis = uiState.uniqueEmojis,
+                            onIntent = onIntent,
+                            columns = columns,
+                            gridState = gridState,
+                            topPadding = floatingBarSpace,
+                        ) {
+                            if (uiState.screenMode == ScreenMode.Searching) {
+                                if (uiState.searchState.query.isBlank() &&
+                                    !uiState.searchState.hasSearched &&
+                                    uiState.searchState.recentSearches.isNotEmpty()
+                                ) {
+                                    item(span = { GridItemSpan(maxLineSpan) }, key = "recent_header") {
+                                        RecentSearchesHeader(
+                                            onClearAll = { onIntent(GalleryIntent.ClearRecentSearches) },
+                                        )
+                                    }
+                                    items(
+                                        count = uiState.searchState.recentSearches.size,
+                                        key = { "recent_$it" },
+                                        span = { GridItemSpan(maxLineSpan) },
+                                    ) { index ->
+                                        val search = uiState.searchState.recentSearches[index]
+                                        RecentSearchItem(
+                                            query = search,
+                                            onClick = { onIntent(GalleryIntent.SelectRecentSearch(search)) },
+                                            onDelete = { onIntent(GalleryIntent.DeleteRecentSearch(search)) },
+                                        )
+                                    }
                                 }
 
-                            GalleryContent(
-                                uiState = uiState,
-                                uniqueEmojis = uiState.uniqueEmojis,
-                                onIntent = onIntent,
-                                columns = columns,
-                                gridState = gridState,
-                                topPadding = floatingBarSpace,
-                            ) {
+                                if (uiState.searchState.isSearching && uiState.searchState.results.isEmpty()) {
+                                    // Loading indicator — only when no results to show yet
+                                    item(span = { GridItemSpan(maxLineSpan) }, key = "search_loading") {
+                                        val searchingDescription = stringResource(R.string.gallery_cd_searching)
+                                        Box(
+                                            modifier =
+                                                Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(32.dp)
+                                                    .semantics {
+                                                        contentDescription = searchingDescription
+                                                        liveRegion = LiveRegionMode.Polite
+                                                    },
+                                            contentAlignment = Alignment.Center,
+                                        ) {
+                                            CircularProgressIndicator()
+                                        }
+                                    }
+                                } else if (uiState.searchState.searchError != null) {
+                                    // Error state
+                                    item(span = { GridItemSpan(maxLineSpan) }, key = "search_error") {
+                                        val error = uiState.searchState.searchError
+                                        ErrorState(
+                                            message = when (error) {
+                                                is SearchError.NotSupported ->
+                                                    stringResource(R.string.gallery_error_search_not_supported)
+                                                is SearchError.IndexFailed ->
+                                                    stringResource(R.string.gallery_error_search_index_failed)
+                                                is SearchError.Generic -> error.message
+                                            },
+                                            onRetry = if (error.isRetryable) {
+                                                { onIntent(GalleryIntent.UpdateSearchQuery(uiState.searchState.query)) }
+                                            } else {
+                                                null
+                                            },
+                                        )
+                                    }
+                                } else if (uiState.searchState.hasSearched && uiState.searchState.results.isEmpty()) {
+                                    // No results
+                                    item(span = { GridItemSpan(maxLineSpan) }, key = "search_no_results") {
+                                        EmptyState(
+                                            icon = "🔍",
+                                            title =
+                                                stringResource(
+                                                    com.adsamcik.riposte.core.search.R.string.search_no_results_title,
+                                                ),
+                                            message =
+                                                stringResource(
+                                                    com.adsamcik.riposte.core.search.R.string.search_no_results_description,
+                                                    uiState.searchState.query,
+                                                ),
+                                            actionLabel = stringResource(
+                                                com.adsamcik.riposte.core.ui.R.string.ui_loading_no_results_clear,
+                                            ),
+                                            onAction = { onIntent(GalleryIntent.ClearSearch) },
+                                        )
+                                    }
+                                } else if (uiState.searchState.results.isNotEmpty()) {
+                                    // Search results
+                                    // Results header
+                                    item(span = { GridItemSpan(maxLineSpan) }, key = "search_results_header") {
+                                        com.adsamcik.riposte.core.ui.component.SearchResultsHeader(
+                                            query = uiState.searchState.query,
+                                            resultCount = uiState.searchState.totalResultCount,
+                                            durationMs = uiState.searchState.searchDurationMs,
+                                            isTextOnly = uiState.searchState.isTextOnly,
+                                        )
+                                    }
+                                    // Result items - reuse MemeGridItem
+                                    items(
+                                        items = uiState.searchState.results,
+                                        key = { "search_${it.meme.id}" },
+                                    ) { result ->
+                                        val isSelected = result.meme.id in uiState.selectedMemeIds
+                                        MemeGridItem(
+                                            meme = result.meme,
+                                            isSelected = isSelected,
+                                            isSelectionMode = uiState.isSelectionMode,
+                                            onIntent = onIntent,
+                                            showEmojis = true,
+                                        )
+                                    }
+                                }
+                            } else if (uiState.usePaging && pagedMemes != null) {
+                                val loadState = pagedMemes.loadState
+
                                 // Suggestions first
                                 items(
                                     items = uiState.suggestions,
@@ -716,59 +711,38 @@ private fun GalleryScreenContent(
                                         }
                                     }
                                 }
+                            } else {
+                                // Suggestions first
+                                items(
+                                    items = uiState.suggestions,
+                                    key = { "suggestion_${it.id}" },
+                                ) { meme ->
+                                    val isSelected = meme.id in uiState.selectedMemeIds
+
+                                    MemeGridItem(
+                                        meme = meme,
+                                        isSelected = isSelected,
+                                        isSelectionMode = uiState.isSelectionMode,
+                                        onIntent = onIntent,
+                                    )
+                                }
+
+                                // Remaining items
+                                items(
+                                    items = nonSuggestionMemes,
+                                    key = { it.id },
+                                ) { meme ->
+                                    val isSelected = meme.id in uiState.selectedMemeIds
+                                    MemeGridItem(
+                                        meme = meme,
+                                        isSelected = isSelected,
+                                        isSelectionMode = uiState.isSelectionMode,
+                                        onIntent = onIntent,
+                                    )
+                                }
                             }
                         }
                     }
-                }
-                else -> {
-                    // Non-paged list view (Favorites, ByEmoji filters)
-                    val suggestionIds =
-                        remember(uiState.suggestions) {
-                            uiState.suggestions.map { it.id }.toSet()
-                        }
-                    val nonSuggestionMemes =
-                        remember(uiState.memes, suggestionIds) {
-                            uiState.memes.filter { it.id !in suggestionIds }
-                        }
-
-                    GalleryContent(
-                        uiState = uiState,
-                        uniqueEmojis = uiState.uniqueEmojis,
-                        onIntent = onIntent,
-                        columns = columns,
-                        gridState = gridState,
-                        topPadding = floatingBarSpace,
-                    ) {
-                        // Suggestions first
-                        items(
-                            items = uiState.suggestions,
-                            key = { "suggestion_${it.id}" },
-                        ) { meme ->
-                            val isSelected = meme.id in uiState.selectedMemeIds
-
-                            MemeGridItem(
-                                meme = meme,
-                                isSelected = isSelected,
-                                isSelectionMode = uiState.isSelectionMode,
-                                onIntent = onIntent,
-                            )
-                        }
-
-                        // Remaining items
-                        items(
-                            items = nonSuggestionMemes,
-                            key = { it.id },
-                        ) { meme ->
-                            val isSelected = meme.id in uiState.selectedMemeIds
-                            MemeGridItem(
-                                meme = meme,
-                                isSelected = isSelected,
-                                isSelectionMode = uiState.isSelectionMode,
-                                onIntent = onIntent,
-                            )
-                        }
-                    }
-                }
             }
             }
 
