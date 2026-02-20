@@ -3,6 +3,7 @@ package com.adsamcik.riposte.core.common.extension
 import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
+import timber.log.Timber
 import java.io.File
 import java.io.FileOutputStream
 
@@ -64,6 +65,7 @@ fun Uri.copyToFile(
         }
         true
     } catch (e: Exception) {
+        Timber.e(e, "Failed to copy URI to file")
         false
     }
 }

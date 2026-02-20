@@ -403,7 +403,7 @@ class EmbeddingGemmaGenerator
                 Timber.d("Copied asset: $assetName (${targetFile.length() / 1024 / 1024} MB)")
                 true
             } catch (e: Exception) {
-                Timber.d("Asset not found: $assetName")
+                Timber.d(e, "Asset not found in assets: $assetName")
                 false
             }
         }

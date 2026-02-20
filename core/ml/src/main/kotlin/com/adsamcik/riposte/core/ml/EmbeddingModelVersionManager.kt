@@ -12,6 +12,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -123,6 +124,7 @@ class EmbeddingModelVersionManager
             return try {
                 version.substringAfter(":").substringBefore(".").toInt()
             } catch (e: Exception) {
+                Timber.e(e, "Failed to extract major version from: $version")
                 0
             }
         }

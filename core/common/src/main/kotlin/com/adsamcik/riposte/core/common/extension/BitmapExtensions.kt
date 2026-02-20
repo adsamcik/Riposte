@@ -5,6 +5,7 @@ import android.graphics.BitmapFactory
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
+import timber.log.Timber
 
 /**
  * Scales a bitmap to fit within the specified max dimensions while maintaining aspect ratio.
@@ -52,6 +53,7 @@ fun Bitmap.saveToFile(
         }
         true
     } catch (e: Exception) {
+        Timber.e(e, "Failed to save bitmap to file")
         false
     }
 }

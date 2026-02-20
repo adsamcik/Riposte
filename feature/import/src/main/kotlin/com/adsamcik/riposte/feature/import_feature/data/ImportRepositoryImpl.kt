@@ -282,6 +282,7 @@ class ImportRepositoryImpl
                     val bitmap = loadAndResizeBitmap(uri) ?: return@withContext null
                     extractTextFromBitmap(bitmap)
                 } catch (e: Exception) {
+                    Timber.e(e, "Failed to extract text from URI")
                     null
                 }
             }
@@ -332,6 +333,7 @@ class ImportRepositoryImpl
                     // Limit suggestions
                     suggestions.take(5)
                 } catch (e: Exception) {
+                    Timber.e(e, "Failed to suggest emojis for URI")
                     emptyList()
                 }
             }
@@ -342,6 +344,7 @@ class ImportRepositoryImpl
                     val hash = calculateUriHash(uri) ?: return@withContext false
                     memeDao.memeExistsByHash(hash)
                 } catch (e: Exception) {
+                    Timber.e(e, "Failed to check for duplicate URI")
                     false
                 }
             }
@@ -352,6 +355,7 @@ class ImportRepositoryImpl
                     val hash = calculateUriHash(uri) ?: return@withContext null
                     memeDao.getMemeByHash(hash)?.id
                 } catch (e: Exception) {
+                    Timber.e(e, "Failed to find duplicate meme ID for URI")
                     null
                 }
             }

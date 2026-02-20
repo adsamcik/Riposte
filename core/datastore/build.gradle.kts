@@ -22,6 +22,9 @@ android {
 dependencies {
     implementation(project(":core:model"))
 
+    // Logging
+    implementation(libs.timber)
+
     // DataStore
     implementation(libs.datastore.preferences)
 

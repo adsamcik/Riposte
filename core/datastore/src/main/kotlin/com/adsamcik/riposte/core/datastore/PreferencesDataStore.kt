@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import timber.log.Timber
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -195,6 +196,7 @@ class PreferencesDataStore
                         try {
                             Json.decodeFromString<List<String>>(json)
                         } catch (e: Exception) {
+                            Timber.e(e, "Failed to decode recent searches JSON")
                             emptyList()
                         }
                     } ?: emptyList()
@@ -211,6 +213,7 @@ class PreferencesDataStore
                         try {
                             Json.decodeFromString<List<String>>(it).toMutableList()
                         } catch (e: Exception) {
+                            Timber.e(e, "Failed to decode recent searches for adding")
                             mutableListOf()
                         }
                     } ?: mutableListOf()
@@ -232,6 +235,7 @@ class PreferencesDataStore
                         try {
                             Json.decodeFromString<List<String>>(it).toMutableList()
                         } catch (e: Exception) {
+                            Timber.e(e, "Failed to decode recent searches for deleting")
                             mutableListOf()
                         }
                     } ?: mutableListOf()
@@ -369,6 +373,7 @@ class PreferencesDataStore
                         try {
                             Json.decodeFromString<Map<String, Long>>(json)
                         } catch (e: Exception) {
+                            Timber.e(e, "Failed to decode unlocked milestones JSON")
                             emptyMap()
                         }
                     } ?: emptyMap()
@@ -385,6 +390,7 @@ class PreferencesDataStore
                         try {
                             Json.decodeFromString<Map<String, Long>>(it).toMutableMap()
                         } catch (e: Exception) {
+                            Timber.e(e, "Failed to decode milestones for unlocking")
                             mutableMapOf()
                         }
                     } ?: mutableMapOf()

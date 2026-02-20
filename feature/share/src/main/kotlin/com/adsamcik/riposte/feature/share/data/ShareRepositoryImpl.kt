@@ -22,6 +22,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 import java.io.File
 import java.time.Instant
 import javax.inject.Inject
@@ -318,6 +319,7 @@ class ShareRepositoryImpl
                     .map { EmojiTag.fromEmoji(it) }
             } catch (e: Exception) {
                 // If parsing fails, return empty list rather than crash
+                Timber.e(e, "Failed to parse emoji tags from JSON")
                 emptyList()
             }
         }

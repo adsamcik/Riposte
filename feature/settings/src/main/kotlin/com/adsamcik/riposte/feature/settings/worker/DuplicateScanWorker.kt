@@ -14,6 +14,7 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
+import timber.log.Timber
 import java.util.concurrent.TimeUnit
 
 /**
@@ -52,6 +53,7 @@ class DuplicateScanWorker
                 .collect()
             Result.success()
         } catch (e: Exception) {
+            Timber.e(e, "Duplicate scan failed")
             if (runAttemptCount < MAX_RETRIES) {
                 Result.retry()
             } else {

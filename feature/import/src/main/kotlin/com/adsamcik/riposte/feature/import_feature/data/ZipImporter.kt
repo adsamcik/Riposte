@@ -584,6 +584,7 @@ class DefaultZipImporter
             return try {
                 json.decodeFromString<MemeMetadata>(content)
             } catch (e: Exception) {
+                Timber.e(e, "Failed to parse meme metadata JSON")
                 null
             }
         }
