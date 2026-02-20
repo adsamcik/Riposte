@@ -68,7 +68,10 @@ class MemeEntityMerger @Inject constructor() {
         val set1 = parseJsonStringArray(json1)
         val set2 = parseJsonStringArray(json2)
         val union = (set1 + set2).distinct()
-        return json.encodeToString(JsonArray.serializer(), JsonArray(union.map { kotlinx.serialization.json.JsonPrimitive(it) }))
+        return json.encodeToString(
+            JsonArray.serializer(),
+            JsonArray(union.map { kotlinx.serialization.json.JsonPrimitive(it) }),
+        )
     }
 
     private fun unionSearchPhrases(json1: String?, json2: String?): String? {
@@ -77,7 +80,10 @@ class MemeEntityMerger @Inject constructor() {
         val set2 = json2?.let { parseJsonStringArray(it) } ?: emptyList()
         val union = (set1 + set2).distinct()
         if (union.isEmpty()) return null
-        return json.encodeToString(JsonArray.serializer(), JsonArray(union.map { kotlinx.serialization.json.JsonPrimitive(it) }))
+        return json.encodeToString(
+            JsonArray.serializer(),
+            JsonArray(union.map { kotlinx.serialization.json.JsonPrimitive(it) }),
+        )
     }
 
     private fun parseJsonStringArray(jsonStr: String): List<String> =

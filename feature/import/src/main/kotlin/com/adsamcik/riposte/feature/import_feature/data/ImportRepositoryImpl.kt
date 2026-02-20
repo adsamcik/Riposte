@@ -458,7 +458,9 @@ class ImportRepositoryImpl
                     }
 
                     // Calculate sample size
-                    val sampleSize = calculateInSampleSize(outWidth, outHeight, MAX_IMAGE_DIMENSION, MAX_IMAGE_DIMENSION)
+                    val sampleSize = calculateInSampleSize(
+                        outWidth, outHeight, MAX_IMAGE_DIMENSION, MAX_IMAGE_DIMENSION,
+                    )
 
                     // Second pass: actual decode (stream fully closed from first pass)
                     val bitmap = if (filePath != null) {
@@ -472,7 +474,10 @@ class ImportRepositoryImpl
                     }
 
                     if (bitmap != null) {
-                        Timber.d("Decoded image: %dx%d (sample=%d) from %s", bitmap.width, bitmap.height, sampleSize, uri)
+                        Timber.d(
+                            "Decoded image: %dx%d (sample=%d) from %s",
+                            bitmap.width, bitmap.height, sampleSize, uri,
+                        )
                     } else {
                         Timber.w("BitmapFactory returned null for %s (bounds were %dx%d)", uri, outWidth, outHeight)
                     }

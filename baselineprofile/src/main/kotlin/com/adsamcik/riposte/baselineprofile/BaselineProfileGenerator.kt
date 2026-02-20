@@ -17,7 +17,8 @@ import org.junit.runner.RunWith
  * and runtime performance by pre-compiling critical code paths.
  *
  * Generate the baseline profile with:
- * ./gradlew :baselineprofile:connectedBenchmarkAndroidTest -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.enabledRules=BaselineProfile
+ * ./gradlew :baselineprofile:connectedBenchmarkAndroidTest
+ *   -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.enabledRules=BaselineProfile
  */
 @RunWith(AndroidJUnit4::class)
 @LargeTest

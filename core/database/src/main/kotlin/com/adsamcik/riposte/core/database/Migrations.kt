@@ -304,8 +304,14 @@ val MIGRATION_6_7 =
                     FOREIGN KEY(memeId2) REFERENCES memes(id) ON DELETE CASCADE
                 )""",
             )
-            db.execSQL("CREATE INDEX IF NOT EXISTS index_potential_duplicates_memeId1 ON potential_duplicates (memeId1)")
-            db.execSQL("CREATE INDEX IF NOT EXISTS index_potential_duplicates_memeId2 ON potential_duplicates (memeId2)")
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS index_potential_duplicates_memeId1 " +
+                    "ON potential_duplicates (memeId1)",
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS index_potential_duplicates_memeId2 " +
+                    "ON potential_duplicates (memeId2)",
+            )
             db.execSQL("CREATE INDEX IF NOT EXISTS index_potential_duplicates_status ON potential_duplicates (status)")
             db.execSQL(
                 "CREATE UNIQUE INDEX IF NOT EXISTS index_potential_duplicates_memeId1_memeId2 " +

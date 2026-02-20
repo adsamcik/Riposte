@@ -164,7 +164,10 @@ class DefaultZipImporter
 
                 // Clear previous extraction
                 val existingFiles = extractDir.listFiles()
-                Timber.d("extractBundle: clearing %d existing files from %s", existingFiles?.size ?: 0, extractDir.absolutePath)
+                Timber.d(
+                    "extractBundle: clearing %d existing files from %s",
+                    existingFiles?.size ?: 0, extractDir.absolutePath,
+                )
                 existingFiles?.forEach { it.delete() }
 
                 try {

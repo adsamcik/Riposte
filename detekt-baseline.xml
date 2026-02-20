@@ -9,13 +9,6 @@
     <ID>CyclomaticComplexMethod:MemeEntity.kt$MemeEntity$override fun equals(other: Any?): Boolean</ID>
     <ID>CyclomaticComplexMethod:ZipImporter.kt$DefaultZipImporter$override fun extractBundleStream(zipUri: Uri): Flow&lt;ZipExtractionEvent&gt;</ID>
     <ID>CyclomaticComplexMethod:ZipImporter.kt$DefaultZipImporter$override suspend fun extractBundle(zipUri: Uri): ZipExtractionResult</ID>
-    <ID>FunctionParameterNaming:EmbeddingGenerationWorker.kt$EmbeddingGenerationWorker.Companion$_currentVersion: String</ID>
-    <ID>FunctionParameterNaming:FakeMlComponents.kt$FakeTextRecognizer$_bitmap: Bitmap</ID>
-    <ID>FunctionParameterNaming:GalleryScreen.kt$_onDeleteCountChange: (Int) -&gt; Unit</ID>
-    <ID>FunctionParameterNaming:GalleryScreen.kt$_onNavigateToImport: () -&gt; Unit</ID>
-    <ID>FunctionParameterNaming:GalleryScreen.kt$_onNavigateToMeme: (Long) -&gt; Unit</ID>
-    <ID>FunctionParameterNaming:SearchBar.kt$_onEmojiClick: (String) -&gt; Unit</ID>
-    <ID>FunctionParameterNaming:SlotFiller.kt$SlotFiller$_now: Long</ID>
     <ID>LongMethod:DefaultDuplicateDetectionRepository.kt$DefaultDuplicateDetectionRepository$override fun runDuplicateScan(maxHammingDistance: Int): Flow&lt;ScanProgress&gt;</ID>
     <ID>LongMethod:EmbeddingGemmaGenerator.kt$EmbeddingGemmaGenerator$private fun initializeEmbeddingModel()</ID>
     <ID>LongMethod:EmbeddingGenerationWorker.kt$EmbeddingGenerationWorker$override suspend fun doWork(): Result</ID>
@@ -31,9 +24,7 @@
     <ID>LongMethod:ZipImporter.kt$DefaultZipImporter$override suspend fun extractBundle(zipUri: Uri): ZipExtractionResult</ID>
     <ID>LongParameterList:DuplicateDetectionDao.kt$DuplicateDetectionDao$( id: Long, emojiTagsJson: String, title: String?, description: String?, textContent: String?, searchPhrasesJson: String?, useCount: Int, viewCount: Int, isFavorite: Boolean, )</ID>
     <ID>LongParameterList:DuplicateDetectionDao.kt$DuplicateDetectionDao$( winnerId: Long, loserId: Long, duplicateId: Long, emojiTagsJson: String, title: String?, description: String?, textContent: String?, searchPhrasesJson: String?, useCount: Int, viewCount: Int, isFavorite: Boolean, )</ID>
-    <ID>LongParameterList:GalleryScreen.kt$( uiState: GalleryUiState, pagedMemes: LazyPagingItems&lt;Meme&gt;? = null, onIntent: (GalleryIntent) -&gt; Unit, _onNavigateToMeme: (Long) -&gt; Unit, _onNavigateToImport: () -&gt; Unit, onNavigateToSettings: () -&gt; Unit, snackbarHostState: SnackbarHostState, showDeleteDialog: Boolean, deleteCount: Int, showMenu: Boolean, onShowDeleteDialogChange: (Boolean) -&gt; Unit, _onDeleteCountChange: (Int) -&gt; Unit, onShowMenuChange: (Boolean) -&gt; Unit, )</ID>
     <ID>LongParameterList:GalleryViewModel.kt$GalleryViewModel$( @param:ApplicationContext private val context: Context, private val useCases: GalleryViewModelUseCases, private val getSuggestionsUseCase: GetSuggestionsUseCase, private val shareMemeUseCase: ShareMemeUseCase, private val galleryRepository: GalleryRepository, @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher, private val preferencesDataStore: PreferencesDataStore, val searchDelegate: SearchDelegate, )</ID>
-    <ID>LongParameterList:ImportScreen.kt$( imageUri: Uri, currentEmojis: List&lt;EmojiTag&gt;, suggestedEmojis: List&lt;EmojiTag&gt;, title: String, description: String, onEmojiToggle: (EmojiTag) -&gt; Unit, onTitleChange: (String) -&gt; Unit, onDescriptionChange: (String) -&gt; Unit, onApplySuggestions: () -&gt; Unit, onDone: () -&gt; Unit, modifier: Modifier = Modifier, )</ID>
     <ID>LongParameterList:SettingsViewModel.kt$SettingsViewModel$( @param:ApplicationContext private val context: Context, private val getAppPreferencesUseCase: GetAppPreferencesUseCase, private val getSharingPreferencesUseCase: GetSharingPreferencesUseCase, private val setDarkModeUseCase: SetDarkModeUseCase, private val setDynamicColorsUseCase: SetDynamicColorsUseCase, private val setEnableSemanticSearchUseCase: SetEnableSemanticSearchUseCase, private val setSaveSearchHistoryUseCase: SetSaveSearchHistoryUseCase, private val setSortEmojisByUsageUseCase: SetSortEmojisByUsageUseCase, private val setDefaultFormatUseCase: SetDefaultFormatUseCase, private val setDefaultQualityUseCase: SetDefaultQualityUseCase, private val setDefaultMaxDimensionUseCase: SetDefaultMaxDimensionUseCase, private val setStripMetadataUseCase: SetStripMetadataUseCase, private val setGridDensityUseCase: SetGridDensityUseCase, private val exportPreferencesUseCase: ExportPreferencesUseCase, private val importPreferencesUseCase: ImportPreferencesUseCase, private val observeEmbeddingStatisticsUseCase: ObserveEmbeddingStatisticsUseCase, private val observeLibraryStatsUseCase: ObserveLibraryStatsUseCase, private val crashLogManager: CrashLogManager, @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher, )</ID>
     <ID>LoopWithTooManyJumpStatements:DefaultDuplicateDetectionRepository.kt$DefaultDuplicateDetectionRepository$for</ID>
     <ID>LoopWithTooManyJumpStatements:ImportViewModel.kt$ImportViewModel$for</ID>
@@ -43,15 +34,6 @@
     <ID>MagicNumber:BaselineProfileGenerator.kt$BaselineProfileGenerator$3_000</ID>
     <ID>MagicNumber:BaselineProfileGenerator.kt$BaselineProfileGenerator$5_000</ID>
     <ID>MagicNumber:BitmapExtensions.kt$100</ID>
-    <ID>MagicNumber:DHashCalculator.kt$DHashCalculator$0.114</ID>
-    <ID>MagicNumber:DHashCalculator.kt$DHashCalculator$0.299</ID>
-    <ID>MagicNumber:DHashCalculator.kt$DHashCalculator$0.587</ID>
-    <ID>MagicNumber:EmbeddingGemmaGenerator.kt$EmbeddingGemmaGenerator$1024</ID>
-    <ID>MagicNumber:EmbeddingGemmaGenerator.kt$EmbeddingGemmaGenerator.Companion$128</ID>
-    <ID>MagicNumber:EmbeddingGemmaGenerator.kt$EmbeddingGemmaGenerator.Companion$256</ID>
-    <ID>MagicNumber:EmbeddingGemmaGenerator.kt$EmbeddingGemmaGenerator.Companion$384</ID>
-    <ID>MagicNumber:EmbeddingGemmaGenerator.kt$EmbeddingGemmaGenerator.Companion$512</ID>
-    <ID>MagicNumber:EmbeddingGemmaGenerator.kt$EmbeddingGemmaGenerator.Companion$768</ID>
     <ID>MagicNumber:EmbeddingGenerationWorker.kt$EmbeddingGenerationWorker$100</ID>
     <ID>MagicNumber:EmbeddingManager.kt$EmbeddingManager$16</ID>
     <ID>MagicNumber:EmbeddingModelVersionManager.kt$EmbeddingModelVersionManager$512</ID>
@@ -63,45 +45,10 @@
     <ID>MagicNumber:ImportRepositoryImpl.kt$ImportRepositoryImpl$80</ID>
     <ID>MagicNumber:ImportRepositoryImpl.kt$ImportRepositoryImpl$90</ID>
     <ID>MagicNumber:ImportViewModel.kt$ImportViewModel$5</ID>
-    <ID>MagicNumber:MemeDetailScreen.kt$0.25f</ID>
-    <ID>MagicNumber:MemeDetailScreen.kt$1024</ID>
-    <ID>MagicNumber:MemeDetailScreen.kt$1024.0</ID>
-    <ID>MagicNumber:MemeDetailScreen.kt$120f</ID>
-    <ID>MagicNumber:MemeDetailScreen.kt$280f</ID>
     <ID>MagicNumber:PreferencesDataStore.kt$PreferencesDataStore$4</ID>
-    <ID>MagicNumber:SearchRepositoryImpl.kt$SearchRepositoryImpl$0.5f</ID>
     <ID>MagicNumber:SearchRepositoryImpl.kt$SearchRepositoryImpl$10</ID>
     <ID>MagicNumber:SearchRepositoryImpl.kt$SearchRepositoryImpl$50</ID>
-    <ID>MagicNumber:SettingsViewModel.kt$SettingsViewModel$1024</ID>
-    <ID>MagicNumber:SettingsViewModel.kt$SettingsViewModel$1024.0</ID>
-    <ID>MagicNumber:SettingsViewModel.kt$SettingsViewModel$1_048_576</ID>
-    <ID>MagicNumber:SettingsViewModel.kt$SettingsViewModel$1_048_576.0</ID>
-    <ID>MagicNumber:SettingsViewModel.kt$SettingsViewModel$1_073_741_824</ID>
-    <ID>MagicNumber:SettingsViewModel.kt$SettingsViewModel$1_073_741_824.0</ID>
-    <ID>MagicNumber:SuggestionConfig.kt$SuggestionConfig$1000</ID>
-    <ID>MagicNumber:SuggestionConfig.kt$SuggestionConfig$48L</ID>
-    <ID>MagicNumber:SuggestionConfig.kt$SuggestionConfig$60</ID>
-    <ID>MagicNumber:TriSignalScorer.kt$TriSignalScorer$0.15</ID>
-    <ID>MagicNumber:TriSignalScorer.kt$TriSignalScorer$0.25</ID>
-    <ID>MagicNumber:TriSignalScorer.kt$TriSignalScorer$0.35</ID>
-    <ID>MagicNumber:TriSignalScorer.kt$TriSignalScorer$0.40</ID>
-    <ID>MagicNumber:TriSignalScorer.kt$TriSignalScorer$0.5</ID>
-    <ID>MagicNumber:TriSignalScorer.kt$TriSignalScorer$0.50</ID>
-    <ID>MagicNumber:TriSignalScorer.kt$TriSignalScorer$3.0</ID>
-    <ID>MagicNumber:TriSignalScorer.kt$TriSignalScorer$5</ID>
-    <ID>MagicNumber:TriSignalScorer.kt$TriSignalScorer$5.0</ID>
     <ID>MagicNumber:ZipImporter.kt$DefaultZipImporter$1024</ID>
-    <ID>MaxLineLength:BaselineProfileGenerator.kt$BaselineProfileGenerator$*</ID>
-    <ID>MaxLineLength:FunStatsSections.kt$text = if (milestone.isUnlocked) milestoneTitle(milestone.id) else stringResource(R.string.settings_milestone_locked)</ID>
-    <ID>MaxLineLength:FunStatsSections.kt$text = pluralStringResource(R.plurals.settings_meme_count, uiState.totalMemeCount, uiState.totalMemeCount)</ID>
-    <ID>MaxLineLength:GalleryScreen.kt$enter = slideInVertically(animationSpec = spring(dampingRatio = 0.8f, stiffness = 600f)) { -it } + fadeIn(animationSpec = spring(dampingRatio = 0.8f, stiffness = 600f))</ID>
-    <ID>MaxLineLength:GalleryScreen.kt$exit = slideOutVertically(animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium)) { -it } + fadeOut(animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium))</ID>
-    <ID>MaxLineLength:ImportRepositoryImpl.kt$ImportRepositoryImpl$Timber.d("Decoded image: %dx%d (sample=%d) from %s", bitmap.width, bitmap.height, sampleSize, uri)</ID>
-    <ID>MaxLineLength:ImportRepositoryImpl.kt$ImportRepositoryImpl$val sampleSize = calculateInSampleSize(outWidth, outHeight, MAX_IMAGE_DIMENSION, MAX_IMAGE_DIMENSION)</ID>
-    <ID>MaxLineLength:MemeEntityMerger.kt$MemeEntityMerger$return json.encodeToString(JsonArray.serializer(), JsonArray(union.map { kotlinx.serialization.json.JsonPrimitive(it) }))</ID>
-    <ID>MaxLineLength:Migrations.kt$&lt;no name provided&gt;$db.execSQL("CREATE INDEX IF NOT EXISTS index_potential_duplicates_memeId1 ON potential_duplicates (memeId1)")</ID>
-    <ID>MaxLineLength:Migrations.kt$&lt;no name provided&gt;$db.execSQL("CREATE INDEX IF NOT EXISTS index_potential_duplicates_memeId2 ON potential_duplicates (memeId2)")</ID>
-    <ID>MaxLineLength:ZipImporter.kt$DefaultZipImporter$Timber.d("extractBundle: clearing %d existing files from %s", existingFiles?.size ?: 0, extractDir.absolutePath)</ID>
     <ID>NestedBlockDepth:SettingsViewModel.kt$SettingsViewModel$private fun tryReadZipSettings(bytes: ByteArray): String?</ID>
     <ID>NestedBlockDepth:UriExtensions.kt$fun Uri.getFileName(context: Context): String?</ID>
     <ID>NestedBlockDepth:UriExtensions.kt$fun Uri.getFileSize(context: Context): Long</ID>
@@ -157,13 +104,9 @@
     <ID>TooManyFunctions:SearchRepositoryImpl.kt$SearchRepositoryImpl : SearchRepository</ID>
     <ID>TooManyFunctions:SettingsViewModel.kt$SettingsViewModel : ViewModel</ID>
     <ID>TooManyFunctions:TestDataFactory.kt$TestDataFactory</ID>
-    <ID>UnusedParameter:EmbeddingGenerationWorker.kt$EmbeddingGenerationWorker.Companion$_currentVersion: String</ID>
-    <ID>UnusedParameter:FakeMlComponents.kt$FakeTextRecognizer$_bitmap: Bitmap</ID>
-    <ID>UnusedParameter:GalleryScreen.kt$_onDeleteCountChange: (Int) -&gt; Unit</ID>
-    <ID>UnusedParameter:GalleryScreen.kt$_onNavigateToImport: () -&gt; Unit</ID>
-    <ID>UnusedParameter:GalleryScreen.kt$_onNavigateToMeme: (Long) -&gt; Unit</ID>
-    <ID>UnusedParameter:SearchBar.kt$_onEmojiClick: (String) -&gt; Unit</ID>
-    <ID>UnusedParameter:SlotFiller.kt$SlotFiller$_now: Long</ID>
+    <ID>UnusedParameter:EmbeddingGenerationWorker.kt$EmbeddingGenerationWorker.Companion$currentVersion: String</ID>
+    <ID>UnusedParameter:FakeMlComponents.kt$FakeTextRecognizer$bitmap: Bitmap</ID>
+    <ID>UnusedParameter:SlotFiller.kt$SlotFiller$now: Long</ID>
     <ID>UnusedPrivateMember:ImportRepositoryImpl.kt$ImportRepositoryImpl$private fun calculateFileHash(file: File): String</ID>
     <ID>UnusedPrivateProperty:GalleryNavigation.kt$val route = backStackEntry.toRoute&lt;MemeDetailRoute&gt;()</ID>
     <ID>UnusedPrivateProperty:ImageProcessor.kt$ImageProcessor$@param:ApplicationContext private val context: Context</ID>

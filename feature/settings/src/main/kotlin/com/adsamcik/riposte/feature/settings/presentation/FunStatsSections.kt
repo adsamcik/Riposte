@@ -122,7 +122,11 @@ private fun MemeOMeterCard(uiState: FunStatsUiState) {
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
             )
             Text(
-                text = pluralStringResource(R.plurals.settings_meme_count, uiState.totalMemeCount, uiState.totalMemeCount),
+                text = pluralStringResource(
+                    R.plurals.settings_meme_count,
+                    uiState.totalMemeCount,
+                    uiState.totalMemeCount,
+                ),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
             )
@@ -618,7 +622,11 @@ private fun MilestoneRow(milestone: MilestoneState) {
         Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = if (milestone.isUnlocked) milestoneTitle(milestone.id) else stringResource(R.string.settings_milestone_locked),
+                text = if (milestone.isUnlocked) {
+                    milestoneTitle(milestone.id)
+                } else {
+                    stringResource(R.string.settings_milestone_locked)
+                },
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Medium,
                 color = if (milestone.isUnlocked) {
