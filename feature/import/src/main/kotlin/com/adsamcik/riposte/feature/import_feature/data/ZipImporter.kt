@@ -156,7 +156,7 @@ class DefaultZipImporter
          * @param zipUri URI pointing to the ZIP file.
          * @return Extraction result with images and any errors.
          */
-        @Suppress("CyclomaticComplexMethod", "LongMethod")
+        @Suppress("CyclomaticComplexMethod", "LongMethod", "LoopWithTooManyJumpStatements")
         override suspend fun extractBundle(zipUri: Uri): ZipExtractionResult =
             withContext(Dispatchers.IO) {
                 Timber.d("extractBundle: starting for URI=%s", zipUri)
