@@ -1,71 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Search Bar -->
     <string name="search_placeholder">Texto, emoji o vibra…</string>
-    <string name="search_content_description">Campo de búsqueda de memes</string>
-
-    <!-- Search Bar Actions -->
-    <string name="search_action_close">Cerrar búsqueda</string>
-    <string name="search_action_voice">Búsqueda por voz</string>
-    <string name="search_action_search">Buscar</string>
-    <string name="search_action_clear">Limpiar búsqueda</string>
-
-    <!-- Search Modes -->
-    <string name="search_mode_text">Exacto</string>
-    <string name="search_mode_ai">Inteligente</string>
-    <string name="search_mode_hybrid">Ambos</string>
-    <string name="search_mode_content_description">Modo de búsqueda: %1$s</string>
-
-    <!-- Quick Filters -->
-    <string name="search_quick_filter_favorites">Favoritos</string>
-    <string name="search_quick_filter_recent">Recientes</string>
-    <string name="search_quick_filter_funny">Gracioso</string>
-    <string name="search_quick_filter_love">Amor</string>
-    <string name="search_quick_filter_reactions">Reacciones</string>
-    <string name="search_quick_filter_content_description">Filtro %1$s</string>
-    <string name="search_quick_filter_selected_content_description">Filtro %1$s, seleccionado</string>
-
-    <!-- Suggestions Section -->
-    <string name="search_suggestions_title">Sugerencias</string>
-    <string name="search_suggestions_content_description">Sugerencia: %1$s</string>
-    <string name="search_suggestions_icon">Sugerencia</string>
-
-    <!-- Recent Searches Section -->
     <string name="search_recent_title">Búsquedas Recientes</string>
     <string name="search_recent_clear_all">Limpiar Todo</string>
-    <string name="search_recent_clear_all_content_description">Limpiar todas las búsquedas recientes</string>
-    <string name="search_recent_item_content_description">Búsqueda reciente: %1$s. Desliza a la izquierda para eliminar.</string>
     <string name="search_recent_delete">Eliminar</string>
     <string name="search_recent_icon">Búsqueda reciente</string>
-
-    <!-- Results Toolbar -->
-    <string name="search_results_sort_content_description">Ordenar resultados por %1$s</string>
-    <string name="search_results_view_switch_list">Cambiar a vista de lista</string>
-    <string name="search_results_view_switch_grid">Cambiar a vista de cuadrícula</string>
-
-    <!-- Empty State -->
-    <string name="search_empty_icon">🔍</string>
-    <string name="search_empty_title">Busca Tus Memes</string>
-    <string name="search_empty_description">Encuentra memes por texto, descripción, o usa la búsqueda semántica con IA</string>
-
-    <!-- Search Tips -->
-    <string name="search_tip_smart_search">💡 Consejo: ¡Prueba la búsqueda Inteligente para encontrar memes por significado!</string>
-    <string name="search_tips_title">💡 Consejos de Búsqueda</string>
-    <string name="search_tip_keywords">Usa palabras clave como \"gato\", \"gracioso\", \"reacción\"</string>
-    <string name="search_tip_ai_mode">Prueba el modo IA para lenguaje natural: \"meme sobre los lunes\"</string>
-    <string name="search_tip_emoji_filter">Filtra por emoji para reducir resultados</string>
-
-    <!-- No Results State -->
     <string name="search_no_results_title">No Se Encontraron Resultados</string>
     <string name="search_no_results_description">No se encontraron memes para \"%1$s\"</string>
-
-    <!-- No Results Suggestions -->
-    <string name="search_no_results_clear_filters">Limpiar Todos los Filtros</string>
-
-    <!-- Result Card -->
-    <string name="search_result_card_content_description">%1$s, mejor resultado</string>
-
-    <!-- Error Messages -->
-    <string name="search_error_failed">Error en la búsqueda</string>
-
 </resources>

@@ -1,63 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- MemeCard Component -->
     <string name="ui_meme_card_remove_from_favorites">Odebrat z oblíbených</string>
     <string name="ui_meme_card_add_to_favorites">Přidat do oblíbených</string>
-
-    <!-- LoadingStates Component -->
     <string name="ui_loading_error_title">Jejda!</string>
     <string name="ui_loading_error_retry">Zkusit znovu</string>
     <string name="ui_loading_no_results_title">Nic nenalezeno</string>
     <string name="ui_loading_no_results_message">Nenašli jsme žádné memy odpovídající \"%1$s\"</string>
     <string name="ui_loading_no_results_clear">Vymazat hledání</string>
-
-    <!-- SearchBar Component -->
     <string name="ui_search_placeholder">Hledat memy…</string>
     <string name="ui_search_icon_description">Hledat</string>
     <string name="ui_search_clear_description">Vymazat hledání</string>
-
-    <!-- Accessibility: SectionHeader -->
     <string name="ui_section_header_see_all">Zobrazit vše</string>
-
-    <!-- Accessibility: QuickAccessSection -->
     <string name="ui_quick_access_title">Rychlý přístup</string>
     <string name="ui_quick_access_settings">Nastavení rychlého přístupu</string>
     <string name="ui_quick_access_item_description">%1$s, nálepka. Klepni pro sdílení, podrž pro okamžité sdílení</string>
-
-    <!-- Accessibility: HoldToShareProgress -->
     <string name="ui_hold_to_share_progress">Podrž pro sdílení, %1$d procent</string>
     <string name="ui_hold_to_share_action">Sdílet</string>
-
-    <!-- Accessibility: EmojiGridOverlay -->
     <string name="ui_emoji_grid_title">Všechny nálady</string>
     <string name="ui_emoji_grid_close">Zavřít</string>
-
-    <!-- Accessibility: EmojiFilterRail -->
-    <string name="ui_emoji_filter_clear_all">Vymazat všechny filtry</string>
-
-    <!-- Accessibility: EmojiChip -->
     <string name="ui_emoji_chip_filter_active">Filtr %1$s, aktivní</string>
     <string name="ui_emoji_chip_filter_inactive">Filtr %1$s, neaktivní</string>
-
-    <!-- Accessibility: MoreChip -->
     <string name="ui_more_chip_description">K dispozici %1$d dalších emoji filtrů</string>
-
-    <!-- Accessibility: Toggle states -->
     <string name="ui_toggle_state_on">Zapnuto</string>
     <string name="ui_toggle_state_off">Vypnuto</string>
     <string name="ui_state_favorited">V oblíbených</string>
     <string name="ui_state_not_favorited">Není v oblíbených</string>
     <string name="ui_state_selected">Vybráno</string>
     <string name="ui_state_not_selected">Nevybráno</string>
-
-    <!-- SearchResultsHeader -->
     <plurals name="ui_search_results_count">
         <item quantity="one">%1$d výsledek</item>
         <item quantity="few">%1$d výsledky</item>
         <item quantity="many">%1$d výsledků</item>
         <item quantity="other">%1$d výsledků</item>
     </plurals>
-    <string name="ui_search_results_query">pro \"%1$s\"</string>
     <string name="ui_search_results_duration">%1$s za %2$ss</string>
     <string name="ui_search_text_only_suffix">%1$s (pouze text)</string>
 </resources>

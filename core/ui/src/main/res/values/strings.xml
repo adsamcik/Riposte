@@ -1,61 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- MemeCard Component -->
     <string name="ui_meme_card_remove_from_favorites">Remove from favorites</string>
     <string name="ui_meme_card_add_to_favorites">Add to favorites</string>
-
-    <!-- LoadingStates Component -->
     <string name="ui_loading_error_title">Oops! 😵</string>
     <string name="ui_loading_error_retry">Try Again</string>
     <string name="ui_loading_no_results_title">No matches found 🕵️‍♀️</string>
     <string name="ui_loading_no_results_message">Try different emoji or keywords for \"%1$s\"</string>
     <string name="ui_loading_no_results_clear">Clear Search</string>
-
-    <!-- SearchBar Component -->
     <string name="ui_search_placeholder">Search memes…</string>
     <string name="ui_search_icon_description">Search</string>
     <string name="ui_search_clear_description">Clear search</string>
-
-    <!-- Accessibility: SectionHeader -->
     <string name="ui_section_header_see_all">See all</string>
-
-    <!-- Accessibility: QuickAccessSection -->
     <string name="ui_quick_access_title">Quick Access</string>
     <string name="ui_quick_access_settings">Quick Access settings</string>
     <string name="ui_quick_access_item_description">%1$s, sticker. Tap to share, hold for instant share</string>
-
-    <!-- Accessibility: HoldToShareProgress -->
     <string name="ui_hold_to_share_progress">Hold to share, %1$d percent</string>
     <string name="ui_hold_to_share_action">Share</string>
-
-    <!-- Accessibility: EmojiGridOverlay -->
     <string name="ui_emoji_grid_title">All Moods</string>
     <string name="ui_emoji_grid_close">Close</string>
-
-    <!-- Accessibility: EmojiFilterRail -->
-    <string name="ui_emoji_filter_clear_all">Clear all filters</string>
-
-    <!-- Accessibility: EmojiChip -->
     <string name="ui_emoji_chip_filter_active">%1$s filter, active</string>
     <string name="ui_emoji_chip_filter_inactive">%1$s filter, inactive</string>
-
-    <!-- Accessibility: MoreChip -->
     <string name="ui_more_chip_description">%1$d more emoji filters available</string>
-
-    <!-- Accessibility: Toggle states -->
     <string name="ui_toggle_state_on">On</string>
     <string name="ui_toggle_state_off">Off</string>
     <string name="ui_state_favorited">Favorited</string>
     <string name="ui_state_not_favorited">Not favorited</string>
     <string name="ui_state_selected">Selected</string>
     <string name="ui_state_not_selected">Not selected</string>
-
-    <!-- SearchResultsHeader -->
     <plurals name="ui_search_results_count">
         <item quantity="one">%1$d result</item>
         <item quantity="other">%1$d results</item>
     </plurals>
-    <string name="ui_search_results_query">for \"%1$s\"</string>
     <string name="ui_search_results_duration">%1$s in %2$ss</string>
     <string name="ui_search_text_only_suffix">%1$s (text only)</string>
 </resources>

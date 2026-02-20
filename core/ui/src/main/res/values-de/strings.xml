@@ -1,61 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- MemeCard Component -->
     <string name="ui_meme_card_remove_from_favorites">Aus Favoriten entfernen</string>
     <string name="ui_meme_card_add_to_favorites">Zu Favoriten hinzufügen</string>
-
-    <!-- LoadingStates Component -->
     <string name="ui_loading_error_title">Hoppla!</string>
     <string name="ui_loading_error_retry">Erneut versuchen</string>
     <string name="ui_loading_no_results_title">Keine Ergebnisse gefunden</string>
     <string name="ui_loading_no_results_message">Wir konnten keine Memes finden, die zu \"%1$s\" passen</string>
     <string name="ui_loading_no_results_clear">Suche leeren</string>
-
-    <!-- SearchBar Component -->
     <string name="ui_search_placeholder">Memes suchen…</string>
     <string name="ui_search_icon_description">Suchen</string>
     <string name="ui_search_clear_description">Suche leeren</string>
-
-    <!-- SectionHeader -->
     <string name="ui_section_header_see_all">Alle anzeigen</string>
-
-    <!-- QuickAccessSection -->
     <string name="ui_quick_access_title">Schnellzugriff</string>
     <string name="ui_quick_access_settings">Schnellzugriff-Einstellungen</string>
     <string name="ui_quick_access_item_description">%1$s, Sticker. Tippen zum Teilen, halten für Sofort-Teilen</string>
-
-    <!-- HoldToShareProgress -->
     <string name="ui_hold_to_share_progress">Halten zum Teilen, %1$d Prozent</string>
     <string name="ui_hold_to_share_action">Teilen</string>
-
-    <!-- EmojiGridOverlay -->
     <string name="ui_emoji_grid_title">Alle Stimmungen</string>
     <string name="ui_emoji_grid_close">Schließen</string>
-
-    <!-- EmojiFilterRail -->
-    <string name="ui_emoji_filter_clear_all">Alle Filter löschen</string>
-
-    <!-- EmojiChip -->
     <string name="ui_emoji_chip_filter_active">Filter %1$s, aktiv</string>
     <string name="ui_emoji_chip_filter_inactive">Filter %1$s, inaktiv</string>
-
-    <!-- MoreChip -->
     <string name="ui_more_chip_description">%1$d weitere Emoji-Filter verfügbar</string>
-
-    <!-- Toggle states -->
     <string name="ui_toggle_state_on">Ein</string>
     <string name="ui_toggle_state_off">Aus</string>
     <string name="ui_state_favorited">Favorisiert</string>
     <string name="ui_state_not_favorited">Nicht favorisiert</string>
     <string name="ui_state_selected">Ausgewählt</string>
     <string name="ui_state_not_selected">Nicht ausgewählt</string>
-
-    <!-- SearchResultsHeader -->
     <plurals name="ui_search_results_count">
         <item quantity="one">%1$d Ergebnis</item>
         <item quantity="other">%1$d Ergebnisse</item>
     </plurals>
-    <string name="ui_search_results_query">für \"%1$s\"</string>
     <string name="ui_search_results_duration">%1$s in %2$ss</string>
     <string name="ui_search_text_only_suffix">%1$s (nur Text)</string>
 </resources>

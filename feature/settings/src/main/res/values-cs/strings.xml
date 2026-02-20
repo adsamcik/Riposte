@@ -1,39 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Screen Title -->
     <string name="settings_title">Nastavení</string>
-    
-    <!-- Navigation -->
     <string name="settings_navigate_back">Zpět</string>
-    
-    <!-- Section Headers -->
     <string name="settings_section_appearance">Vzhled</string>
     <string name="settings_section_search">Vyhledávání</string>
     <string name="settings_section_storage">Úložiště</string>
     <string name="settings_section_about">O aplikaci</string>
-    
-    <!-- Appearance Section -->
     <string name="settings_theme_title">Motiv</string>
     <string name="settings_theme_system">Podle systému</string>
     <string name="settings_theme_light">Světlý</string>
     <string name="settings_theme_dark">Tmavý</string>
     <string name="settings_dynamic_colors_title">Dynamické barvy</string>
     <string name="settings_dynamic_colors_subtitle">Použít barvy z tapety</string>
-    
-    <!-- Display Section -->
     <string name="settings_grid_density_title">Hustota mřížky</string>
     <string name="settings_grid_density_subtitle">Velikost náhledů v galerii</string>
     <string name="settings_grid_density_auto">Automaticky (přizpůsobí se obrazovce)</string>
     <string name="settings_grid_density_compact">Velké (3 sloupce)</string>
     <string name="settings_grid_density_standard">Střední (4 sloupce)</string>
     <string name="settings_grid_density_dense">Malé (5 sloupců)</string>
-    
-    <!-- Search Section -->
     <string name="settings_semantic_search_title">Sémantické vyhledávání</string>
     <string name="settings_semantic_search_subtitle">AI vyhledávání podobných memů. Vyžaduje další úložiště pro AI model</string>
-    <string name="settings_embedding_model_title">Model embeddingů</string>
-    <string name="settings_embedding_model_subtitle">%1$d-dimenzionální embeddingy</string>
-    <string name="settings_embedding_model_version">%1$s v%2$s</string>
     <string name="settings_search_index_title">Index vyhledávání</string>
     <string name="settings_search_index_complete">Všech %1$d memů indexováno</string>
     <string name="settings_search_index_progress">%1$d z %2$d memů indexováno</string>
@@ -45,11 +31,8 @@
     <string name="settings_search_history_subtitle">Ukládat poslední hledání</string>
     <string name="settings_sort_emojis_by_usage_title">Řadit emoji podle použití</string>
     <string name="settings_sort_emojis_by_usage_subtitle">Zobrazit nejčastěji sdílené emoji kategorie první</string>
-    
-    <!-- Sharing Section -->
     <string name="settings_section_sharing">Sdílení</string>
     <string name="settings_share_format_title">Formát obrázku</string>
-    <string name="settings_share_format_subtitle">Formát použitý při sdílení memů</string>
     <string name="settings_share_format_jpeg">Standardní (JPEG)</string>
     <string name="settings_share_format_png">Bezztrátový (PNG)</string>
     <string name="settings_share_format_webp">Nejmenší (WebP)</string>
@@ -57,35 +40,25 @@
     <string name="settings_share_quality_subtitle">Vyšší kvalita znamená větší soubor</string>
     <string name="settings_share_quality_value">%1$d%%</string>
     <string name="settings_share_max_size_title">Max. velikost obrázku</string>
-    <string name="settings_share_max_size_subtitle">Sdílené obrázky budou zmenšeny na tuto velikost</string>
     <string name="settings_share_size_small">Malý (480px)</string>
     <string name="settings_share_size_medium">Střední (720px)</string>
     <string name="settings_share_size_large">Velký (1080px)</string>
     <string name="settings_share_size_original">Originál (2048px)</string>
     <string name="settings_share_strip_metadata_title">Zahrnout emoji štítky</string>
     <string name="settings_share_strip_metadata_subtitle">Připojit emoji štítky a info o meme ke sdíleným souborům</string>
-
-    <!-- Storage Section -->
     <string name="settings_clear_cache_title">Vymazat mezipaměť</string>
     <string name="settings_clear_cache_subtitle">Uvolnit %1$s</string>
-    <string name="settings_clear_cache_subtitle_empty">Mezipaměť je prázdná</string>
     <string name="settings_export_data_title">Exportovat data</string>
     <string name="settings_export_data_subtitle">Zálohovat memy a nastavení</string>
     <string name="settings_import_data_title">Importovat data</string>
     <string name="settings_import_data_subtitle">Obnovit ze zálohy</string>
-    
-    <!-- About Section -->
     <string name="settings_version_title">Verze</string>
     <string name="settings_open_source_licenses_title">Open source licence</string>
     <string name="settings_privacy_policy_title">Zásady ochrany soukromí</string>
-    
-    <!-- Clear Cache Dialog -->
     <string name="settings_clear_cache_dialog_title">Vymazat mezipaměť</string>
     <string name="settings_clear_cache_dialog_message">Tímto smažeš %1$s dat v mezipaměti. Tuto akci nelze vrátit zpět.</string>
     <string name="settings_clear_cache_dialog_confirm">Vymazat</string>
     <string name="settings_clear_cache_dialog_cancel">Zrušit</string>
-    
-    <!-- Export Options Dialog -->
     <string name="settings_export_options_title">Možnosti exportu</string>
     <string name="settings_export_option_settings">Nastavení</string>
     <string name="settings_export_option_images">Obrázky memů</string>
@@ -93,14 +66,10 @@
     <string name="settings_export_option_images_coming_soon">Obrázky memů (již brzy)</string>
     <string name="settings_export_option_tags_coming_soon">Štítky a metadata (již brzy)</string>
     <string name="settings_export_button">Exportovat</string>
-
-    <!-- Import Confirmation Dialog -->
     <string name="settings_import_confirm_title">Importovat zálohu</string>
     <string name="settings_import_confirm_message">Nahradit aktuální nastavení zálohou z %1$s?</string>
     <string name="settings_import_confirm_message_unknown">Nahradit aktuální nastavení touto zálohou?</string>
     <string name="settings_import_confirm_replace">Nahradit</string>
-
-    <!-- Language Section -->
     <string name="settings_language_title">Jazyk</string>
     <string name="settings_language_subtitle">Vybrat jazyk aplikace</string>
     <string name="settings_language_system">Podle systému</string>
@@ -109,37 +78,26 @@
     <string name="settings_language_de">Deutsch</string>
     <string name="settings_language_es">Español</string>
     <string name="settings_language_pt">Português</string>
-    
-    <!-- Snackbar Messages -->
     <string name="settings_export_complete">Exportováno do %1$s</string>
     <string name="settings_import_complete">Importováno %1$d memů</string>
-
-    <!-- Additional Snackbar Messages -->
     <string name="settings_snackbar_cache_cleared">Mezipaměť úspěšně vymazána</string>
     <string name="settings_snackbar_cache_clear_failed">Nepodařilo se vymazat mezipaměť</string>
     <string name="settings_snackbar_export_success">Data exportována do %1$s</string>
     <string name="settings_snackbar_export_failed">Export selhal: %1$s</string>
     <string name="settings_snackbar_import_failed">Import selhal: %1$s</string>
     <string name="settings_snackbar_import_success">Nastavení úspěšně importováno</string>
-
-    <!-- Diagnostics Section -->
     <string name="settings_section_diagnostics">Diagnostika</string>
     <string name="settings_crash_share_title">Sdílet záznamy o pádech</string>
     <string name="settings_crash_share_subtitle_empty">Žádné záznamy o pádech</string>
     <string name="settings_crash_clear_title">Vymazat záznamy o pádech</string>
     <string name="settings_crash_cleared">Záznamy o pádech vymazány</string>
-
-    <!-- Library Section -->
     <string name="settings_section_library">Knihovna</string>
     <string name="settings_library_total_memes_title">Celkem memů</string>
     <string name="settings_library_favorites_title">Oblíbené</string>
-
-    <!-- Duplicate Detection -->
     <string name="settings_find_duplicates_title">Najít duplikáty</string>
     <string name="settings_find_duplicates_subtitle">Vyhledat podobné nebo identické memy</string>
     <string name="duplicate_detection_title">Najít duplikáty</string>
     <string name="duplicate_detection_scan_button">Prohledat knihovnu</string>
-    <string name="duplicate_detection_scanning">Prohledávám…</string>
     <string name="duplicate_detection_hashing_progress">Výpočet vizuálních otisků: %1$d / %2$d</string>
     <string name="duplicate_detection_comparing">Porovnávám memy…</string>
     <string name="duplicate_detection_no_duplicates">Žádné duplikáty nenalezeny! Tvá knihovna je čistá 🎉</string>
@@ -154,28 +112,12 @@
     <string name="duplicate_detection_dismiss_all">Odmítnout vše</string>
     <string name="duplicate_detection_exact_match">Přesná shoda</string>
     <string name="duplicate_detection_perceptual_match">Vizuální shoda (vzdálenost: %1$d)</string>
-    <string name="duplicate_detection_merged_success">Sloučeno! Zachována nejlepší kvalita, sloučena metadata</string>
-    <string name="duplicate_detection_dismissed">Odmítnuto</string>
     <string name="duplicate_detection_resolution">%1$d × %2$d</string>
-    <string name="duplicate_detection_higher_res">Vyšší rozlišení</string>
-
-    <!-- About Section -->
-    <string name="settings_licenses_not_available">Open source licence budou k dispozici v budoucí aktualizaci</string>
-
-    <!-- Export Options Dialog -->
     <string name="settings_dialog_cancel">Zrušit</string>
-
-    <!-- Fun Statistics -->
     <string name="settings_section_fun_stats">Zábavné statistiky</string>
     <string name="settings_fun_stats_title">Zábavné statistiky</string>
     <string name="settings_fun_stats_summary_title">Statistiky sbírky a milníky</string>
     <string name="settings_fun_stats_summary_subtitle">Tvé vibrace, momentum, úspěchy a další</string>
-
-    <string name="settings_section_meme_o_meter">Tvá sbírka</string>
-    <string name="settings_meme_o_meter_storage">Celková velikost knihovny</string>
-    <string name="settings_meme_o_meter_memes_imported">Importovaných memů</string>
-
-    <!-- Collection Titles -->
     <string name="settings_title_meme_peasant">Meme nováček</string>
     <string name="settings_title_meme_squire">Meme zbrojnoš</string>
     <string name="settings_title_meme_knight">Meme rytíř</string>
@@ -185,22 +127,15 @@
     <string name="settings_title_meme_deity">Meme božstvo</string>
     <string name="settings_title_meme_h4x0r">Meme H4x0r</string>
     <string name="settings_title_empty">Meme učeň</string>
-
-    <!-- Vibe Check -->
     <string name="settings_section_vibe_check">Tvé vibrace</string>
-    <string name="settings_vibe_no_tags">Oštítkuj memy emoji, abys viděl své vibrace!</string>
     <string name="settings_vibe_memes">%1$d memů</string>
     <string name="settings_vibe_rank">#%1$d</string>
-
-    <!-- Meme Count (plurals) -->
     <plurals name="settings_meme_count">
         <item quantity="one">%d meme</item>
         <item quantity="few">%d memy</item>
         <item quantity="many">%d memů</item>
         <item quantity="other">%d memů</item>
     </plurals>
-
-    <!-- Fun Fact of the Day -->
     <string name="settings_section_fun_fact">Zajímavost dne</string>
     <string name="settings_fun_fact_total_views">Tvé memy byly zobrazeny celkem %1$d krát. Populární sbírka!</string>
     <string name="settings_fun_fact_max_views">Tvůj nejprohlíženější meme byl otevřen %1$d krát. Posedlost?</string>
@@ -214,22 +149,17 @@
     <string name="settings_fun_fact_fresh_drop">Tvůj nejnovější meme je starý jen %1$d hodin. Čerstvý přírůstek!</string>
     <string name="settings_fun_fact_fav_viewers">%1$d tvých oblíbených bylo zobrazeno alespoň jednou. Skvělý vkus!</string>
     <string name="settings_fun_fact_not_enough">Importuj více memů pro odemknutí zajímavostí!</string>
-
-    <!-- Momentum -->
     <string name="settings_section_momentum">Momentum</string>
     <string name="settings_momentum_this_week">%1$d tento týden</string>
     <string name="settings_momentum_this_week_label">tento týden</string>
     <string name="settings_momentum_growing">📈 Meme mašina</string>
     <string name="settings_momentum_stable">➡️ Na vlně</string>
     <string name="settings_momentum_declining">📉 Dobíjím</string>
-    <string name="settings_momentum_no_data">Importuj memy pro zobrazení svého momenta!</string>
     <string name="settings_momentum_week_3">3t</string>
     <string name="settings_momentum_week_2">2t</string>
     <string name="settings_momentum_week_1">1t</string>
     <string name="settings_momentum_week_now">Teď</string>
     <string name="settings_momentum_sparkline_description">Týdenní importy memů: %1$s. Trend: %2$s</string>
-
-    <!-- Milestones -->
     <string name="settings_section_milestones">Milníky</string>
     <string name="settings_milestones_count">%1$d / %2$d</string>
     <string name="settings_milestone_locked">\?\?\?</string>
@@ -260,5 +190,4 @@
     <string name="settings_milestone_night_owl_desc">Importuj meme mezi půlnocí a 4 hodinou ranní</string>
     <string name="settings_milestone_leet">1337</string>
     <string name="settings_milestone_leet_desc">Měj přesně 1 337 memů</string>
-
 </resources>

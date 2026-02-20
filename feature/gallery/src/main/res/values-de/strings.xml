@@ -1,20 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- App Bar -->
-    <string name="gallery_title">Riposte</string>
-
-    <!-- Menu Items -->
-    <string name="gallery_menu_all_memes">Alle Memes</string>
-    <string name="gallery_menu_favorites">Favoriten</string>
     <string name="gallery_menu_settings">Einstellungen</string>
-
-    <!-- Content Descriptions - Top Bar -->
     <string name="gallery_cd_cancel_selection">Auswahl aufheben</string>
     <string name="gallery_cd_select_all">Alle auswählen</string>
     <string name="gallery_cd_search">Suchen</string>
     <string name="gallery_cd_more_options">Weitere Optionen</string>
-
-    <!-- Content Descriptions - Actions -->
     <string name="gallery_cd_share">Teilen</string>
     <string name="gallery_cd_delete">Löschen</string>
     <string name="gallery_cd_import_memes">Memes importieren</string>
@@ -29,51 +19,31 @@
     <string name="gallery_cd_not_selected">Nicht ausgewählt</string>
     <string name="gallery_cd_confirm">Bestätigen</string>
     <string name="gallery_cd_meme_image">Meme-Bild: %s</string>
-
-    <!-- Delete Dialog -->
     <string name="gallery_delete_single_title">Meme löschen?</string>
     <string name="gallery_delete_single_message">Diese Aktion kann nicht rückgängig gemacht werden.</string>
-
-    <!-- Button Labels -->
     <string name="gallery_button_delete">Löschen</string>
     <string name="gallery_button_cancel">Abbrechen</string>
     <string name="gallery_button_save">Speichern</string>
     <string name="gallery_button_discard">Verwerfen</string>
     <string name="gallery_button_done">Fertig</string>
     <string name="gallery_button_import_memes">Memes importieren</string>
-
-    <!-- Empty State -->
     <string name="gallery_empty_title">Noch keine Memes</string>
     <string name="gallery_empty_message">Importiere ein paar Memes, um loszulegen!</string>
-
-    <!-- Favorites Empty State -->
     <string name="gallery_favorites_empty_title">Noch keine Favoriten</string>
     <string name="gallery_favorites_empty_message">Tippe auf das Herz bei einem Meme, um es hier hinzuzufügen</string>
-
-    <!-- Loading State -->
     <string name="gallery_loading_message">Memes werden geladen…</string>
-
-    <!-- Error State -->
     <string name="gallery_error_default">Fehler</string>
-
-    <!-- Meme Detail - Labels -->
     <string name="gallery_detail_label_title">Titel</string>
     <string name="gallery_detail_label_description">Beschreibung</string>
     <string name="gallery_detail_label_emoji_tags">Emoji-Tags</string>
     <string name="gallery_detail_label_imported">Importiert: %s</string>
     <string name="gallery_detail_label_extracted_text">Extrahierter Text:</string>
-
-    <!-- Emoji Dialog -->
     <string name="gallery_emoji_dialog_title">Emoji-Tags bearbeiten</string>
     <string name="gallery_emoji_search_label">Emojis suchen</string>
     <string name="gallery_emoji_section_selected">Ausgewählt</string>
     <string name="gallery_emoji_section_available">Verfügbar</string>
-
-    <!-- Error Messages -->
     <string name="gallery_error_invalid_meme_id">Ungültige Meme-ID</string>
     <string name="gallery_error_meme_not_found">Meme nicht gefunden</string>
-
-    <!-- Snackbar Messages -->
     <string name="gallery_snackbar_deleted">%d Meme(s) gelöscht</string>
     <string name="gallery_snackbar_save_or_discard">Änderungen erst speichern oder verwerfen</string>
     <string name="gallery_snackbar_favorite_failed">Favorit konnte nicht aktualisiert werden</string>
@@ -84,78 +54,38 @@
     <string name="gallery_snackbar_changes_saved">Änderungen gespeichert</string>
     <string name="gallery_snackbar_save_failed">Änderungen konnten nicht gespeichert werden</string>
     <string name="gallery_snackbar_unsaved_changes">Du hast ungespeicherte Änderungen</string>
-
-    <!-- Description Expand/Collapse -->
     <string name="gallery_detail_show_more">Mehr anzeigen</string>
     <string name="gallery_detail_show_less">Weniger anzeigen</string>
-
-    <!-- Discard Changes Dialog -->
     <string name="gallery_discard_changes_title">Änderungen verwerfen?</string>
     <string name="gallery_discard_changes_message">Du hast ungespeicherte Änderungen, die verloren gehen.</string>
     <string name="gallery_button_keep_editing">Weiter bearbeiten</string>
-
-    <!-- Menu Items -->
     <string name="gallery_menu_select">Auswählen</string>
-
-    <!-- Filter State -->
-    <string name="gallery_title_favorites">⭐ Favoriten</string>
     <string name="gallery_cd_clear_filter">Filter löschen</string>
     <string name="gallery_chip_favorites">Favoriten</string>
-
-    <!-- Section Headers -->
-    <string name="gallery_section_suggested">✨ Vorgeschlagen</string>
-
-    <!-- Delete Dialog -->
     <string name="gallery_delete_single_message_named">„%1$s“ löschen? Diese Aktion kann nicht rückgängig gemacht werden.</string>
-
-    <!-- Loading State -->
     <string name="gallery_cd_searching">Memes werden durchsucht</string>
-
-    <!-- Error State -->
     <string name="gallery_action_retry">Erneut versuchen</string>
-
-    <!-- Detail Action Labels -->
     <string name="gallery_detail_action_edit">Bearbeiten</string>
     <string name="gallery_detail_action_share">Teilen</string>
     <string name="gallery_detail_action_favorite">Favorit</string>
     <string name="gallery_detail_action_delete">Löschen</string>
-
-    <!-- Similar Memes Section -->
     <string name="gallery_detail_section_similar">Ähnliche Memes</string>
     <string name="gallery_cd_similar_meme">Ähnliches Meme: %s</string>
     <string name="gallery_similar_hint_generating">Ähnliche Memes werden gesucht…</string>
     <string name="gallery_similar_hint_no_candidates">Importiere mehr Memes, um Empfehlungen zu sehen</string>
     <string name="gallery_similar_hint_none_found">Keine ähnlichen Memes gefunden</string>
     <string name="gallery_similar_hint_error">Empfehlungen konnten nicht geladen werden</string>
-
-    <!-- Details Section -->
-    <string name="gallery_detail_section_details">Details</string>
-    <string name="gallery_detail_dimensions">Abmessungen</string>
-    <string name="gallery_detail_dimensions_value">%1$d × %2$d</string>
-    <string name="gallery_detail_file_size">Dateigröße</string>
-    <string name="gallery_detail_format">Format</string>
-
-    <!-- Error Messages -->
     <string name="gallery_error_load_failed">Memes verstecken sich 🙈</string>
     <string name="gallery_error_share_no_app">Teilen nicht möglich — App nicht gefunden</string>
     <string name="gallery_error_search_not_supported">Semantische Suche wird auf diesem Gerät nicht unterstützt</string>
     <string name="gallery_error_search_index_failed">Suchindex konnte nicht geladen werden — versuchen Sie eine Neuinstallation</string>
-
-    <!-- Detail Action Labels (Edit Mode) -->
     <string name="gallery_detail_action_cancel">Abbrechen</string>
-
-    <!-- Empty Emoji Tags -->
     <string name="gallery_detail_empty_emoji_tags">Keine Emoji-Tags — tippe auf Bearbeiten, um welche hinzuzufügen ✨</string>
-
-    <!-- Import Status Banner -->
     <string name="gallery_import_in_progress">Memes werden importiert… %1$d von %2$d</string>
     <string name="gallery_import_completed">%1$d Memes importiert ✓</string>
     <string name="gallery_import_completed_with_errors">%1$d Memes importiert, %2$d fehlgeschlagen</string>
     <string name="gallery_import_failed">Import hat ein Problem 😅</string>
-
-    <!-- Notification Banner -->
     <string name="gallery_indexing_complete">Suchindex aktualisiert — %1$d Memes bereit 🔍</string>
     <string name="gallery_cd_dismiss_notification">Benachrichtigung schließen</string>
     <string name="gallery_cd_loading_more">Weitere Memes werden geladen</string>
-
 </resources>

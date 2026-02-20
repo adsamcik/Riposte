@@ -1,39 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Screen Title -->
     <string name="settings_title">Ajustes</string>
-    
-    <!-- Navigation -->
     <string name="settings_navigate_back">Volver</string>
-    
-    <!-- Section Headers -->
     <string name="settings_section_appearance">Apariencia</string>
     <string name="settings_section_search">Búsqueda</string>
     <string name="settings_section_storage">Almacenamiento</string>
     <string name="settings_section_about">Acerca de</string>
-    
-    <!-- Appearance Section -->
     <string name="settings_theme_title">Tema</string>
     <string name="settings_theme_system">Predeterminado del sistema</string>
     <string name="settings_theme_light">Claro</string>
     <string name="settings_theme_dark">Oscuro</string>
     <string name="settings_dynamic_colors_title">Colores Dinámicos</string>
     <string name="settings_dynamic_colors_subtitle">Usar colores de tu fondo de pantalla</string>
-    
-    <!-- Display Section -->
     <string name="settings_grid_density_title">Densidad de Cuadrícula</string>
     <string name="settings_grid_density_subtitle">Tamaño de miniaturas en la galería</string>
     <string name="settings_grid_density_auto">Automático (se adapta a la pantalla)</string>
     <string name="settings_grid_density_compact">Grande (3 columnas)</string>
     <string name="settings_grid_density_standard">Mediano (4 columnas)</string>
     <string name="settings_grid_density_dense">Pequeño (5 columnas)</string>
-    
-    <!-- Search Section -->
     <string name="settings_semantic_search_title">Búsqueda Semántica</string>
     <string name="settings_semantic_search_subtitle">Búsqueda con IA para memes similares. Usa almacenamiento adicional para el modelo de IA</string>
-    <string name="settings_embedding_model_title">Modelo de embeddings</string>
-    <string name="settings_embedding_model_subtitle">Embeddings de %1$d dimensiones</string>
-    <string name="settings_embedding_model_version">%1$s v%2$s</string>
     <string name="settings_search_index_title">Índice de búsqueda</string>
     <string name="settings_search_index_complete">Todos los %1$d memes indexados</string>
     <string name="settings_search_index_progress">%1$d de %2$d memes indexados</string>
@@ -45,11 +31,8 @@
     <string name="settings_search_history_subtitle">Guardar búsquedas recientes</string>
     <string name="settings_sort_emojis_by_usage_title">Ordenar emojis por uso</string>
     <string name="settings_sort_emojis_by_usage_subtitle">Mostrar primero las categorías de emoji más compartidas</string>
-    
-    <!-- Sharing Section -->
     <string name="settings_section_sharing">Compartir</string>
     <string name="settings_share_format_title">Formato de imagen</string>
-    <string name="settings_share_format_subtitle">Formato usado al compartir memes</string>
     <string name="settings_share_format_jpeg">Estándar (JPEG)</string>
     <string name="settings_share_format_png">Sin pérdida (PNG)</string>
     <string name="settings_share_format_webp">Más pequeño (WebP)</string>
@@ -57,35 +40,25 @@
     <string name="settings_share_quality_subtitle">Mayor calidad significa archivo más grande</string>
     <string name="settings_share_quality_value">%1$d%%</string>
     <string name="settings_share_max_size_title">Tamaño máximo de imagen</string>
-    <string name="settings_share_max_size_subtitle">Las imágenes compartidas se reducirán a este tamaño</string>
     <string name="settings_share_size_small">Pequeño (480px)</string>
     <string name="settings_share_size_medium">Mediano (720px)</string>
     <string name="settings_share_size_large">Grande (1080px)</string>
     <string name="settings_share_size_original">Original (2048px)</string>
     <string name="settings_share_strip_metadata_title">Incluir etiquetas emoji</string>
     <string name="settings_share_strip_metadata_subtitle">Adjuntar etiquetas emoji e info del meme a archivos compartidos</string>
-
-    <!-- Storage Section -->
     <string name="settings_clear_cache_title">Limpiar Caché</string>
     <string name="settings_clear_cache_subtitle">Liberar %1$s</string>
-    <string name="settings_clear_cache_subtitle_empty">La caché está vacía</string>
     <string name="settings_export_data_title">Exportar Datos</string>
     <string name="settings_export_data_subtitle">Hacer copia de seguridad de tus memes y ajustes</string>
     <string name="settings_import_data_title">Importar Datos</string>
     <string name="settings_import_data_subtitle">Restaurar desde copia de seguridad</string>
-    
-    <!-- About Section -->
     <string name="settings_version_title">Versión</string>
     <string name="settings_open_source_licenses_title">Licencias de Código Abierto</string>
     <string name="settings_privacy_policy_title">Política de Privacidad</string>
-    
-    <!-- Clear Cache Dialog -->
     <string name="settings_clear_cache_dialog_title">Limpiar Caché</string>
     <string name="settings_clear_cache_dialog_message">Esto eliminará %1$s de datos en caché. Esta acción no se puede deshacer.</string>
     <string name="settings_clear_cache_dialog_confirm">Limpiar</string>
     <string name="settings_clear_cache_dialog_cancel">Cancelar</string>
-    
-    <!-- Export Options Dialog -->
     <string name="settings_export_options_title">Opciones de Exportación</string>
     <string name="settings_export_option_settings">Ajustes</string>
     <string name="settings_export_option_images">Imágenes de Memes</string>
@@ -94,8 +67,6 @@
     <string name="settings_export_option_tags_coming_soon">Etiquetas y Metadatos (próximamente)</string>
     <string name="settings_export_button">Exportar</string>
     <string name="settings_dialog_cancel">Cancelar</string>
-
-    <!-- Language Section -->
     <string name="settings_language_title">Idioma</string>
     <string name="settings_language_subtitle">Elegir idioma de la app</string>
     <string name="settings_language_system">Predeterminado del sistema</string>
@@ -104,43 +75,30 @@
     <string name="settings_language_de">Deutsch</string>
     <string name="settings_language_es">Español</string>
     <string name="settings_language_pt">Português</string>
-    
-    <!-- Snackbar Messages -->
     <string name="settings_export_complete">Exportado a %1$s</string>
     <string name="settings_import_complete">%1$d memes importados</string>
-
-    <!-- Additional Snackbar Messages -->
     <string name="settings_snackbar_cache_cleared">Caché limpiado exitosamente</string>
     <string name="settings_snackbar_cache_clear_failed">No se pudo limpiar el caché</string>
     <string name="settings_snackbar_export_success">Datos exportados a %1$s</string>
     <string name="settings_snackbar_export_failed">Exportación fallida: %1$s</string>
     <string name="settings_snackbar_import_failed">Importación fallida: %1$s</string>
     <string name="settings_snackbar_import_success">Ajustes importados exitosamente</string>
-
-    <!-- Diagnostics Section -->
     <string name="settings_section_diagnostics">Diagnósticos</string>
     <string name="settings_crash_share_title">Compartir informes de fallos</string>
     <string name="settings_crash_share_subtitle_empty">Sin informes de fallos</string>
     <string name="settings_crash_clear_title">Borrar informes de fallos</string>
     <string name="settings_crash_cleared">Informes de fallos borrados</string>
-
-    <!-- Library Section -->
     <string name="settings_section_library">Biblioteca</string>
     <string name="settings_library_total_memes_title">Total de memes</string>
     <string name="settings_library_favorites_title">Favoritos</string>
-
-    <!-- Import Confirmation Dialog -->
     <string name="settings_import_confirm_title">Importar copia de seguridad</string>
     <string name="settings_import_confirm_message">¿Reemplazar los ajustes actuales con la copia de seguridad de %1$s?</string>
     <string name="settings_import_confirm_message_unknown">¿Reemplazar los ajustes actuales con esta copia de seguridad?</string>
     <string name="settings_import_confirm_replace">Reemplazar</string>
-
-    <!-- Duplicate Detection -->
     <string name="settings_find_duplicates_title">Buscar duplicados</string>
     <string name="settings_find_duplicates_subtitle">Buscar memes similares o idénticos</string>
     <string name="duplicate_detection_title">Buscar duplicados</string>
     <string name="duplicate_detection_scan_button">Escanear biblioteca</string>
-    <string name="duplicate_detection_scanning">Escaneando…</string>
     <string name="duplicate_detection_hashing_progress">Calculando huellas visuales: %1$d / %2$d</string>
     <string name="duplicate_detection_comparing">Comparando memes…</string>
     <string name="duplicate_detection_no_duplicates">¡No se encontraron duplicados! Tu biblioteca está limpia 🎉</string>
@@ -155,25 +113,11 @@
     <string name="duplicate_detection_dismiss_all">Descartar todos</string>
     <string name="duplicate_detection_exact_match">Coincidencia exacta</string>
     <string name="duplicate_detection_perceptual_match">Coincidencia visual (distancia: %1$d)</string>
-    <string name="duplicate_detection_merged_success">¡Fusionado! Se mantuvo la mejor calidad y se combinaron los metadatos</string>
-    <string name="duplicate_detection_dismissed">Descartado</string>
     <string name="duplicate_detection_resolution">%1$d × %2$d</string>
-    <string name="duplicate_detection_higher_res">Mayor resolución</string>
-
-    <!-- About Section -->
-    <string name="settings_licenses_not_available">Las licencias de código abierto estarán disponibles en una futura actualización</string>
-
-    <!-- Fun Statistics -->
     <string name="settings_section_fun_stats">Estadísticas divertidas</string>
     <string name="settings_fun_stats_title">Estadísticas divertidas</string>
     <string name="settings_fun_stats_summary_title">Estadísticas de colección y logros</string>
     <string name="settings_fun_stats_summary_subtitle">Tus vibras, momentum, logros y más</string>
-
-    <string name="settings_section_meme_o_meter">Tu colección</string>
-    <string name="settings_meme_o_meter_storage">Tamaño total de la biblioteca</string>
-    <string name="settings_meme_o_meter_memes_imported">Memes importados</string>
-
-    <!-- Collection Titles -->
     <string name="settings_title_meme_peasant">Campesino de memes</string>
     <string name="settings_title_meme_squire">Escudero de memes</string>
     <string name="settings_title_meme_knight">Caballero de memes</string>
@@ -183,20 +127,13 @@
     <string name="settings_title_meme_deity">Deidad de memes</string>
     <string name="settings_title_meme_h4x0r">Meme H4x0r</string>
     <string name="settings_title_empty">Aprendiz de memes</string>
-
-    <!-- Vibe Check -->
     <string name="settings_section_vibe_check">Tus vibras</string>
-    <string name="settings_vibe_no_tags">¡Etiqueta memes con emojis para ver tus vibras!</string>
     <string name="settings_vibe_memes">%1$d memes</string>
     <string name="settings_vibe_rank">#%1$d</string>
-
-    <!-- Meme Count (plurals) -->
     <plurals name="settings_meme_count">
         <item quantity="one">%d meme</item>
         <item quantity="other">%d memes</item>
     </plurals>
-
-    <!-- Fun Fact of the Day -->
     <string name="settings_section_fun_fact">Dato curioso del día</string>
     <string name="settings_fun_fact_total_views">Tus memes han sido vistos %1$d veces en total. ¡Colección popular!</string>
     <string name="settings_fun_fact_max_views">Tu meme más visto ha sido abierto %1$d veces. ¿Obsesionado?</string>
@@ -210,22 +147,17 @@
     <string name="settings_fun_fact_fresh_drop">Tu meme más nuevo tiene solo %1$d horas. ¡Recién salido!</string>
     <string name="settings_fun_fact_fav_viewers">%1$d de tus favoritos han sido vistos al menos una vez. ¡Gran gusto!</string>
     <string name="settings_fun_fact_not_enough">¡Importa más memes para desbloquear datos curiosos!</string>
-
-    <!-- Momentum -->
     <string name="settings_section_momentum">Momentum</string>
     <string name="settings_momentum_this_week">%1$d esta semana</string>
     <string name="settings_momentum_this_week_label">esta semana</string>
     <string name="settings_momentum_growing">📈 Máquina de memes</string>
     <string name="settings_momentum_stable">➡️ En marcha</string>
     <string name="settings_momentum_declining">📉 Recargando</string>
-    <string name="settings_momentum_no_data">¡Importa memes para ver tu momentum!</string>
     <string name="settings_momentum_week_3">3s</string>
     <string name="settings_momentum_week_2">2s</string>
     <string name="settings_momentum_week_1">1s</string>
     <string name="settings_momentum_week_now">Ahora</string>
     <string name="settings_momentum_sparkline_description">Importaciones semanales de memes: %1$s. Tendencia: %2$s</string>
-
-    <!-- Milestones -->
     <string name="settings_section_milestones">Logros</string>
     <string name="settings_milestones_count">%1$d / %2$d</string>
     <string name="settings_milestone_locked">\?\?\?</string>
@@ -256,5 +188,4 @@
     <string name="settings_milestone_night_owl_desc">Importa un meme entre medianoche y las 4 AM</string>
     <string name="settings_milestone_leet">1337</string>
     <string name="settings_milestone_leet_desc">Ten exactamente 1337 memes</string>
-
 </resources>

@@ -28,7 +28,6 @@
     <!-- Quality Slider -->
     <string name="share_quality_label">Calidad</string>
     <string name="share_quality_percentage">%1$d%%</string>
-    <string name="share_quality_smaller_file">Archivo más pequeño</string>
     <string name="share_quality_better_quality">Mejor calidad</string>
 
     <!-- Size Presets -->
