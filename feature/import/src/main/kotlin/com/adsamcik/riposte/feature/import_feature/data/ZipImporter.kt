@@ -156,6 +156,7 @@ class DefaultZipImporter
          * @param zipUri URI pointing to the ZIP file.
          * @return Extraction result with images and any errors.
          */
+        @Suppress("CyclomaticComplexMethod", "LongMethod")
         override suspend fun extractBundle(zipUri: Uri): ZipExtractionResult =
             withContext(Dispatchers.IO) {
                 Timber.d("extractBundle: starting for URI=%s", zipUri)
@@ -250,6 +251,7 @@ class DefaultZipImporter
          * @param zipUri URI pointing to the ZIP file.
          * @return Flow of extraction events.
          */
+        @Suppress("CyclomaticComplexMethod", "LongMethod", "LoopWithTooManyJumpStatements")
         override fun extractBundleStream(zipUri: Uri): Flow<ZipExtractionEvent> =
             flow {
                 var processedCount = 0
@@ -341,6 +343,7 @@ class DefaultZipImporter
         /**
          * Process a single ZIP entry for batch extraction, dispatching to JSON or image handling.
          */
+        @Suppress("LongParameterList", "NestedBlockDepth")
         private fun processZipEntry(
             entryName: String,
             entry: java.util.zip.ZipEntry,
@@ -422,6 +425,7 @@ class DefaultZipImporter
         /**
          * Process a single ZIP entry for streaming extraction, returning events to emit.
          */
+        @Suppress("LongMethod", "NestedBlockDepth")
         private fun processStreamZipEntry(
             entryName: String,
             entry: java.util.zip.ZipEntry,
