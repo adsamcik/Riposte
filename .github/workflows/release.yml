@@ -56,7 +56,17 @@ jobs:
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::KEYSTORE_BASE64 secret is not set"
+            exit 1
+          fi
           echo "$KEYSTORE_BASE64" | base64 --decode > "${{ runner.temp }}/release.keystore"
+          # Validate keystore was decoded to a non-empty file
+          if [ ! -s "${{ runner.temp }}/release.keystore" ]; then
+            echo "::error::Decoded keystore is empty — check KEYSTORE_BASE64 secret"
+            exit 1
+          fi
+          echo "Keystore decoded: $(wc -c < "${{ runner.temp }}/release.keystore") bytes"
 
       - name: Configure signing
         env:
@@ -64,7 +74,24 @@ jobs:
           RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
         run: |
-          cat >> local.properties <<EOF
+          # Validate required secrets
+          missing=""
+          [ -z "$RELEASE_STORE_PASSWORD" ] && missing="$missing RELEASE_STORE_PASSWORD"
+          [ -z "$RELEASE_KEY_ALIAS" ] && missing="$missing RELEASE_KEY_ALIAS"
+          [ -z "$RELEASE_KEY_PASSWORD" ] && missing="$missing RELEASE_KEY_PASSWORD"
+          if [ -n "$missing" ]; then
+            echo "::error::Missing required secrets:$missing"
+            exit 1
+          fi
+
+          # Validate keystore is readable
+          keytool -list -keystore "${{ runner.temp }}/release.keystore" \
+            -storepass "$RELEASE_STORE_PASSWORD" -storetype PKCS12 > /dev/null 2>&1 \
+            || keytool -list -keystore "${{ runner.temp }}/release.keystore" \
+              -storepass "$RELEASE_STORE_PASSWORD" -storetype JKS > /dev/null 2>&1 \
+            || { echo "::error::Cannot read keystore — verify KEYSTORE_BASE64 and RELEASE_STORE_PASSWORD secrets"; exit 1; }
+
+          cat > local.properties <<EOF
           RELEASE_STORE_FILE=${{ runner.temp }}/release.keystore
           RELEASE_STORE_PASSWORD=$RELEASE_STORE_PASSWORD
           RELEASE_KEY_ALIAS=$RELEASE_KEY_ALIAS
