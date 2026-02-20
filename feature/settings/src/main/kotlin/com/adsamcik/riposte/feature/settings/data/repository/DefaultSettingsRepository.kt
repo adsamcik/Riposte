@@ -123,9 +123,7 @@ class DefaultSettingsRepository
             runCatching {
                 val jsonElement = Json.parseToJsonElement(json)
 
-                if (jsonElement !is JsonObject) {
-                    throw IllegalArgumentException("Invalid backup format: expected JSON object")
-                }
+                require(jsonElement is JsonObject) { "Invalid backup format: expected JSON object" }
 
                 val sharingPrefsJson = jsonElement["sharingPreferences"] as? JsonObject
                 val appPrefsJson = jsonElement["appPreferences"] as? JsonObject

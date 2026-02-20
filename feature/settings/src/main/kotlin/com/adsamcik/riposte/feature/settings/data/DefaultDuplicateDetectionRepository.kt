@@ -160,9 +160,9 @@ class DefaultDuplicateDetectionRepository @Inject constructor(
             ?: throw IllegalArgumentException("Duplicate not found: $duplicateId")
 
         val meme1 = dao.getMemeById(duplicates.memeId1)
-            ?: throw IllegalStateException("Meme not found: ${duplicates.memeId1}")
+            ?: error("Meme not found: ${duplicates.memeId1}")
         val meme2 = dao.getMemeById(duplicates.memeId2)
-            ?: throw IllegalStateException("Meme not found: ${duplicates.memeId2}")
+            ?: error("Meme not found: ${duplicates.memeId2}")
 
         val merged = merger.merge(meme1, meme2)
 

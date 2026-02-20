@@ -26,6 +26,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 import java.io.File
 import java.io.FileOutputStream
 import java.security.MessageDigest
@@ -427,33 +428,54 @@ class ImportRepositoryImpl
         private suspend fun loadAndResizeBitmap(uri: Uri): Bitmap? =
             withContext(Dispatchers.IO) {
                 try {
-                    context.contentResolver.openInputStream(uri)?.use { input ->
-                        // First, decode bounds only
-                        val options =
-                            BitmapFactory.Options().apply {
-                                inJustDecodeBounds = true
-                            }
-                        BitmapFactory.decodeStream(input, null, options)
+                    // For file:// URIs, use BitmapFactory.decodeFile which handles buffering correctly
+                    val filePath = if (uri.scheme == "file") uri.path else null
 
-                        // Calculate sample size
-                        val sampleSize =
-                            calculateInSampleSize(
-                                options.outWidth,
-                                options.outHeight,
-                                MAX_IMAGE_DIMENSION,
-                                MAX_IMAGE_DIMENSION,
-                            )
+                    // First pass: decode bounds only
+                    val outWidth: Int
+                    val outHeight: Int
+                    if (filePath != null) {
+                        val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                        BitmapFactory.decodeFile(filePath, options)
+                        outWidth = options.outWidth
+                        outHeight = options.outHeight
+                    } else {
+                        val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                        context.contentResolver.openInputStream(uri)?.use { input ->
+                            BitmapFactory.decodeStream(java.io.BufferedInputStream(input), null, options)
+                        }
+                        outWidth = options.outWidth
+                        outHeight = options.outHeight
+                    }
 
-                        // Decode with sample size
-                        context.contentResolver.openInputStream(uri)?.use { input2 ->
-                            val decodeOptions =
-                                BitmapFactory.Options().apply {
-                                    inSampleSize = sampleSize
-                                }
-                            BitmapFactory.decodeStream(input2, null, decodeOptions)
+                    if (outWidth <= 0 || outHeight <= 0) {
+                        Timber.w("Failed to decode image bounds: %dx%d for %s", outWidth, outHeight, uri)
+                        return@withContext null
+                    }
+
+                    // Calculate sample size
+                    val sampleSize = calculateInSampleSize(outWidth, outHeight, MAX_IMAGE_DIMENSION, MAX_IMAGE_DIMENSION)
+
+                    // Second pass: actual decode (stream fully closed from first pass)
+                    val bitmap = if (filePath != null) {
+                        val decodeOptions = BitmapFactory.Options().apply { inSampleSize = sampleSize }
+                        BitmapFactory.decodeFile(filePath, decodeOptions)
+                    } else {
+                        context.contentResolver.openInputStream(uri)?.use { input ->
+                            val decodeOptions = BitmapFactory.Options().apply { inSampleSize = sampleSize }
+                            BitmapFactory.decodeStream(java.io.BufferedInputStream(input), null, decodeOptions)
                         }
                     }
+
+                    if (bitmap != null) {
+                        Timber.d("Decoded image: %dx%d (sample=%d) from %s", bitmap.width, bitmap.height, sampleSize, uri)
+                    } else {
+                        Timber.w("BitmapFactory returned null for %s (bounds were %dx%d)", uri, outWidth, outHeight)
+                    }
+
+                    bitmap
                 } catch (e: Exception) {
+                    Timber.e(e, "Failed to load and resize bitmap from %s", uri)
                     null
                 }
             }

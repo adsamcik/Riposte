@@ -28,10 +28,10 @@ internal fun computeCollectionTitle(
         else -> context.getString(R.string.settings_title_empty)
     }
 
-private val FLOPPY_SIZE = 1_474_560L
-private val CD_SIZE = 700_000_000L
-private val SONG_SIZE = 4_000_000L
-private val PHOTO_SIZE = 3_500_000L
+private const val FLOPPY_SIZE = 1_474_560L
+private const val CD_SIZE = 700_000_000L
+private const val SONG_SIZE = 4_000_000L
+private const val PHOTO_SIZE = 3_500_000L
 
 /**
  * Converts total bytes into a fun real-world equivalence.

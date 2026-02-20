@@ -113,6 +113,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import timber.log.Timber
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -902,8 +903,8 @@ internal fun computeAdaptivePeekHeight(screenHeightDp: Float): Float {
 
 private fun formatFileSize(bytes: Long): String {
     return when {
-        bytes >= 1024 * 1024 -> String.format("%.1f MB", bytes / (1024.0 * 1024.0))
-        bytes >= 1024 -> String.format("%.1f KB", bytes / 1024.0)
+        bytes >= 1024 * 1024 -> String.format(Locale.US, "%.1f MB", bytes / (1024.0 * 1024.0))
+        bytes >= 1024 -> String.format(Locale.US, "%.1f KB", bytes / 1024.0)
         else -> "$bytes B"
     }
 }
