@@ -77,38 +77,14 @@ class ImportRepositoryImpl
         ): Result<Meme> =
             withContext(Dispatchers.IO) {
                 try {
-                    // Extract parameters from metadata
                     val emojis = metadata?.emojis ?: emptyList()
-                    val title = metadata?.title
                     val description = metadata?.description
-                    // Generate unique filename
-                    val fileName = "${UUID.randomUUID()}.jpg"
-                    val imageFile = File(memesDir, fileName)
-                    val thumbnailFile = File(thumbnailsDir, "thumb_$fileName")
 
-                    // Hash original source bytes for deterministic duplicate detection
-                    val fileHash = calculateUriHash(uri)
-
-                    // Copy and process image
-                    val bitmap =
-                        loadAndResizeBitmap(uri)
-                            ?: return@withContext Result.failure(Exception("Failed to load image"))
-
-                    // Save full image
-                    FileOutputStream(imageFile).use { out ->
-                        bitmap.compress(Bitmap.CompressFormat.JPEG, FULL_IMAGE_JPEG_QUALITY, out)
-                    }
-
-                    // Generate thumbnail
-                    val thumbnail = createThumbnail(bitmap)
-                    FileOutputStream(thumbnailFile).use { out ->
-                        thumbnail.compress(Bitmap.CompressFormat.JPEG, THUMBNAIL_JPEG_QUALITY, out)
-                    }
+                    val processed = copyImageToInternal(uri)
+                        ?: return@withContext Result.failure(Exception("Failed to load image"))
 
                     // Use pre-extracted text from metadata if available, otherwise run OCR
-                    val extractedText = metadata?.textContent ?: extractTextFromBitmap(bitmap)
-
-                    // Parse search phrases from metadata
+                    val extractedText = metadata?.textContent ?: extractTextFromBitmap(processed.bitmap)
                     val searchPhrases = metadata?.searchPhrases ?: emptyList()
 
                     // Create XMP metadata and embed in image
@@ -117,7 +93,7 @@ class ImportRepositoryImpl
                             MemeMetadata(
                                 schemaVersion = AppConstants.METADATA_SCHEMA_VERSION,
                                 emojis = emojis,
-                                title = title,
+                                title = metadata?.title,
                                 description = description,
                                 createdAt = Instant.now().toString(),
                                 appVersion = AppConstants.APP_VERSION,
@@ -125,41 +101,11 @@ class ImportRepositoryImpl
                         } else {
                             null
                         }
-                    xmpMetadata?.let { mlServices.xmpMetadataHandler.writeMetadata(imageFile.absolutePath, it) }
+                    xmpMetadata?.let {
+                        mlServices.xmpMetadataHandler.writeMetadata(processed.imageFile.absolutePath, it)
+                    }
 
-                    // Create database entity (embedding stored separately in meme_embeddings table)
-                    val now = System.currentTimeMillis()
-                    val originalFileName = getFileNameFromUri(uri) ?: "Untitled"
-                    val mimeType = context.contentResolver.getType(uri) ?: "image/jpeg"
-                    val memeEntity =
-                        MemeEntity(
-                            filePath = imageFile.absolutePath,
-                            fileName = originalFileName,
-                            mimeType = mimeType,
-                            width = bitmap.width,
-                            height = bitmap.height,
-                            fileSizeBytes = imageFile.length(),
-                            importedAt = now,
-                            emojiTagsJson = kotlinx.serialization.json.Json.encodeToString(emojis),
-                            title = title ?: originalFileName,
-                            description = description,
-                            textContent = extractedText,
-                            searchPhrasesJson =
-                                if (searchPhrases.isNotEmpty()) {
-                                    kotlinx.serialization.json.Json.encodeToString(searchPhrases)
-                                } else {
-                                    null
-                                },
-                            // Embeddings now stored in separate table
-                            embedding = null,
-                            fileHash = fileHash,
-                            basedOn = metadata?.basedOn,
-                            primaryLanguage = metadata?.primaryLanguage,
-                            localizationsJson =
-                                metadata?.localizations?.takeIf { it.isNotEmpty() }?.let {
-                                    kotlinx.serialization.json.Json.encodeToString(it)
-                                },
-                        )
+                    val memeEntity = createMemeEntity(processed, metadata, uri, extractedText)
 
                     // Insert meme
                     val memeId = memeDao.insertMeme(memeEntity)
@@ -185,13 +131,13 @@ class ImportRepositoryImpl
                     val meme =
                         Meme(
                             id = memeId,
-                            filePath = imageFile.absolutePath,
+                            filePath = memeEntity.filePath,
                             fileName = memeEntity.fileName,
                             mimeType = memeEntity.mimeType,
-                            width = bitmap.width,
-                            height = bitmap.height,
+                            width = processed.bitmap.width,
+                            height = processed.bitmap.height,
                             fileSizeBytes = memeEntity.fileSizeBytes,
-                            importedAt = now,
+                            importedAt = memeEntity.importedAt,
                             emojiTags = emojis.map { EmojiTag.fromEmoji(it) },
                             title = memeEntity.title,
                             description = description,
@@ -450,6 +396,79 @@ class ImportRepositoryImpl
                     Result.failure(e)
                 }
             }
+
+        private data class ProcessedImage(
+            val imageFile: File,
+            val bitmap: Bitmap,
+            val fileHash: String?,
+        )
+
+        /**
+         * Copy image from URI to internal storage, creating full image and thumbnail.
+         * Returns null if the image could not be loaded.
+         */
+        private suspend fun copyImageToInternal(uri: Uri): ProcessedImage? {
+            val fileName = "${UUID.randomUUID()}.jpg"
+            val imageFile = File(memesDir, fileName)
+            val thumbnailFile = File(thumbnailsDir, "thumb_$fileName")
+
+            val fileHash = calculateUriHash(uri)
+            val bitmap = loadAndResizeBitmap(uri) ?: return null
+
+            FileOutputStream(imageFile).use { out ->
+                bitmap.compress(Bitmap.CompressFormat.JPEG, FULL_IMAGE_JPEG_QUALITY, out)
+            }
+            val thumbnail = createThumbnail(bitmap)
+            FileOutputStream(thumbnailFile).use { out ->
+                thumbnail.compress(Bitmap.CompressFormat.JPEG, THUMBNAIL_JPEG_QUALITY, out)
+            }
+
+            return ProcessedImage(imageFile, bitmap, fileHash)
+        }
+
+        /**
+         * Build a [MemeEntity] from processed image data, metadata, and source URI.
+         */
+        private fun createMemeEntity(
+            processed: ProcessedImage,
+            metadata: MemeMetadata?,
+            uri: Uri,
+            extractedText: String?,
+        ): MemeEntity {
+            val emojis = metadata?.emojis ?: emptyList()
+            val searchPhrases = metadata?.searchPhrases ?: emptyList()
+            val originalFileName = getFileNameFromUri(uri) ?: "Untitled"
+            val mimeType = context.contentResolver.getType(uri) ?: "image/jpeg"
+            val now = System.currentTimeMillis()
+
+            return MemeEntity(
+                filePath = processed.imageFile.absolutePath,
+                fileName = originalFileName,
+                mimeType = mimeType,
+                width = processed.bitmap.width,
+                height = processed.bitmap.height,
+                fileSizeBytes = processed.imageFile.length(),
+                importedAt = now,
+                emojiTagsJson = kotlinx.serialization.json.Json.encodeToString(emojis),
+                title = metadata?.title ?: originalFileName,
+                description = metadata?.description,
+                textContent = extractedText,
+                searchPhrasesJson =
+                    if (searchPhrases.isNotEmpty()) {
+                        kotlinx.serialization.json.Json.encodeToString(searchPhrases)
+                    } else {
+                        null
+                    },
+                embedding = null,
+                fileHash = processed.fileHash,
+                basedOn = metadata?.basedOn,
+                primaryLanguage = metadata?.primaryLanguage,
+                localizationsJson =
+                    metadata?.localizations?.takeIf { it.isNotEmpty() }?.let {
+                        kotlinx.serialization.json.Json.encodeToString(it)
+                    },
+            )
+        }
 
         private suspend fun loadAndResizeBitmap(uri: Uri): Bitmap? =
             withContext(Dispatchers.IO) {

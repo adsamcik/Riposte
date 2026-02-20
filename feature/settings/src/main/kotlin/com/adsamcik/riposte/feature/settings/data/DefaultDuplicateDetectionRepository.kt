@@ -2,6 +2,7 @@ package com.adsamcik.riposte.feature.settings.data
 
 import android.graphics.BitmapFactory
 import com.adsamcik.riposte.core.database.dao.DuplicateDetectionDao
+import com.adsamcik.riposte.core.database.entity.MemeEntity
 import com.adsamcik.riposte.core.database.entity.PotentialDuplicateEntity
 import com.adsamcik.riposte.core.ml.DHashCalculator
 import com.adsamcik.riposte.feature.settings.domain.model.DuplicateGroup
@@ -100,28 +101,9 @@ class DefaultDuplicateDetectionRepository @Inject constructor(
         // Then check perceptual hash similarity
         for (i in allHashed.indices) {
             for (j in i + 1 until allHashed.size) {
-                val hash1 = allHashed[i].perceptualHash ?: continue
-                val hash2 = allHashed[j].perceptualHash ?: continue
-
-                val distance = DHashCalculator.hammingDistance(hash1, hash2)
-                if (distance <= maxHammingDistance) {
-                    val id1 = minOf(allHashed[i].id, allHashed[j].id)
-                    val id2 = maxOf(allHashed[i].id, allHashed[j].id)
-
-                    // Skip if already found as exact duplicate
-                    val alreadyExact = newDuplicates.any { it.memeId1 == id1 && it.memeId2 == id2 }
-                    if (!alreadyExact && !dao.pairExists(id1, id2)) {
-                        newDuplicates.add(
-                            PotentialDuplicateEntity(
-                                memeId1 = id1,
-                                memeId2 = id2,
-                                hammingDistance = distance,
-                                detectionMethod = "perceptual",
-                                detectedAt = now,
-                            ),
-                        )
-                    }
-                }
+                processPerceptualDuplicatePair(
+                    allHashed[i], allHashed[j], maxHammingDistance, newDuplicates, now,
+                )?.let { newDuplicates.add(it) }
             }
             // Emit progress during comparison phase
             if (i % COMPARE_PROGRESS_INTERVAL == 0) {
@@ -212,6 +194,38 @@ class DefaultDuplicateDetectionRepository @Inject constructor(
             }
         }
         return results
+    }
+
+    /**
+     * Check if two memes are perceptual duplicates and return a [PotentialDuplicateEntity] if so.
+     * Returns null when the pair should be skipped (missing hashes, distance too large, or already known).
+     */
+    private suspend fun processPerceptualDuplicatePair(
+        meme1: MemeEntity,
+        meme2: MemeEntity,
+        maxHammingDistance: Int,
+        existingDuplicates: List<PotentialDuplicateEntity>,
+        now: Long,
+    ): PotentialDuplicateEntity? {
+        val hash1 = meme1.perceptualHash ?: return null
+        val hash2 = meme2.perceptualHash ?: return null
+
+        val distance = DHashCalculator.hammingDistance(hash1, hash2)
+        if (distance > maxHammingDistance) return null
+
+        val id1 = minOf(meme1.id, meme2.id)
+        val id2 = maxOf(meme1.id, meme2.id)
+
+        val alreadyExact = existingDuplicates.any { it.memeId1 == id1 && it.memeId2 == id2 }
+        if (alreadyExact || dao.pairExists(id1, id2)) return null
+
+        return PotentialDuplicateEntity(
+            memeId1 = id1,
+            memeId2 = id2,
+            hammingDistance = distance,
+            detectionMethod = "perceptual",
+            detectedAt = now,
+        )
     }
 
     companion object {
