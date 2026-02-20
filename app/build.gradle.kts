@@ -19,8 +19,8 @@ android {
         applicationId = "com.adsamcik.riposte"
         minSdk = 31
         targetSdk = 36
-        versionCode = 3
-        versionName = "0.3.0"
+        versionCode = 4
+        versionName = "0.3.1"
 
         testInstrumentationRunner = "com.adsamcik.riposte.core.testing.HiltTestRunner"
 
@@ -85,15 +85,6 @@ android {
 
     // AI Packs for Google Play distribution (install-time delivery)
     assetPacks += listOf(":aipacks:generic_embedding", ":aipacks:soc_optimized")
-
-    // Device targeting: deliver SoC-optimized models to matching devices
-    bundle {
-        deviceTargetingConfig = file("device_targeting_config.xml")
-        deviceGroup {
-            enableSplit = true
-            defaultGroup = "other"
-        }
-    }
 
     // Release signing configuration
     signingConfigs {

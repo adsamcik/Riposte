@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-02-20
+
+### Changed
+
+- Simplified build flavors to lite, standard, and googleplay (removed qualcomm/mediatek/full)
+- Google Play flavor uses AI Packs with device-targeted SoC-optimized model delivery
+- Standard flavor bundles generic model only for F-Droid and sideload distribution
+- Lite flavor is now the default for development (fastest builds, no models)
+- CI and PR workflows use lite flavor for faster checks
+
 ## [0.3.0] - 2026-02-20
 
 ### Added
