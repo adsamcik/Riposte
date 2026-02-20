@@ -40,10 +40,10 @@ jobs:
         run: ./gradlew detekt --no-daemon
 
       - name: Build debug APK
-        run: ./gradlew assembleStandardDebug --no-daemon
+        run: ./gradlew assembleLiteDebug --no-daemon
 
       - name: Run unit tests
-        run: ./gradlew testStandardDebugUnitTest --no-daemon
+        run: ./gradlew testLiteDebugUnitTest --no-daemon
 
       - name: Upload test results
         if: always()
@@ -77,4 +77,4 @@ jobs:
         run: chmod +x gradlew
 
       - name: Run Android Lint
-        run: ./gradlew lintStandardDebug --no-daemon
+        run: ./gradlew lintLiteDebug --no-daemon

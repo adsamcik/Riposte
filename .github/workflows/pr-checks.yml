@@ -70,8 +70,8 @@ jobs:
 
       - name: Build and test
         run: |
-          ./gradlew assembleStandardDebug --no-daemon
-          ./gradlew testStandardDebugUnitTest --no-daemon
+          ./gradlew assembleLiteDebug --no-daemon
+          ./gradlew testLiteDebugUnitTest --no-daemon
 
       - name: Validate database schema version
         run: ./gradlew :core:database:validateDatabaseSchema --no-daemon

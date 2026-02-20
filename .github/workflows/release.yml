@@ -14,7 +14,7 @@ on:
         options:
           - lite
           - standard
-          - full
+          - googleplay
       create_release:
         description: 'Create GitHub Release'
         required: true
