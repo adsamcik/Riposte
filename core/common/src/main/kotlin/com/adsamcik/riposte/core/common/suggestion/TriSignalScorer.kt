@@ -29,17 +29,21 @@ class TriSignalScorer(
 
         return when (context.surface) {
             Surface.GALLERY ->
-                engagement * 0.50 + recency * 0.35 + scope * 0.15
+                engagement * GALLERY_ENGAGEMENT_WEIGHT +
+                    recency * GALLERY_RECENCY_WEIGHT +
+                    scope * GALLERY_SCOPE_WEIGHT
 
             Surface.SEARCH ->
-                scope * 0.40 + recency * 0.35 + engagement * 0.25
+                scope * SEARCH_SCOPE_WEIGHT +
+                    recency * SEARCH_RECENCY_WEIGHT +
+                    engagement * SEARCH_ENGAGEMENT_WEIGHT
         }
     }
 
     internal fun engagementScore(meme: Meme): Double {
-        return (meme.useCount * 3.0) +
-            (meme.viewCount * 0.5) +
-            (if (meme.isFavorite) 5.0 else 0.0)
+        return (meme.useCount * USE_COUNT_MULTIPLIER) +
+            (meme.viewCount * VIEW_COUNT_MULTIPLIER) +
+            (if (meme.isFavorite) FAVORITE_BONUS else 0.0)
     }
 
     internal fun recencyScore(
@@ -49,7 +53,7 @@ class TriSignalScorer(
         val daysSinceView =
             meme.lastViewedAt?.let {
                 (now - it).toDouble() / MS_PER_DAY
-            } ?: 30.0
+            } ?: DEFAULT_DAYS_SINCE_VIEW
         return exp(-lambda * daysSinceView)
     }
 
@@ -60,15 +64,28 @@ class TriSignalScorer(
         if (context.currentEmojiFilter != null &&
             meme.emojiTags.any { it.emoji == context.currentEmojiFilter }
         ) {
-            return 3.0
+            return EMOJI_FILTER_MATCH_SCORE
         }
-        if (context.recentSearches.take(5).any { search -> meme.matchesSearch(search) }) {
+        if (context.recentSearches.take(RECENT_SEARCHES_LIMIT).any { search -> meme.matchesSearch(search) }) {
             return 2.0
         }
         return 1.0
     }
 
     companion object {
+        private const val GALLERY_ENGAGEMENT_WEIGHT = 0.50
+        private const val GALLERY_RECENCY_WEIGHT = 0.35
+        private const val GALLERY_SCOPE_WEIGHT = 0.15
+        private const val SEARCH_SCOPE_WEIGHT = 0.40
+        private const val SEARCH_RECENCY_WEIGHT = 0.35
+        private const val SEARCH_ENGAGEMENT_WEIGHT = 0.25
+        private const val USE_COUNT_MULTIPLIER = 3.0
+        private const val VIEW_COUNT_MULTIPLIER = 0.5
+        private const val FAVORITE_BONUS = 5.0
+        private const val DEFAULT_DAYS_SINCE_VIEW = 30.0
+        private const val EMOJI_FILTER_MATCH_SCORE = 3.0
+        private const val RECENT_SEARCHES_LIMIT = 5
+
         internal fun Meme.matchesSearch(query: String): Boolean {
             val q = query.lowercase()
             return title?.lowercase()?.contains(q) == true ||

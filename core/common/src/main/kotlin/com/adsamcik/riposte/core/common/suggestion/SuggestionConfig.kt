@@ -12,7 +12,7 @@ data class SuggestionConfig(
     val exploreSlots: Int = 1,
     val wildcardSlots: Int = 1,
     val halfLifeDays: Double = 14.0,
-    val noveltyWindowMs: Long = 48L * 60 * 60 * 1000,
+    val noveltyWindowMs: Long = NOVELTY_WINDOW_HOURS * MS_PER_HOUR,
     val forgottenThresholdDays: Int = 14,
     val stalenessPenalty: Double = 0.80,
     val driftWindowDays: Int = 7,
@@ -22,5 +22,7 @@ data class SuggestionConfig(
 ) {
     companion object {
         const val MS_PER_DAY: Long = 86_400_000L
+        private const val NOVELTY_WINDOW_HOURS = 48L
+        private const val MS_PER_HOUR = 3_600_000L
     }
 }

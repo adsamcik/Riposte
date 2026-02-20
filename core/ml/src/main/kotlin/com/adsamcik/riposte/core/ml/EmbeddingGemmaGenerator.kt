@@ -400,7 +400,7 @@ class EmbeddingGemmaGenerator
                         input.copyTo(output)
                     }
                 }
-                Timber.d("Copied asset: $assetName (${targetFile.length() / 1024 / 1024} MB)")
+                Timber.d("Copied asset: $assetName (${targetFile.length() / BYTES_PER_KB / BYTES_PER_KB} MB)")
                 true
             } catch (e: Exception) {
                 Timber.d(e, "Asset not found in assets: $assetName")
@@ -574,6 +574,12 @@ class EmbeddingGemmaGenerator
             /** Minimum confidence threshold for image labels. */
             private const val IMAGE_LABEL_CONFIDENCE_THRESHOLD = 0.5f
 
+            /** Bytes per kilobyte for file size logging. */
+            private const val BYTES_PER_KB = 1024
+
+            /** Valid dimensions for Matryoshka Representation Learning truncation. */
+            private val VALID_TRUNCATION_DIMENSIONS = listOf(128, 256, 384, 512, DEFAULT_EMBEDDING_DIMENSION)
+
             /**
              * Detects the device's SoC model and returns the best model filename.
              * Falls back to generic model if no optimized variant is available.
@@ -648,8 +654,8 @@ class EmbeddingGemmaGenerator
                 require(targetDimension <= embedding.size) {
                     "Target dimension ($targetDimension) must be <= embedding size (${embedding.size})"
                 }
-                require(targetDimension in listOf(128, 256, 384, 512, 768)) {
-                    "Target dimension must be one of: 128, 256, 384, 512, 768"
+                require(targetDimension in VALID_TRUNCATION_DIMENSIONS) {
+                    "Target dimension must be one of: $VALID_TRUNCATION_DIMENSIONS"
                 }
 
                 val truncated = embedding.copyOfRange(0, targetDimension)

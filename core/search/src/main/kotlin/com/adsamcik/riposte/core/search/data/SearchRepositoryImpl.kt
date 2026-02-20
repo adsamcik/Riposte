@@ -151,7 +151,8 @@ class SearchRepositoryImpl
             return memeSearchDao.searchByEmoji(emojiQuery).map { entities ->
                 val results =
                     entities.mapIndexed { index, entity ->
-                        val relevanceScore = 1.0f - (index * 0.01f).coerceAtMost(0.5f)
+                        val relevanceScore =
+                            1.0f - (index * POSITION_RELEVANCE_DECAY).coerceAtMost(MAX_POSITION_DECAY)
                         SearchResult(
                             meme = entity.toDomain(),
                             relevanceScore = relevanceScore,
@@ -231,7 +232,7 @@ class SearchRepositoryImpl
         }
 
         private fun decodeEmbedding(bytes: ByteArray): FloatArray {
-            val floatArray = FloatArray(bytes.size / 4)
+            val floatArray = FloatArray(bytes.size / BYTES_PER_FLOAT)
             java.nio.ByteBuffer.wrap(bytes)
                 .order(java.nio.ByteOrder.LITTLE_ENDIAN)
                 .asFloatBuffer()
@@ -321,7 +322,8 @@ class SearchRepositoryImpl
                 entities.mapIndexed { index, entity ->
                     SearchResult(
                         meme = entity.toDomain(),
-                        relevanceScore = 1.0f - (index * 0.01f).coerceAtMost(0.5f),
+                        relevanceScore =
+                            1.0f - (index * POSITION_RELEVANCE_DECAY).coerceAtMost(MAX_POSITION_DECAY),
                         matchType = MatchType.TEXT,
                     )
                 }
@@ -333,7 +335,8 @@ class SearchRepositoryImpl
                 entities.mapIndexed { index, entity ->
                     SearchResult(
                         meme = entity.toDomain(),
-                        relevanceScore = 1.0f - (index * 0.01f).coerceAtMost(0.5f),
+                        relevanceScore =
+                            1.0f - (index * POSITION_RELEVANCE_DECAY).coerceAtMost(MAX_POSITION_DECAY),
                         matchType = MatchType.TEXT,
                     )
                 }
@@ -370,5 +373,8 @@ class SearchRepositoryImpl
             private const val TITLE_MATCH_BONUS = 0.3f
             private const val DESCRIPTION_MATCH_BONUS = 0.15f
             private const val EMOJI_MATCH_BONUS = 0.1f
+            private const val POSITION_RELEVANCE_DECAY = 0.01f
+            private const val MAX_POSITION_DECAY = 0.5f
+            private const val BYTES_PER_FLOAT = 4
         }
     }

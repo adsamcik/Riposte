@@ -30,6 +30,15 @@ class DHashCalculator @Inject constructor() {
         /** Maximum possible Hamming distance between two dHash values. */
         const val MAX_HAMMING_DISTANCE = HASH_BITS
 
+        /** ITU-R BT.601 luminance coefficient for red channel. */
+        private const val LUMINANCE_RED = 0.299
+
+        /** ITU-R BT.601 luminance coefficient for green channel. */
+        private const val LUMINANCE_GREEN = 0.587
+
+        /** ITU-R BT.601 luminance coefficient for blue channel. */
+        private const val LUMINANCE_BLUE = 0.114
+
         /**
          * Compute the Hamming distance between two dHash values.
          * Returns the number of bits that differ (0 = identical).
@@ -82,6 +91,6 @@ class DHashCalculator @Inject constructor() {
         val r = Color.red(pixel)
         val g = Color.green(pixel)
         val b = Color.blue(pixel)
-        return 0.299 * r + 0.587 * g + 0.114 * b
+        return LUMINANCE_RED * r + LUMINANCE_GREEN * g + LUMINANCE_BLUE * b
     }
 }

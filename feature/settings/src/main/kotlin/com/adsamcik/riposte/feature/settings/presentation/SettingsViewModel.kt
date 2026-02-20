@@ -346,9 +346,9 @@ class SettingsViewModel
 
         internal fun formatFileSize(bytes: Long): String {
             return when {
-                bytes >= 1_073_741_824 -> "%.2f GB".format(bytes / 1_073_741_824.0)
-                bytes >= 1_048_576 -> "%.2f MB".format(bytes / 1_048_576.0)
-                bytes >= 1024 -> "%.2f KB".format(bytes / 1024.0)
+                bytes >= BYTES_PER_GB -> "%.2f GB".format(bytes / BYTES_PER_GB.toDouble())
+                bytes >= BYTES_PER_MB -> "%.2f MB".format(bytes / BYTES_PER_MB.toDouble())
+                bytes >= BYTES_PER_KB -> "%.2f KB".format(bytes / BYTES_PER_KB.toDouble())
                 else -> "$bytes B"
             }
         }
@@ -607,5 +607,11 @@ class SettingsViewModel
             viewModelScope.launch {
                 _effects.send(SettingsEffect.NavigateToDuplicateDetection)
             }
+        }
+
+        companion object {
+            private const val BYTES_PER_KB = 1024L
+            private const val BYTES_PER_MB = 1_048_576L
+            private const val BYTES_PER_GB = 1_073_741_824L
         }
     }

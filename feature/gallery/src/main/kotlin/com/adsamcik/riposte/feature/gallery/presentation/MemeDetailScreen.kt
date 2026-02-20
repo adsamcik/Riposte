@@ -898,13 +898,17 @@ private fun MemeMetadataSection(
  * Computes adaptive peek height as 25% of screen height, clamped between 120dp and 280dp.
  */
 internal fun computeAdaptivePeekHeight(screenHeightDp: Float): Float {
-    return (screenHeightDp * 0.25f).coerceIn(120f, 280f)
+    return (screenHeightDp * ADAPTIVE_PEEK_HEIGHT_FRACTION).coerceIn(
+        MIN_ADAPTIVE_PEEK_HEIGHT_DP,
+        MAX_ADAPTIVE_PEEK_HEIGHT_DP,
+    )
 }
 
 private fun formatFileSize(bytes: Long): String {
     return when {
-        bytes >= 1024 * 1024 -> String.format(Locale.US, "%.1f MB", bytes / (1024.0 * 1024.0))
-        bytes >= 1024 -> String.format(Locale.US, "%.1f KB", bytes / 1024.0)
+        bytes >= BYTES_PER_KB * BYTES_PER_KB ->
+            String.format(Locale.US, "%.1f MB", bytes / (BYTES_PER_KB * BYTES_PER_KB))
+        bytes >= BYTES_PER_KB -> String.format(Locale.US, "%.1f KB", bytes / BYTES_PER_KB)
         else -> "$bytes B"
     }
 }
@@ -1228,5 +1232,9 @@ private fun MemeDetailEditModePreview() {
 }
 
 private const val BOTTOM_SHEET_PEEK_HEIGHT_FRACTION = 0.3f
+private const val ADAPTIVE_PEEK_HEIGHT_FRACTION = 0.25f
+private const val MIN_ADAPTIVE_PEEK_HEIGHT_DP = 120f
+private const val MAX_ADAPTIVE_PEEK_HEIGHT_DP = 280f
+private const val BYTES_PER_KB = 1024.0
 
 // endregion
