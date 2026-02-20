@@ -53,9 +53,7 @@ import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHost
@@ -375,6 +373,7 @@ private fun MemeDetailContent(
         },
         containerColor = MaterialTheme.colorScheme.scrim,
         sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        sheetShape = MaterialTheme.shapes.extraLarge,
     ) { paddingValues ->
         Box(
             modifier =
@@ -541,10 +540,6 @@ private fun MemeActionButtonsRow(
             FilledIconButton(
                 onClick = { onIntent(MemeDetailIntent.Share) },
                 modifier = Modifier.size(56.dp),
-                colors =
-                    IconButtonDefaults.filledIconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                    ),
                 enabled = !uiState.isSharing,
             ) {
                 if (uiState.isSharing) {
@@ -570,7 +565,7 @@ private fun MemeActionButtonsRow(
             notFavoritedText = notFavoritedText,
         )
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            OutlinedIconButton(
+            FilledTonalIconButton(
                 onClick = { onIntent(MemeDetailIntent.ShowDeleteDialog) },
             ) {
                 Icon(
@@ -598,11 +593,6 @@ private fun EditActionButton(
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         FilledTonalIconButton(
             onClick = { if (isEditMode) onCancelEdit() else onToggleEdit() },
-            colors =
-                IconButtonDefaults.filledTonalIconButtonColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                ),
         ) {
             Icon(
                 if (isEditMode) Icons.Default.Close else Icons.Default.Edit,
@@ -653,14 +643,6 @@ private fun FavoriteActionButton(
                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                 onIntent(MemeDetailIntent.ToggleFavorite)
             },
-            colors =
-                if (meme.isFavorite) {
-                    IconButtonDefaults.filledTonalIconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                    )
-                } else {
-                    IconButtonDefaults.filledTonalIconButtonColors()
-                },
             modifier =
                 Modifier
                     .graphicsLayer {
