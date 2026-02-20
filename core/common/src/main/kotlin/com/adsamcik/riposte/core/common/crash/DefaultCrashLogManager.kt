@@ -14,7 +14,7 @@ import javax.inject.Singleton
 class DefaultCrashLogManager
     @Inject
     constructor(
-        @CrashLogDir private val crashDir: File,
+        @param:CrashLogDir private val crashDir: File,
     ) : CrashLogManager {
         override fun getCrashLogCount(): Int = crashDir.listFiles()?.size ?: 0
 

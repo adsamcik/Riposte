@@ -24,6 +24,7 @@ import com.adsamcik.riposte.feature.settings.R
  * Screen displaying open source licenses for all third-party libraries.
  */
 @OptIn(ExperimentalMaterial3Api::class)
+@Suppress("DEPRECATION")
 @Composable
 fun LicensesScreen(
     onNavigateBack: () -> Unit,

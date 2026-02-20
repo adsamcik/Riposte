@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.Brightness4
 import androidx.compose.material.icons.filled.ColorLens
 import androidx.compose.material.icons.filled.GridView
@@ -13,7 +14,6 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Storage
-import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
@@ -161,7 +161,7 @@ internal fun LazyListScope.searchSection(
                 subtitle = stringResource(R.string.settings_sort_emojis_by_usage_subtitle),
                 checked = uiState.sortEmojisByUsage,
                 onCheckedChange = { onIntent(SettingsIntent.SetSortEmojisByUsage(it)) },
-                icon = Icons.Default.TrendingUp,
+                icon = Icons.AutoMirrored.Filled.TrendingUp,
             )
         }
     }
@@ -255,7 +255,7 @@ internal fun LazyListScope.funStatsSummarySection(
                 title = stringResource(R.string.settings_fun_stats_summary_title),
                 subtitle = stringResource(R.string.settings_fun_stats_summary_subtitle),
                 onClick = { onIntent(SettingsIntent.OpenFunStats) },
-                icon = Icons.Default.TrendingUp,
+                icon = Icons.AutoMirrored.Filled.TrendingUp,
             )
         }
     }

@@ -20,7 +20,7 @@ import javax.inject.Inject
 class ImportNotificationManager
     @Inject
     constructor(
-        @ApplicationContext private val context: Context,
+        @param:ApplicationContext private val context: Context,
     ) {
         /** Creates the import notification channel. Safe to call multiple times. */
         fun createChannel() {

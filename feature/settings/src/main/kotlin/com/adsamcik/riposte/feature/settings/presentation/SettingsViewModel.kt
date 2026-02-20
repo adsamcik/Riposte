@@ -74,7 +74,7 @@ class SettingsViewModel
         private val observeEmbeddingStatisticsUseCase: ObserveEmbeddingStatisticsUseCase,
         private val observeLibraryStatsUseCase: ObserveLibraryStatsUseCase,
         private val crashLogManager: CrashLogManager,
-        @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+        @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(SettingsUiState())
         val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()

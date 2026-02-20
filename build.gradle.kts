@@ -45,13 +45,26 @@ subprojects {
             jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
             
             // Treat all warnings as errors for stricter code quality
-            allWarningsAsErrors.set(false)
-            
-            // Enable experimental coroutines APIs
-            freeCompilerArgs.addAll(
-                "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi",
-                "-opt-in=kotlinx.coroutines.FlowPreview"
-            )
+            allWarningsAsErrors.set(true)
+        }
+    }
+
+    // Add coroutines opt-in only for modules that declare coroutines as a dependency,
+    // to avoid "unresolved opt-in marker" warnings in modules without coroutines.
+    afterEvaluate {
+        val hasCoroutines = configurations.findByName("implementation")
+            ?.dependencies
+            ?.any { it.group == "org.jetbrains.kotlinx" && it.name.startsWith("kotlinx-coroutines") }
+            ?: false
+        if (hasCoroutines) {
+            tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+                compilerOptions {
+                    freeCompilerArgs.addAll(
+                        "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi",
+                        "-opt-in=kotlinx.coroutines.FlowPreview",
+                    )
+                }
+            }
         }
     }
 

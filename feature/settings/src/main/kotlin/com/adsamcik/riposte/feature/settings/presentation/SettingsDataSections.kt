@@ -4,6 +4,7 @@ package com.adsamcik.riposte.feature.settings.presentation
 
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.CleaningServices
 import androidx.compose.material.icons.filled.Collections
@@ -14,7 +15,6 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.HighQuality
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.PhotoSizeSelectLarge
 import androidx.compose.material.icons.filled.Policy
@@ -53,7 +53,7 @@ internal fun LazyListScope.sharingSection(
                 subtitle = stringResource(R.string.settings_share_strip_metadata_subtitle),
                 checked = !uiState.stripMetadata,
                 onCheckedChange = { onIntent(SettingsIntent.SetStripMetadata(!it)) },
-                icon = Icons.Default.Label,
+                icon = Icons.AutoMirrored.Filled.Label,
             )
         }
     }

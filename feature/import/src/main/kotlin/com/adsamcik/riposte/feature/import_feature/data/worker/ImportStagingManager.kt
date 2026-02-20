@@ -17,7 +17,7 @@ import javax.inject.Inject
 class ImportStagingManager
     @Inject
     constructor(
-        @ApplicationContext private val context: Context,
+        @param:ApplicationContext private val context: Context,
     ) {
         private val stagingRoot: File
             get() = File(context.cacheDir, STAGING_DIR_NAME)

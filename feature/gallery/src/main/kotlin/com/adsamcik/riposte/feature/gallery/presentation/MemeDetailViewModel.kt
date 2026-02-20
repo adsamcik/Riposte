@@ -26,7 +26,7 @@ import javax.inject.Inject
 class MemeDetailViewModel
     @Inject
     constructor(
-        @ApplicationContext private val context: Context,
+        @param:ApplicationContext private val context: Context,
         savedStateHandle: SavedStateHandle,
         private val useCases: MemeDetailUseCases,
         private val shareMemeUseCase: ShareMemeUseCase,

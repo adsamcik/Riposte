@@ -12,6 +12,19 @@
     <!-- Accessibility checks -->
     <issue id="ContentDescription" severity="error" />
     <issue id="LabelFor" severity="warning" />
+
+    <!-- Detect dead code from high minSdk (31) -->
+    <issue id="ObsoleteSdkInt" severity="warning" />
+
+    <!-- Detect unused resources -->
+    <issue id="UnusedResources" severity="warning" />
+
+    <!-- Typography improvements -->
+    <issue id="TypographyDashes" severity="warning" />
+    <issue id="TypographyEllipsis" severity="warning" />
+
+    <!-- Detect incorrect locale-dependent operations -->
+    <issue id="DefaultLocale" severity="warning" />
     
     <!-- Known issues to ignore -->
     <issue id="PropertyEscape" severity="ignore" />

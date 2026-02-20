@@ -33,7 +33,7 @@ class FunStatsViewModel
         private val getFunStatisticsUseCase: GetFunStatisticsUseCase,
         private val getMilestonesUseCase: GetMilestonesUseCase,
         private val observeLibraryStatsUseCase: ObserveLibraryStatsUseCase,
-        @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+        @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(FunStatsUiState())
         val uiState: StateFlow<FunStatsUiState> = _uiState.asStateFlow()

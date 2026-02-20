@@ -42,12 +42,12 @@ import javax.inject.Inject
 class GalleryViewModel
     @Inject
     constructor(
-        @ApplicationContext private val context: Context,
+        @param:ApplicationContext private val context: Context,
         private val useCases: GalleryViewModelUseCases,
         private val getSuggestionsUseCase: GetSuggestionsUseCase,
         private val shareMemeUseCase: ShareMemeUseCase,
         private val galleryRepository: GalleryRepository,
-        @DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
+        @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
         private val preferencesDataStore: PreferencesDataStore,
         val searchDelegate: SearchDelegate,
     ) : ViewModel() {
