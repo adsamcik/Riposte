@@ -71,6 +71,7 @@ class ImportRepositoryImpl
             private const val HASH_BUFFER_SIZE = 8192
         }
 
+        @Suppress("LongMethod")
         override suspend fun importImage(
             uri: Uri,
             metadata: MemeMetadata?,

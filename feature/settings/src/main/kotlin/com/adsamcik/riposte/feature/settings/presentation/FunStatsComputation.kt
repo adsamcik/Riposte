@@ -93,6 +93,7 @@ internal fun computeVibeTagline(topEmojis: List<EmojiUsageStats>): String {
  * Selects the fun fact of the day based on available statistics.
  * Uses the day of year as a deterministic seed for daily rotation.
  */
+@Suppress("CyclomaticComplexMethod")
 internal fun computeFunFactOfTheDay(
     context: Context,
     stats: FunStatistics,

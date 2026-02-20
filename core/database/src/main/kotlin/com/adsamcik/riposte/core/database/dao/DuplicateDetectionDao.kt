@@ -149,6 +149,7 @@ interface DuplicateDetectionDao {
     /**
      * Update meme fields after merge (winner absorbs loser's best metadata).
      */
+    @Suppress("LongParameterList")
     @Query(
         """UPDATE memes SET 
             emojiTagsJson = :emojiTagsJson,
@@ -190,6 +191,7 @@ interface DuplicateDetectionDao {
     /**
      * Merge operation: update winner, reassign embeddings, delete loser, mark as merged.
      */
+    @Suppress("LongParameterList")
     @Transaction
     suspend fun performMerge(
         winnerId: Long,

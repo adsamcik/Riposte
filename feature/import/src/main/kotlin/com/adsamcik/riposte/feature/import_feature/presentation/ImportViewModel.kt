@@ -482,6 +482,7 @@ class ImportViewModel
             importJob = viewModelScope.launch { performImport(images) }
         }
 
+        @Suppress("LoopWithTooManyJumpStatements")
         private fun updateDuplicateMetadata() {
             val state = _uiState.value
             val dupes = state.duplicateIndices
