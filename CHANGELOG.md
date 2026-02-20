@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.3.0] - 2026-02-19
+## [0.3.0] - 2026-02-20
 
 ### Added
 
@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fun statistics screen with milestones, vibe check, sparklines, and M3 Expressive design language
 - Open source licenses screen in settings
 - M3 Expressive design system: Digital Joy color palette, Inter font family, spring physics motion, expressive shapes, and hybrid dynamic color theme
+- MaterialExpressiveTheme with squircle-to-circle emoji chip selection morph and emoji bounce animation
 - Transparent top bar with content scrolling behind it and auto-hiding emoji rail on scroll
 - Emoji usage sorting in filter rail (by share count) with settings toggle
 - Tap emoji in meme detail to search gallery by that emoji
@@ -25,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Auto-resume incomplete embedding indexing on startup with background ML model warm-up
 - Notification banner system in gallery (replaces welcome message)
 - Text-only indicator when semantic search is unavailable
-- Timber logging for all silent catch blocks
+- Timber logging for all silent catch blocks and ZIP bundle extraction
 - Accessibility improvements: gallery loading indicator labels, meme card emoji overlay labels, settings screen enhancements, selection state announcements
 - .NET 8 rewrite of riposte-cli with parallel processing, adaptive 429 handling, dedupe command, and 1000+ image batch optimization
 - Expanded test suite significantly (566+ CLI tests, comprehensive UI regression tests, duplicate detection tests, fun statistics tests, and more)
@@ -43,6 +44,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Upgraded to AGP 9.0.0, Gradle 9.3.1, Material 3 1.5.0-alpha13, MediaPipe 0.10.32, LiteRT 2.1.1
 - Updated launcher icon and splash screen
 - CLI default model updated to gpt-5-mini
+- Replaced tween animations with M3 Expressive spring physics throughout gallery
+- M3 Expressive button hierarchy: Share (filled) > Edit/Favorite (tonal) > Delete (error tonal)
+- Dialog buttons follow M3 hierarchy (filled primary + outlined dismiss)
+- Cards use tonal elevation instead of shadow elevation
+- Spacing tokens applied consistently across shared components
+- Emoji chip ripple effect properly clipped to morphed shape
+- Unified gallery and search into single grid composable for seamless transitions
+- Reduced detekt baseline from 533 to 109 issues (80% reduction)
+- Removed 102 dead string resources across all locales
 
 ### Fixed
 
@@ -52,6 +62,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Auto-dismiss import and embedding indexing completion notifications after 5 seconds
 - Duplicate key crash in gallery LazyVerticalGrid
 - Search results blinking when changing filters
+- Selection mode crash caused by spring animation overshooting padding to negative values
+- Gallery–search transition blink and emoji rail re-animation on mode switch
 - Back button navigation: two-step exit from search mode, keyboard dismissal, edit mode exit from all entry points
 - Gallery bottom row truncation and grid spacing issues
 - Search placeholder cutoff and emoji rail overlap
@@ -66,6 +78,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Search index double-counting memes
 - OpenCL availability proactively detected before enabling GPU
 - CLI ZIP bundling fix for Windows (writestr for OSError)
+- Test compilation warnings treated as errors resolved
 
 ### Security
 
