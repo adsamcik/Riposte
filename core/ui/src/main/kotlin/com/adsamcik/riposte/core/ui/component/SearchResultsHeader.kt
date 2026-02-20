@@ -13,6 +13,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.adsamcik.riposte.core.ui.R
 import com.adsamcik.riposte.core.ui.theme.RiposteTheme
+import com.adsamcik.riposte.core.ui.theme.Spacing
 import java.util.Locale
 
 private const val MILLIS_PER_SECOND = 1000.0
@@ -42,7 +43,7 @@ fun SearchResultsHeader(
         modifier =
             modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+                .padding(horizontal = Spacing.lg, vertical = Spacing.sm),
     ) {
         val countText = pluralStringResource(R.plurals.ui_search_results_count, resultCount, resultCount)
         val headerText = if (durationMs > 0) {

@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
@@ -34,7 +33,9 @@ import coil3.compose.AsyncImage
 import com.adsamcik.riposte.core.model.EmojiTag
 import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.core.ui.R
+import com.adsamcik.riposte.core.ui.theme.RiposteShapes
 import com.adsamcik.riposte.core.ui.theme.RiposteTheme
+import com.adsamcik.riposte.core.ui.theme.Spacing
 import com.adsamcik.riposte.core.ui.theme.ThumbnailSizes
 import java.io.File
 
@@ -67,21 +68,21 @@ fun QuickAccessSection(
         tonalElevation = 1.dp,
     ) {
         Column(
-            modifier = Modifier.padding(vertical = 12.dp),
+            modifier = Modifier.padding(vertical = Spacing.md),
         ) {
             // Header row
             Row(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
+                        .padding(horizontal = Spacing.lg),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     text = "🔥",
                     style = MaterialTheme.typography.titleMedium,
                 )
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(Spacing.sm))
                 Text(
                     text = stringResource(R.string.ui_quick_access_title),
                     style = MaterialTheme.typography.titleSmall,
@@ -101,12 +102,12 @@ fun QuickAccessSection(
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(Spacing.sm))
 
             // Meme row
             LazyRow(
-                contentPadding = PaddingValues(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(horizontal = Spacing.lg),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.md),
             ) {
                 items(
                     items = memes,
@@ -158,8 +159,8 @@ private fun QuickAccessItem(
                 .semantics { contentDescription = itemDescription },
     ) {
         Surface(
-            shape = RoundedCornerShape(ThumbnailSizes.THUMBNAIL_CORNER_RADIUS),
-            shadowElevation = 2.dp,
+            shape = RiposteShapes.SettingsItem,
+            tonalElevation = 2.dp,
             modifier = Modifier.matchParentSize(),
         ) {
             AsyncImage(

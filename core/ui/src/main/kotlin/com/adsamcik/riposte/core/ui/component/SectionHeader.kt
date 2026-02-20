@@ -22,6 +22,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.adsamcik.riposte.core.ui.R
 import com.adsamcik.riposte.core.ui.theme.RiposteTheme
+import com.adsamcik.riposte.core.ui.theme.Spacing
 
 /**
  * Section header component for organizing content into visual groups.
@@ -47,7 +48,7 @@ fun SectionHeader(
         modifier =
             modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(horizontal = Spacing.lg, vertical = Spacing.md),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (icon != null) {
