@@ -8,7 +8,7 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
+
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -40,7 +40,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items as lazyItems
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
@@ -122,6 +122,7 @@ import com.adsamcik.riposte.core.ui.component.ErrorState
 import com.adsamcik.riposte.core.ui.component.LoadingScreen
 import com.adsamcik.riposte.core.ui.component.MemeCardCompact
 import com.adsamcik.riposte.core.ui.modifier.animatedPressScale
+import com.adsamcik.riposte.core.ui.theme.RiposteMotionScheme
 import com.adsamcik.riposte.core.ui.theme.RiposteShapes
 import com.adsamcik.riposte.core.ui.theme.rememberGridColumns
 import com.adsamcik.riposte.feature.gallery.R
@@ -883,7 +884,7 @@ private fun GalleryEmojiFilterRail(
             visible = visible && (uniqueEmojis.isNotEmpty() || showFavoritesChip),
             modifier = modifier,
             enter = slideInVertically(animationSpec = spring(dampingRatio = 0.8f, stiffness = 600f)) { -it } + fadeIn(animationSpec = spring(dampingRatio = 0.8f, stiffness = 600f)),
-            exit = slideOutVertically(animationSpec = tween(durationMillis = 150)) { -it } + fadeOut(animationSpec = tween(durationMillis = 150)),
+            exit = slideOutVertically(animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium)) { -it } + fadeOut(animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium)),
         ) {
             EmojiFilterRail(
                 emojis = uniqueEmojis,
@@ -948,7 +949,7 @@ private fun FloatingSearchBar(
 ) {
     val menuBgAlpha by animateFloatAsState(
         targetValue = if (isScrolled) 1f else 0f,
-        animationSpec = tween(durationMillis = 200),
+        animationSpec = RiposteMotionScheme.DefaultEffects,
         label = "menuBgAlpha",
     )
 
@@ -1041,9 +1042,9 @@ private fun FloatingSearchBar(
                 animationSpec = spring(dampingRatio = 0.8f, stiffness = 600f),
             ),
             exit = slideOutVertically(
-                animationSpec = tween(durationMillis = 150),
+                animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium),
             ) { -it } + fadeOut(
-                animationSpec = tween(durationMillis = 150),
+                animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium),
             ),
         ) {
             LazyRow(
@@ -1115,7 +1116,7 @@ private fun SelectionModeGridItem(
 
     val overlayAlpha by animateFloatAsState(
         targetValue = if (isSelected) 0.25f else 0f,
-        animationSpec = tween(durationMillis = 150),
+        animationSpec = RiposteMotionScheme.FastSpatial,
         label = "overlayAlpha",
     )
     val borderWidth by animateDpAsState(
@@ -1175,7 +1176,7 @@ private fun BoxScope.SelectionOverlay(
     )
     val checkBgColor by animateColorAsState(
         targetValue = if (isSelected) primaryColor else MaterialTheme.colorScheme.scrim.copy(alpha = 0.35f),
-        animationSpec = tween(durationMillis = 150),
+        animationSpec = spring(dampingRatio = 0.65f, stiffness = 1400f),
         label = "checkBgColor",
     )
 
@@ -1392,7 +1393,7 @@ private fun ImportProgressBanner(
                 modifier = Modifier
                     .width(40.dp)
                     .height(4.dp)
-                    .clip(RoundedCornerShape(2.dp)),
+                    .clip(MaterialTheme.shapes.extraSmall),
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                 trackColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.3f),
             )
