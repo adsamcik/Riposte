@@ -4,57 +4,32 @@
   <CurrentIssues>
     <ID>CyclomaticComplexMethod:DefaultDuplicateDetectionRepository.kt$DefaultDuplicateDetectionRepository$override fun runDuplicateScan(maxHammingDistance: Int): Flow&lt;ScanProgress&gt;</ID>
     <ID>CyclomaticComplexMethod:FunStatsComputation.kt$internal fun computeFunFactOfTheDay( context: Context, stats: FunStatistics, ): String?</ID>
-    <ID>CyclomaticComplexMethod:ImportRepositoryImpl.kt$ImportRepositoryImpl$override suspend fun importImage( uri: Uri, metadata: MemeMetadata?, ): Result&lt;Meme&gt;</ID>
     <ID>CyclomaticComplexMethod:MemeEntity.kt$MemeEntity$override fun equals(other: Any?): Boolean</ID>
     <ID>CyclomaticComplexMethod:ZipImporter.kt$DefaultZipImporter$override fun extractBundleStream(zipUri: Uri): Flow&lt;ZipExtractionEvent&gt;</ID>
     <ID>CyclomaticComplexMethod:ZipImporter.kt$DefaultZipImporter$override suspend fun extractBundle(zipUri: Uri): ZipExtractionResult</ID>
     <ID>LongMethod:DefaultDuplicateDetectionRepository.kt$DefaultDuplicateDetectionRepository$override fun runDuplicateScan(maxHammingDistance: Int): Flow&lt;ScanProgress&gt;</ID>
-    <ID>LongMethod:EmbeddingGemmaGenerator.kt$EmbeddingGemmaGenerator$private fun initializeEmbeddingModel()</ID>
-    <ID>LongMethod:EmbeddingGenerationWorker.kt$EmbeddingGenerationWorker$override suspend fun doWork(): Result</ID>
-    <ID>LongMethod:FunStatsSections.kt$internal fun LazyListScope.milestonesSection(uiState: FunStatsUiState)</ID>
-    <ID>LongMethod:FunStatsSections.kt$internal fun LazyListScope.momentumSection(uiState: FunStatsUiState)</ID>
     <ID>LongMethod:ImportRepositoryImpl.kt$ImportRepositoryImpl$override suspend fun importImage( uri: Uri, metadata: MemeMetadata?, ): Result&lt;Meme&gt;</ID>
-    <ID>LongMethod:ImportUseCases.kt$ImportZipBundleStreamingUseCase$operator fun invoke(zipUri: Uri): Flow&lt;ZipImportEvent&gt;</ID>
-    <ID>LongMethod:ImportViewModel.kt$ImportViewModel$private suspend fun performImport(images: List&lt;ImportImage&gt;)</ID>
-    <ID>LongMethod:ImportWorker.kt$ImportWorker$override suspend fun doWork(): Result</ID>
-    <ID>LongMethod:Migrations.kt$&lt;no name provided&gt;$override fun migrate(db: SupportSQLiteDatabase)</ID>
-    <ID>LongMethod:XmpMetadataHandler.kt$XmpMetadataHandler$private fun generateXmpPacket(metadata: MemeMetadata): String</ID>
     <ID>LongMethod:ZipImporter.kt$DefaultZipImporter$override fun extractBundleStream(zipUri: Uri): Flow&lt;ZipExtractionEvent&gt;</ID>
     <ID>LongMethod:ZipImporter.kt$DefaultZipImporter$override suspend fun extractBundle(zipUri: Uri): ZipExtractionResult</ID>
+    <ID>LongMethod:ZipImporter.kt$DefaultZipImporter$private fun processStreamZipEntry( entryName: String, entry: java.util.zip.ZipEntry, zipInput: ZipInputStream, pendingMetadata: MutableMap&lt;String, MemeMetadata&gt;, emittedImages: MutableSet&lt;String&gt;, ): List&lt;ZipExtractionEvent&gt;</ID>
     <ID>LongParameterList:DuplicateDetectionDao.kt$DuplicateDetectionDao$( id: Long, emojiTagsJson: String, title: String?, description: String?, textContent: String?, searchPhrasesJson: String?, useCount: Int, viewCount: Int, isFavorite: Boolean, )</ID>
     <ID>LongParameterList:DuplicateDetectionDao.kt$DuplicateDetectionDao$( winnerId: Long, loserId: Long, duplicateId: Long, emojiTagsJson: String, title: String?, description: String?, textContent: String?, searchPhrasesJson: String?, useCount: Int, viewCount: Int, isFavorite: Boolean, )</ID>
-    <ID>LongParameterList:GalleryViewModel.kt$GalleryViewModel$( @param:ApplicationContext private val context: Context, private val useCases: GalleryViewModelUseCases, private val getSuggestionsUseCase: GetSuggestionsUseCase, private val shareMemeUseCase: ShareMemeUseCase, private val galleryRepository: GalleryRepository, @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher, private val preferencesDataStore: PreferencesDataStore, val searchDelegate: SearchDelegate, )</ID>
-    <ID>LongParameterList:SettingsViewModel.kt$SettingsViewModel$( @param:ApplicationContext private val context: Context, private val getAppPreferencesUseCase: GetAppPreferencesUseCase, private val getSharingPreferencesUseCase: GetSharingPreferencesUseCase, private val setDarkModeUseCase: SetDarkModeUseCase, private val setDynamicColorsUseCase: SetDynamicColorsUseCase, private val setEnableSemanticSearchUseCase: SetEnableSemanticSearchUseCase, private val setSaveSearchHistoryUseCase: SetSaveSearchHistoryUseCase, private val setSortEmojisByUsageUseCase: SetSortEmojisByUsageUseCase, private val setDefaultFormatUseCase: SetDefaultFormatUseCase, private val setDefaultQualityUseCase: SetDefaultQualityUseCase, private val setDefaultMaxDimensionUseCase: SetDefaultMaxDimensionUseCase, private val setStripMetadataUseCase: SetStripMetadataUseCase, private val setGridDensityUseCase: SetGridDensityUseCase, private val exportPreferencesUseCase: ExportPreferencesUseCase, private val importPreferencesUseCase: ImportPreferencesUseCase, private val observeEmbeddingStatisticsUseCase: ObserveEmbeddingStatisticsUseCase, private val observeLibraryStatsUseCase: ObserveLibraryStatsUseCase, private val crashLogManager: CrashLogManager, @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher, )</ID>
-    <ID>LoopWithTooManyJumpStatements:DefaultDuplicateDetectionRepository.kt$DefaultDuplicateDetectionRepository$for</ID>
+    <ID>LongParameterList:ZipImporter.kt$DefaultZipImporter$( entryName: String, entry: java.util.zip.ZipEntry, zipInput: ZipInputStream, extractedImages: MutableMap&lt;String, File&gt;, metadataMap: MutableMap&lt;String, MemeMetadata&gt;, errors: MutableMap&lt;String, String&gt;, )</ID>
     <ID>LoopWithTooManyJumpStatements:ImportViewModel.kt$ImportViewModel$for</ID>
     <ID>LoopWithTooManyJumpStatements:ZipImporter.kt$DefaultZipImporter$while</ID>
-    <ID>MaxLineLength:GalleryScreen.kt$com.adsamcik.riposte.core.search.R.string.search_no_results_description</ID>
-    <ID>MaxLineLength:ZipImporter.kt$DefaultZipImporter$@Suppress("TooGenericExceptionCaught")</ID>
-    <ID>NestedBlockDepth:SettingsViewModel.kt$SettingsViewModel$private fun tryReadZipSettings(bytes: ByteArray): String?</ID>
-    <ID>NestedBlockDepth:UriExtensions.kt$fun Uri.getFileName(context: Context): String?</ID>
-    <ID>NestedBlockDepth:UriExtensions.kt$fun Uri.getFileSize(context: Context): Long</ID>
-    <ID>ReturnCount:EmbeddingGemmaGenerator.kt$EmbeddingGemmaGenerator$private fun getModelPath(): String</ID>
-    <ID>ReturnCount:EmbeddingGemmaGenerator.kt$EmbeddingGemmaGenerator.Companion$fun getBestModelFilename(): String</ID>
-    <ID>ReturnCount:FakeMlComponents.kt$FakeSemanticSearchEngine$suspend fun &lt;T&gt; findSimilar( queryEmbedding: FloatArray, candidates: List&lt;Pair&lt;T, FloatArray&gt;&gt;, topK: Int = 10, threshold: Float = 0.5f, ): Result&lt;List&lt;Pair&lt;T, Float&gt;&gt;&gt;</ID>
-    <ID>ReturnCount:FakeMlComponents.kt$FakeTextRecognizer$private suspend fun executeRecognition(textProvider: () -&gt; String): Result&lt;String&gt;</ID>
-    <ID>ReturnCount:ImportViewModel.kt$ImportViewModel$private suspend fun handleWorkInfoUpdate(workInfo: WorkInfo)</ID>
-    <ID>ReturnCount:MediaPipeEmbeddingGenerator.kt$MediaPipeEmbeddingGenerator$private fun extractEmbedding(result: TextEmbedderResult): FloatArray</ID>
+    <ID>NestedBlockDepth:ZipImporter.kt$DefaultZipImporter$private fun processStreamZipEntry( entryName: String, entry: java.util.zip.ZipEntry, zipInput: ZipInputStream, pendingMetadata: MutableMap&lt;String, MemeMetadata&gt;, emittedImages: MutableSet&lt;String&gt;, ): List&lt;ZipExtractionEvent&gt;</ID>
+    <ID>NestedBlockDepth:ZipImporter.kt$DefaultZipImporter$private fun processZipEntry( entryName: String, entry: java.util.zip.ZipEntry, zipInput: ZipInputStream, extractedImages: MutableMap&lt;String, File&gt;, metadataMap: MutableMap&lt;String, MemeMetadata&gt;, errors: MutableMap&lt;String, String&gt;, )</ID>
+    <ID>ReturnCount:DefaultDuplicateDetectionRepository.kt$DefaultDuplicateDetectionRepository$private suspend fun processPerceptualDuplicatePair( meme1: MemeEntity, meme2: MemeEntity, maxHammingDistance: Int, existingDuplicates: List&lt;PotentialDuplicateEntity&gt;, now: Long, ): PotentialDuplicateEntity?</ID>
     <ID>TooManyFunctions:ComposeTestExtensions.kt$com.adsamcik.riposte.core.testing.ComposeTestExtensions.kt</ID>
-    <ID>TooManyFunctions:DuplicateDetectionDao.kt$DuplicateDetectionDao</ID>
-    <ID>TooManyFunctions:EmbeddingGemmaGenerator.kt$EmbeddingGemmaGenerator : EmbeddingGenerator</ID>
     <ID>TooManyFunctions:EmbeddingManager.kt$EmbeddingManager</ID>
     <ID>TooManyFunctions:FakeMemeRepository.kt$FakeMemeRepository</ID>
     <ID>TooManyFunctions:FakePreferencesDataStore.kt$FakePreferencesDataStore</ID>
     <ID>TooManyFunctions:GalleryRepository.kt$GalleryRepository</ID>
-    <ID>TooManyFunctions:GalleryRepositoryImpl.kt$GalleryRepositoryImpl : GalleryRepository</ID>
     <ID>TooManyFunctions:GalleryViewModel.kt$GalleryViewModel : ViewModel</ID>
-    <ID>TooManyFunctions:ImportRepositoryImpl.kt$ImportRepositoryImpl : ImportRepository</ID>
     <ID>TooManyFunctions:ImportViewModel.kt$ImportViewModel : ViewModel</ID>
-    <ID>TooManyFunctions:MemeDao.kt$MemeDao</ID>
     <ID>TooManyFunctions:MemeDetailViewModel.kt$MemeDetailViewModel : ViewModel</ID>
-    <ID>TooManyFunctions:MemeEmbeddingDao.kt$MemeEmbeddingDao</ID>
-    <ID>TooManyFunctions:SearchRepositoryImpl.kt$SearchRepositoryImpl : SearchRepository</ID>
     <ID>TooManyFunctions:SettingsViewModel.kt$SettingsViewModel : ViewModel</ID>
     <ID>TooManyFunctions:TestDataFactory.kt$TestDataFactory</ID>
+    <ID>TooManyFunctions:XmpMetadataHandler.kt$XmpMetadataHandler</ID>
   </CurrentIssues>
 </SmellBaseline>

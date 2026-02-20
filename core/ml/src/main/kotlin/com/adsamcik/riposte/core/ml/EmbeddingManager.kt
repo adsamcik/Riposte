@@ -191,7 +191,6 @@ class EmbeddingManager
             val validCount = memeEmbeddingDao.countValidEmbeddings()
             val pendingCount = memeEmbeddingDao.countMemesWithoutEmbeddings()
             val regenerationCount = memeEmbeddingDao.countEmbeddingsNeedingRegeneration()
-            val versionCounts = memeEmbeddingDao.getEmbeddingCountByModelVersion()
 
             val rawError = embeddingGenerator.initializationError
 
@@ -200,7 +199,9 @@ class EmbeddingManager
                 pendingEmbeddingCount = pendingCount,
                 regenerationNeededCount = regenerationCount,
                 currentModelVersion = versionManager.currentModelVersion,
-                embeddingsByVersion = versionCounts.associate { it.modelVersion to it.count },
+                embeddingsByVersion = memeEmbeddingDao
+                    .getEmbeddingCountByModelVersion()
+                    .associate { it.modelVersion to it.count },
                 modelError = rawError,
             )
         }

@@ -300,7 +300,7 @@ class UriExtensionsTest {
         val cursor = MatrixCursor(arrayOf(OpenableColumns.DISPLAY_NAME))
         cursor.addRow(arrayOf("test_image.jpg"))
 
-        every { mockContentResolver.query(uri, null, null, null, null) } returns cursor
+        every { mockContentResolver.query(uri, any(), null, null, null) } returns cursor
 
         val result = uri.getFileName(mockContext)
 
@@ -312,7 +312,7 @@ class UriExtensionsTest {
         val uri = mockk<Uri>()
         every { uri.scheme } returns "content"
         every { uri.path } returns "/storage/emulated/0/Download/photo.png"
-        every { mockContentResolver.query(uri, null, null, null, null) } returns null
+        every { mockContentResolver.query(uri, any(), null, null, null) } returns null
 
         val result = uri.getFileName(mockContext)
 
@@ -353,16 +353,15 @@ class UriExtensionsTest {
     }
 
     @Test
-    fun `getFileName handles cursor with negative column index`() {
+    fun `getFileName falls back to path when cursor is empty`() {
         val uri = mockk<Uri>()
         every { uri.scheme } returns "content"
         every { uri.path } returns "/fallback/path/file.jpg"
 
-        // Cursor without DISPLAY_NAME column
-        val cursor = MatrixCursor(arrayOf("other_column"))
-        cursor.addRow(arrayOf("some_value"))
+        val cursor = MatrixCursor(arrayOf(OpenableColumns.DISPLAY_NAME))
+        // Don't add any rows — moveToFirst() returns false
 
-        every { mockContentResolver.query(uri, null, null, null, null) } returns cursor
+        every { mockContentResolver.query(uri, any(), null, null, null) } returns cursor
 
         val result = uri.getFileName(mockContext)
 
@@ -381,7 +380,7 @@ class UriExtensionsTest {
         val cursor = MatrixCursor(arrayOf(OpenableColumns.SIZE))
         cursor.addRow(arrayOf(1024L))
 
-        every { mockContentResolver.query(uri, null, null, null, null) } returns cursor
+        every { mockContentResolver.query(uri, any(), null, null, null) } returns cursor
 
         val result = uri.getFileSize(mockContext)
 
@@ -392,7 +391,7 @@ class UriExtensionsTest {
     fun `getFileSize returns 0 when cursor is null`() {
         val uri = mockk<Uri>()
         every { uri.scheme } returns "content"
-        every { mockContentResolver.query(uri, null, null, null, null) } returns null
+        every { mockContentResolver.query(uri, any(), null, null, null) } returns null
 
         val result = uri.getFileSize(mockContext)
 
@@ -417,7 +416,7 @@ class UriExtensionsTest {
         val cursor = MatrixCursor(arrayOf("other_column"))
         cursor.addRow(arrayOf("value"))
 
-        every { mockContentResolver.query(uri, null, null, null, null) } returns cursor
+        every { mockContentResolver.query(uri, any(), null, null, null) } returns cursor
 
         val result = uri.getFileSize(mockContext)
 
@@ -432,7 +431,7 @@ class UriExtensionsTest {
         val cursor = MatrixCursor(arrayOf(OpenableColumns.SIZE))
         // Don't add any rows
 
-        every { mockContentResolver.query(uri, null, null, null, null) } returns cursor
+        every { mockContentResolver.query(uri, any(), null, null, null) } returns cursor
 
         val result = uri.getFileSize(mockContext)
 

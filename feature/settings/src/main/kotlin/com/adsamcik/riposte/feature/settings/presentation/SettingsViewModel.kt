@@ -511,14 +511,7 @@ class SettingsViewModel
         private fun tryReadZipSettings(bytes: ByteArray): String? {
             return try {
                 ZipInputStream(bytes.inputStream()).use { zip ->
-                    var entry = zip.nextEntry
-                    while (entry != null) {
-                        if (entry.name == "settings.json") {
-                            return zip.bufferedReader().readText()
-                        }
-                        entry = zip.nextEntry
-                    }
-                    null
+                    findZipEntry(zip, "settings.json")
                 }
             } catch (
                 @Suppress("TooGenericExceptionCaught") // Catches all to show error state
@@ -527,6 +520,17 @@ class SettingsViewModel
                 Timber.w(e, "Failed to read settings from ZIP")
                 null
             }
+        }
+
+        private fun findZipEntry(zip: ZipInputStream, name: String): String? {
+            var entry = zip.nextEntry
+            while (entry != null) {
+                if (entry.name == name) {
+                    return zip.bufferedReader().readText()
+                }
+                entry = zip.nextEntry
+            }
+            return null
         }
 
         private fun confirmImport() {

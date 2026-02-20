@@ -179,7 +179,10 @@ class EmbeddingManagerTest {
             coEvery { memeEmbeddingDao.countEmbeddingsNeedingRegeneration() } returns 5
             coEvery { memeEmbeddingDao.getEmbeddingCountByModelVersion() } returns
                 listOf(
-                    com.adsamcik.riposte.core.database.dao.EmbeddingVersionCount("mediapipe_use:1.0.0", 100),
+                    com.adsamcik.riposte.core.database.dao.EmbeddingVersionCount(
+                        "mediapipe_use:1.0.0",
+                        100,
+                    ),
                 )
 
             // When

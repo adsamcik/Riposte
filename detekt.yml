@@ -87,9 +87,10 @@ complexity:
     constructorThreshold: 7
     ignoreDefaultParameters: true
     ignoreDataClasses: true
-    ignoreAnnotatedParameter: []
     ignoreAnnotated:
       - 'Composable'
+      - 'Inject'
+    ignoreAnnotatedParameter: []
   MethodOverloading:
     active: false
   NamedArguments:
@@ -121,10 +122,16 @@ complexity:
     thresholdInEnums: 11
     ignoreDeprecated: false
     ignorePrivate: false
-    ignoreOverridden: false
+    ignoreOverridden: true
     ignoreAnnotatedFunctions:
       - 'Preview'
       - 'Composable'
+      - 'Query'
+      - 'Insert'
+      - 'Update'
+      - 'Delete'
+      - 'Transaction'
+      - 'RawQuery'
 
 coroutines:
   active: true

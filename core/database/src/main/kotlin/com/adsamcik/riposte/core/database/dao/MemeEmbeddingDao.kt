@@ -253,11 +253,3 @@ interface MemeEmbeddingDao {
     )
     suspend fun hasValidEmbedding(memeId: Long): Boolean
 }
-
-/**
- * Data class for embedding count per model version.
- */
-data class EmbeddingVersionCount(
-    val modelVersion: String,
-    val count: Int,
-)

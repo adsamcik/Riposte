@@ -125,6 +125,7 @@ import com.adsamcik.riposte.core.ui.modifier.animatedPressScale
 import com.adsamcik.riposte.core.ui.theme.RiposteMotionScheme
 import com.adsamcik.riposte.core.ui.theme.RiposteShapes
 import com.adsamcik.riposte.core.ui.theme.rememberGridColumns
+import com.adsamcik.riposte.core.search.R as SearchR
 import com.adsamcik.riposte.feature.gallery.R
 import kotlinx.coroutines.flow.collectLatest
 import timber.log.Timber
@@ -592,11 +593,11 @@ private fun GalleryScreenContent(
                                             icon = "🔍",
                                             title =
                                                 stringResource(
-                                                    com.adsamcik.riposte.core.search.R.string.search_no_results_title,
+                                                    SearchR.string.search_no_results_title,
                                                 ),
                                             message =
                                                 stringResource(
-                                                    com.adsamcik.riposte.core.search.R.string.search_no_results_description,
+                                                    SearchR.string.search_no_results_description,
                                                     uiState.searchState.query,
                                                 ),
                                             actionLabel = stringResource(
@@ -980,7 +981,7 @@ private fun FloatingSearchBar(
                 query = uiState.searchState.query,
                 onQueryChange = { onIntent(GalleryIntent.UpdateSearchQuery(it)) },
                 onSearch = { /* debounce handles it */ },
-                placeholder = stringResource(com.adsamcik.riposte.core.search.R.string.search_placeholder),
+                placeholder = stringResource(SearchR.string.search_placeholder),
                 onFocusChanged = { focused -> onIntent(GalleryIntent.SearchFieldFocusChanged(focused)) },
                 modifier = Modifier.weight(1f),
             )
@@ -1290,7 +1291,7 @@ private fun RecentSearchesHeader(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = stringResource(com.adsamcik.riposte.core.search.R.string.search_recent_title),
+            text = stringResource(SearchR.string.search_recent_title),
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
@@ -1298,7 +1299,7 @@ private fun RecentSearchesHeader(
         )
         TextButton(onClick = onClearAll) {
             Text(
-                text = stringResource(com.adsamcik.riposte.core.search.R.string.search_recent_clear_all),
+                text = stringResource(SearchR.string.search_recent_clear_all),
                 style = MaterialTheme.typography.labelMedium,
                 maxLines = 1,
             )
@@ -1330,7 +1331,7 @@ private fun RecentSearchItem(
         ) {
             Icon(
                 imageVector = Icons.Default.History,
-                contentDescription = stringResource(com.adsamcik.riposte.core.search.R.string.search_recent_icon),
+                contentDescription = stringResource(SearchR.string.search_recent_icon),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(20.dp),
             )
@@ -1344,7 +1345,7 @@ private fun RecentSearchItem(
         IconButton(onClick = onDelete) {
             Icon(
                 imageVector = Icons.Default.Close,
-                contentDescription = stringResource(com.adsamcik.riposte.core.search.R.string.search_recent_delete),
+                contentDescription = stringResource(SearchR.string.search_recent_delete),
                 modifier = Modifier.size(18.dp),
             )
         }

@@ -12,43 +12,29 @@ import java.io.IOException
  * Gets the file name from a content URI.
  */
 fun Uri.getFileName(context: Context): String? {
-    var result: String? = null
     if (scheme == "content") {
-        context.contentResolver.query(this, null, null, null, null)?.use { cursor ->
-            if (cursor.moveToFirst()) {
-                val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                if (nameIndex >= 0) {
-                    result = cursor.getString(nameIndex)
-                }
-            }
-        }
+        queryColumn(context, OpenableColumns.DISPLAY_NAME)?.let { return it }
     }
-    if (result == null) {
-        result =
-            path?.let { path ->
-                val cut = path.lastIndexOf('/')
-                if (cut != -1) path.substring(cut + 1) else path
-            }
+    return path?.let { path ->
+        val cut = path.lastIndexOf('/')
+        if (cut != -1) path.substring(cut + 1) else path
     }
-    return result
 }
 
 /**
  * Gets the file size from a content URI.
  */
 fun Uri.getFileSize(context: Context): Long {
-    var size: Long = 0
     if (scheme == "content") {
-        context.contentResolver.query(this, null, null, null, null)?.use { cursor ->
-            if (cursor.moveToFirst()) {
-                val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
-                if (sizeIndex >= 0) {
-                    size = cursor.getLong(sizeIndex)
-                }
-            }
-        }
+        return queryColumn(context, OpenableColumns.SIZE)?.toLongOrNull() ?: 0L
     }
-    return size
+    return 0L
+}
+
+private fun Uri.queryColumn(context: Context, column: String): String? {
+    return context.contentResolver.query(this, arrayOf(column), null, null, null)?.use { cursor ->
+        if (cursor.moveToFirst()) cursor.getString(0) else null
+    }
 }
 
 /**
