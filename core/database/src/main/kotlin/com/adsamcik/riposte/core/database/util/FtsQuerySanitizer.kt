@@ -22,6 +22,8 @@ object FtsQuerySanitizer {
      */
     const val DEFAULT_MAX_TERMS = 10
 
+    private const val MAX_ASCII_CODE = 127
+
     /** FTS4 special characters that need to be removed. */
     private val FTS_SPECIAL_CHARS_REGEX = Regex("[\"*():`]")
 
@@ -213,7 +215,7 @@ object FtsQuerySanitizer {
         if (term.isBlank()) return false
 
         // If the term contains any non-ASCII character, it's valid (emoji, CJK, etc.)
-        if (term.any { it.code > 127 }) {
+        if (term.any { it.code > MAX_ASCII_CODE }) {
             return true
         }
 

@@ -172,14 +172,14 @@ class SearchRepositoryImpl
                     .filter { it.isNotBlank() }
             return (titleSuggestions + descriptionSuggestions)
                 .distinct()
-                .take(10)
+                .take(MAX_SEARCH_SUGGESTIONS)
         }
 
         private fun extractRelevantPhrase(description: String, prefix: String): String {
             val lowerDesc = description.lowercase()
             val lowerPrefix = prefix.lowercase()
             val index = lowerDesc.indexOf(lowerPrefix)
-            if (index < 0) return description.take(50)
+            if (index < 0) return description.take(DESCRIPTION_SNIPPET_LENGTH)
 
             // Find word boundaries around the match
             val start = description.lastIndexOf(' ', (index - 1).coerceAtLeast(0)).let {
@@ -187,7 +187,7 @@ class SearchRepositoryImpl
             }
             val endOfMatch = index + prefix.length
             // Take a few more words after the match (up to ~40 more chars)
-            val end = description.indexOf(' ', (endOfMatch + 40).coerceAtMost(description.length)).let {
+            val end = description.indexOf(' ', (endOfMatch + PHRASE_CONTEXT_CHARS).coerceAtMost(description.length)).let {
                 if (it < 0) description.length else it
             }
             return description.substring(start, end).trim()
@@ -376,5 +376,8 @@ class SearchRepositoryImpl
             private const val POSITION_RELEVANCE_DECAY = 0.01f
             private const val MAX_POSITION_DECAY = 0.5f
             private const val BYTES_PER_FLOAT = 4
+            private const val MAX_SEARCH_SUGGESTIONS = 10
+            private const val DESCRIPTION_SNIPPET_LENGTH = 50
+            private const val PHRASE_CONTEXT_CHARS = 40
         }
     }

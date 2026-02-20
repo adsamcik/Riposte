@@ -23,6 +23,14 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @LargeTest
 class BaselineProfileGenerator {
+    companion object {
+        private const val GALLERY_LOAD_TIMEOUT_MS = 5_000L
+        private const val SCROLLABLE_WAIT_TIMEOUT_MS = 2_000L
+        private const val NAVIGATION_TIMEOUT_MS = 3_000L
+        private const val SCROLL_DISTANCE_RATIO = 0.5f
+        private const val SEARCH_INPUT_SETTLE_MS = 500L
+    }
+
     @get:Rule
     val rule = BaselineProfileRule()
 
@@ -37,38 +45,37 @@ class BaselineProfileGenerator {
             startActivityAndWait()
 
             // Wait for the gallery screen to load
-            device.wait(Until.hasObject(By.res("gallery_grid")), 5_000)
+            device.wait(Until.hasObject(By.res("gallery_grid")), GALLERY_LOAD_TIMEOUT_MS)
 
             // Scroll through gallery - common user journey
-            device.wait(Until.hasObject(By.scrollable(true)), 2_000)
+            device.wait(Until.hasObject(By.scrollable(true)), SCROLLABLE_WAIT_TIMEOUT_MS)
             val scrollable = device.findObject(By.scrollable(true))
             scrollable?.let {
                 // Scroll down and up to precompile scrolling paths
-                it.scroll(Direction.DOWN, 0.5f)
+                it.scroll(Direction.DOWN, SCROLL_DISTANCE_RATIO)
                 device.waitForIdle()
-                it.scroll(Direction.UP, 0.5f)
+                it.scroll(Direction.UP, SCROLL_DISTANCE_RATIO)
                 device.waitForIdle()
             }
 
             // Navigate to search - common action
             device.findObject(By.res("search_button"))?.click()
-            device.wait(Until.hasObject(By.res("search_bar")), 3_000)
+            device.wait(Until.hasObject(By.res("search_bar")), NAVIGATION_TIMEOUT_MS)
 
             // Go back to gallery
             device.pressBack()
-            device.wait(Until.hasObject(By.res("gallery_grid")), 3_000)
+            device.wait(Until.hasObject(By.res("gallery_grid")), NAVIGATION_TIMEOUT_MS)
 
             // Search with text input - common user journey
             device.findObject(By.res("search_button"))?.click()
-            device.wait(Until.hasObject(By.res("search_bar")), 3_000)
+            device.wait(Until.hasObject(By.res("search_bar")), NAVIGATION_TIMEOUT_MS)
             device.findObject(By.clazz("android.widget.EditText"))?.text = "funny"
             device.waitForIdle()
-            @Suppress("MagicNumber")
-            Thread.sleep(500)
+            Thread.sleep(SEARCH_INPUT_SETTLE_MS)
 
             // Go back to gallery
             device.pressBack()
-            device.wait(Until.hasObject(By.res("gallery_grid")), 3_000)
+            device.wait(Until.hasObject(By.res("gallery_grid")), NAVIGATION_TIMEOUT_MS)
 
             // Long press on first meme card for hold-to-share flow
             val galleryGrid = device.findObject(By.scrollable(true))
@@ -78,7 +85,7 @@ class BaselineProfileGenerator {
             }
 
             // If share screen appeared, exercise the share UI
-            device.wait(Until.hasObject(By.res("hold_to_share_progress")), 3_000)
+            device.wait(Until.hasObject(By.res("hold_to_share_progress")), NAVIGATION_TIMEOUT_MS)
             device.findObject(By.res("hold_to_share_progress"))?.let {
                 device.waitForIdle()
                 device.pressBack()
