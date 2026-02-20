@@ -124,6 +124,9 @@ class DefaultZipImporter
              */
             const val MAX_ENTRY_COUNT = 10_000
 
+            private const val BYTES_PER_KB = 1024
+            private const val IO_BUFFER_SIZE = 8192
+
             /**
              * Maximum size for a single extracted file (50 MB).
              */
@@ -133,9 +136,6 @@ class DefaultZipImporter
              * Maximum size for a JSON sidecar file (1 MB).
              */
             const val MAX_JSON_SIZE = 1L * BYTES_PER_KB * BYTES_PER_KB
-
-            private const val BYTES_PER_KB = 1024
-            private const val IO_BUFFER_SIZE = 8192
         }
 
         /**
@@ -277,13 +277,18 @@ class DefaultZipImporter
                     } ?: run {
                         errors["bundle"] = "Could not open ZIP file"
                     }
-                } catch (e: IOException) {
+                } catch (
+                    @Suppress("TooGenericExceptionCaught") // ZIP extraction can throw IO, Security, and other exceptions
+                    e: Exception,
+                ) {
                     Timber.e(e, "extractBundle: exception during extraction")
                     errors["bundle"] = "Failed to extract ZIP: ${e.message}"
                 }
 
-                Timber.d("extractBundle: extracted %d images, %d metadata, %d errors",
-                    extractedImages.size, metadataMap.size, errors.size)
+                Timber.d(
+                    "extractBundle: extracted %d images, %d metadata, %d errors",
+                    extractedImages.size, metadataMap.size, errors.size,
+                )
 
                 // Pair images with their metadata
                 for ((imageName, imageFile) in extractedImages) {
@@ -462,7 +467,10 @@ class DefaultZipImporter
                         emit(ZipExtractionEvent.Error("bundle", "Could not open ZIP file"))
                         errorCount++
                     }
-                } catch (e: IOException) {
+                } catch (
+                    @Suppress("TooGenericExceptionCaught") // ZIP extraction can throw IO, Security, and other exceptions
+                    e: Exception,
+                ) {
                     emit(ZipExtractionEvent.Error("bundle", "Failed to extract ZIP: ${e.message}"))
                     errorCount++
                 }

@@ -2,7 +2,6 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
-    <ID>CollapsibleIfStatements:GalleryScreen.kt$if (uiState.searchState.query.isBlank() &amp;&amp; !uiState.searchState.hasSearched) { if (uiState.searchState.recentSearches.isNotEmpty()) { item(span = { GridItemSpan(maxLineSpan) }, key = "recent_header") { RecentSearchesHeader( onClearAll = { onIntent(GalleryIntent.ClearRecentSearches) }, ) } items( count = uiState.searchState.recentSearches.size, key = { "recent_$it" }, span = { GridItemSpan(maxLineSpan) }, ) { index -&gt; val search = uiState.searchState.recentSearches[index] RecentSearchItem( query = search, onClick = { onIntent(GalleryIntent.SelectRecentSearch(search)) }, onDelete = { onIntent(GalleryIntent.DeleteRecentSearch(search)) }, ) } } }</ID>
     <ID>CyclomaticComplexMethod:DefaultDuplicateDetectionRepository.kt$DefaultDuplicateDetectionRepository$override fun runDuplicateScan(maxHammingDistance: Int): Flow&lt;ScanProgress&gt;</ID>
     <ID>CyclomaticComplexMethod:FunStatsComputation.kt$internal fun computeFunFactOfTheDay( context: Context, stats: FunStatistics, ): String?</ID>
     <ID>CyclomaticComplexMethod:ImportRepositoryImpl.kt$ImportRepositoryImpl$override suspend fun importImage( uri: Uri, metadata: MemeMetadata?, ): Result&lt;Meme&gt;</ID>
@@ -29,26 +28,8 @@
     <ID>LoopWithTooManyJumpStatements:DefaultDuplicateDetectionRepository.kt$DefaultDuplicateDetectionRepository$for</ID>
     <ID>LoopWithTooManyJumpStatements:ImportViewModel.kt$ImportViewModel$for</ID>
     <ID>LoopWithTooManyJumpStatements:ZipImporter.kt$DefaultZipImporter$while</ID>
-    <ID>MagicNumber:BaselineProfileGenerator.kt$BaselineProfileGenerator$0.5f</ID>
-    <ID>MagicNumber:BaselineProfileGenerator.kt$BaselineProfileGenerator$2_000</ID>
-    <ID>MagicNumber:BaselineProfileGenerator.kt$BaselineProfileGenerator$3_000</ID>
-    <ID>MagicNumber:BaselineProfileGenerator.kt$BaselineProfileGenerator$5_000</ID>
-    <ID>MagicNumber:BitmapExtensions.kt$100</ID>
-    <ID>MagicNumber:EmbeddingGenerationWorker.kt$EmbeddingGenerationWorker$100</ID>
-    <ID>MagicNumber:EmbeddingManager.kt$EmbeddingManager$16</ID>
-    <ID>MagicNumber:EmbeddingModelVersionManager.kt$EmbeddingModelVersionManager$512</ID>
-    <ID>MagicNumber:EmbeddingModelVersionManager.kt$EmbeddingModelVersionManager$768</ID>
-    <ID>MagicNumber:FakePreferencesDataStore.kt$FakePreferencesDataStore$4</ID>
-    <ID>MagicNumber:FtsQuerySanitizer.kt$FtsQuerySanitizer$127</ID>
-    <ID>MagicNumber:ImageProcessor.kt$ImageProcessor$1024</ID>
-    <ID>MagicNumber:ImportRepositoryImpl.kt$ImportRepositoryImpl$5</ID>
-    <ID>MagicNumber:ImportRepositoryImpl.kt$ImportRepositoryImpl$80</ID>
-    <ID>MagicNumber:ImportRepositoryImpl.kt$ImportRepositoryImpl$90</ID>
-    <ID>MagicNumber:ImportViewModel.kt$ImportViewModel$5</ID>
-    <ID>MagicNumber:PreferencesDataStore.kt$PreferencesDataStore$4</ID>
-    <ID>MagicNumber:SearchRepositoryImpl.kt$SearchRepositoryImpl$10</ID>
-    <ID>MagicNumber:SearchRepositoryImpl.kt$SearchRepositoryImpl$50</ID>
-    <ID>MagicNumber:ZipImporter.kt$DefaultZipImporter$1024</ID>
+    <ID>MaxLineLength:GalleryScreen.kt$com.adsamcik.riposte.core.search.R.string.search_no_results_description</ID>
+    <ID>MaxLineLength:ZipImporter.kt$DefaultZipImporter$@Suppress("TooGenericExceptionCaught")</ID>
     <ID>NestedBlockDepth:SettingsViewModel.kt$SettingsViewModel$private fun tryReadZipSettings(bytes: ByteArray): String?</ID>
     <ID>NestedBlockDepth:UriExtensions.kt$fun Uri.getFileName(context: Context): String?</ID>
     <ID>NestedBlockDepth:UriExtensions.kt$fun Uri.getFileSize(context: Context): Long</ID>
@@ -58,35 +39,6 @@
     <ID>ReturnCount:FakeMlComponents.kt$FakeTextRecognizer$private suspend fun executeRecognition(textProvider: () -&gt; String): Result&lt;String&gt;</ID>
     <ID>ReturnCount:ImportViewModel.kt$ImportViewModel$private suspend fun handleWorkInfoUpdate(workInfo: WorkInfo)</ID>
     <ID>ReturnCount:MediaPipeEmbeddingGenerator.kt$MediaPipeEmbeddingGenerator$private fun extractEmbedding(result: TextEmbedderResult): FloatArray</ID>
-    <ID>TooGenericExceptionCaught:BitmapExtensions.kt$e: Exception</ID>
-    <ID>TooGenericExceptionCaught:DefaultSemanticSearchEngine.kt$DefaultSemanticSearchEngine$e: Exception</ID>
-    <ID>TooGenericExceptionCaught:DuplicateDetectionViewModel.kt$DuplicateDetectionViewModel$e: Exception</ID>
-    <ID>TooGenericExceptionCaught:DuplicateScanWorker.kt$DuplicateScanWorker$e: Exception</ID>
-    <ID>TooGenericExceptionCaught:EmbeddingGemmaGenerator.kt$EmbeddingGemmaGenerator$cpuError: Exception</ID>
-    <ID>TooGenericExceptionCaught:EmbeddingGemmaGenerator.kt$EmbeddingGemmaGenerator$e: Exception</ID>
-    <ID>TooGenericExceptionCaught:EmbeddingGenerationWorker.kt$EmbeddingGenerationWorker$e: Exception</ID>
-    <ID>TooGenericExceptionCaught:EmbeddingManager.kt$EmbeddingManager$e: Exception</ID>
-    <ID>TooGenericExceptionCaught:EmbeddingModelVersionManager.kt$EmbeddingModelVersionManager$e: Exception</ID>
-    <ID>TooGenericExceptionCaught:FakeMemeRepository.kt$FakeMemeRepository$e: Exception</ID>
-    <ID>TooGenericExceptionCaught:FlowUtils.kt$e: Exception</ID>
-    <ID>TooGenericExceptionCaught:FunStatsViewModel.kt$FunStatsViewModel$e: Exception</ID>
-    <ID>TooGenericExceptionCaught:GalleryRepositoryImpl.kt$GalleryRepositoryImpl$e: Exception</ID>
-    <ID>TooGenericExceptionCaught:GetSimilarMemesUseCase.kt$GetSimilarMemesUseCase$e: Throwable</ID>
-    <ID>TooGenericExceptionCaught:ImageProcessor.kt$ImageProcessor$e: Exception</ID>
-    <ID>TooGenericExceptionCaught:ImportRepositoryImpl.kt$ImportRepositoryImpl$e: Exception</ID>
-    <ID>TooGenericExceptionCaught:ImportViewModel.kt$ImportViewModel$e: Exception</ID>
-    <ID>TooGenericExceptionCaught:MediaPipeEmbeddingGenerator.kt$MediaPipeEmbeddingGenerator$e: Exception</ID>
-    <ID>TooGenericExceptionCaught:MemeDetailViewModel.kt$MemeDetailViewModel$e: Exception</ID>
-    <ID>TooGenericExceptionCaught:MemeMapper.kt$MemeMapper$e: Exception</ID>
-    <ID>TooGenericExceptionCaught:PreferencesDataStore.kt$PreferencesDataStore$e: Exception</ID>
-    <ID>TooGenericExceptionCaught:SearchDelegate.kt$SearchDelegate$e: Exception</ID>
-    <ID>TooGenericExceptionCaught:SettingsViewModel.kt$SettingsViewModel$e: Exception</ID>
-    <ID>TooGenericExceptionCaught:ShareRepositoryImpl.kt$ShareRepositoryImpl$e: Exception</ID>
-    <ID>TooGenericExceptionCaught:UriExtensions.kt$e: Exception</ID>
-    <ID>TooGenericExceptionCaught:XmpMetadataHandler.kt$XmpMetadataHandler$e: Exception</ID>
-    <ID>TooGenericExceptionCaught:ZipImporter.kt$DefaultZipImporter$e: Exception</ID>
-    <ID>TooGenericExceptionThrown:SettingsViewModel.kt$SettingsViewModel$throw Exception("Cannot open file")</ID>
-    <ID>TooGenericExceptionThrown:SettingsViewModel.kt$SettingsViewModel$throw Exception("Cannot open output stream")</ID>
     <ID>TooManyFunctions:ComposeTestExtensions.kt$com.adsamcik.riposte.core.testing.ComposeTestExtensions.kt</ID>
     <ID>TooManyFunctions:DuplicateDetectionDao.kt$DuplicateDetectionDao</ID>
     <ID>TooManyFunctions:EmbeddingGemmaGenerator.kt$EmbeddingGemmaGenerator : EmbeddingGenerator</ID>
@@ -104,12 +56,5 @@
     <ID>TooManyFunctions:SearchRepositoryImpl.kt$SearchRepositoryImpl : SearchRepository</ID>
     <ID>TooManyFunctions:SettingsViewModel.kt$SettingsViewModel : ViewModel</ID>
     <ID>TooManyFunctions:TestDataFactory.kt$TestDataFactory</ID>
-    <ID>UnusedParameter:EmbeddingGenerationWorker.kt$EmbeddingGenerationWorker.Companion$currentVersion: String</ID>
-    <ID>UnusedParameter:FakeMlComponents.kt$FakeTextRecognizer$bitmap: Bitmap</ID>
-    <ID>UnusedParameter:SlotFiller.kt$SlotFiller$now: Long</ID>
-    <ID>UnusedPrivateMember:ImportRepositoryImpl.kt$ImportRepositoryImpl$private fun calculateFileHash(file: File): String</ID>
-    <ID>UnusedPrivateProperty:GalleryNavigation.kt$val route = backStackEntry.toRoute&lt;MemeDetailRoute&gt;()</ID>
-    <ID>UnusedPrivateProperty:ImageProcessor.kt$ImageProcessor$@param:ApplicationContext private val context: Context</ID>
-    <ID>UnusedPrivateProperty:MlKitTextRecognizer.kt$MlKitTextRecognizer$val task = recognizer.process(image) .addOnSuccessListener { result -&gt; val text = result.text.takeIf { it.isNotBlank() } continuation.resume(text) } .addOnFailureListener { exception -&gt; continuation.resumeWithException(exception) }</ID>
   </CurrentIssues>
 </SmellBaseline>

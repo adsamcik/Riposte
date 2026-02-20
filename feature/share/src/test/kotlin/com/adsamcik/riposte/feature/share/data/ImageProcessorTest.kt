@@ -1,6 +1,5 @@
 package com.adsamcik.riposte.feature.share.data
 
-import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import com.adsamcik.riposte.core.model.ImageFormat
@@ -22,15 +21,13 @@ import java.io.File
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33], manifest = Config.NONE)
 class ImageProcessorTest {
-    private lateinit var context: Context
     private lateinit var imageProcessor: ImageProcessor
 
     private val mockBitmap: Bitmap = mockk(relaxed = true)
 
     @Before
     fun setup() {
-        context = mockk(relaxed = true)
-        imageProcessor = ImageProcessor(context)
+        imageProcessor = ImageProcessor()
     }
 
     @After

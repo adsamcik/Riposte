@@ -171,6 +171,8 @@ class SlotFiller(
             .take(config.forgottenSlots)
     }
 
+    // Parameter reserved for time-aware slot filling
+    @Suppress("UnusedParameter")
     internal fun fillExplore(
         allMemes: List<Meme>,
         now: Long,

@@ -5,7 +5,6 @@ import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavOptions
 import androidx.navigation.compose.composable
-import androidx.navigation.toRoute
 import com.adsamcik.riposte.core.common.navigation.GalleryRoute
 import com.adsamcik.riposte.core.common.navigation.MemeDetailRoute
 import com.adsamcik.riposte.feature.gallery.presentation.GalleryScreen
@@ -50,8 +49,7 @@ fun NavGraphBuilder.memeDetailScreen(
     onNavigateToMeme: (Long) -> Unit = {},
     onNavigateToGalleryWithEmoji: (String) -> Unit = {},
 ) {
-    composable<MemeDetailRoute> { backStackEntry ->
-        val route = backStackEntry.toRoute<MemeDetailRoute>()
+    composable<MemeDetailRoute> {
         MemeDetailScreen(
             onNavigateBack = onNavigateBack,
             onNavigateToMeme = onNavigateToMeme,

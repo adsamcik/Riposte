@@ -107,6 +107,7 @@ class MediaPipeEmbeddingGenerator
                         e: Exception,
                     ) {
                         Timber.e(e, "Failed to generate text embedding")
+                        createZeroEmbedding()
                     }
                 }
             }
@@ -129,6 +130,8 @@ class MediaPipeEmbeddingGenerator
                     e: Exception,
                 ) {
                     Timber.e(e, "Failed to generate image embedding")
+                    createZeroEmbedding()
+                }
             }
 
         override suspend fun generateFromUri(uri: Uri): FloatArray =
@@ -154,6 +157,9 @@ class MediaPipeEmbeddingGenerator
                     e: Exception,
                 ) {
                     Timber.e(e, "Failed to generate embedding from URI")
+                    createZeroEmbedding()
+                }
+            }
 
         override suspend fun isReady(): Boolean =
             mutex.withLock {
