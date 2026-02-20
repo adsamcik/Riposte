@@ -357,14 +357,14 @@ fun ImportScreen(
                     }
                 },
                 confirmButton = {
-                    TextButton(onClick = { viewModel.onIntent(ImportIntent.ImportDuplicatesAnyway) }) {
+                    Button(onClick = { viewModel.onIntent(ImportIntent.ImportDuplicatesAnyway) }) {
                         Text(stringResource(R.string.import_duplicate_import_anyway))
                     }
                 },
                 dismissButton = {
                     Column {
                         if (uiState.duplicatesWithChangedMetadata.isNotEmpty()) {
-                            TextButton(onClick = { viewModel.onIntent(ImportIntent.UpdateDuplicateMetadata) }) {
+                            OutlinedButton(onClick = { viewModel.onIntent(ImportIntent.UpdateDuplicateMetadata) }) {
                                 Text(stringResource(R.string.import_duplicate_update_metadata))
                             }
                         }
