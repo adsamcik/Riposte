@@ -65,6 +65,10 @@ class ImportRepositoryImpl
         companion object {
             private const val THUMBNAIL_SIZE = 256
             private const val MAX_IMAGE_DIMENSION = 2048
+            private const val FULL_IMAGE_JPEG_QUALITY = 90
+            private const val THUMBNAIL_JPEG_QUALITY = 80
+            private const val MAX_EMOJI_SUGGESTIONS = 5
+            private const val HASH_BUFFER_SIZE = 8192
         }
 
         override suspend fun importImage(
@@ -92,13 +96,13 @@ class ImportRepositoryImpl
 
                     // Save full image
                     FileOutputStream(imageFile).use { out ->
-                        bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
+                        bitmap.compress(Bitmap.CompressFormat.JPEG, FULL_IMAGE_JPEG_QUALITY, out)
                     }
 
                     // Generate thumbnail
                     val thumbnail = createThumbnail(bitmap)
                     FileOutputStream(thumbnailFile).use { out ->
-                        thumbnail.compress(Bitmap.CompressFormat.JPEG, 80, out)
+                        thumbnail.compress(Bitmap.CompressFormat.JPEG, THUMBNAIL_JPEG_QUALITY, out)
                     }
 
                     // Use pre-extracted text from metadata if available, otherwise run OCR
@@ -198,7 +202,10 @@ class ImportRepositoryImpl
                         )
 
                     Result.success(meme)
-                } catch (e: Exception) {
+                } catch (
+                    @Suppress("TooGenericExceptionCaught") // Worker must not crash - reports failure instead
+                    e: Exception,
+                ) {
                     Result.failure(e)
                 }
             }
@@ -281,7 +288,10 @@ class ImportRepositoryImpl
                 try {
                     val bitmap = loadAndResizeBitmap(uri) ?: return@withContext null
                     extractTextFromBitmap(bitmap)
-                } catch (e: Exception) {
+                } catch (
+                    @Suppress("TooGenericExceptionCaught") // Worker must not crash - reports failure instead
+                    e: Exception,
+                ) {
                     Timber.e(e, "Failed to extract text from URI")
                     null
                 }
@@ -331,8 +341,11 @@ class ImportRepositoryImpl
                     }
 
                     // Limit suggestions
-                    suggestions.take(5)
-                } catch (e: Exception) {
+                    suggestions.take(MAX_EMOJI_SUGGESTIONS)
+                } catch (
+                    @Suppress("TooGenericExceptionCaught") // Worker must not crash - reports failure instead
+                    e: Exception,
+                ) {
                     Timber.e(e, "Failed to suggest emojis for URI")
                     emptyList()
                 }
@@ -343,7 +356,10 @@ class ImportRepositoryImpl
                 try {
                     val hash = calculateUriHash(uri) ?: return@withContext false
                     memeDao.memeExistsByHash(hash)
-                } catch (e: Exception) {
+                } catch (
+                    @Suppress("TooGenericExceptionCaught") // Worker must not crash - reports failure instead
+                    e: Exception,
+                ) {
                     Timber.e(e, "Failed to check for duplicate URI")
                     false
                 }
@@ -354,7 +370,10 @@ class ImportRepositoryImpl
                 try {
                     val hash = calculateUriHash(uri) ?: return@withContext null
                     memeDao.getMemeByHash(hash)?.id
-                } catch (e: Exception) {
+                } catch (
+                    @Suppress("TooGenericExceptionCaught") // Worker must not crash - reports failure instead
+                    e: Exception,
+                ) {
                     Timber.e(e, "Failed to find duplicate meme ID for URI")
                     null
                 }
@@ -424,7 +443,10 @@ class ImportRepositoryImpl
                     mlServices.xmpMetadataHandler.writeMetadata(existing.filePath, xmpMetadata)
 
                     Result.success(Unit)
-                } catch (e: Exception) {
+                } catch (
+                    @Suppress("TooGenericExceptionCaught") // Worker must not crash - reports failure instead
+                    e: Exception,
+                ) {
                     Result.failure(e)
                 }
             }
@@ -483,7 +505,10 @@ class ImportRepositoryImpl
                     }
 
                     bitmap
-                } catch (e: Exception) {
+                } catch (
+                    @Suppress("TooGenericExceptionCaught") // Worker must not crash - reports failure instead
+                    e: Exception,
+                ) {
                     Timber.e(e, "Failed to load and resize bitmap from %s", uri)
                     null
                 }
@@ -521,28 +546,16 @@ class ImportRepositoryImpl
             return mlServices.textRecognizer.recognizeText(bitmap)
         }
 
-        private fun calculateFileHash(file: File): String {
-            val digest = MessageDigest.getInstance("SHA-256")
-            file.inputStream().use { input ->
-                val buffer = ByteArray(8192)
-                var read: Int
-                while (input.read(buffer).also { read = it } != -1) {
-                    digest.update(buffer, 0, read)
-                }
-            }
-            return digest.digest().joinToString("") { "%02x".format(it) }
-        }
-
         /**
          * Hash the raw bytes from a content URI for deterministic duplicate detection.
-         * Unlike [calculateFileHash], this hashes the original source bytes before any
+         * This hashes the original source bytes before any
          * bitmap decode/re-encode, ensuring the same source file always produces the
          * same hash regardless of image format or device-specific decoding behavior.
          */
         private fun calculateUriHash(uri: Uri): String? {
             val digest = MessageDigest.getInstance("SHA-256")
             context.contentResolver.openInputStream(uri)?.use { input ->
-                val buffer = ByteArray(8192)
+                val buffer = ByteArray(HASH_BUFFER_SIZE)
                 var read: Int
                 while (input.read(buffer).also { read = it } != -1) {
                     digest.update(buffer, 0, read)

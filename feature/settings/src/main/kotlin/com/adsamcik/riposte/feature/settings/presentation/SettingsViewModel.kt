@@ -185,7 +185,10 @@ class SettingsViewModel
                 val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
                 val versionCode = PackageInfoCompat.getLongVersionCode(packageInfo)
                 "${packageInfo.versionName} ($versionCode)"
-            } catch (e: Exception) {
+            } catch (
+                @Suppress("TooGenericExceptionCaught") // Catches all to show error state
+                e: Exception,
+            ) {
                 Timber.w(e, "Failed to get app version")
                 "1.0.0"
             }
@@ -373,7 +376,10 @@ class SettingsViewModel
                     _effects.send(
                         SettingsEffect.ShowSnackbar(context.getString(R.string.settings_snackbar_cache_cleared)),
                     )
-                } catch (e: Exception) {
+                } catch (
+                    @Suppress("TooGenericExceptionCaught") // Catches all to show error state
+                    e: Exception,
+                ) {
                     Timber.e(e, "Failed to clear cache")
                     _effects.send(
                         SettingsEffect.ShowSnackbar(context.getString(R.string.settings_snackbar_cache_clear_failed)),
@@ -420,7 +426,7 @@ class SettingsViewModel
                 try {
                     val outputStream =
                         context.contentResolver.openOutputStream(uri)
-                            ?: throw Exception("Cannot open output stream")
+                            ?: throw IllegalStateException("Cannot open output stream")
 
                     ZipOutputStream(outputStream.buffered()).use { zip ->
                         if (_uiState.value.exportSettings) {
@@ -436,7 +442,10 @@ class SettingsViewModel
                     _effects.send(
                         SettingsEffect.ShowSnackbar(context.getString(R.string.settings_snackbar_export_success, "")),
                     )
-                } catch (e: Exception) {
+                } catch (
+                    @Suppress("TooGenericExceptionCaught") // Catches all to show error state
+                    e: Exception,
+                ) {
                     Timber.e(e, "Failed to export settings")
                     _effects.send(
                         SettingsEffect.ShowSnackbar(
@@ -462,7 +471,7 @@ class SettingsViewModel
                 try {
                     val inputStream =
                         context.contentResolver.openInputStream(uri)
-                            ?: throw Exception("Cannot open file")
+                            ?: throw IllegalStateException("Cannot open file")
 
                     val bytes = inputStream.buffered().use { it.readBytes() }
 
@@ -485,7 +494,10 @@ class SettingsViewModel
                             importBackupTimestamp = timestamp,
                         )
                     }
-                } catch (e: Exception) {
+                } catch (
+                    @Suppress("TooGenericExceptionCaught") // Catches all to show error state
+                    e: Exception,
+                ) {
                     Timber.e(e, "Failed to import settings from URI")
                     _effects.send(
                         SettingsEffect.ShowSnackbar(
@@ -508,7 +520,10 @@ class SettingsViewModel
                     }
                     null
                 }
-            } catch (e: Exception) {
+            } catch (
+                @Suppress("TooGenericExceptionCaught") // Catches all to show error state
+                e: Exception,
+            ) {
                 Timber.w(e, "Failed to read settings from ZIP")
                 null
             }

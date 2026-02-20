@@ -6,6 +6,7 @@ import com.adsamcik.riposte.core.model.EmojiTag
 import com.adsamcik.riposte.core.model.LocalizedContent
 import com.adsamcik.riposte.core.model.Meme
 import kotlinx.serialization.encodeToString
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import timber.log.Timber
 
@@ -107,7 +108,7 @@ object MemeMapper {
         return try {
             val emojis: List<String> = json.decodeFromString(jsonString)
             emojis.map { EmojiTag.fromEmoji(it) }
-        } catch (e: Exception) {
+        } catch (e: SerializationException) {
             Timber.d(e, "Failed to parse emoji tags as JSON, falling back to comma-separated format")
             // Fallback: legacy comma-separated format
             jsonString.split(",")
@@ -131,7 +132,7 @@ object MemeMapper {
         if (jsonString.isNullOrBlank()) return emptyMap()
         return try {
             json.decodeFromString(jsonString)
-        } catch (e: Exception) {
+        } catch (e: SerializationException) {
             Timber.w(e, "Failed to parse localizations JSON")
             emptyMap()
         }
@@ -152,7 +153,7 @@ object MemeMapper {
         if (jsonString.isNullOrBlank()) return emptyList()
         return try {
             json.decodeFromString(jsonString)
-        } catch (e: Exception) {
+        } catch (e: SerializationException) {
             Timber.w(e, "Failed to parse search phrases JSON")
             emptyList()
         }

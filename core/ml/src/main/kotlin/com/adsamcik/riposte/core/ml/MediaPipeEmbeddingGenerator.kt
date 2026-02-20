@@ -102,9 +102,11 @@ class MediaPipeEmbeddingGenerator
                     try {
                         val result: TextEmbedderResult = embedder.embed(text)
                         extractEmbedding(result)
-                    } catch (e: Exception) {
+                    } catch (
+                        @Suppress("TooGenericExceptionCaught") // ML libraries throw unpredictable exceptions
+                        e: Exception,
+                    ) {
                         Timber.e(e, "Failed to generate text embedding")
-                        createZeroEmbedding()
                     }
                 }
             }
@@ -122,10 +124,11 @@ class MediaPipeEmbeddingGenerator
                     // Concatenate labels with spaces for embedding
                     val labelText = labels.joinToString(" ")
                     generateFromText(labelText)
-                } catch (e: Exception) {
+                } catch (
+                    @Suppress("TooGenericExceptionCaught") // ML libraries throw unpredictable exceptions
+                    e: Exception,
+                ) {
                     Timber.e(e, "Failed to generate image embedding")
-                    createZeroEmbedding()
-                }
             }
 
         override suspend fun generateFromUri(uri: Uri): FloatArray =
@@ -146,11 +149,11 @@ class MediaPipeEmbeddingGenerator
                     } finally {
                         bitmap.recycle()
                     }
-                } catch (e: Exception) {
+                } catch (
+                    @Suppress("TooGenericExceptionCaught") // ML libraries throw unpredictable exceptions
+                    e: Exception,
+                ) {
                     Timber.e(e, "Failed to generate embedding from URI")
-                    createZeroEmbedding()
-                }
-            }
 
         override suspend fun isReady(): Boolean =
             mutex.withLock {
@@ -218,7 +221,10 @@ class MediaPipeEmbeddingGenerator
                 updateEmbeddingDimension()
 
                 Timber.i("MediaPipe TextEmbedder initialized successfully (dimension: $embeddingDimension)")
-            } catch (e: Exception) {
+            } catch (
+                @Suppress("TooGenericExceptionCaught") // ML libraries throw unpredictable exceptions
+                e: Exception,
+            ) {
                 Timber.e(e, "Failed to initialize MediaPipe TextEmbedder")
                 textEmbedder = null
             }
@@ -239,7 +245,10 @@ class MediaPipeEmbeddingGenerator
                         Timber.d("Detected embedding dimension: ${floatEmbedding.size}")
                     }
                 }
-            } catch (e: Exception) {
+            } catch (
+                @Suppress("TooGenericExceptionCaught") // ML libraries throw unpredictable exceptions
+                e: Exception,
+            ) {
                 Timber.w(e, "Failed to detect embedding dimension, using default")
             }
         }

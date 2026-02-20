@@ -10,10 +10,12 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import timber.log.Timber
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
 import java.util.zip.ZipInputStream
 import javax.inject.Inject
 
@@ -131,6 +133,8 @@ class DefaultZipImporter
              * Maximum size for a JSON sidecar file (1 MB).
              */
             const val MAX_JSON_SIZE = 1L * 1024 * 1024
+
+            private const val IO_BUFFER_SIZE = 8192
         }
 
         /**
@@ -257,7 +261,10 @@ class DefaultZipImporter
                                             }
                                         }
                                     }
-                                } catch (e: Exception) {
+                                } catch (
+                                    @Suppress("TooGenericExceptionCaught") // I/O + parsing may throw various exceptions
+                                    e: Exception,
+                                ) {
                                     errors[entryName] = e.message ?: "Unknown error"
                                 }
 
@@ -269,7 +276,7 @@ class DefaultZipImporter
                     } ?: run {
                         errors["bundle"] = "Could not open ZIP file"
                     }
-                } catch (e: Exception) {
+                } catch (e: IOException) {
                     Timber.e(e, "extractBundle: exception during extraction")
                     errors["bundle"] = "Failed to extract ZIP: ${e.message}"
                 }
@@ -438,7 +445,10 @@ class DefaultZipImporter
                                             }
                                         }
                                     }
-                                } catch (e: Exception) {
+                                } catch (
+                                    @Suppress("TooGenericExceptionCaught") // I/O + parsing may throw various exceptions
+                                    e: Exception,
+                                ) {
                                     emit(ZipExtractionEvent.Error(entryName, e.message ?: "Unknown error"))
                                     errorCount++
                                 }
@@ -451,7 +461,7 @@ class DefaultZipImporter
                         emit(ZipExtractionEvent.Error("bundle", "Could not open ZIP file"))
                         errorCount++
                     }
-                } catch (e: Exception) {
+                } catch (e: IOException) {
                     emit(ZipExtractionEvent.Error("bundle", "Failed to extract ZIP: ${e.message}"))
                     errorCount++
                 }
@@ -476,7 +486,7 @@ class DefaultZipImporter
             entryName: String,
             errors: MutableMap<String, String>,
         ): ByteArray? {
-            val buffer = ByteArray(8192)
+            val buffer = ByteArray(IO_BUFFER_SIZE)
             val output = java.io.ByteArrayOutputStream()
             var totalRead = 0L
             var bytesRead: Int
@@ -501,7 +511,7 @@ class DefaultZipImporter
             input: ZipInputStream,
             maxSize: Long,
         ): ByteArray? {
-            val buffer = ByteArray(8192)
+            val buffer = ByteArray(IO_BUFFER_SIZE)
             val output = java.io.ByteArrayOutputStream()
             var totalRead = 0L
             var bytesRead: Int
@@ -526,7 +536,7 @@ class DefaultZipImporter
             outputFile: File,
             maxSize: Long,
         ): Long {
-            val buffer = ByteArray(8192)
+            val buffer = ByteArray(IO_BUFFER_SIZE)
             var totalWritten = 0L
 
             FileOutputStream(outputFile).use { output ->
@@ -586,7 +596,7 @@ class DefaultZipImporter
         private fun parseMetadataJson(content: String): MemeMetadata? {
             return try {
                 json.decodeFromString<MemeMetadata>(content)
-            } catch (e: Exception) {
+            } catch (e: SerializationException) {
                 Timber.e(e, "Failed to parse meme metadata JSON")
                 null
             }

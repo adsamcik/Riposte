@@ -179,7 +179,10 @@ class SearchDelegate
                             searchError = SearchError.IndexFailed,
                         )
                     }
-                } catch (e: Exception) {
+                } catch (
+                    @Suppress("TooGenericExceptionCaught") // Catches all to show error state
+                    e: Exception,
+                ) {
                     Timber.e(e, "Search failed")
                     _state.update {
                         it.copy(

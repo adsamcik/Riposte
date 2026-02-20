@@ -103,7 +103,10 @@ class GalleryRepositoryImpl
                 try {
                     memeDao.updateMeme(meme.toEntity())
                     Result.success(Unit)
-                } catch (e: Exception) {
+                } catch (
+                    @Suppress("TooGenericExceptionCaught") // Catches all to show error state
+                    e: Exception,
+                ) {
                     Timber.e(e, "Failed to update meme")
                     Result.failure(e)
                 }
@@ -130,7 +133,10 @@ class GalleryRepositoryImpl
                     }
 
                     Result.success(Unit)
-                } catch (e: Exception) {
+                } catch (
+                    @Suppress("TooGenericExceptionCaught") // Catches all to show error state
+                    e: Exception,
+                ) {
                     Timber.e(e, "Failed to delete meme with tags")
                     Result.failure(e)
                 }
@@ -150,7 +156,10 @@ class GalleryRepositoryImpl
                         memeDao.deleteMemeById(id)
                     }
                     Result.success(Unit)
-                } catch (e: Exception) {
+                } catch (
+                    @Suppress("TooGenericExceptionCaught") // Catches all to show error state
+                    e: Exception,
+                ) {
                     Timber.e(e, "Failed to delete meme")
                     Result.failure(e)
                 }
@@ -172,7 +181,10 @@ class GalleryRepositoryImpl
                     // Delete from database
                     memeDao.deleteMemesByIds(ids.toList())
                     Result.success(Unit)
-                } catch (e: Exception) {
+                } catch (
+                    @Suppress("TooGenericExceptionCaught") // Catches all to show error state
+                    e: Exception,
+                ) {
                     Timber.e(e, "Failed to delete %d memes", ids.size)
                     Result.failure(e)
                 }
@@ -183,7 +195,10 @@ class GalleryRepositoryImpl
                 try {
                     memeDao.toggleFavorite(id)
                     Result.success(Unit)
-                } catch (e: Exception) {
+                } catch (
+                    @Suppress("TooGenericExceptionCaught") // Catches all to show error state
+                    e: Exception,
+                ) {
                     Timber.e(e, "Failed to toggle favorite")
                     Result.failure(e)
                 }

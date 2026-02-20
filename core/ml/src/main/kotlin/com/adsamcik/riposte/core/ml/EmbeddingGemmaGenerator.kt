@@ -127,7 +127,10 @@ class EmbeddingGemmaGenerator
 
                         // Convert ImmutableList<Float> to FloatArray
                         embedding.map { it }.toFloatArray()
-                    } catch (e: Exception) {
+                    } catch (
+                        @Suppress("TooGenericExceptionCaught") // ML libraries throw unpredictable exceptions
+                        e: Exception,
+                    ) {
                         Timber.e(e, "Failed to generate text embedding")
                         throw e
                     }
@@ -182,7 +185,10 @@ class EmbeddingGemmaGenerator
                         val embedding = awaitListenableFuture(future)
 
                         embedding.map { it }.toFloatArray()
-                    } catch (e: Exception) {
+                    } catch (
+                        @Suppress("TooGenericExceptionCaught") // ML libraries throw unpredictable exceptions
+                        e: Exception,
+                    ) {
                         Timber.e(e, "Failed to generate document embedding")
                         throw e
                     }
@@ -202,7 +208,10 @@ class EmbeddingGemmaGenerator
                     // Concatenate labels with spaces for embedding as a document
                     val labelText = labels.joinToString(" ")
                     generateFromDocument(labelText, title = "Image labels")
-                } catch (e: Exception) {
+                } catch (
+                    @Suppress("TooGenericExceptionCaught") // ML libraries throw unpredictable exceptions
+                    e: Exception,
+                ) {
                     Timber.e(e, "Failed to generate image embedding")
                     throw e
                 }
@@ -226,7 +235,10 @@ class EmbeddingGemmaGenerator
                     } finally {
                         bitmap.recycle()
                     }
-                } catch (e: Exception) {
+                } catch (
+                    @Suppress("TooGenericExceptionCaught") // ML libraries throw unpredictable exceptions
+                    e: Exception,
+                ) {
                     Timber.e(e, "Failed to generate embedding from URI")
                     throw e
                 }
@@ -316,7 +328,10 @@ class EmbeddingGemmaGenerator
                 Timber.e(e, "EmbeddingGemma static initialization failed")
                 embeddingModel = null
                 _initializationError = ERROR_FAILED_TO_LOAD
-            } catch (e: Exception) {
+            } catch (
+                @Suppress("TooGenericExceptionCaught") // ML libraries throw unpredictable exceptions
+                e: Exception,
+            ) {
                 Timber.e(e, "Failed to initialize EmbeddingGemma")
 
                 // Try CPU fallback if GPU fails
@@ -402,7 +417,10 @@ class EmbeddingGemmaGenerator
                 }
                 Timber.d("Copied asset: $assetName (${targetFile.length() / BYTES_PER_KB / BYTES_PER_KB} MB)")
                 true
-            } catch (e: Exception) {
+            } catch (
+                @Suppress("TooGenericExceptionCaught") // ML libraries throw unpredictable exceptions
+                e: Exception,
+            ) {
                 Timber.d(e, "Asset not found in assets: $assetName")
                 false
             }

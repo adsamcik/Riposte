@@ -22,7 +22,10 @@ fun <T> Flow<T>.asResource(): Flow<Resource<T>> {
 suspend fun <T> safeCall(block: suspend () -> T): Resource<T> {
     return try {
         Resource.Success(block())
-    } catch (e: Exception) {
+    } catch (
+        @Suppress("TooGenericExceptionCaught") // Wraps any failure as Resource.Error
+        e: Exception,
+    ) {
         Resource.Error(e.message ?: "Unknown error", e)
     }
 }

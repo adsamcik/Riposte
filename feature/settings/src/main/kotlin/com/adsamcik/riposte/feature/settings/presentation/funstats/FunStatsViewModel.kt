@@ -82,7 +82,10 @@ class FunStatsViewModel
                             totalMilestoneCount = milestones.size,
                         )
                     }
-                } catch (e: Exception) {
+                } catch (
+                    @Suppress("TooGenericExceptionCaught") // Catches all to show error state
+                    e: Exception,
+                ) {
                     Timber.w(e, "Failed to load fun statistics")
                     _uiState.update { it.copy(isLoading = false) }
                 }

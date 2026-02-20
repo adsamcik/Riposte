@@ -41,6 +41,10 @@ class ImportViewModel
         private val importStagingManager: ImportStagingManager,
         private val importRepository: ImportRepository,
     ) : ViewModel() {
+        companion object {
+            private const val MAX_APPLIED_EMOJIS = 5
+        }
+
         private val _uiState = MutableStateFlow(ImportUiState())
         val uiState: StateFlow<ImportUiState> = _uiState.asStateFlow()
 
@@ -306,7 +310,10 @@ class ImportViewModel
                     }
                     state.copy(selectedImages = updatedImages)
                 }
-            } catch (e: Exception) {
+            } catch (
+                @Suppress("TooGenericExceptionCaught") // Worker must not crash - reports failure instead
+                e: Exception,
+            ) {
                 Timber.w(e, "Failed to process image at index %d", index)
                 _uiState.update { state ->
                     val updatedImages = state.selectedImages.toMutableList()
@@ -377,7 +384,7 @@ class ImportViewModel
 
         private fun applySuggestedEmojis() {
             updateEditingImage { image ->
-                image.copy(emojis = image.suggestedEmojis.take(5))
+                image.copy(emojis = image.suggestedEmojis.take(MAX_APPLIED_EMOJIS))
             }
         }
 
@@ -422,7 +429,10 @@ class ImportViewModel
                                     duplicatesWithChangedMetadata.add(index)
                                 }
                             }
-                        } catch (e: Exception) {
+                        } catch (
+                            @Suppress("TooGenericExceptionCaught") // Worker must not crash - reports failure instead
+                            e: Exception,
+                        ) {
                             Timber.d(e, "Failed to check duplicate metadata, proceeding with import")
                         }
                     }
@@ -589,7 +599,10 @@ class ImportViewModel
                                             localizations = image.localizations,
                                         ),
                                     )
-                                } catch (e: Exception) {
+                                } catch (
+                                    @Suppress("TooGenericExceptionCaught") // Worker must not crash - reports failure instead
+                                    e: Exception,
+                                ) {
                                     Timber.w(e, "Failed to parse metadata during import")
                                     null
                                 }
@@ -623,7 +636,10 @@ class ImportViewModel
                         selectedImages = emptyList(),
                     )
                 }
-            } catch (e: Exception) {
+            } catch (
+                @Suppress("TooGenericExceptionCaught") // Worker must not crash - reports failure instead
+                e: Exception,
+            ) {
                 Timber.e(e, "Import failed for %d images", images.size)
                 _uiState.update {
                     it.copy(isImporting = false, statusMessage = null)

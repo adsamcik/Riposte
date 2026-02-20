@@ -6,6 +6,7 @@ import com.adsamcik.riposte.core.model.MemeMetadata
 import dagger.hilt.android.qualifiers.ApplicationContext
 import timber.log.Timber
 import java.io.File
+import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -39,7 +40,10 @@ class XmpMetadataHandler
                     val path = uri.path ?: return null
                     readMetadataFromSidecar(path)
                 }
-            } catch (e: Exception) {
+            } catch (
+                @Suppress("TooGenericExceptionCaught") // I/O + JSON parsing may throw various exceptions
+                e: Exception,
+            ) {
                 Timber.w(e, "Failed to read XMP metadata from URI")
                 null
             }
@@ -51,7 +55,10 @@ class XmpMetadataHandler
         fun readMetadata(filePath: String): MemeMetadata? {
             return try {
                 readMetadataFromSidecar(filePath)
-            } catch (e: Exception) {
+            } catch (
+                @Suppress("TooGenericExceptionCaught") // I/O + JSON parsing may throw various exceptions
+                e: Exception,
+            ) {
                 Timber.w(e, "Failed to read XMP metadata from path")
                 null
             }
@@ -67,7 +74,10 @@ class XmpMetadataHandler
             return try {
                 val xmpContent = sidecarFile.readText()
                 parseXmpPacket(xmpContent)
-            } catch (e: Exception) {
+            } catch (
+                @Suppress("TooGenericExceptionCaught") // I/O + JSON parsing may throw various exceptions
+                e: Exception,
+            ) {
                 Timber.w(e, "Failed to parse XMP sidecar file")
                 null
             }
@@ -166,7 +176,7 @@ class XmpMetadataHandler
                 val sidecarFile = File(imagePath + SIDECAR_EXTENSION)
                 sidecarFile.writeText(xmpPacket)
                 true
-            } catch (e: Exception) {
+            } catch (e: IOException) {
                 Timber.e(e, "Failed to write XMP metadata")
                 false
             }
@@ -280,7 +290,10 @@ class XmpMetadataHandler
                 } else {
                     true
                 }
-            } catch (e: Exception) {
+            } catch (
+                @Suppress("TooGenericExceptionCaught") // SecurityException from file operations
+                e: Exception,
+            ) {
                 Timber.w(e, "Failed to delete XMP sidecar file")
                 false
             }

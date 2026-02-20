@@ -20,6 +20,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import timber.log.Timber
@@ -93,9 +94,9 @@ class PreferencesDataStore
                             prefs[PreferencesKeys.DEFAULT_FORMAT]?.let {
                                 ImageFormat.valueOf(it)
                             } ?: ImageFormat.JPEG,
-                        defaultQuality = prefs[PreferencesKeys.DEFAULT_QUALITY] ?: 85,
-                        maxWidth = prefs[PreferencesKeys.MAX_WIDTH] ?: 1080,
-                        maxHeight = prefs[PreferencesKeys.MAX_HEIGHT] ?: 1080,
+                        defaultQuality = prefs[PreferencesKeys.DEFAULT_QUALITY] ?: DEFAULT_QUALITY,
+                        maxWidth = prefs[PreferencesKeys.MAX_WIDTH] ?: DEFAULT_MAX_DIMENSION,
+                        maxHeight = prefs[PreferencesKeys.MAX_HEIGHT] ?: DEFAULT_MAX_DIMENSION,
                         stripMetadata = prefs[PreferencesKeys.STRIP_METADATA] ?: true,
                     )
                 }
@@ -138,7 +139,7 @@ class PreferencesDataStore
                             prefs[PreferencesKeys.USER_DENSITY_PREFERENCE]?.let {
                                 UserDensityPreference.valueOf(it)
                             } ?: UserDensityPreference.AUTO,
-                        holdToShareDelayMs = prefs[PreferencesKeys.HOLD_TO_SHARE_DELAY_MS] ?: 600L,
+                        holdToShareDelayMs = prefs[PreferencesKeys.HOLD_TO_SHARE_DELAY_MS] ?: DEFAULT_HOLD_TO_SHARE_DELAY_MS,
                         sortEmojisByUsage = prefs[PreferencesKeys.SORT_EMOJIS_BY_USAGE] ?: true,
                     )
                 }
@@ -175,7 +176,7 @@ class PreferencesDataStore
          */
         suspend fun setGridColumns(columns: Int) {
             context.dataStore.edit { prefs ->
-                prefs[PreferencesKeys.GRID_COLUMNS] = columns.coerceIn(2, 4)
+                prefs[PreferencesKeys.GRID_COLUMNS] = columns.coerceIn(2, MAX_GRID_COLUMNS)
             }
         }
 
@@ -195,7 +196,7 @@ class PreferencesDataStore
                     prefs[PreferencesKeys.RECENT_SEARCHES]?.let { json ->
                         try {
                             Json.decodeFromString<List<String>>(json)
-                        } catch (e: Exception) {
+                        } catch (e: SerializationException) {
                             Timber.e(e, "Failed to decode recent searches JSON")
                             emptyList()
                         }
@@ -212,7 +213,7 @@ class PreferencesDataStore
                     currentJson?.let {
                         try {
                             Json.decodeFromString<List<String>>(it).toMutableList()
-                        } catch (e: Exception) {
+                        } catch (e: SerializationException) {
                             Timber.e(e, "Failed to decode recent searches for adding")
                             mutableListOf()
                         }
@@ -234,7 +235,7 @@ class PreferencesDataStore
                     currentJson?.let {
                         try {
                             Json.decodeFromString<List<String>>(it).toMutableList()
-                        } catch (e: Exception) {
+                        } catch (e: SerializationException) {
                             Timber.e(e, "Failed to decode recent searches for deleting")
                             mutableListOf()
                         }
@@ -372,7 +373,7 @@ class PreferencesDataStore
                     prefs[PreferencesKeys.UNLOCKED_MILESTONES]?.let { json ->
                         try {
                             Json.decodeFromString<Map<String, Long>>(json)
-                        } catch (e: Exception) {
+                        } catch (e: SerializationException) {
                             Timber.e(e, "Failed to decode unlocked milestones JSON")
                             emptyMap()
                         }
@@ -389,7 +390,7 @@ class PreferencesDataStore
                     currentJson?.let {
                         try {
                             Json.decodeFromString<Map<String, Long>>(it).toMutableMap()
-                        } catch (e: Exception) {
+                        } catch (e: SerializationException) {
                             Timber.e(e, "Failed to decode milestones for unlocking")
                             mutableMapOf()
                         }
@@ -414,5 +415,9 @@ class PreferencesDataStore
 
         companion object {
             private const val MAX_RECENT_SEARCHES = 20
+            private const val DEFAULT_QUALITY = 85
+            private const val DEFAULT_MAX_DIMENSION = 1080
+            private const val DEFAULT_HOLD_TO_SHARE_DELAY_MS = 600L
+            private const val MAX_GRID_COLUMNS = 4
         }
     }

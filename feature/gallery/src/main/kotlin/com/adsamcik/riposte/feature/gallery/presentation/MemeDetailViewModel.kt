@@ -126,7 +126,10 @@ class MemeDetailViewModel
                         launch {
                             try {
                                 useCases.recordMemeView(currentMemeId)
-                            } catch (e: Exception) {
+                            } catch (
+                                @Suppress("TooGenericExceptionCaught") // Catches all to show error state
+                                e: Exception,
+                            ) {
                                 Timber.d(e, "Failed to record meme view")
                             }
                         }
@@ -140,7 +143,10 @@ class MemeDetailViewModel
                             )
                         }
                     }
-                } catch (e: Exception) {
+                } catch (
+                    @Suppress("TooGenericExceptionCaught") // Catches all to show error state
+                    e: Exception,
+                ) {
                     _uiState.update { it.copy(isLoading = false, errorMessage = e.message) }
                 }
             }
@@ -330,7 +336,10 @@ class MemeDetailViewModel
                 try {
                     val status = useCases.getSimilarMemes(currentMemeId)
                     _uiState.update { it.copy(similarMemesStatus = status, isLoadingSimilar = false) }
-                } catch (e: Exception) {
+                } catch (
+                    @Suppress("TooGenericExceptionCaught") // Catches all to show error state
+                    e: Exception,
+                ) {
                     Timber.e(e, "Failed to load similar memes")
                     _uiState.update {
                         it.copy(
@@ -369,7 +378,10 @@ class MemeDetailViewModel
                 try {
                     val ids = useCases.getAllMemeIds()
                     _uiState.update { it.copy(allMemeIds = ids) }
-                } catch (e: Exception) {
+                } catch (
+                    @Suppress("TooGenericExceptionCaught") // Catches all to show error state
+                    e: Exception,
+                ) {
                     Timber.d(e, "Failed to load meme IDs for pager")
                 }
             }

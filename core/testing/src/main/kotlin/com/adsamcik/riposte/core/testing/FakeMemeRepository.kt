@@ -268,7 +268,10 @@ class FakeMemeRepository {
 
         return try {
             Result.success(block())
-        } catch (e: Exception) {
+        } catch (
+            @Suppress("TooGenericExceptionCaught") // Test fake mirrors real repo behavior
+            e: Exception,
+        ) {
             Result.failure(e)
         }
     }

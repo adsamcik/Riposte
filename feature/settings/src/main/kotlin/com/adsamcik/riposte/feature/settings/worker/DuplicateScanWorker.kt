@@ -52,7 +52,10 @@ class DuplicateScanWorker
                 }
                 .collect()
             Result.success()
-        } catch (e: Exception) {
+        } catch (
+            @Suppress("TooGenericExceptionCaught") // Worker must not crash - reports failure instead
+            e: Exception,
+        ) {
             Timber.e(e, "Duplicate scan failed")
             if (runAttemptCount < MAX_RETRIES) {
                 Result.retry()

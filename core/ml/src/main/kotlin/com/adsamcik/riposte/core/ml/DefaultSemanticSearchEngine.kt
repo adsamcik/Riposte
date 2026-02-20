@@ -43,7 +43,10 @@ class DefaultSemanticSearchEngine
                             ?: embeddingGenerator.generateFromText(query).also {
                                 queryEmbeddingCache[query] = it
                             }
-                    } catch (e: Exception) {
+                    } catch (
+                        @Suppress("TooGenericExceptionCaught") // ML libraries throw unpredictable exceptions
+                        e: Exception,
+                    ) {
                         Timber.w(e, "Failed to generate query embedding")
                         throw e
                     }
@@ -78,7 +81,10 @@ class DefaultSemanticSearchEngine
                             ?: embeddingGenerator.generateFromText(query).also {
                                 queryEmbeddingCache[query] = it
                             }
-                    } catch (e: Exception) {
+                    } catch (
+                        @Suppress("TooGenericExceptionCaught") // ML libraries throw unpredictable exceptions
+                        e: Exception,
+                    ) {
                         Timber.w(e, "Failed to generate query embedding for multi-vector search")
                         throw e
                     }

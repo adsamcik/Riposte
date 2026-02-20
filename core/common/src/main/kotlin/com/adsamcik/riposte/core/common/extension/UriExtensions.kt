@@ -6,6 +6,7 @@ import android.provider.OpenableColumns
 import timber.log.Timber
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
 
 /**
  * Gets the file name from a content URI.
@@ -64,7 +65,7 @@ fun Uri.copyToFile(
             }
         }
         true
-    } catch (e: Exception) {
+    } catch (e: IOException) {
         Timber.e(e, "Failed to copy URI to file")
         false
     }

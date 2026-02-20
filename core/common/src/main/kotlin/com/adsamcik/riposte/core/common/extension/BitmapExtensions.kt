@@ -5,7 +5,10 @@ import android.graphics.BitmapFactory
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
 import timber.log.Timber
+
+private const val MAX_COMPRESS_QUALITY = 100
 
 /**
  * Scales a bitmap to fit within the specified max dimensions while maintaining aspect ratio.
@@ -34,7 +37,7 @@ fun Bitmap.compress(
     quality: Int,
 ): ByteArray {
     return ByteArrayOutputStream().use { stream ->
-        compress(format, quality.coerceIn(0, 100), stream)
+        compress(format, quality.coerceIn(0, MAX_COMPRESS_QUALITY), stream)
         stream.toByteArray()
     }
 }
@@ -49,10 +52,10 @@ fun Bitmap.saveToFile(
 ): Boolean {
     return try {
         FileOutputStream(file).use { stream ->
-            compress(format, quality.coerceIn(0, 100), stream)
+            compress(format, quality.coerceIn(0, MAX_COMPRESS_QUALITY), stream)
         }
         true
-    } catch (e: Exception) {
+    } catch (e: IOException) {
         Timber.e(e, "Failed to save bitmap to file")
         false
     }

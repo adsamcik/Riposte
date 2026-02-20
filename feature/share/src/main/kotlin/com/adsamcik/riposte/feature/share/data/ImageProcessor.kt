@@ -1,15 +1,14 @@
 package com.adsamcik.riposte.feature.share.data
 
-import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.exifinterface.media.ExifInterface
 import com.adsamcik.riposte.core.model.ImageFormat
 import com.adsamcik.riposte.core.model.ShareConfig
-import dagger.hilt.android.qualifiers.ApplicationContext
 import timber.log.Timber
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -20,9 +19,16 @@ import javax.inject.Singleton
 @Singleton
 class ImageProcessor
     @Inject
-    constructor(
-        @param:ApplicationContext private val context: Context,
-    ) {
+    constructor() {
+        companion object {
+            private const val PNG_BYTES_PER_PIXEL = 1.0
+            private const val JPEG_BYTES_PER_PIXEL_FACTOR = 0.3
+            private const val WEBP_BYTES_PER_PIXEL_FACTOR = 0.2
+            private const val GIF_BYTES_PER_PIXEL = 0.5
+            private const val QUALITY_PERCENT_DIVISOR = 100.0
+            private const val MIN_ESTIMATED_FILE_SIZE = 1024L
+        }
+
         /**
          * Process an image according to the share configuration.
          */
@@ -151,7 +157,7 @@ class ImageProcessor
                 }
 
                 exif.saveAttributes()
-            } catch (e: Exception) {
+            } catch (e: IOException) {
                 // Ignore errors when stripping metadata
                 Timber.d(e, "Failed to strip EXIF metadata")
             }
@@ -186,7 +192,7 @@ class ImageProcessor
                 }
 
                 destExif.saveAttributes()
-            } catch (e: Exception) {
+            } catch (e: IOException) {
                 // Ignore errors when copying metadata
                 Timber.d(e, "Failed to copy EXIF metadata")
             }
@@ -210,7 +216,7 @@ class ImageProcessor
                     bitmap.compress(compressFormat, quality, out)
                 }
                 true
-            } catch (e: Exception) {
+            } catch (e: IOException) {
                 Timber.e(e, "Failed to save processed bitmap")
                 false
             }
@@ -229,12 +235,12 @@ class ImageProcessor
             val pixels = width.toLong() * height
             val bytesPerPixel =
                 when (format) {
-                    ImageFormat.PNG -> 1.0 // PNG is lossless but compresses well
-                    ImageFormat.JPEG -> (quality / 100.0) * 0.3 // JPEG compression
-                    ImageFormat.WEBP -> (quality / 100.0) * 0.2 // WebP is more efficient
-                    ImageFormat.GIF -> 0.5
+                    ImageFormat.PNG -> PNG_BYTES_PER_PIXEL
+                    ImageFormat.JPEG -> (quality / QUALITY_PERCENT_DIVISOR) * JPEG_BYTES_PER_PIXEL_FACTOR
+                    ImageFormat.WEBP -> (quality / QUALITY_PERCENT_DIVISOR) * WEBP_BYTES_PER_PIXEL_FACTOR
+                    ImageFormat.GIF -> GIF_BYTES_PER_PIXEL
                 }
-            return (pixels * bytesPerPixel).toLong().coerceAtLeast(1024)
+            return (pixels * bytesPerPixel).toLong().coerceAtLeast(MIN_ESTIMATED_FILE_SIZE)
         }
 
         sealed class ProcessResult {

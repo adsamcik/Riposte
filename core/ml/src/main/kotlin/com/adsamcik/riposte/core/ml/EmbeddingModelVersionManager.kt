@@ -97,10 +97,10 @@ class EmbeddingModelVersionManager
          */
         fun getCurrentEmbeddingDimension(): Int {
             return when {
-                currentModelVersion.startsWith("embeddinggemma") -> 768
-                currentModelVersion.startsWith("mediapipe_use") -> 512
-                currentModelVersion.startsWith("litert_use") -> 512
-                else -> 768
+                currentModelVersion.startsWith("embeddinggemma") -> EMBEDDING_GEMMA_DIMENSION
+                currentModelVersion.startsWith("mediapipe_use") -> USE_MODEL_DIMENSION
+                currentModelVersion.startsWith("litert_use") -> USE_MODEL_DIMENSION
+                else -> EMBEDDING_GEMMA_DIMENSION
             }
         }
 
@@ -123,7 +123,10 @@ class EmbeddingModelVersionManager
         private fun extractMajorVersion(version: String): Int {
             return try {
                 version.substringAfter(":").substringBefore(".").toInt()
-            } catch (e: Exception) {
+            } catch (
+                @Suppress("TooGenericExceptionCaught") // ML libraries throw unpredictable exceptions
+                e: Exception,
+            ) {
                 Timber.e(e, "Failed to extract major version from: $version")
                 0
             }
@@ -157,6 +160,9 @@ class EmbeddingModelVersionManager
              * UPDATE THIS when changing the embedding model.
              */
             const val CURRENT_VERSION = "embeddinggemma:1.0.0"
+
+            private const val EMBEDDING_GEMMA_DIMENSION = 768
+            private const val USE_MODEL_DIMENSION = 512
 
             private val KEY_LAST_MODEL_VERSION = stringPreferencesKey("last_model_version")
             private val KEY_ERROR_APP_VERSION_CODE = longPreferencesKey("error_app_version_code")

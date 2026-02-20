@@ -77,7 +77,10 @@ class DuplicateDetectionViewModel @Inject constructor(
             try {
                 repository.mergeDuplicates(duplicateId)
                 _effects.send(DuplicateDetectionEffect.ShowSnackbar("Merged! Kept best quality, combined metadata"))
-            } catch (e: Exception) {
+            } catch (
+                @Suppress("TooGenericExceptionCaught") // Catches all to show error state
+                e: Exception,
+            ) {
                 _effects.send(DuplicateDetectionEffect.ShowSnackbar("Merge failed: ${e.message}"))
             }
         }
@@ -88,7 +91,10 @@ class DuplicateDetectionViewModel @Inject constructor(
             try {
                 repository.dismissDuplicate(duplicateId)
                 _effects.send(DuplicateDetectionEffect.ShowSnackbar("Dismissed"))
-            } catch (e: Exception) {
+            } catch (
+                @Suppress("TooGenericExceptionCaught") // Catches all to show error state
+                e: Exception,
+            ) {
                 _effects.send(DuplicateDetectionEffect.ShowSnackbar("Dismiss failed: ${e.message}"))
             }
         }
@@ -101,7 +107,10 @@ class DuplicateDetectionViewModel @Inject constructor(
                 _effects.send(
                     DuplicateDetectionEffect.ShowSnackbar("Merged ${results.size} duplicate pairs"),
                 )
-            } catch (e: Exception) {
+            } catch (
+                @Suppress("TooGenericExceptionCaught") // Catches all to show error state
+                e: Exception,
+            ) {
                 _effects.send(DuplicateDetectionEffect.ShowSnackbar("Merge all failed: ${e.message}"))
             }
         }
@@ -112,7 +121,10 @@ class DuplicateDetectionViewModel @Inject constructor(
             try {
                 repository.dismissAll()
                 _effects.send(DuplicateDetectionEffect.ShowSnackbar("All duplicates dismissed"))
-            } catch (e: Exception) {
+            } catch (
+                @Suppress("TooGenericExceptionCaught") // Catches all to show error state
+                e: Exception,
+            ) {
                 _effects.send(DuplicateDetectionEffect.ShowSnackbar("Dismiss all failed: ${e.message}"))
             }
         }

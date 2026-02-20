@@ -51,6 +51,10 @@ class EmbeddingManager
         private val versionManager: EmbeddingModelVersionManager,
         private val appLifecycleTracker: AppLifecycleTracker,
     ) {
+        companion object {
+            private const val BYTES_PER_FLOAT = 4
+            private const val HASH_BYTE_LENGTH = 16
+        }
         /**
          * Initializes the embedding model and resumes any incomplete indexing.
          *
@@ -67,7 +71,10 @@ class EmbeddingManager
                     embeddingGenerator.initialize()
                     versionManager.clearInitializationFailure()
                     Timber.d("Embedding model warm-up completed")
-                } catch (e: Exception) {
+                } catch (
+                    @Suppress("TooGenericExceptionCaught") // ML libraries throw unpredictable exceptions
+                    e: Exception,
+                ) {
                     Timber.w(e, "Embedding model warm-up failed (non-fatal)")
                 }
 
@@ -87,7 +94,10 @@ class EmbeddingManager
                     } else {
                         Timber.d("Skipping auto-reindex: model error present")
                     }
-                } catch (e: Exception) {
+                } catch (
+                    @Suppress("TooGenericExceptionCaught") // ML libraries throw unpredictable exceptions
+                    e: Exception,
+                ) {
                     Timber.w(e, "Failed to resume incomplete indexing")
                 }
             }
@@ -130,7 +140,10 @@ class EmbeddingManager
 
                 memeEmbeddingDao.insertEmbedding(entity)
                 true
-            } catch (e: Exception) {
+            } catch (
+                @Suppress("TooGenericExceptionCaught") // ML libraries throw unpredictable exceptions
+                e: Exception,
+            ) {
                 Timber.e(e, "Failed to generate embedding for meme $memeId")
                 false
             }
@@ -232,7 +245,10 @@ class EmbeddingManager
                                 )
                                 scheduleBackgroundGeneration()
                             }
-                        } catch (e: Exception) {
+                        } catch (
+                            @Suppress("TooGenericExceptionCaught") // ML libraries throw unpredictable exceptions
+                            e: Exception,
+                        ) {
                             Timber.w(e, "Failed to check indexing status on foreground return")
                         }
                     }
@@ -271,14 +287,14 @@ class EmbeddingManager
 
         private fun encodeEmbedding(embedding: FloatArray): ByteArray {
             val buffer =
-                ByteBuffer.allocate(embedding.size * 4)
+                ByteBuffer.allocate(embedding.size * BYTES_PER_FLOAT)
                     .order(ByteOrder.LITTLE_ENDIAN)
             embedding.forEach { buffer.putFloat(it) }
             return buffer.array()
         }
 
         private fun decodeEmbedding(bytes: ByteArray): FloatArray {
-            val floatArray = FloatArray(bytes.size / 4)
+            val floatArray = FloatArray(bytes.size / BYTES_PER_FLOAT)
             ByteBuffer.wrap(bytes)
                 .order(ByteOrder.LITTLE_ENDIAN)
                 .asFloatBuffer()
@@ -290,7 +306,7 @@ class EmbeddingManager
             val digest = MessageDigest.getInstance("SHA-256")
             val hash = digest.digest(text.toByteArray(Charsets.UTF_8))
             // Truncate to 32 chars (128 bits) for storage efficiency while maintaining uniqueness
-            return hash.take(16).joinToString("") { "%02x".format(it) }
+            return hash.take(HASH_BYTE_LENGTH).joinToString("") { "%02x".format(it) }
         }
     }
 

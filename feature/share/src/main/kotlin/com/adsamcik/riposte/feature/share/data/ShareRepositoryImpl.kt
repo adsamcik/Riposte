@@ -113,7 +113,10 @@ class ShareRepositoryImpl
                             Result.success(uri)
                         }
                     }
-                } catch (e: Exception) {
+                } catch (
+                    @Suppress("TooGenericExceptionCaught") // I/O and parsing may throw various exceptions
+                    e: Exception,
+                ) {
                     Result.failure(e)
                 }
             }
@@ -235,7 +238,10 @@ class ShareRepositoryImpl
                     }
 
                     Result.success(imageUri)
-                } catch (e: Exception) {
+                } catch (
+                    @Suppress("TooGenericExceptionCaught") // I/O and parsing may throw various exceptions
+                    e: Exception,
+                ) {
                     Result.failure(e)
                 }
             }
@@ -317,7 +323,10 @@ class ShareRepositoryImpl
                     .map { it.trim() }
                     .filter { it.isNotEmpty() }
                     .map { EmojiTag.fromEmoji(it) }
-            } catch (e: Exception) {
+            } catch (
+                @Suppress("TooGenericExceptionCaught") // Parsing may throw various exceptions
+                e: Exception,
+            ) {
                 // If parsing fails, return empty list rather than crash
                 Timber.e(e, "Failed to parse emoji tags from JSON")
                 emptyList()

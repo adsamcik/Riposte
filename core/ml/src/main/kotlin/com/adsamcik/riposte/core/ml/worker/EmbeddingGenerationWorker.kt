@@ -106,7 +106,10 @@ class EmbeddingGenerationWorker
                             }
 
                             successCount++
-                        } catch (e: Exception) {
+                        } catch (
+                            @Suppress("TooGenericExceptionCaught") // Worker must not crash - reports failure instead
+                            e: Exception,
+                        ) {
                             failureCount++
                             Timber.w(e, "Failed to generate embedding for meme ${memeData.id}")
                         }
@@ -114,7 +117,7 @@ class EmbeddingGenerationWorker
                         // Update progress
                         setProgressAsync(
                             workDataOf(
-                                KEY_PROGRESS to ((successCount + failureCount) * 100 / pendingMemes.size),
+                                KEY_PROGRESS to ((successCount + failureCount) * PERCENTAGE_MULTIPLIER / pendingMemes.size),
                             ),
                         )
 
@@ -151,7 +154,10 @@ class EmbeddingGenerationWorker
                     }
 
                     Result.success(outputData)
-                } catch (e: Exception) {
+                } catch (
+                    @Suppress("TooGenericExceptionCaught") // Worker must not crash - reports failure instead
+                    e: Exception,
+                ) {
                     Timber.e(e, "Embedding generation work failed")
                     if (runAttemptCount < MAX_RETRY_COUNT) {
                         Result.retry()
@@ -182,7 +188,10 @@ class EmbeddingGenerationWorker
             val phrases =
                 try {
                     kotlinx.serialization.json.Json.decodeFromString<List<String>>(jsonString)
-                } catch (e: Exception) {
+                } catch (
+                    @Suppress("TooGenericExceptionCaught") // Worker must not crash - reports failure instead
+                    e: Exception,
+                ) {
                     // Fallback: treat as comma-separated if not valid JSON
                     Timber.d(e, "Failed to parse search phrases as JSON, falling back to comma-separated format")
                     jsonString.split(",").map { it.trim() }
@@ -192,7 +201,7 @@ class EmbeddingGenerationWorker
 
         private fun encodeEmbedding(embedding: FloatArray): ByteArray {
             val buffer =
-                ByteBuffer.allocate(embedding.size * 4)
+                ByteBuffer.allocate(embedding.size * BYTES_PER_FLOAT)
                     .order(ByteOrder.LITTLE_ENDIAN)
             embedding.forEach { buffer.putFloat(it) }
             return buffer.array()
@@ -202,8 +211,7 @@ class EmbeddingGenerationWorker
             val digest = MessageDigest.getInstance("SHA-256")
             val hash = digest.digest(text.toByteArray(Charsets.UTF_8))
             // Truncate to 32 chars (128 bits) to match EmbeddingManager.generateHash
-            @Suppress("MagicNumber")
-            return hash.take(16).joinToString("") { "%02x".format(it) }
+            return hash.take(HASH_BYTE_LENGTH).joinToString("") { "%02x".format(it) }
         }
 
         private suspend fun maybePromoteToForeground(
@@ -234,6 +242,10 @@ class EmbeddingGenerationWorker
             const val MAX_RETRY_COUNT = 3
             const val CURRENT_MODEL_VERSION = "embeddinggemma:1.0.0"
             private const val CONTINUATION_DELAY_SECONDS = 5L
+            private const val PERCENTAGE_MULTIPLIER = 100
+            private const val BYTES_PER_FLOAT = 4
+            private const val HASH_BYTE_LENGTH = 16
+            private const val BACKOFF_SECONDS = 30L
 
             // Output data keys
             const val KEY_PROCESSED_COUNT = "processed_count"
@@ -257,7 +269,7 @@ class EmbeddingGenerationWorker
                         .setConstraints(constraints)
                         .setBackoffCriteria(
                             BackoffPolicy.EXPONENTIAL,
-                            30,
+                            BACKOFF_SECONDS,
                             TimeUnit.SECONDS,
                         )
                         .addTag(WORK_NAME)
@@ -288,7 +300,7 @@ class EmbeddingGenerationWorker
                         .setInitialDelay(CONTINUATION_DELAY_SECONDS, TimeUnit.SECONDS)
                         .setBackoffCriteria(
                             BackoffPolicy.EXPONENTIAL,
-                            30,
+                            BACKOFF_SECONDS,
                             TimeUnit.SECONDS,
                         )
                         .addTag(WORK_NAME)
@@ -305,6 +317,8 @@ class EmbeddingGenerationWorker
             /**
              * Enqueues embedding regeneration work for outdated model versions.
              */
+            // Parameter reserved for future version-specific migration logic
+            @Suppress("UnusedParameter")
             fun enqueueRegeneration(
                 context: Context,
                 currentVersion: String,
