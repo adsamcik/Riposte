@@ -287,7 +287,6 @@ class EmbeddingGemmaGenerator
             initializationAttempted = true
 
             try {
-                // Ensure models are copied from assets to internal storage
                 copyModelsFromAssetsIfNeeded()
 
                 val modelPath = getModelPath()
@@ -307,6 +306,25 @@ class EmbeddingGemmaGenerator
                     return
                 }
 
+                if (!tryInitializeWithGpu(modelPath, tokenizerPath) && shouldUseGpu()) {
+                    initializeWithCpu()
+                }
+            } catch (e: UnsatisfiedLinkError) {
+                Timber.e(e, "Native library not available for EmbeddingGemma (unsupported ABI?)")
+                embeddingModel = null
+                _initializationError = ERROR_NOT_COMPATIBLE
+            } catch (e: ExceptionInInitializerError) {
+                Timber.e(e, "EmbeddingGemma static initialization failed")
+                embeddingModel = null
+                _initializationError = ERROR_FAILED_TO_LOAD
+            }
+        }
+
+        private fun tryInitializeWithGpu(
+            modelPath: String,
+            tokenizerPath: String,
+        ): Boolean {
+            return try {
                 Timber.d("Initializing EmbeddingGemma with GPU=${shouldUseGpu()}")
                 Timber.d("Model path: $modelPath")
                 Timber.d("Tokenizer path: $tokenizerPath")
@@ -320,56 +338,50 @@ class EmbeddingGemmaGenerator
 
                 Timber.i("EmbeddingGemma initialized successfully (dimension: $embeddingDimension)")
                 _initializationError = null
-            } catch (e: UnsatisfiedLinkError) {
-                Timber.e(e, "Native library not available for EmbeddingGemma (unsupported ABI?)")
-                embeddingModel = null
-                _initializationError = ERROR_NOT_COMPATIBLE
-            } catch (e: ExceptionInInitializerError) {
-                Timber.e(e, "EmbeddingGemma static initialization failed")
-                embeddingModel = null
-                _initializationError = ERROR_FAILED_TO_LOAD
+                true
             } catch (
                 @Suppress("TooGenericExceptionCaught") // ML libraries throw unpredictable exceptions
                 e: Exception,
             ) {
                 Timber.e(e, "Failed to initialize EmbeddingGemma")
-
-                // Try CPU fallback if GPU fails
-                if (shouldUseGpu()) {
-                    Timber.i("Retrying with CPU...")
-                    useGpu = false
-                    try {
-                        val modelPath = getModelPath()
-                        val tokenizerPath = getTokenizerPath()
-
-                        embeddingModel =
-                            GemmaEmbeddingModel(
-                                modelPath,
-                                tokenizerPath,
-                                false,
-                            )
-                        Timber.i("EmbeddingGemma initialized with CPU fallback")
-                        _initializationError = null
-                    } catch (cpuError: UnsatisfiedLinkError) {
-                        Timber.e(cpuError, "CPU fallback failed: native library not available")
-                        embeddingModel = null
-                        _initializationError = ERROR_NOT_COMPATIBLE
-                    } catch (cpuError: ExceptionInInitializerError) {
-                        Timber.e(cpuError, "CPU fallback failed: static initialization error")
-                        embeddingModel = null
-                        _initializationError = ERROR_FAILED_TO_LOAD
-                    } catch (
-                        @Suppress("TooGenericExceptionCaught") // GPU/CPU fallback catches unpredictable errors
-                        cpuError: Exception,
-                    ) {
-                        Timber.e(cpuError, "CPU fallback also failed")
-                        embeddingModel = null
-                        _initializationError = ERROR_INIT_FAILED
-                    }
-                } else {
+                if (!shouldUseGpu()) {
                     embeddingModel = null
                     _initializationError = ERROR_INIT_FAILED
                 }
+                false
+            }
+        }
+
+        private fun initializeWithCpu() {
+            Timber.i("Retrying with CPU...")
+            useGpu = false
+            try {
+                val modelPath = getModelPath()
+                val tokenizerPath = getTokenizerPath()
+
+                embeddingModel =
+                    GemmaEmbeddingModel(
+                        modelPath,
+                        tokenizerPath,
+                        false,
+                    )
+                Timber.i("EmbeddingGemma initialized with CPU fallback")
+                _initializationError = null
+            } catch (cpuError: UnsatisfiedLinkError) {
+                Timber.e(cpuError, "CPU fallback failed: native library not available")
+                embeddingModel = null
+                _initializationError = ERROR_NOT_COMPATIBLE
+            } catch (cpuError: ExceptionInInitializerError) {
+                Timber.e(cpuError, "CPU fallback failed: static initialization error")
+                embeddingModel = null
+                _initializationError = ERROR_FAILED_TO_LOAD
+            } catch (
+                @Suppress("TooGenericExceptionCaught") // GPU/CPU fallback catches unpredictable errors
+                cpuError: Exception,
+            ) {
+                Timber.e(cpuError, "CPU fallback also failed")
+                embeddingModel = null
+                _initializationError = ERROR_INIT_FAILED
             }
         }
 
@@ -435,24 +447,22 @@ class EmbeddingGemmaGenerator
          */
         private fun getModelPath(): String {
             val modelDir = File(context.filesDir, MODEL_DIRECTORY)
-
-            // First, try the best model for this device's chipset
             val bestModelFile = getBestModelFilename()
             val optimizedPath = File(modelDir, bestModelFile)
-            if (optimizedPath.exists()) {
-                Timber.d("Using optimized model: $bestModelFile")
-                return optimizedPath.absolutePath
-            }
-
-            // Fall back to generic model
             val genericPath = File(modelDir, MODEL_FILENAME_GENERIC)
-            if (genericPath.exists()) {
-                Timber.d("Using generic model (optimized not found)")
-                return genericPath.absolutePath
-            }
 
-            // Return expected path for error messaging
-            return optimizedPath.absolutePath
+            return when {
+                optimizedPath.exists() -> {
+                    Timber.d("Using optimized model: $bestModelFile")
+                    optimizedPath.absolutePath
+                }
+                genericPath.exists() -> {
+                    Timber.d("Using generic model (optimized not found)")
+                    genericPath.absolutePath
+                }
+                // Return expected path for error messaging
+                else -> optimizedPath.absolutePath
+            }
         }
 
         /**
@@ -607,28 +617,29 @@ class EmbeddingGemmaGenerator
              */
             fun getBestModelFilename(): String {
                 val socModel = Build.SOC_MODEL.lowercase()
-
                 Timber.d("Detected SoC: $socModel")
 
-                // Try to find a matching platform-specific model
-                for ((chipset, modelFile) in PLATFORM_MODELS) {
-                    if (socModel.contains(chipset.lowercase())) {
-                        Timber.i("Using optimized model for $chipset: $modelFile")
-                        return modelFile
-                    }
+                val socMatch = PLATFORM_MODELS.entries.firstOrNull { (chipset, _) ->
+                    socModel.contains(chipset.lowercase())
+                }
+                val match = socMatch ?: PLATFORM_MODELS.entries.firstOrNull { (chipset, _) ->
+                    Build.BOARD.lowercase().contains(chipset.lowercase())
                 }
 
-                // Also check Build.BOARD for some devices
-                val board = Build.BOARD.lowercase()
-                for ((chipset, modelFile) in PLATFORM_MODELS) {
-                    if (board.contains(chipset.lowercase())) {
-                        Timber.i("Using optimized model for $chipset (from board): $modelFile")
-                        return modelFile
+                return when {
+                    socMatch != null -> {
+                        Timber.i("Using optimized model for ${socMatch.key}: ${socMatch.value}")
+                        socMatch.value
+                    }
+                    match != null -> {
+                        Timber.i("Using optimized model for ${match.key} (from board): ${match.value}")
+                        match.value
+                    }
+                    else -> {
+                        Timber.i("Using generic model (no optimized variant for $socModel)")
+                        MODEL_FILENAME_GENERIC
                     }
                 }
-
-                Timber.i("Using generic model (no optimized variant for $socModel)")
-                return MODEL_FILENAME_GENERIC
             }
 
             /**

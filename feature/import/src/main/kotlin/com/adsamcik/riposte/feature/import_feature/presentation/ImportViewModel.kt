@@ -86,16 +86,13 @@ class ImportViewModel
                     }
                 }
 
-                WorkInfo.State.SUCCEEDED -> {
-                    // Ignore stale terminal states from previous imports
-                    if (!_uiState.value.isImporting) return
+                WorkInfo.State.SUCCEEDED -> if (_uiState.value.isImporting) {
                     val completed = workInfo.outputData.getInt(ImportWorker.KEY_COMPLETED, 0)
                     val failed = workInfo.outputData.getInt(ImportWorker.KEY_FAILED, 0)
                     handleImportComplete(completed, failed)
                 }
 
-                WorkInfo.State.FAILED -> {
-                    if (!_uiState.value.isImporting) return
+                WorkInfo.State.FAILED -> if (_uiState.value.isImporting) {
                     _uiState.update {
                         it.copy(
                             isImporting = false,
@@ -114,8 +111,7 @@ class ImportViewModel
                     )
                 }
 
-                WorkInfo.State.CANCELLED -> {
-                    if (!_uiState.value.isImporting) return
+                WorkInfo.State.CANCELLED -> if (_uiState.value.isImporting) {
                     _uiState.update {
                         it.copy(isImporting = false, importProgress = 0f, statusMessage = null)
                     }
@@ -583,43 +579,7 @@ class ImportViewModel
                 // Create import request items with full metadata
                 val items =
                     images.mapIndexed { index, image ->
-                        val emojiStrings = image.emojis.map { it.emoji }
-                        val metadataJson =
-                            if (emojiStrings.isNotEmpty()) {
-                                try {
-                                    kotlinx.serialization.json.Json.encodeToString(
-                                        MemeMetadata(
-                                            emojis = emojiStrings,
-                                            title = image.title,
-                                            description = image.description,
-                                            textContent = image.extractedText,
-                                            searchPhrases = image.searchPhrases,
-                                            basedOn = image.basedOn,
-                                            primaryLanguage = image.primaryLanguage,
-                                            localizations = image.localizations,
-                                        ),
-                                    )
-                                } catch (
-                                    @Suppress("TooGenericExceptionCaught")
-                                    // Worker must not crash - reports failure instead
-                                    e: Exception,
-                                ) {
-                                    Timber.w(e, "Failed to parse metadata during import")
-                                    null
-                                }
-                            } else {
-                                null
-                            }
-                        ImportRequestItemData(
-                            id = "${requestId}_$index",
-                            stagedFilePath = java.io.File(stagingDir, "${requestId}_$index").absolutePath,
-                            originalFileName = image.fileName,
-                            emojis = image.emojis.joinToString(",") { it.emoji },
-                            title = image.title,
-                            description = image.description,
-                            extractedText = image.extractedText,
-                            metadataJson = metadataJson,
-                        )
+                        buildImportRequestItem(requestId, index, image, stagingDir)
                     }
 
                 // Persist import request via repository
@@ -651,6 +611,51 @@ class ImportViewModel
                     ),
                 )
             }
+        }
+
+        private fun buildImportRequestItem(
+            requestId: String,
+            index: Int,
+            image: ImportImage,
+            stagingDir: java.io.File,
+        ): ImportRequestItemData {
+            val emojiStrings = image.emojis.map { it.emoji }
+            val metadataJson =
+                if (emojiStrings.isNotEmpty()) {
+                    try {
+                        kotlinx.serialization.json.Json.encodeToString(
+                            MemeMetadata(
+                                emojis = emojiStrings,
+                                title = image.title,
+                                description = image.description,
+                                textContent = image.extractedText,
+                                searchPhrases = image.searchPhrases,
+                                basedOn = image.basedOn,
+                                primaryLanguage = image.primaryLanguage,
+                                localizations = image.localizations,
+                            ),
+                        )
+                    } catch (
+                        @Suppress("TooGenericExceptionCaught")
+                        // Serialization may fail unexpectedly
+                        e: Exception,
+                    ) {
+                        Timber.w(e, "Failed to serialize metadata during import")
+                        null
+                    }
+                } else {
+                    null
+                }
+            return ImportRequestItemData(
+                id = "${requestId}_$index",
+                stagedFilePath = java.io.File(stagingDir, "${requestId}_$index").absolutePath,
+                originalFileName = image.fileName,
+                emojis = image.emojis.joinToString(",") { it.emoji },
+                title = image.title,
+                description = image.description,
+                extractedText = image.extractedText,
+                metadataJson = metadataJson,
+            )
         }
 
         private fun cancelImport() {

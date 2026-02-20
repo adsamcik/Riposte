@@ -143,12 +143,10 @@ class FakeTextRecognizer {
             delay(simulatedDelay)
         }
 
-        simulatedError?.let { error ->
+        return simulatedError?.let { error ->
             simulatedError = null
-            return Result.failure(error)
-        }
-
-        return Result.success(textProvider())
+            Result.failure(error)
+        } ?: Result.success(textProvider())
     }
 }
 
@@ -356,23 +354,19 @@ class FakeSemanticSearchEngine {
             return Result.failure(error)
         }
 
-        // Use preset results if available
-        presetResults?.let { preset ->
-            @Suppress("UNCHECKED_CAST")
-            return Result.success(preset.take(topK) as List<Pair<T, Float>>)
+        // Use preset results if available, otherwise calculate actual cosine similarity
+        @Suppress("UNCHECKED_CAST")
+        val resultList = presetResults?.let { preset ->
+            preset.take(topK) as List<Pair<T, Float>>
+        } ?: candidates.map { (item, embedding) ->
+            val similarity = cosineSimilarity(queryEmbedding, embedding)
+            item to similarity
         }
+            .filter { it.second >= threshold }
+            .sortedByDescending { it.second }
+            .take(topK)
 
-        // Otherwise calculate actual cosine similarity
-        val results =
-            candidates.map { (item, embedding) ->
-                val similarity = cosineSimilarity(queryEmbedding, embedding)
-                item to similarity
-            }
-                .filter { it.second >= threshold }
-                .sortedByDescending { it.second }
-                .take(topK)
-
-        return Result.success(results)
+        return Result.success(resultList)
     }
 
     /**

@@ -267,21 +267,14 @@ class MediaPipeEmbeddingGenerator
          */
         private fun extractEmbedding(result: TextEmbedderResult): FloatArray {
             val embeddings = result.embeddingResult().embeddings()
-            if (embeddings.isEmpty()) {
-                Timber.w("TextEmbedder returned empty embeddings")
-                return createZeroEmbedding()
-            }
-
-            val embedding = embeddings.first()
-            val floatEmbedding = embedding.floatEmbedding()
+            val floatEmbedding = embeddings.firstOrNull()?.floatEmbedding()
 
             if (floatEmbedding == null) {
-                Timber.w("TextEmbedder returned null float embedding")
-                return createZeroEmbedding()
+                val reason = if (embeddings.isEmpty()) "empty embeddings" else "null float embedding"
+                Timber.w("TextEmbedder returned $reason")
             }
 
-            // Convert to FloatArray (MediaPipe returns a float[] which Kotlin sees as FloatArray)
-            return floatEmbedding
+            return floatEmbedding ?: createZeroEmbedding()
         }
 
         /**
