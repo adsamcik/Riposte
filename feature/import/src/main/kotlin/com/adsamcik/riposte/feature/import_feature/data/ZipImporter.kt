@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import timber.log.Timber
 import java.io.File
 import java.io.FileOutputStream
 import java.util.zip.ZipInputStream
@@ -152,6 +153,7 @@ class DefaultZipImporter
          */
         override suspend fun extractBundle(zipUri: Uri): ZipExtractionResult =
             withContext(Dispatchers.IO) {
+                Timber.d("extractBundle: starting for URI=%s", zipUri)
                 val extractedMemes = mutableListOf<ExtractedMeme>()
                 val errors = mutableMapOf<String, String>()
 
@@ -161,10 +163,13 @@ class DefaultZipImporter
                 val metadataMap = mutableMapOf<String, MemeMetadata>()
 
                 // Clear previous extraction
-                extractDir.listFiles()?.forEach { it.delete() }
+                val existingFiles = extractDir.listFiles()
+                Timber.d("extractBundle: clearing %d existing files from %s", existingFiles?.size ?: 0, extractDir.absolutePath)
+                existingFiles?.forEach { it.delete() }
 
                 try {
                     context.contentResolver.openInputStream(zipUri)?.use { inputStream ->
+                        Timber.d("extractBundle: opened input stream, class=%s", inputStream.javaClass.simpleName)
                         ZipInputStream(inputStream).use { zipInput ->
                             var entryCount = 0
                             var entry = zipInput.nextEntry
@@ -178,9 +183,13 @@ class DefaultZipImporter
                                 }
 
                                 val entryName = entry.name
+                                Timber.d("extractBundle: entry #%d name='%s' size=%d compressed=%d isDir=%b",
+                                    entryCount, entryName, entry.size, entry.compressedSize, entry.isDirectory)
 
                                 // Skip directories and hidden files
                                 if (entry.isDirectory || entryName.startsWith(".") || entryName.contains("/")) {
+                                    Timber.d("extractBundle: SKIPPING entry (dir=%b, dotfile=%b, hasSlash=%b)",
+                                        entry.isDirectory, entryName.startsWith("."), entryName.contains("/"))
                                     zipInput.closeEntry()
                                     entry = zipInput.nextEntry
                                     continue
@@ -229,6 +238,8 @@ class DefaultZipImporter
                                                     } else {
                                                         val written =
                                                             copyWithLimit(zipInput, outputFile, MAX_SINGLE_FILE_SIZE)
+                                                        Timber.d("extractBundle: image '%s' -> '%s' wrote %d bytes",
+                                                            entryName, outputFile.name, written)
                                                         if (written < 0) {
                                                             val maxMb =
                                                                 MAX_SINGLE_FILE_SIZE / 1024 / 1024
@@ -250,13 +261,18 @@ class DefaultZipImporter
                                 zipInput.closeEntry()
                                 entry = zipInput.nextEntry
                             }
+                            Timber.d("extractBundle: finished iterating, entryCount=%d", entryCount)
                         }
                     } ?: run {
                         errors["bundle"] = "Could not open ZIP file"
                     }
                 } catch (e: Exception) {
+                    Timber.e(e, "extractBundle: exception during extraction")
                     errors["bundle"] = "Failed to extract ZIP: ${e.message}"
                 }
+
+                Timber.d("extractBundle: extracted %d images, %d metadata, %d errors",
+                    extractedImages.size, metadataMap.size, errors.size)
 
                 // Pair images with their metadata
                 for ((imageName, imageFile) in extractedImages) {
