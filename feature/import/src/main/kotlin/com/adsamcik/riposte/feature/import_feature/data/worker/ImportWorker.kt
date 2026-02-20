@@ -16,6 +16,7 @@ import com.adsamcik.riposte.core.common.AppConstants
 import com.adsamcik.riposte.core.common.lifecycle.AppLifecycleTracker
 import com.adsamcik.riposte.core.database.dao.ImportRequestDao
 import com.adsamcik.riposte.core.database.entity.ImportRequestEntity
+import com.adsamcik.riposte.core.database.entity.ImportRequestItemEntity
 import com.adsamcik.riposte.core.model.MemeMetadata
 import com.adsamcik.riposte.feature.import_feature.domain.repository.ImportRepository
 import dagger.assisted.Assisted
@@ -63,78 +64,13 @@ class ImportWorker
             maybePromoteToForeground(request.completedCount, request.imageCount)
 
             val pendingItems = importRequestDao.getPendingItems(requestId)
-            var completed = request.completedCount
-            var failed = request.failedCount
-
-            for (item in pendingItems) {
-                if (isStopped) break
-
-                val stagedFile = File(item.stagedFilePath)
-                val uri = Uri.fromFile(stagedFile)
-
-                val metadataJsonValue = item.metadataJson
-                val metadata =
-                    if (metadataJsonValue != null) {
-                        try {
-                            kotlinx.serialization.json.Json.decodeFromString<MemeMetadata>(
-                                metadataJsonValue,
-                            )
-                        } catch (e: kotlinx.serialization.SerializationException) {
-                            Timber.w(e, "Failed to parse metadata JSON in import worker")
-                            null
-                        }
-                    } else {
-                        val emojis = item.emojis.split(",").filter { it.isNotBlank() }
-                        if (emojis.isNotEmpty()) {
-                            MemeMetadata(
-                                emojis = emojis,
-                                title = item.title,
-                                description = item.description,
-                                textContent = item.extractedText,
-                            )
-                        } else {
-                            null
-                        }
-                    }
-
-                val result = importRepository.importImage(uri, metadata)
-                if (result.isSuccess) {
-                    completed++
-                    importRequestDao.updateItemStatus(
-                        itemId = item.id,
-                        status = ImportRequestEntity.STATUS_COMPLETED,
-                    )
-                } else {
-                    Timber.w("Failed to import item %s: %s", item.id, result.exceptionOrNull()?.message)
-                    failed++
-                    importRequestDao.updateItemStatus(
-                        itemId = item.id,
-                        status = ImportRequestEntity.STATUS_FAILED,
-                        errorMessage = result.exceptionOrNull()?.message,
-                    )
-                }
-
-                // Update request progress in DB
-                importRequestDao.updateRequestProgress(
-                    id = requestId,
-                    status = ImportRequestEntity.STATUS_IN_PROGRESS,
-                    completed = completed,
-                    failed = failed,
-                    updatedAt = System.currentTimeMillis(),
-                )
-
-                // Report progress to WorkManager observers
-                setProgress(
-                    workDataOf(
-                        KEY_COMPLETED to completed,
-                        KEY_FAILED to failed,
-                        KEY_TOTAL to request.imageCount,
-                    ),
-                )
-
-                // Update foreground notification if active
-                maybePromoteToForeground(completed, request.imageCount)
-            }
+            val (completed, failed) = processPendingItems(
+                requestId = requestId,
+                pendingItems = pendingItems,
+                startCompleted = request.completedCount,
+                startFailed = request.failedCount,
+                totalImageCount = request.imageCount,
+            )
             Timber.i("Import complete: %d succeeded, %d failed out of %d total", completed, failed, request.imageCount)
 
             // Cleanup staging directory
@@ -199,6 +135,88 @@ class ImportWorker
                 notification,
                 android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC,
             )
+        }
+
+        private suspend fun processPendingItems(
+            requestId: String,
+            pendingItems: List<ImportRequestItemEntity>,
+            startCompleted: Int,
+            startFailed: Int,
+            totalImageCount: Int,
+        ): Pair<Int, Int> {
+            var completed = startCompleted
+            var failed = startFailed
+
+            for (item in pendingItems) {
+                if (isStopped) break
+
+                val stagedFile = File(item.stagedFilePath)
+                val uri = Uri.fromFile(stagedFile)
+                val metadata = parseItemMetadata(item)
+
+                val result = importRepository.importImage(uri, metadata)
+                if (result.isSuccess) {
+                    completed++
+                    importRequestDao.updateItemStatus(
+                        itemId = item.id,
+                        status = ImportRequestEntity.STATUS_COMPLETED,
+                    )
+                } else {
+                    Timber.w("Failed to import item %s: %s", item.id, result.exceptionOrNull()?.message)
+                    failed++
+                    importRequestDao.updateItemStatus(
+                        itemId = item.id,
+                        status = ImportRequestEntity.STATUS_FAILED,
+                        errorMessage = result.exceptionOrNull()?.message,
+                    )
+                }
+
+                importRequestDao.updateRequestProgress(
+                    id = requestId,
+                    status = ImportRequestEntity.STATUS_IN_PROGRESS,
+                    completed = completed,
+                    failed = failed,
+                    updatedAt = System.currentTimeMillis(),
+                )
+
+                setProgress(
+                    workDataOf(
+                        KEY_COMPLETED to completed,
+                        KEY_FAILED to failed,
+                        KEY_TOTAL to totalImageCount,
+                    ),
+                )
+
+                maybePromoteToForeground(completed, totalImageCount)
+            }
+
+            return Pair(completed, failed)
+        }
+
+        private fun parseItemMetadata(item: ImportRequestItemEntity): MemeMetadata? {
+            val metadataJsonValue = item.metadataJson
+            return if (metadataJsonValue != null) {
+                try {
+                    kotlinx.serialization.json.Json.decodeFromString<MemeMetadata>(
+                        metadataJsonValue,
+                    )
+                } catch (e: kotlinx.serialization.SerializationException) {
+                    Timber.w(e, "Failed to parse metadata JSON in import worker")
+                    null
+                }
+            } else {
+                val emojis = item.emojis.split(",").filter { it.isNotBlank() }
+                if (emojis.isNotEmpty()) {
+                    MemeMetadata(
+                        emojis = emojis,
+                        title = item.title,
+                        description = item.description,
+                        textContent = item.extractedText,
+                    )
+                } else {
+                    null
+                }
+            }
         }
 
         companion object {

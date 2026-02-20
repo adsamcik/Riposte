@@ -67,64 +67,10 @@ class EmbeddingGenerationWorker
                         )
                     }
 
-                    var successCount = 0
-                    var failureCount = 0
-
                     // Promote to foreground if app is already backgrounded
                     maybePromoteToForeground(0, pendingMemes.size)
 
-                    pendingMemes.forEach { memeData ->
-                        try {
-                            // Generate content embedding (title + description)
-                            val contentText = buildContentText(memeData)
-                            if (contentText.isNotBlank()) {
-                                val embedding = embeddingGenerator.generateFromText(contentText)
-                                val sourceHash = generateHash(contentText)
-                                embeddingRepository.saveEmbedding(
-                                    memeId = memeData.id,
-                                    embedding = encodeEmbedding(embedding),
-                                    dimension = embedding.size,
-                                    modelVersion = CURRENT_MODEL_VERSION,
-                                    sourceTextHash = sourceHash,
-                                    embeddingType = EmbeddingType.CONTENT.key,
-                                )
-                            }
-
-                            // Generate intent embedding (searchPhrases)
-                            val intentText = buildIntentText(memeData)
-                            if (intentText.isNotBlank()) {
-                                val embedding = embeddingGenerator.generateFromText(intentText)
-                                val sourceHash = generateHash(intentText)
-                                embeddingRepository.saveEmbedding(
-                                    memeId = memeData.id,
-                                    embedding = encodeEmbedding(embedding),
-                                    dimension = embedding.size,
-                                    modelVersion = CURRENT_MODEL_VERSION,
-                                    sourceTextHash = sourceHash,
-                                    embeddingType = EmbeddingType.INTENT.key,
-                                )
-                            }
-
-                            successCount++
-                        } catch (
-                            @Suppress("TooGenericExceptionCaught") // Worker must not crash - reports failure instead
-                            e: Exception,
-                        ) {
-                            failureCount++
-                            Timber.w(e, "Failed to generate embedding for meme ${memeData.id}")
-                        }
-
-                        // Update progress
-                        setProgressAsync(
-                            workDataOf(
-                                KEY_PROGRESS to
-                                    ((successCount + failureCount) * PERCENTAGE_MULTIPLIER / pendingMemes.size),
-                            ),
-                        )
-
-                        // Update foreground notification if active
-                        maybePromoteToForeground(successCount + failureCount, pendingMemes.size)
-                    }
+                    val (successCount, failureCount) = processEmbeddings(pendingMemes)
 
                     // Check if there are more memes to process
                     val remainingCount = embeddingRepository.countMemesNeedingEmbeddings()
@@ -169,6 +115,62 @@ class EmbeddingGenerationWorker
                     }
                 }
             }
+
+        private suspend fun processEmbeddings(pendingMemes: List<MemeDataForEmbedding>): Pair<Int, Int> {
+            var successCount = 0
+            var failureCount = 0
+
+            pendingMemes.forEach { memeData ->
+                try {
+                    val contentText = buildContentText(memeData)
+                    if (contentText.isNotBlank()) {
+                        val embedding = embeddingGenerator.generateFromText(contentText)
+                        val sourceHash = generateHash(contentText)
+                        embeddingRepository.saveEmbedding(
+                            memeId = memeData.id,
+                            embedding = encodeEmbedding(embedding),
+                            dimension = embedding.size,
+                            modelVersion = CURRENT_MODEL_VERSION,
+                            sourceTextHash = sourceHash,
+                            embeddingType = EmbeddingType.CONTENT.key,
+                        )
+                    }
+
+                    val intentText = buildIntentText(memeData)
+                    if (intentText.isNotBlank()) {
+                        val embedding = embeddingGenerator.generateFromText(intentText)
+                        val sourceHash = generateHash(intentText)
+                        embeddingRepository.saveEmbedding(
+                            memeId = memeData.id,
+                            embedding = encodeEmbedding(embedding),
+                            dimension = embedding.size,
+                            modelVersion = CURRENT_MODEL_VERSION,
+                            sourceTextHash = sourceHash,
+                            embeddingType = EmbeddingType.INTENT.key,
+                        )
+                    }
+
+                    successCount++
+                } catch (
+                    @Suppress("TooGenericExceptionCaught") // Worker must not crash - reports failure instead
+                    e: Exception,
+                ) {
+                    failureCount++
+                    Timber.w(e, "Failed to generate embedding for meme ${memeData.id}")
+                }
+
+                setProgressAsync(
+                    workDataOf(
+                        KEY_PROGRESS to
+                            ((successCount + failureCount) * PERCENTAGE_MULTIPLIER / pendingMemes.size),
+                    ),
+                )
+
+                maybePromoteToForeground(successCount + failureCount, pendingMemes.size)
+            }
+
+            return Pair(successCount, failureCount)
+        }
 
         /**
          * Build text for content embedding slot: title + description.

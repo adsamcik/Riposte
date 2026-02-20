@@ -316,6 +316,7 @@ internal fun LazyListScope.funFactSection(uiState: FunStatsUiState) {
 
 // region Momentum
 
+@Suppress("LongMethod") // Compose section with multiple UI elements
 internal fun LazyListScope.momentumSection(uiState: FunStatsUiState) {
     if (uiState.weeklyImportCounts.all { it == 0 }) return
 
@@ -505,6 +506,7 @@ private fun MomentumSparkline(
 
 // region Milestones
 
+@Suppress("LongMethod") // Compose section with multiple UI elements
 internal fun LazyListScope.milestonesSection(uiState: FunStatsUiState) {
     if (uiState.milestones.isEmpty() || uiState.unlockedMilestoneCount == 0) return
 

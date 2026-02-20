@@ -215,31 +215,13 @@ class XmpMetadataHandler
                 )
 
                 // Emojis
-                appendLine("""      <$XMP_PREFIX:emojis>""")
-                appendLine("""        <rdf:Bag>""")
-                metadata.emojis.forEach { emoji ->
-                    appendLine("""          <rdf:li>${escapeXml(emoji)}</rdf:li>""")
-                }
-                appendLine("""        </rdf:Bag>""")
-                appendLine("""      </$XMP_PREFIX:emojis>""")
+                append(buildEmojiTagsXml(metadata.emojis))
 
                 // Title
-                metadata.title?.let { title ->
-                    appendLine("""      <dc:title>""")
-                    appendLine("""        <rdf:Alt>""")
-                    appendLine("""          <rdf:li xml:lang="x-default">${escapeXml(title)}</rdf:li>""")
-                    appendLine("""        </rdf:Alt>""")
-                    appendLine("""      </dc:title>""")
-                }
+                metadata.title?.let { title -> append(buildLocalizationsXml("title", title)) }
 
                 // Description
-                metadata.description?.let { description ->
-                    appendLine("""      <dc:description>""")
-                    appendLine("""        <rdf:Alt>""")
-                    appendLine("""          <rdf:li xml:lang="x-default">${escapeXml(description)}</rdf:li>""")
-                    appendLine("""        </rdf:Alt>""")
-                    appendLine("""      </dc:description>""")
-                }
+                metadata.description?.let { desc -> append(buildLocalizationsXml("description", desc)) }
 
                 // Timestamps
                 metadata.createdAt?.let { createdAt ->
@@ -263,13 +245,7 @@ class XmpMetadataHandler
 
                 // Tags
                 if (metadata.tags.isNotEmpty()) {
-                    appendLine("""      <$XMP_PREFIX:tags>""")
-                    appendLine("""        <rdf:Bag>""")
-                    metadata.tags.forEach { tag ->
-                        appendLine("""          <rdf:li>${escapeXml(tag)}</rdf:li>""")
-                    }
-                    appendLine("""        </rdf:Bag>""")
-                    appendLine("""      </$XMP_PREFIX:tags>""")
+                    append(buildMetadataTagsXml(metadata.tags))
                 }
 
                 appendLine("""    </rdf:Description>""")
@@ -278,6 +254,40 @@ class XmpMetadataHandler
                 appendLine("""<?xpacket end="w"?>""")
             }
         }
+
+        private fun buildEmojiTagsXml(emojis: List<String>): String =
+            buildString {
+                appendLine("""      <$XMP_PREFIX:emojis>""")
+                appendLine("""        <rdf:Bag>""")
+                emojis.forEach { emoji ->
+                    appendLine("""          <rdf:li>${escapeXml(emoji)}</rdf:li>""")
+                }
+                appendLine("""        </rdf:Bag>""")
+                appendLine("""      </$XMP_PREFIX:emojis>""")
+            }
+
+        private fun buildLocalizationsXml(
+            property: String,
+            value: String,
+        ): String =
+            buildString {
+                appendLine("""      <dc:$property>""")
+                appendLine("""        <rdf:Alt>""")
+                appendLine("""          <rdf:li xml:lang="x-default">${escapeXml(value)}</rdf:li>""")
+                appendLine("""        </rdf:Alt>""")
+                appendLine("""      </dc:$property>""")
+            }
+
+        private fun buildMetadataTagsXml(tags: List<String>): String =
+            buildString {
+                appendLine("""      <$XMP_PREFIX:tags>""")
+                appendLine("""        <rdf:Bag>""")
+                tags.forEach { tag ->
+                    appendLine("""          <rdf:li>${escapeXml(tag)}</rdf:li>""")
+                }
+                appendLine("""        </rdf:Bag>""")
+                appendLine("""      </$XMP_PREFIX:tags>""")
+            }
 
         /**
          * Delete XMP sidecar file for an image.

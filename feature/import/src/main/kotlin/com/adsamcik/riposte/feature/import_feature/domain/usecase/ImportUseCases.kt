@@ -308,63 +308,67 @@ class ImportZipBundleStreamingUseCase
 
                 try {
                     zipImporter.extractBundleStream(zipUri).collect { event ->
-                        when (event) {
-                            is ZipExtractionEvent.Progress -> {
-                                emit(
-                                    ZipImportEvent.Progress(
-                                        imported = importedMemes.size,
-                                        errors = importErrors.size,
-                                        currentEntry = event.currentEntry,
-                                    ),
-                                )
-                            }
-
-                            is ZipExtractionEvent.MemeExtracted -> {
-                                val result =
-                                    repository.importImage(
-                                        uri = event.extractedMeme.imageUri,
-                                        metadata = event.extractedMeme.metadata,
-                                    )
-
-                                result.fold(
-                                    onSuccess = { meme ->
-                                        importedMemes.add(meme)
-                                        emit(ZipImportEvent.MemeImported(meme))
-                                    },
-                                    onFailure = { error ->
-                                        val fileName = event.extractedMeme.imageUri.lastPathSegment ?: "unknown"
-                                        val message = error.message ?: "Import failed"
-                                        importErrors[fileName] = message
-                                        emit(ZipImportEvent.Error(fileName, message))
-                                    },
-                                )
-
-                                // Clean up temp file immediately after import
-                                event.tempFile.delete()
-                            }
-
-                            is ZipExtractionEvent.Error -> {
-                                importErrors[event.entryName] = event.message
-                                emit(ZipImportEvent.Error(event.entryName, event.message))
-                            }
-
-                            is ZipExtractionEvent.Complete -> {
-                                emit(
-                                    ZipImportEvent.Complete(
-                                        ZipImportResult(
-                                            successCount = importedMemes.size,
-                                            failureCount = importErrors.size,
-                                            importedMemes = importedMemes.toList(),
-                                            errors = importErrors.toMap(),
-                                        ),
-                                    ),
-                                )
-                            }
-                        }
+                        emit(mapExtractionEvent(event, importedMemes, importErrors))
                     }
                 } finally {
                     // Clean up the extraction directory even if an exception occurs
                     zipImporter.cleanupExtractedFiles()
+                }
+            }
+
+        private suspend fun mapExtractionEvent(
+            event: ZipExtractionEvent,
+            importedMemes: MutableList<Meme>,
+            importErrors: MutableMap<String, String>,
+        ): ZipImportEvent =
+            when (event) {
+                is ZipExtractionEvent.Progress -> {
+                    ZipImportEvent.Progress(
+                        imported = importedMemes.size,
+                        errors = importErrors.size,
+                        currentEntry = event.currentEntry,
+                    )
+                }
+
+                is ZipExtractionEvent.MemeExtracted -> {
+                    val result =
+                        repository.importImage(
+                            uri = event.extractedMeme.imageUri,
+                            metadata = event.extractedMeme.metadata,
+                        )
+
+                    val importEvent =
+                        result.fold(
+                            onSuccess = { meme ->
+                                importedMemes.add(meme)
+                                ZipImportEvent.MemeImported(meme)
+                            },
+                            onFailure = { error ->
+                                val fileName = event.extractedMeme.imageUri.lastPathSegment ?: "unknown"
+                                val message = error.message ?: "Import failed"
+                                importErrors[fileName] = message
+                                ZipImportEvent.Error(fileName, message)
+                            },
+                        )
+
+                    event.tempFile.delete()
+                    importEvent
+                }
+
+                is ZipExtractionEvent.Error -> {
+                    importErrors[event.entryName] = event.message
+                    ZipImportEvent.Error(event.entryName, event.message)
+                }
+
+                is ZipExtractionEvent.Complete -> {
+                    ZipImportEvent.Complete(
+                        ZipImportResult(
+                            successCount = importedMemes.size,
+                            failureCount = importErrors.size,
+                            importedMemes = importedMemes.toList(),
+                            errors = importErrors.toMap(),
+                        ),
+                    )
                 }
             }
     }

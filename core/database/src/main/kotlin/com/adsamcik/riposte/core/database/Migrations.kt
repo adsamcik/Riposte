@@ -12,6 +12,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  */
 val MIGRATION_1_2 =
     object : Migration(1, 2) {
+        @Suppress("LongMethod") // SQL migration with multiple schema changes
         override fun migrate(db: SupportSQLiteDatabase) {
             // 1. Add searchPhrasesJson to memes table
             db.execSQL("ALTER TABLE memes ADD COLUMN searchPhrasesJson TEXT DEFAULT NULL")
@@ -160,6 +161,7 @@ val MIGRATION_2_3 =
  */
 val MIGRATION_3_4 =
     object : Migration(3, 4) {
+        @Suppress("LongMethod") // SQL migration with multiple schema changes
         override fun migrate(db: SupportSQLiteDatabase) {
             // 1. Add basedOn to memes table
             db.execSQL("ALTER TABLE memes ADD COLUMN basedOn TEXT DEFAULT NULL")
