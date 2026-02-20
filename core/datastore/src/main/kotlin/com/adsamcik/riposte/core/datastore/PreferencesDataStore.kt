@@ -139,7 +139,8 @@ class PreferencesDataStore
                             prefs[PreferencesKeys.USER_DENSITY_PREFERENCE]?.let {
                                 UserDensityPreference.valueOf(it)
                             } ?: UserDensityPreference.AUTO,
-                        holdToShareDelayMs = prefs[PreferencesKeys.HOLD_TO_SHARE_DELAY_MS] ?: DEFAULT_HOLD_TO_SHARE_DELAY_MS,
+                        holdToShareDelayMs =
+                            prefs[PreferencesKeys.HOLD_TO_SHARE_DELAY_MS] ?: DEFAULT_HOLD_TO_SHARE_DELAY_MS,
                         sortEmojisByUsage = prefs[PreferencesKeys.SORT_EMOJIS_BY_USAGE] ?: true,
                     )
                 }

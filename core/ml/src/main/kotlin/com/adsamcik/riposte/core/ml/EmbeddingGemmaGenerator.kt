@@ -358,7 +358,10 @@ class EmbeddingGemmaGenerator
                         Timber.e(cpuError, "CPU fallback failed: static initialization error")
                         embeddingModel = null
                         _initializationError = ERROR_FAILED_TO_LOAD
-                    } catch (cpuError: Exception) {
+                    } catch (
+                        @Suppress("TooGenericExceptionCaught") // GPU/CPU fallback catches unpredictable errors
+                        cpuError: Exception,
+                    ) {
                         Timber.e(cpuError, "CPU fallback also failed")
                         embeddingModel = null
                         _initializationError = ERROR_INIT_FAILED

@@ -127,13 +127,14 @@ class DefaultZipImporter
             /**
              * Maximum size for a single extracted file (50 MB).
              */
-            const val MAX_SINGLE_FILE_SIZE = 50L * 1024 * 1024
+            const val MAX_SINGLE_FILE_SIZE = 50L * BYTES_PER_KB * BYTES_PER_KB
 
             /**
              * Maximum size for a JSON sidecar file (1 MB).
              */
-            const val MAX_JSON_SIZE = 1L * 1024 * 1024
+            const val MAX_JSON_SIZE = 1L * BYTES_PER_KB * BYTES_PER_KB
 
+            private const val BYTES_PER_KB = 1024
             private const val IO_BUFFER_SIZE = 8192
         }
 
@@ -210,7 +211,7 @@ class DefaultZipImporter
                                             val declaredSize = entry.size
                                             if (declaredSize > MAX_JSON_SIZE) {
                                                 errors[entryName] =
-                                                    "JSON size limit exceeded (max: ${MAX_JSON_SIZE / 1024}KB)"
+                                                    "JSON size limit exceeded (max: ${MAX_JSON_SIZE / BYTES_PER_KB}KB)"
                                             } else {
                                                 val imageFileName = getSafeFileName(entryName.removeSuffix(".json"))
                                                 if (imageFileName != null) {
@@ -231,7 +232,7 @@ class DefaultZipImporter
                                             // Check file size limit
                                             val declaredSize = entry.size
                                             if (declaredSize > MAX_SINGLE_FILE_SIZE) {
-                                                val maxMb = MAX_SINGLE_FILE_SIZE / 1024 / 1024
+                                                val maxMb = MAX_SINGLE_FILE_SIZE / BYTES_PER_KB / BYTES_PER_KB
                                                 errors[entryName] =
                                                     "File size limit exceeded (max: ${maxMb}MB)"
                                             } else {
@@ -249,7 +250,7 @@ class DefaultZipImporter
                                                             entryName, outputFile.name, written)
                                                         if (written < 0) {
                                                             val maxMb =
-                                                                MAX_SINGLE_FILE_SIZE / 1024 / 1024
+                                                                MAX_SINGLE_FILE_SIZE / BYTES_PER_KB / BYTES_PER_KB
                                                             errors[entryName] =
                                                                 "File size limit exceeded (max: ${maxMb}MB)"
                                                             outputFile.delete()
@@ -494,7 +495,7 @@ class DefaultZipImporter
             while (input.read(buffer).also { bytesRead = it } != -1) {
                 totalRead += bytesRead
                 if (totalRead > maxSize) {
-                    errors[entryName] = "JSON size limit exceeded (max: ${maxSize / 1024}KB)"
+                    errors[entryName] = "JSON size limit exceeded (max: ${maxSize / BYTES_PER_KB}KB)"
                     return null
                 }
                 output.write(buffer, 0, bytesRead)

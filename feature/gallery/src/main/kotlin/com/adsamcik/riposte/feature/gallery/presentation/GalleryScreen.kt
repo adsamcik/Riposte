@@ -439,25 +439,26 @@ private fun GalleryScreenContent(
                         gridState = gridState,
                         topPadding = floatingBarSpace,
                     ) {
-                        if (uiState.searchState.query.isBlank() && !uiState.searchState.hasSearched) {
-                            if (uiState.searchState.recentSearches.isNotEmpty()) {
-                                item(span = { GridItemSpan(maxLineSpan) }, key = "recent_header") {
-                                    RecentSearchesHeader(
-                                        onClearAll = { onIntent(GalleryIntent.ClearRecentSearches) },
-                                    )
-                                }
-                                items(
-                                    count = uiState.searchState.recentSearches.size,
-                                    key = { "recent_$it" },
-                                    span = { GridItemSpan(maxLineSpan) },
-                                ) { index ->
-                                    val search = uiState.searchState.recentSearches[index]
-                                    RecentSearchItem(
-                                        query = search,
-                                        onClick = { onIntent(GalleryIntent.SelectRecentSearch(search)) },
-                                        onDelete = { onIntent(GalleryIntent.DeleteRecentSearch(search)) },
-                                    )
-                                }
+                        if (uiState.searchState.query.isBlank() &&
+                            !uiState.searchState.hasSearched &&
+                            uiState.searchState.recentSearches.isNotEmpty()
+                        ) {
+                            item(span = { GridItemSpan(maxLineSpan) }, key = "recent_header") {
+                                RecentSearchesHeader(
+                                    onClearAll = { onIntent(GalleryIntent.ClearRecentSearches) },
+                                )
+                            }
+                            items(
+                                count = uiState.searchState.recentSearches.size,
+                                key = { "recent_$it" },
+                                span = { GridItemSpan(maxLineSpan) },
+                            ) { index ->
+                                val search = uiState.searchState.recentSearches[index]
+                                RecentSearchItem(
+                                    query = search,
+                                    onClick = { onIntent(GalleryIntent.SelectRecentSearch(search)) },
+                                    onDelete = { onIntent(GalleryIntent.DeleteRecentSearch(search)) },
+                                )
                             }
                         }
 

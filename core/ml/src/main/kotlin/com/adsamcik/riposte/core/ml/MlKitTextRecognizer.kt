@@ -40,15 +40,14 @@ class MlKitTextRecognizer
 
         private suspend fun processImage(image: InputImage): String? {
             return suspendCancellableCoroutine { continuation ->
-                val task =
-                    recognizer.process(image)
-                        .addOnSuccessListener { result ->
-                            val text = result.text.takeIf { it.isNotBlank() }
-                            continuation.resume(text)
-                        }
-                        .addOnFailureListener { exception ->
-                            continuation.resumeWithException(exception)
-                        }
+                recognizer.process(image)
+                    .addOnSuccessListener { result ->
+                        val text = result.text.takeIf { it.isNotBlank() }
+                        continuation.resume(text)
+                    }
+                    .addOnFailureListener { exception ->
+                        continuation.resumeWithException(exception)
+                    }
 
                 continuation.invokeOnCancellation {
                     // ML Kit tasks cannot be cancelled, but we acknowledge the cancellation

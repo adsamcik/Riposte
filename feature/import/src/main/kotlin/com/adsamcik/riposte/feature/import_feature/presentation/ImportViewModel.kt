@@ -600,7 +600,8 @@ class ImportViewModel
                                         ),
                                     )
                                 } catch (
-                                    @Suppress("TooGenericExceptionCaught") // Worker must not crash - reports failure instead
+                                    @Suppress("TooGenericExceptionCaught")
+                                    // Worker must not crash - reports failure instead
                                     e: Exception,
                                 ) {
                                     Timber.w(e, "Failed to parse metadata during import")

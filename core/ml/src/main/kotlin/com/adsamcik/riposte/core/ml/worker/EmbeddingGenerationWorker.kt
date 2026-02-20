@@ -117,7 +117,8 @@ class EmbeddingGenerationWorker
                         // Update progress
                         setProgressAsync(
                             workDataOf(
-                                KEY_PROGRESS to ((successCount + failureCount) * PERCENTAGE_MULTIPLIER / pendingMemes.size),
+                                KEY_PROGRESS to
+                                    ((successCount + failureCount) * PERCENTAGE_MULTIPLIER / pendingMemes.size),
                             ),
                         )
 

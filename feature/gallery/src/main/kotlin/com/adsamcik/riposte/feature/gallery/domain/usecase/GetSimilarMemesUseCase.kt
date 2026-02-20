@@ -67,7 +67,10 @@ class GetSimilarMemesUseCase
                         }
 
                     SimilarMemesStatus.Found(memes)
-                } catch (e: Throwable) {
+                } catch (
+                    @Suppress("TooGenericExceptionCaught") // ML operations may throw any exception
+                    e: Exception,
+                ) {
                     Timber.w(e, "Failed to find similar memes for meme %d", memeId)
                     SimilarMemesStatus.Error(e.message ?: "Unknown error")
                 }

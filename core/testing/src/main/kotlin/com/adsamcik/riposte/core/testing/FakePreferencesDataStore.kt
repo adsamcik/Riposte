@@ -77,7 +77,9 @@ class FakePreferencesDataStore {
      * Sets the grid columns count.
      */
     suspend fun setGridColumns(columns: Int) {
-        _appPreferences.update { current: AppPreferences -> current.copy(gridColumns = columns.coerceIn(2, MAX_GRID_COLUMNS)) }
+        _appPreferences.update { current: AppPreferences ->
+            current.copy(gridColumns = columns.coerceIn(2, MAX_GRID_COLUMNS))
+        }
     }
 
     /**

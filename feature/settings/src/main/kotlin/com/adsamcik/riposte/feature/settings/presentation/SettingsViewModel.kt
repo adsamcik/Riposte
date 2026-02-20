@@ -426,7 +426,7 @@ class SettingsViewModel
                 try {
                     val outputStream =
                         context.contentResolver.openOutputStream(uri)
-                            ?: throw IllegalStateException("Cannot open output stream")
+                            ?: error("Cannot open output stream")
 
                     ZipOutputStream(outputStream.buffered()).use { zip ->
                         if (_uiState.value.exportSettings) {
@@ -471,7 +471,7 @@ class SettingsViewModel
                 try {
                     val inputStream =
                         context.contentResolver.openInputStream(uri)
-                            ?: throw IllegalStateException("Cannot open file")
+                            ?: error("Cannot open file")
 
                     val bytes = inputStream.buffered().use { it.readBytes() }
 

@@ -187,7 +187,10 @@ class SearchRepositoryImpl
             }
             val endOfMatch = index + prefix.length
             // Take a few more words after the match (up to ~40 more chars)
-            val end = description.indexOf(' ', (endOfMatch + PHRASE_CONTEXT_CHARS).coerceAtMost(description.length)).let {
+            val end = description.indexOf(
+                ' ',
+                (endOfMatch + PHRASE_CONTEXT_CHARS).coerceAtMost(description.length),
+            ).let {
                 if (it < 0) description.length else it
             }
             return description.substring(start, end).trim()
