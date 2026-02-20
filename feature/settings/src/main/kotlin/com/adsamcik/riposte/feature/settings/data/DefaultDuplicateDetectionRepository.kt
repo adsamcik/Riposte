@@ -43,6 +43,7 @@ class DefaultDuplicateDetectionRepository @Inject constructor(
             }
         }
 
+    @Suppress("CyclomaticComplexMethod", "LongMethod")
     override fun runDuplicateScan(maxHammingDistance: Int): Flow<ScanProgress> = flow {
         // Phase 1: Compute perceptual hashes for un-hashed memes
         val unhashed = dao.getMemesWithoutPerceptualHash()
@@ -200,6 +201,7 @@ class DefaultDuplicateDetectionRepository @Inject constructor(
      * Check if two memes are perceptual duplicates and return a [PotentialDuplicateEntity] if so.
      * Returns null when the pair should be skipped (missing hashes, distance too large, or already known).
      */
+    @Suppress("ReturnCount")
     private suspend fun processPerceptualDuplicatePair(
         meme1: MemeEntity,
         meme2: MemeEntity,
