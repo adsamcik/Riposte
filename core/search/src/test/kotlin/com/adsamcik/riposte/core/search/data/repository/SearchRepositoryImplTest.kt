@@ -232,6 +232,87 @@ class SearchRepositoryImplTest {
             coVerify { semanticSearchEngine.findSimilarMultiVector("test", any(), 20) }
         }
 
+    @Test
+    fun `searchSemantic groups multiple embeddings per meme into single result`() =
+        runTest {
+            val entity = createTestMemeEntity(1, "meme1.jpg", title = "Funny cat")
+            val embedding = createTestEmbedding(128)
+
+            val embeddingRows =
+                listOf(
+                    createMemeWithEmbeddingData(entity, embedding, embeddingType = "content"),
+                    createMemeWithEmbeddingData(entity, embedding, embeddingType = "intent"),
+                )
+            coEvery { memeEmbeddingDao.getMemesWithEmbeddings() } returns embeddingRows
+
+            val semanticResult =
+                listOf(
+                    SearchResult(
+                        meme = entity.toDomainMeme(),
+                        relevanceScore = 0.9f,
+                        matchType = MatchType.SEMANTIC,
+                    ),
+                )
+            coEvery {
+                semanticSearchEngine.findSimilarMultiVector(any(), any(), any())
+            } returns semanticResult
+
+            val results = repository.searchSemantic("test", 20)
+
+            assertThat(results).hasSize(1)
+            assertThat(results[0].meme.id).isEqualTo(1)
+        }
+
+    @Test
+    fun `searchSemantic skips embeddings with less than 2 dimensions`() =
+        runTest {
+            val entity = createTestMemeEntity(1, "meme1.jpg", title = "Tiny embedding")
+            val tinyEmbedding = createTestEmbedding(1)
+
+            val embeddingData = listOf(createMemeWithEmbeddingData(entity, tinyEmbedding))
+            coEvery { memeEmbeddingDao.getMemesWithEmbeddings() } returns embeddingData
+
+            coEvery {
+                semanticSearchEngine.findSimilarMultiVector(any(), any(), any())
+            } returns emptyList()
+
+            val results = repository.searchSemantic("test", 20)
+
+            assertThat(results).isEmpty()
+        }
+
+    @Test
+    fun `searchSemantic returns empty when all embeddings are null`() =
+        runTest {
+            val entity = createTestMemeEntity(1, "meme1.jpg", title = "Null embedding")
+
+            val embeddingData =
+                listOf(
+                    MemeWithEmbeddingData(
+                        memeId = entity.id,
+                        filePath = entity.filePath,
+                        fileName = entity.fileName,
+                        title = entity.title,
+                        description = entity.description,
+                        textContent = entity.textContent,
+                        emojiTagsJson = entity.emojiTagsJson,
+                        embedding = null,
+                        embeddingType = "content",
+                        dimension = 0,
+                        modelVersion = "test:1.0.0",
+                    ),
+                )
+            coEvery { memeEmbeddingDao.getMemesWithEmbeddings() } returns embeddingData
+
+            coEvery {
+                semanticSearchEngine.findSimilarMultiVector(any(), any(), any())
+            } returns emptyList()
+
+            val results = repository.searchSemantic("test", 20)
+
+            assertThat(results).isEmpty()
+        }
+
     // endregion
 
     // region searchHybrid Tests
@@ -343,6 +424,33 @@ class SearchRepositoryImplTest {
 
             assertThat(results).hasSize(1)
             assertThat(results[0].matchType).isEqualTo(MatchType.HYBRID)
+        }
+
+    @Test
+    fun `searchHybrid deduplicates when FTS returns same meme multiple times`() =
+        runTest {
+            val duplicateEntity = createTestMemeEntity(1, "meme1.jpg", title = "Duplicate meme")
+            val duplicateFtsResults =
+                listOf(duplicateEntity, duplicateEntity, duplicateEntity)
+            every { memeSearchDao.searchMemes(any()) } returns flowOf(duplicateFtsResults)
+
+            val disabledPrefs = defaultPreferences.copy(enableSemanticSearch = false)
+            every { preferencesDataStore.appPreferences } returns flowOf(disabledPrefs)
+
+            repository =
+                SearchRepositoryImpl(
+                    memeDao = memeDao,
+                    memeSearchDao = memeSearchDao,
+                    memeEmbeddingDao = memeEmbeddingDao,
+                    emojiTagDao = emojiTagDao,
+                    semanticSearchEngine = semanticSearchEngine,
+                    preferencesDataStore = preferencesDataStore,
+                )
+
+            val results = repository.searchHybrid("test", 20)
+
+            assertThat(results).hasSize(1)
+            assertThat(results[0].meme.id).isEqualTo(1)
         }
 
     // endregion

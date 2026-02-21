@@ -402,6 +402,86 @@ class GalleryUseCasesTest {
 
     // endregion
 
+    // region Adversarial Input Tests
+
+    @Test
+    fun `GetMemesUseCase passes through duplicate memes from repository`() =
+        runTest {
+            val duplicateMemes =
+                listOf(
+                    createTestMeme(1, "meme1.jpg"),
+                    createTestMeme(1, "meme1.jpg"),
+                    createTestMeme(2, "meme2.jpg"),
+                )
+            every { repository.getMemes() } returns flowOf(duplicateMemes)
+            val useCase = GetMemesUseCase(repository)
+
+            useCase().test {
+                val memes = awaitItem()
+                assertThat(memes).hasSize(3)
+                assertThat(memes[0].id).isEqualTo(1)
+                assertThat(memes[1].id).isEqualTo(1)
+                awaitComplete()
+            }
+
+            verify { repository.getMemes() }
+        }
+
+    @Test
+    fun `GetMemesByEmojiUseCase handles empty emoji string`() =
+        runTest {
+            val emptyEmojiMemes = listOf(createTestMeme(1, "meme1.jpg"))
+            every { repository.getMemesByEmoji("") } returns flowOf(emptyEmojiMemes)
+            val useCase = GetMemesByEmojiUseCase(repository)
+
+            useCase("").test {
+                val memes = awaitItem()
+                assertThat(memes).hasSize(1)
+                awaitComplete()
+            }
+
+            verify { repository.getMemesByEmoji("") }
+        }
+
+    @Test
+    fun `DeleteMemesUseCase handles duplicate IDs in deletion request`() =
+        runTest {
+            // Set inherently deduplicates, so setOf(1L, 1L, 2L) becomes setOf(1L, 2L)
+            val idsWithDuplicateIntent = setOf(1L, 2L)
+            coEvery { repository.deleteMemes(idsWithDuplicateIntent) } returns Result.success(Unit)
+            coEvery { repository.deleteMeme(1) } returns Result.success(Unit)
+            val useCase = DeleteMemesUseCase(repository)
+
+            // Batch delete with set (duplicates impossible by type)
+            val batchResult = useCase(idsWithDuplicateIntent)
+            assertThat(batchResult.isSuccess).isTrue()
+
+            // Single delete called twice for same ID (simulates duplicate intent)
+            val firstResult = useCase(1L)
+            val secondResult = useCase(1L)
+            assertThat(firstResult.isSuccess).isTrue()
+            assertThat(secondResult.isSuccess).isTrue()
+
+            coVerify(exactly = 1) { repository.deleteMemes(idsWithDuplicateIntent) }
+            coVerify(exactly = 2) { repository.deleteMeme(1) }
+        }
+
+    @Test
+    fun `ToggleFavoriteUseCase handles rapid sequential toggles`() =
+        runTest {
+            coEvery { repository.toggleFavorite(1) } returns Result.success(Unit)
+            val useCase = ToggleFavoriteUseCase(repository)
+
+            val firstResult = useCase(1)
+            val secondResult = useCase(1)
+
+            assertThat(firstResult.isSuccess).isTrue()
+            assertThat(secondResult.isSuccess).isTrue()
+            coVerify(exactly = 2) { repository.toggleFavorite(1) }
+        }
+
+    // endregion
+
     // region Helper Functions
 
     private fun createTestMeme(
