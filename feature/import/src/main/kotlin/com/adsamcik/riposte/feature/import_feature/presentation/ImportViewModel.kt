@@ -153,9 +153,6 @@ class ImportViewModel
                         ),
                     )
                 }
-                if (failedCount == 0) {
-                    _effects.send(ImportEffect.NavigateToGallery)
-                }
             } else {
                 _effects.send(
                     ImportEffect.ShowError(
@@ -589,17 +586,21 @@ class ImportViewModel
                 importRepository.createImportRequest(requestId, images.size, stagingDir.absolutePath)
                 importRepository.createImportRequestItems(requestId, items)
 
-                // Enqueue the worker — progress is observed via observeImportWork()
+                // Enqueue the worker — gallery observes progress via WorkManager
                 ImportWorker.enqueue(context, requestId)
 
                 _uiState.update {
                     it.copy(
+                        isImporting = false,
                         importProgress = 0f,
                         totalImportCount = it.selectedImages.size,
                         statusMessage = null,
                         selectedImages = emptyList(),
                     )
                 }
+
+                // Navigate to gallery immediately — progress banner shows there
+                _effects.send(ImportEffect.NavigateToGallery)
             } catch (
                 @Suppress("TooGenericExceptionCaught") // Worker must not crash - reports failure instead
                 e: Exception,
