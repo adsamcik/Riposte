@@ -151,8 +151,15 @@ object FtsQuerySanitizer {
     ): String {
         if (query.isBlank() || columns.isEmpty()) return ""
 
-        val sanitized =
+        // Step 1: Remove Unicode control characters
+        val withoutControlChars =
             query
+                .replace(RTL_MARKS_REGEX, "")
+                .replace(VARIATION_SELECTORS_REGEX, "")
+
+        // Step 2: Remove FTS special characters and operators
+        val sanitized =
+            withoutControlChars
                 .replace(FTS_SPECIAL_CHARS_REGEX, " ")
                 .replace(FTS_OPERATORS_REGEX, " ")
 

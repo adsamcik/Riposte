@@ -97,6 +97,24 @@ class EmbeddingManagerTest {
         }
 
     @Test
+    fun `generateAndStoreEmbedding rejects all-zero embedding`() =
+        runTest {
+            // Given
+            val memeId = 1L
+            val searchText = "blank meme"
+            val zeroEmbedding = FloatArray(512) { 0f }
+
+            coEvery { embeddingGenerator.generateFromText(searchText) } returns zeroEmbedding
+
+            // When
+            val result = embeddingManager.generateAndStoreEmbedding(memeId, searchText)
+
+            // Then
+            assertThat(result).isFalse()
+            coVerify(exactly = 0) { memeEmbeddingDao.insertEmbedding(any()) }
+        }
+
+    @Test
     fun `generateAndStoreEmbedding returns false on failure`() =
         runTest {
             // Given

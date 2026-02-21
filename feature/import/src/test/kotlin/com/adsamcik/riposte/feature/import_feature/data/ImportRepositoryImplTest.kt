@@ -350,7 +350,7 @@ class ImportRepositoryImplTest {
     // region Emoji Suggestion Tests
 
     @Test
-    fun `suggestEmojis returns non-empty list`() =
+    fun `suggestEmojis returns matching emojis for keyword input`() =
         runTest {
             // Arrange
             val uri = createTestImageUri()
@@ -360,8 +360,10 @@ class ImportRepositoryImplTest {
             // Act
             val result = repository.suggestEmojis(uri)
 
-            // Assert
-            assertThat(result).isNotEmpty()
+            // Assert — "joy" → 😂, "laughing" → 🤣, "fire" → 🔥
+            assertThat(result).hasSize(3)
+            val emojis = result.map { it.emoji }
+            assertThat(emojis).containsExactly("😂", "🤣", "🔥").inOrder()
         }
 
     // endregion

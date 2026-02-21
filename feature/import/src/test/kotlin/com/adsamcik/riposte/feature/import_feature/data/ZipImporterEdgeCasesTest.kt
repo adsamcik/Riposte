@@ -6,9 +6,7 @@ import android.net.Uri
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
+import com.google.common.truth.Truth.assertThat
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Rule
@@ -56,8 +54,8 @@ class ZipImporterEdgeCasesTest {
 
             val result = zipImporter.extractBundle(uri)
 
-            assertTrue(result.errors.containsKey("bundle"))
-            assertTrue(result.errors["bundle"]!!.contains("Too many entries"))
+            assertThat(result.errors).containsKey("bundle")
+            assertThat(result.errors["bundle"]).contains("Too many entries")
         }
 
     @Test
@@ -73,8 +71,8 @@ class ZipImporterEdgeCasesTest {
 
             val result = zipImporter.extractBundle(uri)
 
-            assertTrue(result.errors.containsKey("large.jpg"))
-            assertTrue(result.errors["large.jpg"]!!.contains("size limit"))
+            assertThat(result.errors).containsKey("large.jpg")
+            assertThat(result.errors["large.jpg"]).contains("size limit")
         }
 
     @Test
@@ -89,11 +87,11 @@ class ZipImporterEdgeCasesTest {
 
             val result = zipImporter.extractBundle(uri)
 
-            assertTrue(result.errors.containsKey("test.jpg.json"))
-            assertTrue(
+            assertThat(result.errors).containsKey("test.jpg.json")
+            assertThat(
                 result.errors["test.jpg.json"]!!.contains("size limit") ||
                     result.errors["test.jpg.json"]!!.contains("too large"),
-            )
+            ).isTrue()
         }
 
     // ==================== Path Traversal Tests ====================
@@ -109,7 +107,7 @@ class ZipImporterEdgeCasesTest {
             val result = zipImporter.extractBundle(uri)
 
             // Should not extract any files
-            assertEquals(0, result.extractedMemes.size)
+            assertThat(result.extractedMemes).isEmpty()
         }
 
     @Test
@@ -123,7 +121,7 @@ class ZipImporterEdgeCasesTest {
             val result = zipImporter.extractBundle(uri)
 
             // Hidden files should be skipped (not error, but not extracted)
-            assertEquals(0, result.extractedMemes.size)
+            assertThat(result.extractedMemes).isEmpty()
         }
 
     @Test
@@ -137,7 +135,7 @@ class ZipImporterEdgeCasesTest {
             val result = zipImporter.extractBundle(uri)
 
             // Subdirectory entries should be skipped
-            assertEquals(0, result.extractedMemes.size)
+            assertThat(result.extractedMemes).isEmpty()
         }
 
     // ==================== Error Handling Tests ====================
@@ -153,7 +151,7 @@ class ZipImporterEdgeCasesTest {
 
             // A corrupt ZIP should either have errors or simply no extracted memes
             // The implementation may handle the corrupt data differently on various platforms
-            assertEquals(0, result.extractedMemes.size)
+            assertThat(result.extractedMemes).isEmpty()
         }
 
     @Test
@@ -166,7 +164,7 @@ class ZipImporterEdgeCasesTest {
 
             val result = zipImporter.extractBundle(uri)
 
-            assertEquals(0, result.extractedMemes.size)
+            assertThat(result.extractedMemes).isEmpty()
             // Empty ZIP should not be an error - just no images found
         }
 
@@ -180,7 +178,7 @@ class ZipImporterEdgeCasesTest {
 
             val result = zipImporter.extractBundle(uri)
 
-            assertEquals(0, result.extractedMemes.size)
+            assertThat(result.extractedMemes).isEmpty()
         }
 
     @Test
@@ -196,9 +194,9 @@ class ZipImporterEdgeCasesTest {
             val result = zipImporter.extractBundle(uri)
 
             // Image should still be extracted, just without metadata
-            assertEquals(1, result.extractedMemes.size)
+            assertThat(result.extractedMemes).hasSize(1)
             // The malformed JSON should not cause an error, just null metadata
-            assertEquals(null, result.extractedMemes[0].metadata)
+            assertThat(result.extractedMemes[0].metadata).isNull()
         }
 
     // ==================== SecurityException Tests ====================
@@ -219,8 +217,8 @@ class ZipImporterEdgeCasesTest {
 
             val result = zipImporterWithMock.extractBundle(uri)
 
-            assertTrue(result.errors.containsKey("bundle"))
-            assertTrue(result.errors["bundle"]!!.contains("Permission denied"))
+            assertThat(result.errors).containsKey("bundle")
+            assertThat(result.errors["bundle"]).contains("Permission denied")
         }
 
     // ==================== Unicode Filename Tests ====================
@@ -237,7 +235,7 @@ class ZipImporterEdgeCasesTest {
             val result = zipImporter.extractBundle(uri)
 
             // Should successfully extract unicode-named files
-            assertEquals(1, result.extractedMemes.size)
+            assertThat(result.extractedMemes).hasSize(1)
         }
 
     @Test
@@ -251,7 +249,7 @@ class ZipImporterEdgeCasesTest {
 
             val result = zipImporter.extractBundle(uri)
 
-            assertEquals(1, result.extractedMemes.size)
+            assertThat(result.extractedMemes).hasSize(1)
         }
 
     // ==================== Cleanup Tests ====================
@@ -267,14 +265,14 @@ class ZipImporterEdgeCasesTest {
             val uri = Uri.fromFile(zipFile)
 
             val result = zipImporter.extractBundle(uri)
-            assertEquals(1, result.extractedMemes.size)
+            assertThat(result.extractedMemes).hasSize(1)
 
             // Now cleanup
             zipImporter.cleanupExtractedFiles()
 
             // Verify extracted file no longer exists
             val extractedFile = File(result.extractedMemes[0].imageUri.path!!)
-            assertFalse(extractedFile.exists())
+            assertThat(extractedFile.exists()).isFalse()
         }
 
     @Test
@@ -287,7 +285,7 @@ class ZipImporterEdgeCasesTest {
             val zipFile1 = tempFolder.newFile("first.meme.zip")
             zipFile1.writeBytes(zipBytes1)
             val result1 = zipImporter.extractBundle(Uri.fromFile(zipFile1))
-            assertEquals(1, result1.extractedMemes.size)
+            assertThat(result1.extractedMemes).hasSize(1)
 
             // Cleanup (simulates what happens after a completed or cancelled import)
             zipImporter.cleanupExtractedFiles()
@@ -298,9 +296,9 @@ class ZipImporterEdgeCasesTest {
             zipFile2.writeBytes(zipBytes2)
             val result2 = zipImporter.extractBundle(Uri.fromFile(zipFile2))
 
-            assertEquals(1, result2.extractedMemes.size)
+            assertThat(result2.extractedMemes).hasSize(1)
             val extractedFile = File(result2.extractedMemes[0].imageUri.path!!)
-            assertTrue(extractedFile.exists())
+            assertThat(extractedFile.exists()).isTrue()
         }
 
     @Test
@@ -314,8 +312,8 @@ class ZipImporterEdgeCasesTest {
                 zipFile.writeBytes(zipBytes)
                 val result = zipImporter.extractBundle(Uri.fromFile(zipFile))
 
-                assertEquals("Extraction $i should succeed", 1, result.extractedMemes.size)
-                assertTrue(File(result.extractedMemes[0].imageUri.path!!).exists())
+                assertThat(result.extractedMemes).hasSize(1)
+                assertThat(File(result.extractedMemes[0].imageUri.path!!).exists()).isTrue()
 
                 zipImporter.cleanupExtractedFiles()
             }
@@ -328,7 +326,7 @@ class ZipImporterEdgeCasesTest {
         val zipFile = tempFolder.newFile("test.meme.zip")
         zipFile.writeBytes(ByteArray(0))
         val uri = Uri.fromFile(zipFile)
-        assertTrue(zipImporter.isMemeZipBundle(uri))
+        assertThat(zipImporter.isMemeZipBundle(uri)).isTrue()
     }
 
     @Test
@@ -338,7 +336,7 @@ class ZipImporterEdgeCasesTest {
         val zipFile = tempFolder.newFile("test.zip")
         zipFile.writeBytes(ByteArray(0))
         val uri = Uri.fromFile(zipFile)
-        assertFalse(zipImporter.isMemeZipBundle(uri))
+        assertThat(zipImporter.isMemeZipBundle(uri)).isFalse()
     }
 
     // ==================== Helper Functions ====================
