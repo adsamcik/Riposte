@@ -51,6 +51,7 @@ public sealed class CopilotService
                     Mode = SystemMessageMode.Replace,
                     Content = systemPrompt,
                 },
+                InfiniteSessions = new InfiniteSessionConfig { Enabled = false },
             });
 
             try
@@ -92,7 +93,11 @@ public sealed class CopilotService
             }
             finally
             {
+                var sessionId = session.SessionId;
                 await session.DisposeAsync();
+                // Remove session from Copilot history to avoid polluting the user's session list
+                try { await client.DeleteSessionAsync(sessionId); }
+                catch { /* best-effort cleanup */ }
             }
         }
         catch (FileNotFoundException)
