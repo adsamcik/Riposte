@@ -2,9 +2,9 @@ Major update with new features and polish!
 
 ✨ Find Flow Fusion — inline emoji quick-filters in search bar
 📊 Fun statistics with milestones and sparklines
-🎨 M3 Expressive design: Digital Joy palette, spring physics, squircle morphs
+🎨 M3 Expressive design: Digital Joy palette, spring physics
 🔄 Native Android share sheet replaces intermediate screen
 🔔 Notification banners in gallery
 ♿ Accessibility improvements throughout
-🐛 Fixed ANR on startup, duplicate key crash, and many more bugs
-🔒 Improved security: no silent search fallback, embedding validation
+🐛 Fixed ANR on startup, duplicate key crash, and more
+🔒 Improved security: no silent fallback, embedding validation
