@@ -1,0 +1,3 @@
+Bug fix release
+
+🐛 Fixed crash on meme detail screen when viewing similar memes
