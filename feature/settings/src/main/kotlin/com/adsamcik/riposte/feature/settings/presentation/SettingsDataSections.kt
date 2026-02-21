@@ -174,6 +174,7 @@ internal fun LazyListScope.storageSection(
                 subtitle = stringResource(R.string.settings_export_data_subtitle),
                 onClick = { onIntent(SettingsIntent.ShowExportOptionsDialog) },
                 icon = Icons.Default.Upload,
+                enabled = !uiState.isExporting,
             )
 
             ClickableSettingItem(
@@ -181,6 +182,7 @@ internal fun LazyListScope.storageSection(
                 subtitle = stringResource(R.string.settings_import_data_subtitle),
                 onClick = { onIntent(SettingsIntent.ImportData) },
                 icon = Icons.Default.Download,
+                enabled = !uiState.isImporting,
             )
 
             ClickableSettingItem(

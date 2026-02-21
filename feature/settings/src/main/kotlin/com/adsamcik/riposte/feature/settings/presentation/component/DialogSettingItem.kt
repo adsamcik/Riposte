@@ -91,7 +91,7 @@ fun <T> DialogSettingItem(
             },
             confirmButton = {
                 TextButton(onClick = { showDialog = false }) {
-                    Text(stringResource(R.string.settings_clear_cache_dialog_cancel))
+                    Text(stringResource(R.string.settings_dialog_cancel))
                 }
             },
         )

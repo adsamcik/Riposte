@@ -125,6 +125,7 @@ import com.adsamcik.riposte.core.ui.component.MemeCardCompact
 import com.adsamcik.riposte.core.ui.modifier.animatedPressScale
 import com.adsamcik.riposte.core.ui.theme.RiposteMotionScheme
 import com.adsamcik.riposte.core.ui.theme.RiposteShapes
+import com.adsamcik.riposte.core.ui.theme.Spacing
 import com.adsamcik.riposte.core.ui.theme.rememberGridColumns
 import com.adsamcik.riposte.core.search.R as SearchR
 import com.adsamcik.riposte.feature.gallery.R
@@ -569,7 +570,7 @@ private fun GalleryScreenContent(
                                             modifier =
                                                 Modifier
                                                     .fillMaxWidth()
-                                                    .padding(32.dp)
+                                                    .padding(Spacing.xxl)
                                                     .semantics {
                                                         contentDescription = searchingDescription
                                                         liveRegion = LiveRegionMode.Polite
@@ -695,7 +696,7 @@ private fun GalleryScreenContent(
                                             modifier =
                                                 Modifier
                                                     .fillMaxWidth()
-                                                    .padding(16.dp),
+                                                    .padding(Spacing.lg),
                                             contentAlignment = Alignment.Center,
                                         ) {
                                             val loadingDescription = stringResource(R.string.gallery_cd_loading_more)
@@ -830,16 +831,16 @@ private fun GalleryContent(
             state = gridState,
             columns = GridCells.Fixed(columns),
             contentPadding = PaddingValues(
-                start = 8.dp,
-                end = 8.dp,
-                top = safeTopPadding + emojiRailSpace + 4.dp,
+                start = Spacing.sm,
+                end = Spacing.sm,
+                top = safeTopPadding + emojiRailSpace + Spacing.xs,
                 bottom = when {
-                    uiState.screenMode == ScreenMode.Searching -> 24.dp
+                    uiState.screenMode == ScreenMode.Searching -> Spacing.xl
                     else -> 120.dp
                 },
             ),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+            verticalArrangement = Arrangement.spacedBy(Spacing.sm),
             content = gridContent,
         )
 
@@ -929,7 +930,7 @@ private fun GalleryEmojiFilterRail(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 4.dp, bottom = 4.dp)
+                    .padding(top = Spacing.xs, bottom = Spacing.xs)
                     .testTag("EmojiFilterRail"),
             )
         }
@@ -971,9 +972,9 @@ private fun FloatingSearchBar(
                 Modifier
                     .fillMaxWidth()
                     .height(64.dp)
-                    .padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
+                    .padding(start = Spacing.sm, end = Spacing.sm, top = Spacing.sm, bottom = Spacing.sm),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
         ) {
             // Navigation icon (close for active filters when not searching)
             if (uiState.screenMode != ScreenMode.Searching &&
@@ -1054,8 +1055,8 @@ private fun FloatingSearchBar(
             ),
         ) {
             LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                contentPadding = PaddingValues(horizontal = Spacing.lg),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 6.dp),
@@ -1299,7 +1300,7 @@ private fun RecentSearchesHeader(
         modifier =
             modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+                .padding(horizontal = Spacing.lg, vertical = Spacing.sm),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -1333,13 +1334,13 @@ private fun RecentSearchItem(
             modifier
                 .fillMaxWidth()
                 .combinedClickable(onClick = onClick)
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(horizontal = Spacing.lg, vertical = Spacing.md),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.md),
             modifier = Modifier.weight(1f),
         ) {
             Icon(
@@ -1384,9 +1385,9 @@ private fun ImportProgressBanner(
                 modifier
                     .fillMaxWidth()
                     .background(MaterialTheme.colorScheme.primaryContainer)
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(horizontal = Spacing.lg, vertical = Spacing.sm),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.md),
         ) {
             LinearProgressIndicator(
                 progress = {
@@ -1498,16 +1499,16 @@ private fun NotificationBanner(
             modifier =
                 modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp),
+                    .padding(horizontal = Spacing.md),
             shape = MaterialTheme.shapes.medium,
             color = containerColor,
             tonalElevation = 2.dp,
             shadowElevation = 4.dp,
         ) {
             Row(
-                modifier = Modifier.padding(start = 16.dp, end = 4.dp, top = 10.dp, bottom = 10.dp),
+                modifier = Modifier.padding(start = Spacing.lg, end = Spacing.xs, top = 10.dp, bottom = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.md),
             ) {
                 Icon(
                     imageVector = icon,

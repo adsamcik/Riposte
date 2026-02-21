@@ -424,6 +424,7 @@ class SettingsViewModel
 
         private fun exportToUri(uri: Uri) {
             viewModelScope.launch {
+                _uiState.update { it.copy(isExporting = true) }
                 try {
                     val outputStream =
                         context.contentResolver.openOutputStream(uri)
@@ -440,6 +441,7 @@ class SettingsViewModel
                         // TODO: Export tags/metadata when MemeRepository is available in settings module
                     }
 
+                    _uiState.update { it.copy(isExporting = false) }
                     _effects.send(
                         SettingsEffect.ShowSnackbar(context.getString(R.string.settings_snackbar_export_success, "")),
                     )
@@ -447,6 +449,7 @@ class SettingsViewModel
                     @Suppress("TooGenericExceptionCaught") // Catches all to show error state
                     e: Exception,
                 ) {
+                    _uiState.update { it.copy(isExporting = false) }
                     Timber.e(e, "Failed to export settings")
                     _effects.send(
                         SettingsEffect.ShowSnackbar(
@@ -469,6 +472,7 @@ class SettingsViewModel
 
         private fun importFromUri(uri: Uri) {
             viewModelScope.launch {
+                _uiState.update { it.copy(isImporting = true) }
                 try {
                     val inputStream =
                         context.contentResolver.openInputStream(uri)
@@ -490,6 +494,7 @@ class SettingsViewModel
 
                     _uiState.update {
                         it.copy(
+                            isImporting = false,
                             showImportConfirmDialog = true,
                             pendingImportJson = jsonString,
                             importBackupTimestamp = timestamp,
@@ -499,6 +504,7 @@ class SettingsViewModel
                     @Suppress("TooGenericExceptionCaught") // Catches all to show error state
                     e: Exception,
                 ) {
+                    _uiState.update { it.copy(isImporting = false) }
                     Timber.e(e, "Failed to import settings from URI")
                     _effects.send(
                         SettingsEffect.ShowSnackbar(

@@ -827,15 +827,7 @@ private fun EditImageSheet(
                         emojiTag = emojiTag,
                         onClick = { onEmojiToggle(emojiTag) },
                         showName = true,
-                        backgroundColor =
-                            if (currentEmojis.contains(
-                                    emojiTag,
-                                )
-                            ) {
-                                MaterialTheme.colorScheme.primaryContainer
-                            } else {
-                                null
-                            },
+                        isSelected = currentEmojis.contains(emojiTag),
                     )
                 }
             }
@@ -858,15 +850,7 @@ private fun EditImageSheet(
                 EmojiChip(
                     emojiTag = emojiTag,
                     onClick = { onEmojiToggle(emojiTag) },
-                    backgroundColor =
-                        if (currentEmojis.contains(
-                                emojiTag,
-                            )
-                        ) {
-                            MaterialTheme.colorScheme.primaryContainer
-                        } else {
-                            null
-                        },
+                    isSelected = currentEmojis.contains(emojiTag),
                 )
             }
         }
