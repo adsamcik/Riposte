@@ -57,3 +57,6 @@ app/src/main/assets_qualcomm/embedding_models/
 aipacks/*/src/main/assets/**/*.tflite
 aipacks/*/src/main/assets/**/sentencepiece.model
 app/full/release/
+
+# Play Store assets (source images, annotations, bundles)
+playStore/
