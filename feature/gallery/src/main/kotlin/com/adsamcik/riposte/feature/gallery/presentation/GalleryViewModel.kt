@@ -234,7 +234,7 @@ class GalleryViewModel
             }
         }
 
-        /** Observe WorkManager for embedding generation work completion. */
+        /** Observe WorkManager for embedding generation work progress and completion. */
         private fun observeEmbeddingWork() {
             viewModelScope.launch {
                 try {
@@ -244,16 +244,43 @@ class GalleryViewModel
                         )
                         .collectLatest { workInfos ->
                             val workInfo = workInfos.firstOrNull()
-                            if (workInfo?.state == androidx.work.WorkInfo.State.SUCCEEDED) {
-                                val processedCount = workInfo.outputData.getInt("processed_count", 0)
-                                if (processedCount > 0) {
-                                    _uiState.update {
-                                        it.copy(notification = GalleryNotification.IndexingComplete(processedCount))
+                            when (workInfo?.state) {
+                                androidx.work.WorkInfo.State.RUNNING -> {
+                                    val processed = workInfo.progress.getInt("processed_count", 0)
+                                    val remaining = workInfo.progress.getInt("remaining_count", 0)
+                                    if (processed + remaining > 0) {
+                                        _uiState.update {
+                                            it.copy(
+                                                embeddingStatus = EmbeddingWorkStatus.InProgress(
+                                                    processed,
+                                                    remaining,
+                                                ),
+                                            )
+                                        }
                                     }
-                                    // Prune finished work so notification doesn't reappear on next startup
-                                    wm.pruneWork()
-                                    delay(NOTIFICATION_AUTO_DISMISS_MS)
-                                    dismissNotification()
+                                }
+                                androidx.work.WorkInfo.State.ENQUEUED -> {
+                                    // Work is queued but not running yet — show indeterminate
+                                    _uiState.update {
+                                        it.copy(embeddingStatus = EmbeddingWorkStatus.InProgress(0, 0))
+                                    }
+                                }
+                                androidx.work.WorkInfo.State.SUCCEEDED -> {
+                                    val processedCount = workInfo.outputData.getInt("processed_count", 0)
+                                    _uiState.update {
+                                        it.copy(embeddingStatus = EmbeddingWorkStatus.Idle)
+                                    }
+                                    if (processedCount > 0) {
+                                        _uiState.update {
+                                            it.copy(notification = GalleryNotification.IndexingComplete(processedCount))
+                                        }
+                                        wm.pruneWork()
+                                        delay(NOTIFICATION_AUTO_DISMISS_MS)
+                                        dismissNotification()
+                                    }
+                                }
+                                else -> {
+                                    _uiState.update { it.copy(embeddingStatus = EmbeddingWorkStatus.Idle) }
                                 }
                             }
                         }

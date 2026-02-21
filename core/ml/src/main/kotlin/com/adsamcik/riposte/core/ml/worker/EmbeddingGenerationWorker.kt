@@ -192,6 +192,8 @@ class EmbeddingGenerationWorker
             setProgressAsync(
                 workDataOf(
                     KEY_PROGRESS to ((success + failed) * PERCENTAGE_MULTIPLIER / total),
+                    KEY_PROCESSED_COUNT to (success + failed),
+                    KEY_REMAINING_COUNT to (total - success - failed),
                 ),
             )
         }

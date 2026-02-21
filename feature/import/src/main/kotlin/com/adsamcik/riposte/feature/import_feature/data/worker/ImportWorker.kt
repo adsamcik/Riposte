@@ -164,46 +164,68 @@ class ImportWorker
             totalImageCount: Int,
         ): Boolean {
             val stagedFile = File(item.stagedFilePath)
+
+            // Validate staged file still exists before attempting import
+            if (!stagedFile.exists()) {
+                Timber.w("Staged file missing for item %s: %s", item.id, item.stagedFilePath)
+                val currentRequest = importRequestDao.getRequest(requestId)
+                val newFailed = (currentRequest?.failedCount ?: 0) + 1
+                importRequestDao.completeItem(
+                    itemId = item.id,
+                    itemStatus = ImportRequestEntity.STATUS_FAILED,
+                    errorMessage = "Staged file not found: ${stagedFile.name}",
+                    requestId = requestId,
+                    completed = currentRequest?.completedCount ?: 0,
+                    failed = newFailed,
+                )
+                setProgress(
+                    workDataOf(
+                        KEY_COMPLETED to (currentRequest?.completedCount ?: 0),
+                        KEY_FAILED to newFailed,
+                        KEY_TOTAL to totalImageCount,
+                    ),
+                )
+                return false
+            }
+
             val uri = Uri.fromFile(stagedFile)
             val metadata = parseItemMetadata(item)
 
             val result = importRepository.importImage(uri, metadata)
             val success = result.isSuccess
+
+            // Read current totals and atomically update item + request in one transaction
+            val currentRequest = importRequestDao.getRequest(requestId)
+            val newCompleted = (currentRequest?.completedCount ?: 0) + if (success) 1 else 0
+            val newFailed = (currentRequest?.failedCount ?: 0) + if (!success) 1 else 0
+
             if (success) {
-                importRequestDao.updateItemStatus(
+                importRequestDao.completeItem(
                     itemId = item.id,
-                    status = ImportRequestEntity.STATUS_COMPLETED,
+                    itemStatus = ImportRequestEntity.STATUS_COMPLETED,
+                    requestId = requestId,
+                    completed = newCompleted,
+                    failed = newFailed,
                 )
             } else {
                 Timber.w("Failed to import item %s: %s", item.id, result.exceptionOrNull()?.message)
-                importRequestDao.updateItemStatus(
+                importRequestDao.completeItem(
                     itemId = item.id,
-                    status = ImportRequestEntity.STATUS_FAILED,
+                    itemStatus = ImportRequestEntity.STATUS_FAILED,
                     errorMessage = result.exceptionOrNull()?.message,
+                    requestId = requestId,
+                    completed = newCompleted,
+                    failed = newFailed,
                 )
             }
 
-            // Read current totals from the request for accurate progress
-            val currentRequest = importRequestDao.getRequest(requestId)
-            val currentCompleted = (currentRequest?.completedCount ?: 0) + if (success) 1 else 0
-            val currentFailed = (currentRequest?.failedCount ?: 0) + if (!success) 1 else 0
-
-            importRequestDao.updateRequestProgress(
-                id = requestId,
-                status = ImportRequestEntity.STATUS_IN_PROGRESS,
-                completed = currentCompleted,
-                failed = currentFailed,
-                updatedAt = System.currentTimeMillis(),
-            )
-
             setProgress(
                 workDataOf(
-                    KEY_COMPLETED to currentCompleted,
-                    KEY_FAILED to currentFailed,
+                    KEY_COMPLETED to newCompleted,
+                    KEY_FAILED to newFailed,
                     KEY_TOTAL to totalImageCount,
                 ),
             )
-
             return success
         }
 

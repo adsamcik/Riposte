@@ -789,6 +789,10 @@ private fun GalleryScreenContent(
                     status = uiState.importStatus,
                 )
 
+                EmbeddingProgressBanner(
+                    status = uiState.embeddingStatus,
+                )
+
                 NotificationBanner(
                     notification = uiState.notification,
                     onDismiss = { onIntent(GalleryIntent.DismissNotification) },
@@ -1426,7 +1430,55 @@ private fun ImportProgressBanner(
 }
 
 /**
- * Banner for one-shot notifications (import complete, indexing complete, etc.).
+ * Slim progress banner for background embedding/indexing work.
+ * Uses tertiary container to distinguish from import progress.
+ */
+@Composable
+private fun EmbeddingProgressBanner(
+    status: EmbeddingWorkStatus,
+    modifier: Modifier = Modifier,
+) {
+    AnimatedVisibility(
+        visible = status is EmbeddingWorkStatus.InProgress,
+        enter = slideInVertically() + fadeIn(),
+        exit = slideOutVertically() + fadeOut(),
+    ) {
+        val inProgress = status as? EmbeddingWorkStatus.InProgress
+        Row(
+            modifier =
+                modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.tertiaryContainer)
+                    .padding(horizontal = Spacing.lg, vertical = Spacing.sm),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+        ) {
+            LinearProgressIndicator(
+                modifier = Modifier
+                    .width(40.dp)
+                    .height(4.dp)
+                    .clip(MaterialTheme.shapes.extraSmall),
+                color = MaterialTheme.colorScheme.onTertiaryContainer,
+                trackColor = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.3f),
+            )
+            Text(
+                text =
+                    if (inProgress != null && inProgress.processed > 0) {
+                        stringResource(R.string.gallery_indexing_in_progress_count, inProgress.processed)
+                    } else {
+                        stringResource(R.string.gallery_indexing_in_progress)
+                    },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onTertiaryContainer,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+/**
  * Slides down from below the search bar with a spring animation.
  * Uses M3 Expressive styling with Surface, rounded shape, and notification-type icons.
  */

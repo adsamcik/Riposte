@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import com.adsamcik.riposte.core.database.entity.ImportRequestEntity
 import com.adsamcik.riposte.core.database.entity.ImportRequestItemEntity
 import kotlinx.coroutines.flow.Flow
@@ -81,4 +82,38 @@ interface ImportRequestDao {
      */
     @Query("SELECT COALESCE(SUM(completedCount), 0) FROM import_requests")
     suspend fun getTotalImportedMemeCount(): Int
+
+    /**
+     * Atomically update an item's status and the parent request's progress
+     * counters in a single transaction, preventing count drift if the worker
+     * is killed between the two writes.
+     */
+    @Transaction
+    suspend fun completeItem(
+        itemId: String,
+        itemStatus: String,
+        errorMessage: String? = null,
+        requestId: String,
+        completed: Int,
+        failed: Int,
+    ) {
+        updateItemStatus(itemId, itemStatus, errorMessage)
+        updateRequestProgress(
+            id = requestId,
+            status = ImportRequestEntity.STATUS_IN_PROGRESS,
+            completed = completed,
+            failed = failed,
+            updatedAt = System.currentTimeMillis(),
+        )
+    }
+
+    /**
+     * Find import requests stuck in IN_PROGRESS for longer than [staleThreshold]
+     * (epoch millis). Used by the gallery watchdog to recover stale imports.
+     */
+    @Query(
+        """SELECT * FROM import_requests
+           WHERE status = 'in_progress' AND updatedAt < :staleThreshold""",
+    )
+    suspend fun getStaleRequests(staleThreshold: Long): List<ImportRequestEntity>
 }
