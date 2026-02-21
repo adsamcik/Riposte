@@ -25,10 +25,14 @@ import java.io.File
 /**
  * WorkManager worker that processes meme imports in the background.
  *
+ * Uses adaptive batch sizing: imports the first item to measure device speed,
+ * then fills the remaining time budget (7 min total, 3 min headroom = 4 min work).
+ * Each batch re-enqueues itself if items remain, staying within WorkManager's
+ * 10-minute execution window on any device.
+ *
  * - Reads staged images and metadata from [ImportRequestDao]
  * - Imports each image via [ImportRepository.importImage]
  * - Reports progress via [setProgress] and updates the notification
- * - Conditionally promotes to a foreground service when the app is backgrounded
  * - Survives process death by tracking per-item status in Room
  */
 @HiltWorker
@@ -59,25 +63,28 @@ class ImportWorker
             )
 
             val pendingItems = importRequestDao.getPendingItems(requestId)
-            val batch = pendingItems.take(BATCH_SIZE)
-            val (completed, failed) = processPendingItems(
+            if (pendingItems.isEmpty()) {
+                return finalizeImport(request, requestId, request.completedCount, request.failedCount)
+            }
+
+            val (completed, failed, processedCount) = processAdaptiveBatch(
                 requestId = requestId,
-                pendingItems = batch,
+                pendingItems = pendingItems,
                 startCompleted = request.completedCount,
                 startFailed = request.failedCount,
                 totalImageCount = request.imageCount,
             )
+
+            val remaining = pendingItems.size - processedCount
             Timber.i(
                 "Import batch complete: %d succeeded, %d failed out of %d total (%d remaining)",
                 completed,
                 failed,
                 request.imageCount,
-                pendingItems.size - batch.size,
+                remaining,
             )
 
-            val hasRemaining = pendingItems.size > batch.size
-            if (hasRemaining) {
-                // More items to process — re-enqueue for the next batch
+            return if (remaining > 0) {
                 importRequestDao.updateRequestProgress(
                     id = requestId,
                     status = ImportRequestEntity.STATUS_IN_PROGRESS,
@@ -86,38 +93,153 @@ class ImportWorker
                     updatedAt = System.currentTimeMillis(),
                 )
                 enqueue(applicationContext, requestId)
-            } else {
-                // All items processed — finalize
-                val stagingDir = File(request.stagingDir)
-                if (stagingDir.exists()) {
-                    stagingDir.deleteRecursively()
-                    Timber.d("Cleaned up staging directory: %s", stagingDir.absolutePath)
-                }
-
-                val finalStatus =
-                    if (failed == request.imageCount) {
-                        ImportRequestEntity.STATUS_FAILED
-                    } else {
-                        ImportRequestEntity.STATUS_COMPLETED
-                    }
-
-                importRequestDao.updateRequestProgress(
-                    id = requestId,
-                    status = finalStatus,
-                    completed = completed,
-                    failed = failed,
-                    updatedAt = System.currentTimeMillis(),
+                Result.success(
+                    workDataOf(
+                        KEY_COMPLETED to completed,
+                        KEY_FAILED to failed,
+                        KEY_TOTAL to request.imageCount,
+                    ),
                 )
+            } else {
+                finalizeImport(request, requestId, completed, failed)
+            }
+        }
 
-                // Cleanup old completed requests (>24h)
-                val dayAgo = System.currentTimeMillis() - DAY_IN_MILLIS
-                importRequestDao.cleanupOldRequestItems(dayAgo)
-                importRequestDao.cleanupOldRequests(dayAgo)
+        /**
+         * Adaptive batch: import the first item to measure speed, then fill the
+         * remaining time budget. Returns (completed, failed, itemsProcessed).
+         */
+        private suspend fun processAdaptiveBatch(
+            requestId: String,
+            pendingItems: List<ImportRequestItemEntity>,
+            startCompleted: Int,
+            startFailed: Int,
+            totalImageCount: Int,
+        ): Triple<Int, Int, Int> {
+            var completed = startCompleted
+            var failed = startFailed
+            var processed = 0
+            val batchStartTime = System.currentTimeMillis()
 
-                // Show completion notification if app is in background
-                if (appLifecycleTracker.isInBackground.value) {
-                    notificationManager.showCompleteNotification(completed, failed)
+            // Import first item and measure duration
+            val firstItem = pendingItems.first()
+            val firstItemStart = System.currentTimeMillis()
+            importSingleItem(firstItem, requestId, totalImageCount).let { success ->
+                if (success) completed++ else failed++
+            }
+            processed++
+            val firstItemDuration = System.currentTimeMillis() - firstItemStart
+            val perItemMs = firstItemDuration.coerceAtLeast(MIN_ITEM_DURATION_MS)
+
+            // Calculate how many more items fit in the work budget
+            val elapsedMs = System.currentTimeMillis() - batchStartTime
+            val remainingBudgetMs = WORK_BUDGET_MS - elapsedMs
+            val additionalItems = (remainingBudgetMs / perItemMs).toInt()
+                .coerceIn(0, pendingItems.size - 1)
+
+            Timber.d(
+                "Adaptive batch: first item took %dms, budget allows %d more (of %d pending)",
+                firstItemDuration,
+                additionalItems,
+                pendingItems.size - 1,
+            )
+
+            // Process the rest of the adaptive batch
+            for (i in 1..additionalItems) {
+                if (isStopped) break
+                val item = pendingItems[i]
+                importSingleItem(item, requestId, totalImageCount).let { success ->
+                    if (success) completed++ else failed++
                 }
+                processed++
+            }
+
+            return Triple(completed, failed, processed)
+        }
+
+        /** Imports a single item, updates DB status and progress. Returns true on success. */
+        private suspend fun importSingleItem(
+            item: ImportRequestItemEntity,
+            requestId: String,
+            totalImageCount: Int,
+        ): Boolean {
+            val stagedFile = File(item.stagedFilePath)
+            val uri = Uri.fromFile(stagedFile)
+            val metadata = parseItemMetadata(item)
+
+            val result = importRepository.importImage(uri, metadata)
+            val success = result.isSuccess
+            if (success) {
+                importRequestDao.updateItemStatus(
+                    itemId = item.id,
+                    status = ImportRequestEntity.STATUS_COMPLETED,
+                )
+            } else {
+                Timber.w("Failed to import item %s: %s", item.id, result.exceptionOrNull()?.message)
+                importRequestDao.updateItemStatus(
+                    itemId = item.id,
+                    status = ImportRequestEntity.STATUS_FAILED,
+                    errorMessage = result.exceptionOrNull()?.message,
+                )
+            }
+
+            // Read current totals from the request for accurate progress
+            val currentRequest = importRequestDao.getRequest(requestId)
+            val currentCompleted = (currentRequest?.completedCount ?: 0) + if (success) 1 else 0
+            val currentFailed = (currentRequest?.failedCount ?: 0) + if (!success) 1 else 0
+
+            importRequestDao.updateRequestProgress(
+                id = requestId,
+                status = ImportRequestEntity.STATUS_IN_PROGRESS,
+                completed = currentCompleted,
+                failed = currentFailed,
+                updatedAt = System.currentTimeMillis(),
+            )
+
+            setProgress(
+                workDataOf(
+                    KEY_COMPLETED to currentCompleted,
+                    KEY_FAILED to currentFailed,
+                    KEY_TOTAL to totalImageCount,
+                ),
+            )
+
+            return success
+        }
+
+        private suspend fun finalizeImport(
+            request: ImportRequestEntity,
+            requestId: String,
+            completed: Int,
+            failed: Int,
+        ): Result {
+            val stagingDir = File(request.stagingDir)
+            if (stagingDir.exists()) {
+                stagingDir.deleteRecursively()
+                Timber.d("Cleaned up staging directory: %s", stagingDir.absolutePath)
+            }
+
+            val finalStatus =
+                if (failed == request.imageCount) {
+                    ImportRequestEntity.STATUS_FAILED
+                } else {
+                    ImportRequestEntity.STATUS_COMPLETED
+                }
+
+            importRequestDao.updateRequestProgress(
+                id = requestId,
+                status = finalStatus,
+                completed = completed,
+                failed = failed,
+                updatedAt = System.currentTimeMillis(),
+            )
+
+            val dayAgo = System.currentTimeMillis() - DAY_IN_MILLIS
+            importRequestDao.cleanupOldRequestItems(dayAgo)
+            importRequestDao.cleanupOldRequests(dayAgo)
+
+            if (appLifecycleTracker.isInBackground.value) {
+                notificationManager.showCompleteNotification(completed, failed)
             }
 
             return Result.success(
@@ -127,60 +249,6 @@ class ImportWorker
                     KEY_TOTAL to request.imageCount,
                 ),
             )
-        }
-
-        private suspend fun processPendingItems(
-            requestId: String,
-            pendingItems: List<ImportRequestItemEntity>,
-            startCompleted: Int,
-            startFailed: Int,
-            totalImageCount: Int,
-        ): Pair<Int, Int> {
-            var completed = startCompleted
-            var failed = startFailed
-
-            for (item in pendingItems) {
-                if (isStopped) break
-
-                val stagedFile = File(item.stagedFilePath)
-                val uri = Uri.fromFile(stagedFile)
-                val metadata = parseItemMetadata(item)
-
-                val result = importRepository.importImage(uri, metadata)
-                if (result.isSuccess) {
-                    completed++
-                    importRequestDao.updateItemStatus(
-                        itemId = item.id,
-                        status = ImportRequestEntity.STATUS_COMPLETED,
-                    )
-                } else {
-                    Timber.w("Failed to import item %s: %s", item.id, result.exceptionOrNull()?.message)
-                    failed++
-                    importRequestDao.updateItemStatus(
-                        itemId = item.id,
-                        status = ImportRequestEntity.STATUS_FAILED,
-                        errorMessage = result.exceptionOrNull()?.message,
-                    )
-                }
-
-                importRequestDao.updateRequestProgress(
-                    id = requestId,
-                    status = ImportRequestEntity.STATUS_IN_PROGRESS,
-                    completed = completed,
-                    failed = failed,
-                    updatedAt = System.currentTimeMillis(),
-                )
-
-                setProgress(
-                    workDataOf(
-                        KEY_COMPLETED to completed,
-                        KEY_FAILED to failed,
-                        KEY_TOTAL to totalImageCount,
-                    ),
-                )
-            }
-
-            return Pair(completed, failed)
         }
 
         private fun parseItemMetadata(item: ImportRequestItemEntity): MemeMetadata? {
@@ -214,8 +282,13 @@ class ImportWorker
             const val KEY_COMPLETED = "completed"
             const val KEY_FAILED = "failed"
             const val KEY_TOTAL = "total"
-            private const val BATCH_SIZE = 20
             private const val DAY_IN_MILLIS = 24 * 60 * 60 * 1000L
+
+            /** 7 min total minus 3 min headroom = 4 min work budget per batch. */
+            private const val WORK_BUDGET_MS = 4L * 60 * 1000
+
+            /** Floor for per-item duration to avoid division issues on very fast imports. */
+            private const val MIN_ITEM_DURATION_MS = 50L
 
             /**
              * Enqueues an import worker for the given request.
