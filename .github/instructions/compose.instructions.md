@@ -120,17 +120,34 @@ val filteredMemes = remember(memes, query) {
 - Prefer primitives and immutable collections in state
 
 ### Keys in Lists
-Always provide stable keys:
+Always provide stable, **unique** keys. Defensively deduplicate data before using IDs as keys:
 ```kotlin
+// ✅ Good: Deduplicate and use prefixed keys
+val uniqueMemes = remember(memes) { memes.distinctBy { it.id } }
+LazyColumn {
+    items(
+        items = uniqueMemes,
+        key = { "meme_${it.id}" }
+    ) { meme ->
+        MemeCard(meme = meme)
+    }
+}
+
+// ❌ Avoid: Trusting data uniqueness without dedup
 LazyColumn {
     items(
         items = memes,
-        key = { it.id }
+        key = { it.id }  // Crashes if duplicates exist
     ) { meme ->
         MemeCard(meme = meme)
     }
 }
 ```
+
+**Key safety rules:**
+1. **Always dedup defensively** — use `.distinctBy { it.id }` before passing to `items(key = ...)`
+2. **Prefer prefixed keys** — `"section_${it.id}"` over raw `it.id` to avoid cross-list collisions
+3. **Never trust data uniqueness** — DAO JOINs, race conditions, and multi-embedding rows can produce duplicates
 
 ## Material 3
 

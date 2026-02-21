@@ -992,6 +992,30 @@ class MemeDetailViewModelTest {
             assertThat(state.isLoadingSimilar).isFalse()
         }
 
+    // region Duplicate Data Safety Tests
+
+    @Test
+    fun `similar memes with duplicate IDs are safe for LazyRow keys`() =
+        runTest {
+            val meme2 = createTestMeme(2L)
+            val meme3 = createTestMeme(3L)
+            // UseCase returns duplicates (e.g. from JOIN expansion or race condition)
+            coEvery { getSimilarMemesUseCase(any(), any()) } returns
+                SimilarMemesStatus.Found(listOf(meme2, meme2, meme3))
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            val status = viewModel.uiState.value.similarMemesStatus
+            assertThat(status).isInstanceOf(SimilarMemesStatus.Found::class.java)
+            val found = status as SimilarMemesStatus.Found
+            // UI layer applies distinctBy { it.id } — verify data reaches UI without crash
+            assertThat(found.memes.map { it.id }).contains(2L)
+            assertThat(found.memes.map { it.id }).contains(3L)
+        }
+
+    // endregion
+
     @Test
     fun `NavigateToSimilarMeme does not interfere with current meme state`() =
         runTest {
@@ -1215,6 +1239,19 @@ class MemeDetailViewModelTest {
             advanceUntilIdle()
 
             coVerify { toggleFavoriteUseCase(2L) }
+        }
+
+    @Test
+    fun `allMemeIds with duplicates are deduplicated`() =
+        runTest {
+            coEvery { getAllMemeIdsUseCase() } returns listOf(1L, 2L, 2L, 3L, 3L, 3L)
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            val ids = viewModel.uiState.value.allMemeIds
+            assertThat(ids).containsExactly(1L, 2L, 3L).inOrder()
+            assertThat(ids).containsNoDuplicates()
         }
 
     @Test

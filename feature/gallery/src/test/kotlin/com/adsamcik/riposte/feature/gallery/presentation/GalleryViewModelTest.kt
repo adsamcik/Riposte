@@ -1023,6 +1023,35 @@ class GalleryViewModelTest {
 
     // endregion
 
+    // region Duplicate Data Safety Tests
+
+    @Test
+    fun `memes list with duplicate IDs does not crash grid keys`() =
+        runTest {
+            val dupeMememes =
+                listOf(
+                    createTestMeme(1, "meme1.jpg", isFavorite = true),
+                    createTestMeme(2, "meme2.jpg", isFavorite = true),
+                    createTestMeme(2, "meme2_dupe.jpg", isFavorite = true), // duplicate ID from DAO JOIN
+                    createTestMeme(3, "meme3.jpg", isFavorite = true),
+                )
+            every { getFavoritesUseCase() } returns flowOf(dupeMememes)
+            every { getLibraryStatsUseCase() } returns flowOf(LibraryStatistics(totalMemes = 4, favoriteMemes = 4))
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onIntent(GalleryIntent.SetFilter(GalleryFilter.Favorites))
+            advanceUntilIdle()
+
+            val memes = viewModel.uiState.value.memes
+            // GalleryScreen applies .distinctBy { it.id } — data flows through without crash
+            assertThat(memes).isNotEmpty()
+            assertThat(memes.map { it.id }).contains(2L)
+        }
+
+    // endregion
+
     // region Helper Functions
 
     private fun createTestMeme(

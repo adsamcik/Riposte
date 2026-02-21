@@ -161,6 +161,30 @@ composeRule.onNodeWithTag("meme_card_123").performClick()
 6. **Fast tests** - mock slow dependencies
 7. **Readable tests** - clear names and structure
 
+## Adversarial Input Testing
+
+Always include tests with **duplicate/malformed data** flowing from data sources. DAO JOINs, race conditions, and multi-row expansions can produce duplicates that crash Compose `key` providers.
+
+### Pattern: Duplicate Data Regression Tests
+```kotlin
+@Test
+fun `allMemeIds with duplicates are deduplicated`() = runTest {
+    // Mock data source returning duplicates (simulates DAO JOIN expansion)
+    coEvery { getAllMemeIdsUseCase() } returns listOf(1L, 2L, 2L, 3L, 3L, 3L)
+
+    viewModel = createViewModel()
+    advanceUntilIdle()
+
+    val ids = viewModel.uiState.value.allMemeIds
+    assertThat(ids).containsNoDuplicates()
+}
+```
+
+**When to add adversarial tests:**
+- Any ViewModel that feeds data to `LazyList`, `LazyGrid`, or `HorizontalPager` with `key = { ... }`
+- Any UseCase that aggregates data from JOINs or multiple sources
+- Any repository method that could return duplicate IDs
+
 ## Coverage Goals
 
 - ViewModels: 90%+
