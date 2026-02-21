@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-02-21
+
+### Changed
+
+- Improved meme detail UX: image error state, larger touch targets, refined button hierarchy, accessible roles
+- Gallery content transitions with Crossfade, dark mode emoji card backgrounds, localized strings
+- Import flow: error count in failure summary, Material icons for emoji editing, BackHandler for editor sheet
+- Cross-cutting polish: consistent spacing tokens, dialog strings, export progress indicator, emoji selection feedback
+- Navigate to gallery immediately after import starts instead of waiting
+- Replaced foreground service with batched WorkManager workers for background processing
+- Adaptive batch sizing based on device performance
+- Removed unnecessary READ_MEDIA_IMAGES and READ_EXTERNAL_STORAGE permissions
+- Bumped AGP from 9.0.1 to 9.1.0-rc01
+
+### Fixed
+
+- Fixed LazyList duplicate key crash with defensive deduplication at DAO and Compose levels
+- Fixed silent error swallowing in duplicate detection observation flow
+- Eliminated dead code: unused SearchBarWithEmoji stub, deprecated onLongPress parameter, unused DropdownSettingItem
+- Deduplicated formatFileSize() into shared core/common utility
+
+### Improved
+
+- Significantly expanded test suite: ZIP security tests, settings import/export tests, accessibility tests, adversarial data tests, DAO regression tests
+- Improved test quality: fixed FTS bug, strengthened test oracles, reduced mock boilerplate
+
 ## [0.3.2] - 2026-02-21
 
 ### Fixed
