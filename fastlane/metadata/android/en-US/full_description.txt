@@ -1,15 +1,37 @@
-Riposte helps you organize, search, and share memes from your personal collection — fast.
+You're mid-conversation. You need that one perfect meme. Riposte gets you from thought to share in under 10 seconds.
 
-Tag your memes with emojis, search by mood or description, and share directly to any app in seconds. Built for the moment you're mid-conversation and need the perfect reaction image.
+Riposte is a meme organizer built for speed. Import your collection, let AI tag everything with emojis, then find exactly what you need with a tap or a few words. No cloud. No accounts. Everything runs on your device.
 
-Features:
+🔍 FIND MEMES YOUR WAY
 
-• Emoji-based categorization — tap an emoji to find matching memes instantly
-• AI-powered semantic search — describe what you're looking for in plain words
-• Quick share — long-press any meme to share it directly
-• Import from gallery or ZIP bundles — bring your whole collection in at once
-• Customizable sharing — control format, quality, and size before sending
-• Fully offline — all AI processing happens on-device, no data leaves your phone
-• Material You — dynamic colors that match your system theme
+• Emoji search — tap 🐶 to see dogs, 🔥 for fire content, 🍕 for pizza memes. One tap, instant results.
+• Text search — type "confused cat" or "awkward handshake" and find matching memes by description.
+• AI semantic search — describe what you're looking for in plain language. The on-device AI understands meaning, not just keywords.
+• Combined search — mix emoji filters with text for precision. Find exactly what you need.
 
-Riposte is free and open source software.
+📱 BUILT FOR SHARING
+
+• Long-press any meme to share directly to WhatsApp, Discord, Telegram, or any app.
+• Customize format (JPEG, PNG, WebP), quality, and size before sharing.
+• Swipe through memes in detail view to browse your collection.
+
+🏷️ SMART ORGANIZATION
+
+• AI-powered emoji tagging — import images and get automatic emoji suggestions based on content.
+• Import single images or entire collections as .meme.zip bundles.
+• "More Like This" — discover similar memes using AI visual similarity.
+• Fun statistics — track your collection with milestones, vibe checks, and sparkline charts.
+
+🔒 PRIVATE & OFFLINE
+
+• All AI processing happens on-device using MediaPipe and ML Kit. Zero data sent to servers.
+• No accounts, no sign-ups, no tracking.
+• Your memes stay on your phone, period.
+
+🎨 DESIGNED WITH CARE
+
+• Material 3 with dynamic colors — adapts to your wallpaper on Android 12+.
+• Smooth spring animations and a playful emoji-driven interface.
+• Accessibility-first: full screen reader support, adjustable text sizes, high contrast.
+
+Riposte is free and open source. Built by a meme enthusiast who was tired of scrolling through 2,000 unsorted images looking for that one reaction pic.
