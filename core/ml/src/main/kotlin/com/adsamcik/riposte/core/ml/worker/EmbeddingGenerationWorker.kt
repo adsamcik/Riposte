@@ -1,14 +1,11 @@
 package com.adsamcik.riposte.core.ml.worker
 
-import android.annotation.SuppressLint
 import android.content.Context
-import android.content.pm.ServiceInfo
 import androidx.hilt.work.HiltWorker
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingWorkPolicy
-import androidx.work.ForegroundInfo
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
@@ -37,7 +34,6 @@ import java.util.concurrent.TimeUnit
  * - Exponential backoff on failure
  * - Progress reporting
  * - Model version tracking
- * - Foreground service promotion when app is backgrounded
  */
 @HiltWorker
 class EmbeddingGenerationWorker
@@ -66,9 +62,6 @@ class EmbeddingGenerationWorker
                             ),
                         )
                     }
-
-                    // Promote to foreground if app is already backgrounded
-                    maybePromoteToForeground(0, pendingMemes.size)
 
                     val (successCount, failureCount) = processEmbeddings(pendingMemes)
 
@@ -165,8 +158,6 @@ class EmbeddingGenerationWorker
                             ((successCount + failureCount) * PERCENTAGE_MULTIPLIER / pendingMemes.size),
                     ),
                 )
-
-                maybePromoteToForeground(successCount + failureCount, pendingMemes.size)
             }
 
             return Pair(successCount, failureCount)
@@ -215,28 +206,6 @@ class EmbeddingGenerationWorker
             val hash = digest.digest(text.toByteArray(Charsets.UTF_8))
             // Truncate to 32 chars (128 bits) to match EmbeddingManager.generateHash
             return hash.take(HASH_BYTE_LENGTH).joinToString("") { "%02x".format(it) }
-        }
-
-        private suspend fun maybePromoteToForeground(
-            current: Int,
-            total: Int,
-        ) {
-            if (appLifecycleTracker.isInBackground.value) {
-                setForeground(createForegroundInfo(current, total))
-            }
-        }
-
-        @SuppressLint("SpecifyForegroundServiceType") // Declared in app manifest
-        private fun createForegroundInfo(
-            current: Int,
-            total: Int,
-        ): ForegroundInfo {
-            val notification = notificationManager.buildProgressNotification(current, total)
-            return ForegroundInfo(
-                EmbeddingNotificationManager.NOTIFICATION_ID,
-                notification,
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC,
-            )
         }
 
         companion object {

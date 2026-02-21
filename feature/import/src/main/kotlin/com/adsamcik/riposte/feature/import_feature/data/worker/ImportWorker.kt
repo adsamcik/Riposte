@@ -1,13 +1,11 @@
 package com.adsamcik.riposte.feature.import_feature.data.worker
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.Data
 import androidx.work.ExistingWorkPolicy
-import androidx.work.ForegroundInfo
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
@@ -60,50 +58,66 @@ class ImportWorker
                 updatedAt = System.currentTimeMillis(),
             )
 
-            // Promote to foreground if app is already backgrounded
-            maybePromoteToForeground(request.completedCount, request.imageCount)
-
             val pendingItems = importRequestDao.getPendingItems(requestId)
+            val batch = pendingItems.take(BATCH_SIZE)
             val (completed, failed) = processPendingItems(
                 requestId = requestId,
-                pendingItems = pendingItems,
+                pendingItems = batch,
                 startCompleted = request.completedCount,
                 startFailed = request.failedCount,
                 totalImageCount = request.imageCount,
             )
-            Timber.i("Import complete: %d succeeded, %d failed out of %d total", completed, failed, request.imageCount)
-
-            // Cleanup staging directory
-            val stagingDir = File(request.stagingDir)
-            if (stagingDir.exists()) {
-                stagingDir.deleteRecursively()
-                Timber.d("Cleaned up staging directory: %s", stagingDir.absolutePath)
-            }
-
-            // Final status
-            val finalStatus =
-                if (failed == request.imageCount) {
-                    ImportRequestEntity.STATUS_FAILED
-                } else {
-                    ImportRequestEntity.STATUS_COMPLETED
-                }
-
-            importRequestDao.updateRequestProgress(
-                id = requestId,
-                status = finalStatus,
-                completed = completed,
-                failed = failed,
-                updatedAt = System.currentTimeMillis(),
+            Timber.i(
+                "Import batch complete: %d succeeded, %d failed out of %d total (%d remaining)",
+                completed,
+                failed,
+                request.imageCount,
+                pendingItems.size - batch.size,
             )
 
-            // Cleanup old completed requests (>24h)
-            val dayAgo = System.currentTimeMillis() - DAY_IN_MILLIS
-            importRequestDao.cleanupOldRequestItems(dayAgo)
-            importRequestDao.cleanupOldRequests(dayAgo)
+            val hasRemaining = pendingItems.size > batch.size
+            if (hasRemaining) {
+                // More items to process — re-enqueue for the next batch
+                importRequestDao.updateRequestProgress(
+                    id = requestId,
+                    status = ImportRequestEntity.STATUS_IN_PROGRESS,
+                    completed = completed,
+                    failed = failed,
+                    updatedAt = System.currentTimeMillis(),
+                )
+                enqueue(applicationContext, requestId)
+            } else {
+                // All items processed — finalize
+                val stagingDir = File(request.stagingDir)
+                if (stagingDir.exists()) {
+                    stagingDir.deleteRecursively()
+                    Timber.d("Cleaned up staging directory: %s", stagingDir.absolutePath)
+                }
 
-            // Show completion notification if app is in background
-            if (appLifecycleTracker.isInBackground.value) {
-                notificationManager.showCompleteNotification(completed, failed)
+                val finalStatus =
+                    if (failed == request.imageCount) {
+                        ImportRequestEntity.STATUS_FAILED
+                    } else {
+                        ImportRequestEntity.STATUS_COMPLETED
+                    }
+
+                importRequestDao.updateRequestProgress(
+                    id = requestId,
+                    status = finalStatus,
+                    completed = completed,
+                    failed = failed,
+                    updatedAt = System.currentTimeMillis(),
+                )
+
+                // Cleanup old completed requests (>24h)
+                val dayAgo = System.currentTimeMillis() - DAY_IN_MILLIS
+                importRequestDao.cleanupOldRequestItems(dayAgo)
+                importRequestDao.cleanupOldRequests(dayAgo)
+
+                // Show completion notification if app is in background
+                if (appLifecycleTracker.isInBackground.value) {
+                    notificationManager.showCompleteNotification(completed, failed)
+                }
             }
 
             return Result.success(
@@ -112,28 +126,6 @@ class ImportWorker
                     KEY_FAILED to failed,
                     KEY_TOTAL to request.imageCount,
                 ),
-            )
-        }
-
-        private suspend fun maybePromoteToForeground(
-            current: Int,
-            total: Int,
-        ) {
-            if (appLifecycleTracker.isInBackground.value) {
-                setForeground(createForegroundInfo(current, total))
-            }
-        }
-
-        @SuppressLint("SpecifyForegroundServiceType") // Declared in app manifest
-        private fun createForegroundInfo(
-            current: Int,
-            total: Int,
-        ): ForegroundInfo {
-            val notification = notificationManager.buildProgressNotification(current, total)
-            return ForegroundInfo(
-                ImportNotificationManager.NOTIFICATION_ID,
-                notification,
-                android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC,
             )
         }
 
@@ -186,8 +178,6 @@ class ImportWorker
                         KEY_TOTAL to totalImageCount,
                     ),
                 )
-
-                maybePromoteToForeground(completed, totalImageCount)
             }
 
             return Pair(completed, failed)
@@ -224,6 +214,7 @@ class ImportWorker
             const val KEY_COMPLETED = "completed"
             const val KEY_FAILED = "failed"
             const val KEY_TOTAL = "total"
+            private const val BATCH_SIZE = 20
             private const val DAY_IN_MILLIS = 24 * 60 * 60 * 1000L
 
             /**
