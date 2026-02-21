@@ -166,6 +166,18 @@ Pager(config = PagingConfig(pageSize = 20)) { ... }.flow
 - **CLI tool**: Uses GitHub Copilot SDK, requires `copilot auth login` first
 - **Paging for All filter**: Use `usePaging=true` for All memes, regular lists for filtered views
 - **Database schema versioning**: Only one schema version bump allowed per release cycle. If the schema was already bumped, add your changes to the existing migration instead of creating a new one. See `core/database/released-schema-version.txt`.
+- **LazyList key safety**: Never trust data uniqueness for `key = { ... }`. Always `distinctBy { it.id }` before `items(key = ...)`, prefer prefixed keys (`"section_${it.id}"`). DAO JOINs can produce duplicate rows.
+- **Compose lint**: Slack `compose-lint-checks` is enabled project-wide — fix warnings before merging.
+
+## Bug Fix Protocol
+
+When fixing bugs, follow this protocol to avoid incomplete fixes:
+
+1. **Blast radius check** — trace the defective data/function to ALL consumers, not just the crash site
+2. **Fix at the source** — fix the query/producer, not just a downstream workaround
+3. **Defend in depth** — add defensive guards (e.g., `distinctBy`) at the UI layer too
+4. **Regression test with adversarial data** — mock realistic bad data (duplicates, nulls, empty lists), not just clean happy-path data
+5. **Audit instructions** — if `.github/instructions/` files recommend the broken pattern, update them
 
 ## Agent Instructions
 
