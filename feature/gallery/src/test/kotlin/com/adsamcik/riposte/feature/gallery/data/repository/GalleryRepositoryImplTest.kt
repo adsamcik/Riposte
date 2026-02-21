@@ -582,6 +582,44 @@ class GalleryRepositoryImplTest {
 
     // endregion
 
+    // region getEmbeddingsExcluding Tests
+
+    @Test
+    fun `getEmbeddingsExcluding returns one embedding per meme from content type`() =
+        runTest(testDispatcher) {
+            val embeddings =
+                listOf(
+                    com.adsamcik.riposte.core.database.entity.MemeIdWithEmbedding(
+                        memeId = 2L,
+                        embedding = byteArrayOf(1, 2, 3),
+                    ),
+                    com.adsamcik.riposte.core.database.entity.MemeIdWithEmbedding(
+                        memeId = 3L,
+                        embedding = byteArrayOf(4, 5, 6),
+                    ),
+                )
+            coEvery { memeEmbeddingDao.getContentEmbeddingsExcluding(1L) } returns embeddings
+
+            val result = repository.getEmbeddingsExcluding(1L)
+
+            assertThat(result).hasSize(2)
+            assertThat(result.map { it.memeId }).containsNoDuplicates()
+            assertThat(result.map { it.memeId }).containsExactly(2L, 3L)
+        }
+
+    @Test
+    fun `getEmbeddingsExcluding excludes specified meme ID`() =
+        runTest(testDispatcher) {
+            coEvery { memeEmbeddingDao.getContentEmbeddingsExcluding(1L) } returns emptyList()
+
+            val result = repository.getEmbeddingsExcluding(1L)
+
+            assertThat(result).isEmpty()
+            coVerify { memeEmbeddingDao.getContentEmbeddingsExcluding(1L) }
+        }
+
+    // endregion
+
     // region Helper Functions
 
     private fun createTestMemeEntity(

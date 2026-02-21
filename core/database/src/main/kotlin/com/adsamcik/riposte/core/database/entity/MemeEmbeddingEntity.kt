@@ -188,3 +188,27 @@ data class MemeWithEmbeddingData(
         return result
     }
 }
+
+/**
+ * Lightweight projection for similarity search — just memeId and embedding bytes.
+ * Returned by [MemeEmbeddingDao.getContentEmbeddingsExcluding].
+ */
+data class MemeIdWithEmbedding(
+    val memeId: Long,
+    val embedding: ByteArray?,
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        other as MemeIdWithEmbedding
+        if (memeId != other.memeId) return false
+        if (!embedding.contentEquals(other.embedding)) return false
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = memeId.hashCode()
+        result = 31 * result + (embedding?.contentHashCode() ?: 0)
+        return result
+    }
+}

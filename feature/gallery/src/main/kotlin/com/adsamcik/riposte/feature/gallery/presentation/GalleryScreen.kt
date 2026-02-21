@@ -440,6 +440,10 @@ private fun GalleryScreenContent(
                     remember(uiState.memes, suggestionIds) {
                         uiState.memes.filter { it.id !in suggestionIds }.distinctBy { it.id }
                     }
+                val uniqueSearchResults =
+                    remember(uiState.searchState.results) {
+                        uiState.searchState.results.distinctBy { it.meme.id }
+                    }
 
                 val contentKey = when {
                     uiState.screenMode != ScreenMode.Searching && uiState.isLoading -> "loading"
@@ -632,7 +636,7 @@ private fun GalleryScreenContent(
                                     }
                                     // Result items - reuse MemeGridItem
                                     items(
-                                        items = uiState.searchState.results,
+                                        items = uniqueSearchResults,
                                         key = { "search_${it.meme.id}" },
                                     ) { result ->
                                         val isSelected = result.meme.id in uiState.selectedMemeIds

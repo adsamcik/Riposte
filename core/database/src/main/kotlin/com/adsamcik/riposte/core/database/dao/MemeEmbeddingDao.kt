@@ -7,6 +7,7 @@ import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
 import com.adsamcik.riposte.core.database.entity.MemeEmbeddingEntity
+import com.adsamcik.riposte.core.database.entity.MemeIdWithEmbedding
 import com.adsamcik.riposte.core.database.entity.MemeWithEmbeddingData
 import kotlinx.coroutines.flow.Flow
 
@@ -62,6 +63,7 @@ interface MemeEmbeddingDao {
     /**
      * Get memes with their embeddings for search operations.
      * Joins meme data with embeddings for efficient search.
+     * Returns one row per (meme, embeddingType) — callers needing unique memes must group by memeId.
      */
     @Transaction
     @Query(
@@ -84,6 +86,26 @@ interface MemeEmbeddingDao {
     """,
     )
     suspend fun getMemesWithEmbeddings(): List<MemeWithEmbeddingData>
+
+    /**
+     * Get content embeddings for similarity search, excluding a specific meme.
+     * Filters to a single embeddingType to guarantee one row per meme — safe for
+     * use as LazyList keys without deduplication.
+     */
+    @Query(
+        """
+        SELECT 
+            m.id as memeId,
+            e.embedding
+        FROM memes m
+        INNER JOIN meme_embeddings e ON m.id = e.memeId
+        WHERE m.id != :excludeMemeId
+            AND e.embedding IS NOT NULL
+            AND e.needsRegeneration = 0
+            AND e.embeddingType = 'content'
+    """,
+    )
+    suspend fun getContentEmbeddingsExcluding(excludeMemeId: Long): List<MemeIdWithEmbedding>
 
     /**
      * Get memes with their embeddings as a Flow.

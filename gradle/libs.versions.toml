@@ -90,6 +90,7 @@ aboutlibraries = "14.0.0-b02"
 # Code Quality Tools
 detekt = "1.23.8"
 ktlint = "1.5.0"
+compose-lint-checks = "1.4.2"
 
 [libraries]
 # Core AndroidX
@@ -220,6 +221,7 @@ aboutlibraries-compose-m3 = { group = "com.mikepenz", name = "aboutlibraries-com
 
 # Code Quality Tools
 detekt-formatting = { group = "io.gitlab.arturbosch.detekt", name = "detekt-formatting", version.ref = "detekt" }
+compose-lint-checks = { group = "com.slack.lint.compose", name = "compose-lint-checks", version.ref = "compose-lint-checks" }
 
 [bundles]
 compose = [

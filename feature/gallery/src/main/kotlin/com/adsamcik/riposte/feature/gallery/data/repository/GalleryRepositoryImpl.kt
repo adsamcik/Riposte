@@ -240,8 +240,7 @@ class GalleryRepositoryImpl
 
         override suspend fun getEmbeddingsExcluding(memeId: Long): List<MemeEmbeddingData> =
             withContext(ioDispatcher) {
-                memeEmbeddingDao.getMemesWithEmbeddings()
-                    .filter { it.memeId != memeId }
+                memeEmbeddingDao.getContentEmbeddingsExcluding(memeId)
                     .map { MemeEmbeddingData(memeId = it.memeId, embedding = it.embedding) }
             }
     }
