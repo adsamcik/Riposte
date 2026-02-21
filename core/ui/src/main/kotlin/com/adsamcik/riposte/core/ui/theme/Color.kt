@@ -54,7 +54,7 @@ val Info = Color(0xFF0284C7)
 val InfoDark = Color(0xFF38BDF8)
 
 // ── Emoji Card Backgrounds (warm, expressive variety) ─────
-val EmojiCardBackgrounds =
+val EmojiCardBackgroundsLight =
     listOf(
         // Amber 100
         Color(0xFFFEF3C7),
@@ -73,6 +73,28 @@ val EmojiCardBackgrounds =
         // Cyan 100
         Color(0xFFCFFAFE),
     )
+
+val EmojiCardBackgroundsDark =
+    listOf(
+        // Amber 900
+        Color(0xFF78350F),
+        // Green 900
+        Color(0xFF14532D),
+        // Blue 900
+        Color(0xFF1E3A5F),
+        // Pink 900
+        Color(0xFF831843),
+        // Indigo 900
+        Color(0xFF312E81),
+        // Purple 900
+        Color(0xFF581C87),
+        // Orange 900
+        Color(0xFF7C2D12),
+        // Cyan 900
+        Color(0xFF164E63),
+    )
+
+val EmojiCardBackgrounds = EmojiCardBackgroundsLight
 
 // ── Emoji Context Colors (for contextual UI tinting) ──────
 object EmojiContextColors {

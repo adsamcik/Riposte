@@ -9,6 +9,7 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -166,7 +167,7 @@ fun GalleryScreen(
                         context.startActivity(effect.intent)
                     } catch (e: android.content.ActivityNotFoundException) {
                         Timber.w(e, "No app found to handle share intent")
-                        snackbarHostState.showSnackbar("Unable to share — app not found")
+                        snackbarHostState.showSnackbar(context.getString(R.string.gallery_error_share_no_app))
                     }
                 }
                 is GalleryEffect.TriggerHapticFeedback -> { /* Handled by Compose haptic feedback */ }
@@ -439,21 +440,35 @@ private fun GalleryScreenContent(
                         uiState.memes.filter { it.id !in suggestionIds }
                     }
 
-                when {
-                    uiState.screenMode != ScreenMode.Searching && uiState.isLoading -> {
+                val contentKey = when {
+                    uiState.screenMode != ScreenMode.Searching && uiState.isLoading -> "loading"
+                    uiState.screenMode != ScreenMode.Searching && uiState.error != null -> "error"
+                    uiState.screenMode != ScreenMode.Searching && uiState.isEmpty && !uiState.usePaging -> "empty"
+                    uiState.screenMode != ScreenMode.Searching && uiState.usePaging && pagedMemes != null &&
+                        pagedMemes.loadState.refresh is LoadState.Loading -> "paged-loading"
+                    uiState.screenMode != ScreenMode.Searching && uiState.usePaging && pagedMemes != null &&
+                        pagedMemes.loadState.refresh is LoadState.Error -> "paged-error"
+                    uiState.screenMode != ScreenMode.Searching && uiState.usePaging && pagedMemes != null &&
+                        pagedMemes.itemCount == 0 -> "paged-empty"
+                    else -> "content"
+                }
+
+                Crossfade(targetState = contentKey, label = "gallery_content") { targetKey ->
+                    when (targetKey) {
+                    "loading" -> {
                         LoadingScreen(
                             message = stringResource(R.string.gallery_loading_message),
                             modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
                         )
                     }
-                    uiState.screenMode != ScreenMode.Searching && uiState.error != null -> {
+                    "error" -> {
                         ErrorState(
                             message = uiState.error.orEmpty(),
                             onRetry = { onIntent(GalleryIntent.LoadMemes) },
                             modifier = Modifier.semantics { liveRegion = LiveRegionMode.Assertive },
                         )
                     }
-                    uiState.screenMode != ScreenMode.Searching && uiState.isEmpty && !uiState.usePaging -> {
+                    "empty" -> {
                         Box(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center,
@@ -476,24 +491,21 @@ private fun GalleryScreenContent(
                             }
                         }
                     }
-                    uiState.screenMode != ScreenMode.Searching && uiState.usePaging && pagedMemes != null &&
-                        pagedMemes.loadState.refresh is LoadState.Loading -> {
+                    "paged-loading" -> {
                         LoadingScreen(
                             message = stringResource(R.string.gallery_loading_message),
                             modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
                         )
                     }
-                    uiState.screenMode != ScreenMode.Searching && uiState.usePaging && pagedMemes != null &&
-                        pagedMemes.loadState.refresh is LoadState.Error -> {
-                        val error = (pagedMemes.loadState.refresh as LoadState.Error).error
+                    "paged-error" -> {
+                        val error = (pagedMemes!!.loadState.refresh as LoadState.Error).error
                         ErrorState(
                             message = error.message ?: stringResource(R.string.gallery_error_load_failed),
                             onRetry = { pagedMemes.retry() },
                             modifier = Modifier.semantics { liveRegion = LiveRegionMode.Assertive },
                         )
                     }
-                    uiState.screenMode != ScreenMode.Searching && uiState.usePaging && pagedMemes != null &&
-                        pagedMemes.itemCount == 0 -> {
+                    "paged-empty" -> {
                         Box(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center,
@@ -744,6 +756,7 @@ private fun GalleryScreenContent(
                             }
                         }
                     }
+            }
             }
             }
 
@@ -1454,6 +1467,14 @@ private fun NotificationBanner(
                 null -> Icons.Default.Check
             }
 
+        val iconDescription =
+            when (notification) {
+                is GalleryNotification.ImportComplete -> "Success"
+                is GalleryNotification.ImportFailed -> "Error"
+                is GalleryNotification.IndexingComplete -> "Complete"
+                null -> "Info"
+            }
+
         val text =
             when (notification) {
                 is GalleryNotification.ImportComplete ->
@@ -1490,7 +1511,7 @@ private fun NotificationBanner(
             ) {
                 Icon(
                     imageVector = icon,
-                    contentDescription = null,
+                    contentDescription = iconDescription,
                     tint = contentColor,
                     modifier = Modifier.size(20.dp),
                 )
