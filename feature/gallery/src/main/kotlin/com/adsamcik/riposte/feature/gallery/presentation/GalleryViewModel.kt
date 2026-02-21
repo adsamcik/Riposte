@@ -11,6 +11,8 @@ import com.adsamcik.riposte.core.common.share.ShareMemeUseCase
 import com.adsamcik.riposte.core.common.suggestion.GetSuggestionsUseCase
 import com.adsamcik.riposte.core.common.suggestion.SuggestionContext
 import com.adsamcik.riposte.core.common.suggestion.Surface
+import com.adsamcik.riposte.core.database.dao.ImportRequestDao
+import com.adsamcik.riposte.core.database.entity.ImportRequestEntity
 import com.adsamcik.riposte.core.datastore.PreferencesDataStore
 import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.feature.gallery.R
@@ -50,6 +52,7 @@ class GalleryViewModel
         private val galleryRepository: GalleryRepository,
         @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
         private val preferencesDataStore: PreferencesDataStore,
+        private val importRequestDao: ImportRequestDao,
         val searchDelegate: SearchDelegate,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(GalleryUiState())
@@ -84,6 +87,7 @@ class GalleryViewModel
             observeEmbeddingWork()
             observeUniqueEmojis()
             observeFavoritesCount()
+            recoverStaleImports()
         }
 
         fun onIntent(intent: GalleryIntent) {
@@ -286,6 +290,65 @@ class GalleryViewModel
                         }
                 } catch (_: IllegalStateException) {
                     Timber.d("WorkManager not available, skipping embedding work observation")
+                }
+            }
+        }
+
+        /**
+         * On startup, detect import requests stuck in IN_PROGRESS for >30 minutes
+         * with no active WorkManager work. Mark them as failed so they don't block
+         * future imports. The user can re-import if needed.
+         */
+        private fun recoverStaleImports() {
+            viewModelScope.launch {
+                try {
+                    val staleThreshold = System.currentTimeMillis() - STALE_IMPORT_THRESHOLD_MS
+                    val staleRequests = importRequestDao.getStaleRequests(staleThreshold)
+                    if (staleRequests.isEmpty()) return@launch
+
+                    val wm = androidx.work.WorkManager.getInstance(context)
+                    val workInfos = wm.getWorkInfosForUniqueWork(
+                        com.adsamcik.riposte.core.common.AppConstants.IMPORT_WORK_NAME,
+                    ).get()
+                    val hasActiveWork = workInfos.any { !it.state.isFinished }
+
+                    if (hasActiveWork) {
+                        Timber.d("Import work still active, skipping stale recovery")
+                        return@launch
+                    }
+
+                    for (request in staleRequests) {
+                        Timber.w(
+                            "Marking stale import %s as failed (%d completed, %d failed of %d)",
+                            request.id,
+                            request.completedCount,
+                            request.failedCount,
+                            request.imageCount,
+                        )
+                        importRequestDao.updateRequestProgress(
+                            id = request.id,
+                            status = if (request.completedCount > 0) {
+                                ImportRequestEntity.STATUS_COMPLETED
+                            } else {
+                                ImportRequestEntity.STATUS_FAILED
+                            },
+                            completed = request.completedCount,
+                            failed = request.failedCount,
+                            updatedAt = System.currentTimeMillis(),
+                        )
+                        _uiState.update {
+                            it.copy(
+                                notification = GalleryNotification.ImportFailed(
+                                    "Import stalled — ${request.completedCount} of ${request.imageCount} saved",
+                                ),
+                            )
+                        }
+                    }
+                } catch (
+                    @Suppress("TooGenericExceptionCaught")
+                    e: Exception,
+                ) {
+                    Timber.w(e, "Failed to recover stale imports")
                 }
             }
         }
@@ -580,5 +643,8 @@ class GalleryViewModel
 
         companion object {
             private const val NOTIFICATION_AUTO_DISMISS_MS = 5000L
+
+            /** Imports stuck in IN_PROGRESS for longer than this are considered stale. */
+            private const val STALE_IMPORT_THRESHOLD_MS = 30L * 60 * 1000
         }
     }

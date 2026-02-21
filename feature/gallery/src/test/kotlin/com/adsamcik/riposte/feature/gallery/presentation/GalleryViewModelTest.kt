@@ -62,6 +62,7 @@ class GalleryViewModelTest {
     private lateinit var galleryRepository: com.adsamcik.riposte.feature.gallery.domain.repository.GalleryRepository
     private lateinit var preferencesDataStore: PreferencesDataStore
     private lateinit var searchDelegate: SearchDelegate
+    private lateinit var importRequestDao: com.adsamcik.riposte.core.database.dao.ImportRequestDao
     private lateinit var context: Context
 
     private lateinit var viewModel: GalleryViewModel
@@ -106,6 +107,8 @@ class GalleryViewModelTest {
         searchDelegate = mockk(relaxed = true)
         every { searchDelegate.state } returns MutableStateFlow(SearchSliceState())
         every { searchDelegate.effects } returns kotlinx.coroutines.flow.emptyFlow()
+        importRequestDao = mockk(relaxed = true)
+        coEvery { importRequestDao.getStaleRequests(any()) } returns emptyList()
         preferencesDataStore = mockk()
 
         every { getMemesUseCase() } returns flowOf(testMemes)
@@ -145,6 +148,7 @@ class GalleryViewModelTest {
             galleryRepository = galleryRepository,
             defaultDispatcher = mainDispatcherRule.testDispatcher,
             preferencesDataStore = preferencesDataStore,
+            importRequestDao = importRequestDao,
             searchDelegate = searchDelegate,
         )
     }
