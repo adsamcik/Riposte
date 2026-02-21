@@ -2,6 +2,7 @@ package com.adsamcik.riposte.feature.import_feature.presentation
 
 import android.content.res.Configuration
 import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -38,6 +39,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.AddPhotoAlternate
@@ -169,6 +171,10 @@ fun ImportScreen(
             skipHiddenState = false,
         )
     val scaffoldState = rememberBottomSheetScaffoldState(bottomSheetState = bottomSheetState)
+
+    BackHandler(enabled = uiState.editingImage != null) {
+        viewModel.onIntent(ImportIntent.CloseEditor)
+    }
 
     // Update sheet state when image is selected
     LaunchedEffect(uiState.editingImage) {
@@ -393,13 +399,19 @@ private fun ImportResultSummary(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Text(
-            text = when {
-                result.successCount == 0 && result.failureCount == 0 -> "⚠️"
-                result.failureCount == 0 -> "✅"
-                else -> "⚠️"
+        Icon(
+            imageVector = if (result.failureCount == 0 && result.successCount > 0) {
+                Icons.Default.CheckCircle
+            } else {
+                Icons.Default.Warning
             },
-            style = MaterialTheme.typography.displayLarge,
+            contentDescription = if (result.failureCount == 0 && result.successCount > 0) "Success" else "Warning",
+            tint = if (result.failureCount == 0 && result.successCount > 0) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.error
+            },
+            modifier = Modifier.size(64.dp),
         )
         Spacer(Modifier.height(16.dp))
         Text(

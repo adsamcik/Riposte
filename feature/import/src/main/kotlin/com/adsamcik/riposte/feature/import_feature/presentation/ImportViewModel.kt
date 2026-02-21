@@ -94,6 +94,7 @@ class ImportViewModel
                 }
 
                 WorkInfo.State.FAILED -> if (_uiState.value.isImporting) {
+                    val totalCount = _uiState.value.totalImportCount
                     _uiState.update {
                         it.copy(
                             isImporting = false,
@@ -101,7 +102,7 @@ class ImportViewModel
                             importResult =
                                 ImportResult(
                                     successCount = 0,
-                                    failureCount = 0,
+                                    failureCount = totalCount,
                                 ),
                         )
                     }
