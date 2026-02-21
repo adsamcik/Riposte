@@ -8,7 +8,6 @@ import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -41,7 +40,6 @@ class ZipImporterEdgeCasesTest {
 
     // ==================== ZIP Bomb Protection Tests ====================
 
-    @Ignore("Creating 10,001 ZIP entries is too slow for unit tests. Run manually to verify.")
     @Test
     fun `extractBundle blocks ZIP with too many entries`() =
         runTest {
@@ -345,8 +343,8 @@ class ZipImporterEdgeCasesTest {
         val baos = ByteArrayOutputStream()
         ZipOutputStream(baos).use { zos ->
             repeat(count) { i ->
-                zos.putNextEntry(ZipEntry("image_$i.jpg"))
-                zos.write(createMinimalJpeg())
+                // Use empty non-image entries: counted toward the limit but skip processing
+                zos.putNextEntry(ZipEntry("entry_$i.dat"))
                 zos.closeEntry()
             }
         }
