@@ -267,6 +267,34 @@ class GetSimilarMemesUseCaseTest {
     // region Edge Cases
 
     @Test
+    fun `deduplicates when same meme has multiple embeddings`() =
+        runTest {
+            val currentEmbedding = FloatArray(128) { 1.0f }
+            val contentEmbedding = FloatArray(128) { 0.9f }
+            val intentEmbedding = FloatArray(128) { 0.8f }
+
+            coEvery { embeddingManager.getEmbedding(1L) } returns currentEmbedding
+            // Same memeId appears twice — once per embedding type (content + intent)
+            coEvery { galleryRepository.getEmbeddingsExcluding(1L) } returns
+                listOf(
+                    createEmbeddingData(2L, contentEmbedding),
+                    createEmbeddingData(2L, intentEmbedding),
+                    createEmbeddingData(3L, contentEmbedding),
+                )
+            coEvery { semanticSearchEngine.cosineSimilarity(any(), any()) } returns 0.85f
+            coEvery { galleryRepository.getMemeById(2L) } returns createMeme(2L)
+            coEvery { galleryRepository.getMemeById(3L) } returns createMeme(3L)
+
+            val result = useCase(1L)
+
+            assertThat(result).isInstanceOf(SimilarMemesStatus.Found::class.java)
+            val found = result as SimilarMemesStatus.Found
+            // Meme 2 should appear only once despite having two embeddings
+            assertThat(found.memes).hasSize(2)
+            assertThat(found.memes.map { it.id }).containsExactly(2L, 3L)
+        }
+
+    @Test
     fun `handles getMemeById returning null gracefully`() =
         runTest {
             val currentEmbedding = FloatArray(128) { 1.0f }

@@ -55,6 +55,7 @@ class GetSimilarMemesUseCase
                         }
                             .filter { it.second >= SIMILARITY_THRESHOLD }
                             .sortedByDescending { it.second }
+                            .distinctBy { it.first }
                             .take(limit)
 
                     if (scored.isEmpty()) {
