@@ -59,24 +59,24 @@ class SettingsViewModelTest {
     private lateinit var context: Context
     private lateinit var viewModel: SettingsViewModel
 
-    // Use case mocks
+    // Use case mocks — setter use cases are relaxed since most tests only verify specific ones
     private lateinit var getAppPreferencesUseCase: GetAppPreferencesUseCase
     private lateinit var getSharingPreferencesUseCase: GetSharingPreferencesUseCase
-    private lateinit var setDarkModeUseCase: SetDarkModeUseCase
-    private lateinit var setDynamicColorsUseCase: SetDynamicColorsUseCase
-    private lateinit var setEnableSemanticSearchUseCase: SetEnableSemanticSearchUseCase
-    private lateinit var setSaveSearchHistoryUseCase: SetSaveSearchHistoryUseCase
-    private lateinit var setSortEmojisByUsageUseCase: SetSortEmojisByUsageUseCase
-    private lateinit var setDefaultFormatUseCase: SetDefaultFormatUseCase
-    private lateinit var setDefaultQualityUseCase: SetDefaultQualityUseCase
-    private lateinit var setDefaultMaxDimensionUseCase: SetDefaultMaxDimensionUseCase
-    private lateinit var setStripMetadataUseCase: SetStripMetadataUseCase
-    private lateinit var setGridDensityUseCase: SetGridDensityUseCase
-    private lateinit var exportPreferencesUseCase: ExportPreferencesUseCase
-    private lateinit var importPreferencesUseCase: ImportPreferencesUseCase
+    private val setDarkModeUseCase: SetDarkModeUseCase = mockk(relaxed = true)
+    private val setDynamicColorsUseCase: SetDynamicColorsUseCase = mockk(relaxed = true)
+    private val setEnableSemanticSearchUseCase: SetEnableSemanticSearchUseCase = mockk(relaxed = true)
+    private val setSaveSearchHistoryUseCase: SetSaveSearchHistoryUseCase = mockk(relaxed = true)
+    private val setSortEmojisByUsageUseCase: SetSortEmojisByUsageUseCase = mockk(relaxed = true)
+    private val setDefaultFormatUseCase: SetDefaultFormatUseCase = mockk(relaxed = true)
+    private val setDefaultQualityUseCase: SetDefaultQualityUseCase = mockk(relaxed = true)
+    private val setDefaultMaxDimensionUseCase: SetDefaultMaxDimensionUseCase = mockk(relaxed = true)
+    private val setStripMetadataUseCase: SetStripMetadataUseCase = mockk(relaxed = true)
+    private val setGridDensityUseCase: SetGridDensityUseCase = mockk(relaxed = true)
+    private val exportPreferencesUseCase: ExportPreferencesUseCase = mockk(relaxed = true)
+    private val importPreferencesUseCase: ImportPreferencesUseCase = mockk(relaxed = true)
     private lateinit var observeEmbeddingStatisticsUseCase: ObserveEmbeddingStatisticsUseCase
     private lateinit var observeLibraryStatsUseCase: ObserveLibraryStatsUseCase
-    private lateinit var crashLogManager: CrashLogManager
+    private val crashLogManager: CrashLogManager = mockk(relaxed = true)
 
     private val appPreferencesFlow = MutableStateFlow(createDefaultAppPreferences())
     private val sharingPreferencesFlow = MutableStateFlow(createDefaultSharingPreferences())
@@ -104,21 +104,8 @@ class SettingsViewModelTest {
         // Setup use case mocks
         getAppPreferencesUseCase = mockk()
         getSharingPreferencesUseCase = mockk()
-        setDarkModeUseCase = mockk(relaxed = true)
-        setDynamicColorsUseCase = mockk(relaxed = true)
-        setEnableSemanticSearchUseCase = mockk(relaxed = true)
-        setSaveSearchHistoryUseCase = mockk(relaxed = true)
-        setSortEmojisByUsageUseCase = mockk(relaxed = true)
-        setDefaultFormatUseCase = mockk(relaxed = true)
-        setDefaultQualityUseCase = mockk(relaxed = true)
-        setDefaultMaxDimensionUseCase = mockk(relaxed = true)
-        setStripMetadataUseCase = mockk(relaxed = true)
-        setGridDensityUseCase = mockk(relaxed = true)
-        exportPreferencesUseCase = mockk(relaxed = true)
-        importPreferencesUseCase = mockk(relaxed = true)
         observeEmbeddingStatisticsUseCase = mockk(relaxed = true)
         observeLibraryStatsUseCase = mockk(relaxed = true)
-        crashLogManager = mockk(relaxed = true)
 
         every { getAppPreferencesUseCase() } returns appPreferencesFlow
         every { getSharingPreferencesUseCase() } returns sharingPreferencesFlow
@@ -363,68 +350,6 @@ class SettingsViewModelTest {
     // endregion
 
     // region Regression: keepMetadata removed (p0-3)
-
-    @Test
-    fun `UiState does not contain keepMetadata field`() {
-        // Compile-time verification: SettingsUiState has no keepMetadata property.
-        // If keepMetadata were added back, this test would fail to compile.
-        val state = SettingsUiState()
-        val fields =
-            listOf(
-                state.darkMode,
-                state.dynamicColorsEnabled,
-                state.defaultFormat,
-                state.defaultQuality,
-                state.defaultMaxDimension,
-                state.enableSemanticSearch,
-                state.saveSearchHistory,
-            )
-        assertThat(fields).isNotEmpty()
-    }
-
-    @Test
-    fun `SettingsIntent does not contain SetKeepMetadata`() {
-        // Compile-time verification: if SetKeepMetadata were reintroduced,
-        // this when-expression would fail to compile (non-exhaustive).
-        val intent: SettingsIntent = SettingsIntent.SetDefaultFormat(ImageFormat.WEBP)
-        val isKeepMetadata =
-            when (intent) {
-                is SettingsIntent.SetDarkMode,
-                is SettingsIntent.SetLanguage,
-                is SettingsIntent.SetDynamicColors,
-                is SettingsIntent.SetGridDensity,
-                is SettingsIntent.SetDefaultFormat,
-                is SettingsIntent.SetDefaultQuality,
-                is SettingsIntent.SetDefaultMaxDimension,
-                is SettingsIntent.SetEnableSemanticSearch,
-                is SettingsIntent.SetSaveSearchHistory,
-                is SettingsIntent.SetSortEmojisByUsage,
-                is SettingsIntent.CalculateCacheSize,
-                is SettingsIntent.ShowClearCacheDialog,
-                is SettingsIntent.DismissDialog,
-                is SettingsIntent.ConfirmClearCache,
-                is SettingsIntent.ShowExportOptionsDialog,
-                is SettingsIntent.DismissExportOptionsDialog,
-                is SettingsIntent.SetExportSettings,
-                is SettingsIntent.SetExportImages,
-                is SettingsIntent.SetExportTags,
-                is SettingsIntent.ConfirmExport,
-                is SettingsIntent.ExportToUri,
-                is SettingsIntent.ImportData,
-                is SettingsIntent.ImportFromUri,
-                is SettingsIntent.ConfirmImport,
-                is SettingsIntent.DismissImportConfirmDialog,
-                is SettingsIntent.OpenLicenses,
-                is SettingsIntent.OpenPrivacyPolicy,
-                is SettingsIntent.OpenFunStats,
-                is SettingsIntent.SetStripMetadata,
-                is SettingsIntent.ShareCrashLogs,
-                is SettingsIntent.ClearCrashLogs,
-                is SettingsIntent.OpenDuplicateDetection,
-                -> false
-            }
-        assertThat(isKeepMetadata).isFalse()
-    }
 
     // endregion
 

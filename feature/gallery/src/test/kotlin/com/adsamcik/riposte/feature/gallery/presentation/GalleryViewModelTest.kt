@@ -47,17 +47,17 @@ class GalleryViewModelTest {
     val mainDispatcherRule = MainDispatcherRule(StandardTestDispatcher())
 
     private lateinit var getMemesUseCase: GetMemesUseCase
-    private lateinit var getPagedMemesUseCase: GetPagedMemesUseCase
+    private val getPagedMemesUseCase: GetPagedMemesUseCase = mockk(relaxed = true)
     private lateinit var getFavoritesUseCase: GetFavoritesUseCase
     private lateinit var getMemesByEmojiUseCase: GetMemesByEmojiUseCase
-    private lateinit var getMemeByIdUseCase: GetMemeByIdUseCase
-    private lateinit var deleteMemesUseCase: DeleteMemesUseCase
-    private lateinit var toggleFavoriteUseCase: ToggleFavoriteUseCase
+    private val getMemeByIdUseCase: GetMemeByIdUseCase = mockk(relaxed = true)
+    private val deleteMemesUseCase: DeleteMemesUseCase = mockk(relaxed = true)
+    private val toggleFavoriteUseCase: ToggleFavoriteUseCase = mockk(relaxed = true)
     private lateinit var getAllMemeIdsUseCase: GetAllMemeIdsUseCase
     private lateinit var getAllEmojisWithCountsUseCase: GetAllEmojisWithCountsUseCase
     private lateinit var getAllEmojisWithTagCountsUseCase: GetAllEmojisWithTagCountsUseCase
     private lateinit var getLibraryStatsUseCase: GetLibraryStatsUseCase
-    private lateinit var getSuggestionsUseCase: GetSuggestionsUseCase
+    private val getSuggestionsUseCase: GetSuggestionsUseCase = GetSuggestionsUseCase()
     private lateinit var shareMemeUseCase: ShareMemeUseCase
     private lateinit var galleryRepository: com.adsamcik.riposte.feature.gallery.domain.repository.GalleryRepository
     private lateinit var preferencesDataStore: PreferencesDataStore
@@ -92,17 +92,12 @@ class GalleryViewModelTest {
         every { context.getString(any(), any()) } returns "1 meme deleted"
         every { context.getString(any()) } returns "Error"
         getMemesUseCase = mockk()
-        getPagedMemesUseCase = mockk(relaxed = true)
         getFavoritesUseCase = mockk()
         getMemesByEmojiUseCase = mockk()
-        getMemeByIdUseCase = mockk()
-        deleteMemesUseCase = mockk()
-        toggleFavoriteUseCase = mockk()
         getAllMemeIdsUseCase = mockk()
         getAllEmojisWithCountsUseCase = mockk()
         getAllEmojisWithTagCountsUseCase = mockk()
         getLibraryStatsUseCase = mockk()
-        getSuggestionsUseCase = GetSuggestionsUseCase()
         shareMemeUseCase = mockk()
         coEvery { shareMemeUseCase(any()) } returns Result.success(Intent())
         galleryRepository = mockk(relaxed = true)
