@@ -44,6 +44,8 @@ jobs:
               - 'docs/**'
               - '*.md'
               - '.github/**'
+            web:
+              - 'web/**'
 
   android-checks:
     name: Android Checks

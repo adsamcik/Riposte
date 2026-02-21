@@ -3,8 +3,12 @@ name: Code Quality
 on:
   push:
     branches: [ main, develop ]
+    paths-ignore:
+      - 'web/**'
   pull_request:
     branches: [ main, develop ]
+    paths-ignore:
+      - 'web/**'
   workflow_dispatch:
 
 concurrency:

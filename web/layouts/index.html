@@ -1,0 +1,84 @@
+{{ define "main" }}
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-content">
+    <h1 class="hero-title">🎭 Riposte</h1>
+    <p class="hero-tagline">Find the perfect meme and share it in under 10 seconds.</p>
+    <p class="hero-description">
+      Organize your meme collection with emoji tags, search with AI, and share instantly.
+      Fully offline — your memes stay on your device.
+    </p>
+    <div class="hero-cta">
+      {{ with .Site.Params.playStoreUrl }}
+      <a href="{{ . }}" class="btn btn-primary" target="_blank" rel="noopener">
+        <img src="{{ $.Site.BaseURL }}images/google-play-badge.png" alt="Get it on Google Play" class="play-badge">
+      </a>
+      {{ else }}
+      <span class="btn btn-secondary">Coming soon to Google Play</span>
+      {{ end }}
+      <a href="{{ .Site.Params.githubRepo }}" class="btn btn-outline" target="_blank" rel="noopener">
+        View Source on GitHub
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section class="features" id="features">
+  <h2 class="section-title">Features</h2>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <span class="feature-icon">🏷️</span>
+      <h3>Emoji Tags</h3>
+      <p>Categorize memes with emoji taps. Filter your collection instantly by mood, reaction, or vibe.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🔍</span>
+      <h3>AI-Powered Search</h3>
+      <p>Find memes by describing them. On-device semantic search understands what you mean, not just keywords.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">📤</span>
+      <h3>Instant Sharing</h3>
+      <p>Share directly to any app. Configure format, quality, and size — then share with a single tap.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🔒</span>
+      <h3>Fully Offline</h3>
+      <p>All AI processing happens on your device. No cloud uploads, no accounts, no tracking. Your memes are yours.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">📥</span>
+      <h3>Easy Import</h3>
+      <p>Import individual images or <code>.meme.zip</code> bundles with pre-tagged emoji metadata.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🌍</span>
+      <h3>Multilingual</h3>
+      <p>Available in English, Czech, German, Spanish, and Portuguese.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Screenshots -->
+<section class="screenshots" id="screenshots">
+  <h2 class="section-title">Screenshots</h2>
+  <div class="screenshot-strip">
+    <p class="placeholder-text">Screenshots coming soon</p>
+  </div>
+</section>
+
+<!-- Open Source -->
+<section class="open-source" id="open-source">
+  <h2 class="section-title">Open Source</h2>
+  <p>
+    Riposte is free software licensed under the
+    <a href="{{ .Site.Params.githubRepo }}/blob/main/LICENSE" target="_blank" rel="noopener">GNU GPL v3.0</a>.
+    You can view, modify, and contribute to the source code on
+    <a href="{{ .Site.Params.githubRepo }}" target="_blank" rel="noopener">GitHub</a>.
+  </p>
+  <p>
+    Built with Kotlin, Jetpack Compose, and Material 3. Uses ML Kit and MediaPipe for on-device AI.
+  </p>
+</section>
+{{ end }}

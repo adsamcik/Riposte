@@ -1,0 +1,12 @@
+baseURL = "https://adsamcik.github.io/meme-my-mood/"
+languageCode = "en"
+title = "Riposte — Meme Organizer for Android"
+
+[params]
+  description = "Organize, search, and share memes with emoji tags and AI-powered search. Find the perfect meme in under 10 seconds."
+  githubRepo = "https://github.com/adsamcik/meme-my-mood"
+  # Update this when you have a Play Store listing
+  playStoreUrl = ""
+
+[markup.goldmark.renderer]
+  unsafe = true
