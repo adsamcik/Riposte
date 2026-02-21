@@ -20,6 +20,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Adaptive batch sizing based on device performance
 - Removed unnecessary READ_MEDIA_IMAGES and READ_EXTERNAL_STORAGE permissions
 - Bumped AGP from 9.0.1 to 9.1.0-rc01
+- Import worker uses atomic status updates for crash safety
+- Embedding progress now shows processed/remaining counts in gallery banner
+
+### Added
+
+- Stale import recovery: detects imports stuck >30 minutes on gallery startup and auto-resolves them
+- Embedding progress banner in gallery with real-time processing counts
 
 ### Fixed
 
@@ -27,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed silent error swallowing in duplicate detection observation flow
 - Eliminated dead code: unused SearchBarWithEmoji stub, deprecated onLongPress parameter, unused DropdownSettingItem
 - Deduplicated formatFileSize() into shared core/common utility
+- Import worker validates staged files exist before processing
 
 ### Improved
 
