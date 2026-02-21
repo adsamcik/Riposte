@@ -282,6 +282,72 @@ class SearchRepositoryImplTest {
         }
 
     @Test
+    fun `semantic search with corrupted embedding bytes does not crash`() =
+        runTest {
+            val entity = createTestMemeEntity(1, "corrupted.jpg", title = "Corrupted embedding")
+            val corruptedBytes = ByteArray(3) { it.toByte() }
+
+            val embeddingData =
+                listOf(
+                    MemeWithEmbeddingData(
+                        memeId = entity.id,
+                        filePath = entity.filePath,
+                        fileName = entity.fileName,
+                        title = entity.title,
+                        description = entity.description,
+                        textContent = entity.textContent,
+                        emojiTagsJson = entity.emojiTagsJson,
+                        embedding = corruptedBytes,
+                        embeddingType = "content",
+                        dimension = 0,
+                        modelVersion = "test:1.0.0",
+                    ),
+                )
+            coEvery { memeEmbeddingDao.getMemesWithEmbeddings() } returns embeddingData
+
+            coEvery {
+                semanticSearchEngine.findSimilarMultiVector(any(), any(), any())
+            } returns emptyList()
+
+            val results = repository.searchSemantic("test", 20)
+
+            assertThat(results).isEmpty()
+        }
+
+    @Test
+    fun `semantic search with empty embedding bytes handles gracefully`() =
+        runTest {
+            val entity = createTestMemeEntity(1, "empty.jpg", title = "Empty embedding")
+            val emptyBytes = ByteArray(0)
+
+            val embeddingData =
+                listOf(
+                    MemeWithEmbeddingData(
+                        memeId = entity.id,
+                        filePath = entity.filePath,
+                        fileName = entity.fileName,
+                        title = entity.title,
+                        description = entity.description,
+                        textContent = entity.textContent,
+                        emojiTagsJson = entity.emojiTagsJson,
+                        embedding = emptyBytes,
+                        embeddingType = "content",
+                        dimension = 0,
+                        modelVersion = "test:1.0.0",
+                    ),
+                )
+            coEvery { memeEmbeddingDao.getMemesWithEmbeddings() } returns embeddingData
+
+            coEvery {
+                semanticSearchEngine.findSimilarMultiVector(any(), any(), any())
+            } returns emptyList()
+
+            val results = repository.searchSemantic("test", 20)
+
+            assertThat(results).isEmpty()
+        }
+
+    @Test
     fun `searchSemantic returns empty when all embeddings are null`() =
         runTest {
             val entity = createTestMemeEntity(1, "meme1.jpg", title = "Null embedding")

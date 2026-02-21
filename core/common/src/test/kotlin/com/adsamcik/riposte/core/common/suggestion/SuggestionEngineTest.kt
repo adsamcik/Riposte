@@ -369,6 +369,45 @@ class SuggestionEngineTest {
     }
 
     @Test
+    fun `library of exactly minLibrarySize memes produces suggestions`() {
+        val memes = (1..5).map { testMeme(id = it.toLong(), importedAt = now - it * MS_PER_DAY) }
+        val context = SuggestionContext(surface = Surface.GALLERY)
+
+        val result = engine.suggest(memes, context, now)
+
+        // Exactly at minLibrarySize (5) the check `< 5` is false → suggestions produced
+        // Kills the < → <= mutation on `if (allMemes.size < config.minLibrarySize)`
+        assertThat(result).isNotEmpty()
+    }
+
+    @Test
+    fun `library at smallLibraryThreshold uses full algorithm not small library shortcut`() {
+        // 20 memes with engagement anti-correlated to recency so full algorithm differs
+        val memes =
+            (1..20).map {
+                testMeme(
+                    id = it.toLong(),
+                    importedAt = now - it * MS_PER_DAY,
+                    useCount = it, // older memes have higher use count
+                    viewCount = it * 3,
+                    lastViewedAt = now - (it % 5).toLong() * MS_PER_DAY,
+                    emojiTags = listOf(tag(listOf("😂", "🔥", "❤️", "🎉", "😎")[it % 5])),
+                )
+            }
+        val context = SuggestionContext(surface = Surface.GALLERY)
+
+        val result = engine.suggest(memes, context, now)
+
+        // Small-library shortcut would return memes sorted by importedAt desc: [1, 2, 3, ...]
+        val importRecencyOrder = memes.sortedByDescending { it.importedAt }.take(12).map { it.id }
+        // At exactly smallLibraryThreshold (20) the check `< 20` is false → full algorithm runs
+        // Full algorithm considers engagement/recency/drift, so ordering differs
+        // Kills the < → <= mutation on `if (allMemes.size < config.smallLibraryThreshold)`
+        assertThat(result).isNotEmpty()
+        assertThat(result.map { it.id }).isNotEqualTo(importRecencyOrder)
+    }
+
+    @Test
     fun `staleness rotation changes keepers between sessions`() {
         // Use very close scores so staleness penalty can flip ordering
         val memes =

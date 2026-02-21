@@ -507,6 +507,43 @@ class GalleryViewModelTest {
             assertThat(state.isSelectionMode).isTrue()
         }
 
+    @Test
+    fun `confirmDelete failure clears pendingDeleteIds and preserves selection`() =
+        runTest {
+            coEvery { deleteMemesUseCase(any<Set<Long>>()) } returns Result.failure(Exception("Delete failed"))
+            viewModel = createViewModel()
+            advanceUntilIdle()
+            viewModel.onIntent(GalleryIntent.StartSelection(1))
+            viewModel.onIntent(GalleryIntent.ToggleSelection(2))
+            viewModel.onIntent(GalleryIntent.DeleteSelected)
+            advanceUntilIdle()
+
+            turbineScope {
+                val effects = viewModel.effects.testIn(backgroundScope)
+                // Skip ShowDeleteConfirmation
+                effects.awaitItem()
+
+                viewModel.onIntent(GalleryIntent.ConfirmDelete)
+                advanceUntilIdle()
+
+                val effect = effects.awaitItem()
+                assertThat(effect).isInstanceOf(GalleryEffect.ShowError::class.java)
+
+                effects.cancel()
+            }
+
+            // Selection should be preserved on failure (unlike success which clears it)
+            val state = viewModel.uiState.value
+            assertThat(state.isSelectionMode).isTrue()
+            assertThat(state.selectedMemeIds).containsExactly(1L, 2L)
+
+            // pendingDeleteIds was cleared: a second ConfirmDelete calls with empty set
+            viewModel.onIntent(GalleryIntent.ConfirmDelete)
+            advanceUntilIdle()
+            coVerify(exactly = 1) { deleteMemesUseCase(setOf(1L, 2L)) }
+            coVerify(exactly = 1) { deleteMemesUseCase(emptySet()) }
+        }
+
     // endregion
 
     // region Filter Intent Tests
@@ -574,6 +611,31 @@ class GalleryViewModelTest {
             assertThat(viewModel.uiState.value.favoritesCount).isEqualTo(0)
         }
 
+    @Test
+    fun `when favorites count drops to zero while Favorites filter active then filter auto-clears to All and reloads memes`() =
+        runTest {
+            val statsFlow = MutableStateFlow(LibraryStatistics(totalMemes = 10, favoriteMemes = 3))
+            every { getLibraryStatsUseCase() } returns statsFlow
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            // Activate Favorites filter (non-paged)
+            viewModel.onIntent(GalleryIntent.SetFilter(GalleryFilter.Favorites))
+            advanceUntilIdle()
+            assertThat(viewModel.uiState.value.filter).isEqualTo(GalleryFilter.Favorites)
+            assertThat(viewModel.uiState.value.usePaging).isFalse()
+
+            // Drop favorites to zero
+            statsFlow.value = LibraryStatistics(totalMemes = 10, favoriteMemes = 0)
+            advanceUntilIdle()
+
+            // Filter auto-cleared to All and loadMemes() re-enabled paging
+            val state = viewModel.uiState.value
+            assertThat(state.filter).isEqualTo(GalleryFilter.All)
+            assertThat(state.favoritesCount).isEqualTo(0)
+            assertThat(state.usePaging).isTrue()
+        }
+
     // endregion
 
     // region Grid Columns Intent Tests
@@ -613,6 +675,37 @@ class GalleryViewModelTest {
 
                 effects.cancel()
             }
+        }
+
+    @Test
+    fun `shareSelected with single meme uses quick share path`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
+            viewModel.onIntent(GalleryIntent.StartSelection(1))
+
+            viewModel.onIntent(GalleryIntent.ShareSelected)
+            advanceUntilIdle()
+
+            coVerify { shareMemeUseCase(1L) }
+        }
+
+    @Test
+    fun `shareSelected with multiple memes uses multi share path`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
+            viewModel.onIntent(GalleryIntent.StartSelection(1))
+            viewModel.onIntent(GalleryIntent.ToggleSelection(2))
+
+            viewModel.onIntent(GalleryIntent.ShareSelected)
+            advanceUntilIdle()
+
+            // Single-share path (quickShare / shareMemeUseCase) should NOT be used
+            coVerify(exactly = 0) { shareMemeUseCase(any()) }
+            // Multi-share path resolves memes by ID
+            coVerify { getMemeByIdUseCase(1L) }
+            coVerify { getMemeByIdUseCase(2L) }
         }
 
     // endregion

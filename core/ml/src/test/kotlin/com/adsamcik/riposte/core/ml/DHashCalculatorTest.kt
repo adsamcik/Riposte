@@ -192,6 +192,19 @@ class DHashCalculatorTest {
     }
 
     @Test
+    fun `uniform color bitmap produces zero hash`() {
+        val bitmap = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888)
+        Canvas(bitmap).drawColor(Color.GRAY)
+
+        val hash = calculator.calculate(bitmap)
+
+        // All pixels identical → no pixel is brighter than its neighbor → every bit stays 0
+        // Kills the > → >= mutation on `if (leftGray > rightGray)`
+        assertThat(hash).isEqualTo(0L)
+        bitmap.recycle()
+    }
+
+    @Test
     fun `wide aspect ratio bitmap produces valid hash`() {
         val wide = Bitmap.createBitmap(1000, 10, Bitmap.Config.ARGB_8888)
         Canvas(wide).drawColor(Color.CYAN)
