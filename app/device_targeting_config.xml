@@ -1,43 +1,60 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Device targeting configuration for AI Pack delivery.
+  Group names must match the #group_ suffixes in aipacks/soc_optimized/src/main/assets/.
+  Devices not matching any group receive only the generic_embedding pack.
+
+  Both "Qualcomm" and "QTI" manufacturer values are included because
+  Build.SOC_MANUFACTURER varies by OEM firmware.
+  Cross-mapped SoCs (SM8475, MT6989) are included per PLATFORM_MODELS
+  in EmbeddingGemmaGenerator.kt.
+-->
 <config:device-targeting-config
     xmlns:config="http://schemas.android.com/apk/config">
 
-    <!-- Qualcomm Snapdragon 8 Gen 2 (sm8550) -->
+    <!-- Qualcomm Snapdragon 8 Gen 2 (SM8550) + 8+ Gen 1 (SM8475, uses same model) -->
     <config:device-group name="qualcomm_sm8550">
         <config:device-selector>
+            <config:system-on-chip manufacturer="Qualcomm" model="SM8550"/>
+            <config:system-on-chip manufacturer="Qualcomm" model="SM8475"/>
             <config:system-on-chip manufacturer="QTI" model="SM8550"/>
+            <config:system-on-chip manufacturer="QTI" model="SM8475"/>
         </config:device-selector>
     </config:device-group>
 
-    <!-- Qualcomm Snapdragon 8 Gen 3 (sm8650) -->
+    <!-- Qualcomm Snapdragon 8 Gen 3 (SM8650) -->
     <config:device-group name="qualcomm_sm8650">
         <config:device-selector>
+            <config:system-on-chip manufacturer="Qualcomm" model="SM8650"/>
             <config:system-on-chip manufacturer="QTI" model="SM8650"/>
         </config:device-selector>
     </config:device-group>
 
-    <!-- Qualcomm Snapdragon 8s Gen 3 (sm8750) -->
+    <!-- Qualcomm Snapdragon 8 Elite (SM8750) -->
     <config:device-group name="qualcomm_sm8750">
         <config:device-selector>
+            <config:system-on-chip manufacturer="Qualcomm" model="SM8750"/>
             <config:system-on-chip manufacturer="QTI" model="SM8750"/>
         </config:device-selector>
     </config:device-group>
 
-    <!-- Qualcomm Snapdragon 8 Elite (sm8850) -->
+    <!-- Qualcomm Snapdragon 8 Gen 5 (SM8850) -->
     <config:device-group name="qualcomm_sm8850">
         <config:device-selector>
+            <config:system-on-chip manufacturer="Qualcomm" model="SM8850"/>
             <config:system-on-chip manufacturer="QTI" model="SM8850"/>
         </config:device-selector>
     </config:device-group>
 
-    <!-- MediaTek Dimensity 9300 (mt6991) -->
+    <!-- MediaTek Dimensity 9400 (MT6991) + Dimensity 9300 (MT6989, uses same model) -->
     <config:device-group name="mediatek_mt6991">
         <config:device-selector>
             <config:system-on-chip manufacturer="MediaTek" model="MT6991"/>
+            <config:system-on-chip manufacturer="MediaTek" model="MT6989"/>
         </config:device-selector>
     </config:device-group>
 
-    <!-- MediaTek Dimensity 9400 (mt6993) -->
+    <!-- MediaTek Dimensity 9500 (MT6993) -->
     <config:device-group name="mediatek_mt6993">
         <config:device-selector>
             <config:system-on-chip manufacturer="MediaTek" model="MT6993"/>
