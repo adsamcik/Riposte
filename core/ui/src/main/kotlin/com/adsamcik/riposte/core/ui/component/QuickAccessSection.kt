@@ -49,16 +49,13 @@ import java.io.File
  *
  * @param memes List of memes to display in the quick access row.
  * @param onQuickShare Callback invoked when a meme is tapped or hold completes for quick sharing.
- * @param onLongPress Deprecated: No longer used. Hold gesture now triggers [onQuickShare] with visual feedback.
  * @param onSettingsClick Callback invoked when the settings icon is clicked.
  * @param modifier Modifier for the section container.
  */
-@Suppress("UNUSED_PARAMETER")
 @Composable
 fun QuickAccessSection(
     memes: List<Meme>,
     onQuickShare: (Long) -> Unit,
-    onLongPress: (Long) -> Unit,
     onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -182,7 +179,6 @@ private fun QuickAccessSectionPreview() {
         QuickAccessSection(
             memes = sampleMemes,
             onQuickShare = {},
-            onLongPress = {},
             onSettingsClick = {},
         )
     }
@@ -195,7 +191,6 @@ private fun QuickAccessSectionEmptyPreview() {
         QuickAccessSection(
             memes = emptyList(),
             onQuickShare = {},
-            onLongPress = {},
             onSettingsClick = {},
         )
     }

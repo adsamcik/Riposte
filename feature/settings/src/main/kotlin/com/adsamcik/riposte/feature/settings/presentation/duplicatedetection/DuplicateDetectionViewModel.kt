@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import timber.log.Timber
 
 @HiltViewModel
 class DuplicateDetectionViewModel @Inject constructor(
@@ -43,7 +44,7 @@ class DuplicateDetectionViewModel @Inject constructor(
     private fun observeDuplicateGroups() {
         viewModelScope.launch {
             repository.observeDuplicateGroups()
-                .catch { /* Silently handle errors in observation */ }
+                .catch { e -> Timber.w(e, "Error observing duplicate groups") }
                 .collect { groups ->
                     _uiState.update { it.copy(duplicateGroups = groups) }
                 }

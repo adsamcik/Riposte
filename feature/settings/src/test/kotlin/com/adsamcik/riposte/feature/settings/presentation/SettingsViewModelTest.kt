@@ -422,7 +422,7 @@ class SettingsViewModelTest {
             advanceUntilIdle()
 
             val state = viewModel.uiState.value
-            assertThat(state.cacheSize).isEqualTo("2.00 MB")
+            assertThat(state.cacheSize).isEqualTo("2.0 MB")
         }
 
     @Test
@@ -439,7 +439,7 @@ class SettingsViewModelTest {
             advanceUntilIdle()
 
             val state = viewModel.uiState.value
-            assertThat(state.cacheSize).isEqualTo("1.00 KB")
+            assertThat(state.cacheSize).isEqualTo("1.0 KB")
         }
 
     @Test
@@ -473,7 +473,7 @@ class SettingsViewModelTest {
             advanceUntilIdle()
 
             val state = viewModel.uiState.value
-            assertThat(state.cacheSize).isEqualTo("2.00 GB")
+            assertThat(state.cacheSize).isEqualTo("2.0 GB")
         }
 
     @Test
@@ -497,7 +497,7 @@ class SettingsViewModelTest {
             advanceUntilIdle()
 
             val state = viewModel.uiState.value
-            assertThat(state.cacheSize).isEqualTo("2.00 MB")
+            assertThat(state.cacheSize).isEqualTo("2.0 MB")
         }
 
     @Test
