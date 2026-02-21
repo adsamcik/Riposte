@@ -86,6 +86,15 @@ android {
     // AI Packs for Google Play distribution (install-time delivery)
     assetPacks += listOf(":aipacks:generic_embedding", ":aipacks:soc_optimized")
 
+    // Device targeting for SoC-optimized AI Pack delivery
+    bundle {
+        deviceTargetingConfig = file("device_targeting_config.xml")
+        deviceGroup {
+            enableSplit = true
+            defaultGroup = "other"
+        }
+    }
+
     // Release signing configuration
     signingConfigs {
         create("release") {
