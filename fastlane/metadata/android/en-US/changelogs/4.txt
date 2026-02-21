@@ -1,0 +1,6 @@
+Optimized distribution for Google Play!
+
+📦 AI Packs deliver SoC-optimized ML models via Google Play
+🎯 Device-targeted delivery: right model for your chipset automatically
+🏗️ Simplified build: lite, standard, and googleplay flavors
+⚡ Smaller download — models delivered separately from app

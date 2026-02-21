@@ -1,0 +1,8 @@
+First release of Riposte — your meme organizer!
+
+🎉 Gallery with emoji tagging and favorites
+🔍 Smart search with FTS and AI-powered semantic similarity
+📦 Import images or .meme.zip bundles with auto emoji suggestions
+📤 Share with customizable format, quality, and size
+🎨 Material 3 design with dynamic colors
+🧠 Background embedding generation with WorkManager
