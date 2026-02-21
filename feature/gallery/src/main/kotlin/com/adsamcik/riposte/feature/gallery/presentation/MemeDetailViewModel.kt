@@ -377,7 +377,7 @@ class MemeDetailViewModel
         private fun loadAllMemeIds() {
             viewModelScope.launch {
                 try {
-                    val ids = useCases.getAllMemeIds()
+                    val ids = useCases.getAllMemeIds().distinct()
                     _uiState.update { it.copy(allMemeIds = ids) }
                 } catch (
                     @Suppress("TooGenericExceptionCaught") // Catches all to show error state

@@ -438,7 +438,7 @@ private fun GalleryScreenContent(
                     }
                 val nonSuggestionMemes =
                     remember(uiState.memes, suggestionIds) {
-                        uiState.memes.filter { it.id !in suggestionIds }
+                        uiState.memes.filter { it.id !in suggestionIds }.distinctBy { it.id }
                     }
 
                 val contentKey = when {
