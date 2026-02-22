@@ -7,6 +7,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.4] - 2026-02-22
+
+### Added
+
+- Undo button after deleting a meme — tap to restore within 5 seconds
+- Search emoji by name when editing tags (type "fire" to find 🔥, "sad" to find 😢)
+- "Import Memes" button shown when search finds no results
+- Embedding progress now shows how many memes are processed out of total
+
+### Changed
+
+- Phone vibrates when you favorite a meme
+- Clearing search history now asks for confirmation first
+- Updated launcher icons
+
+### Fixed
+
+- Search errors show a friendly message instead of technical gibberish
+- Stalled import message now translates properly in all languages
+- GIFs are shared as-is instead of being re-encoded
+- Favoriting a meme while scrolling no longer occasionally misses the count update
+- Adding an emoji to a meme while quickly tapping no longer drops the edit
+- Deleting a meme cleans up reliably even if the file is already gone
+- Smart search no longer returns inflated relevance scores
+- Emoji search works correctly in right-to-left languages
+- Several memory leaks fixed during meme import
+- Fixed rare crashes from concurrent background operations
+
+### Security
+
+- Meme bundle import now rejects ZIP bombs (2 GB extraction limit)
+- Each import extracts into its own isolated folder
+- Smart search validates embedding dimensions before comparing
+
+### Accessibility
+
+- TalkBack announces empty state icons, emoji chips, and import thumbnails ("Image 1 of 5")
+- Import progress updates are announced automatically by screen readers
+- Emoji chip text follows your system font size preference
+
 ## [0.3.3] - 2026-02-21
 
 ### Changed
@@ -224,7 +264,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Adaptive rate limiting with exponential backoff
 - Schema v1.1 with localization support
 
-[Unreleased]: https://github.com/adsamcik/riposte/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/adsamcik/riposte/compare/v0.3.4...HEAD
+[0.3.4]: https://github.com/adsamcik/riposte/compare/v0.3.3...v0.3.4
+[0.3.3]: https://github.com/adsamcik/riposte/compare/v0.3.2...v0.3.3
+[0.3.2]: https://github.com/adsamcik/riposte/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/adsamcik/riposte/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/adsamcik/riposte/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/adsamcik/riposte/compare/v0.1.0...v0.2.0
