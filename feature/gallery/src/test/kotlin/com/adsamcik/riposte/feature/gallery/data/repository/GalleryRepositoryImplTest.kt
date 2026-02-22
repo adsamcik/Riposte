@@ -1,6 +1,8 @@
 package com.adsamcik.riposte.feature.gallery.data.repository
 
 import app.cash.turbine.test
+import androidx.room.withTransaction
+import com.adsamcik.riposte.core.database.MemeDatabase
 import com.adsamcik.riposte.core.database.dao.EmojiTagDao
 import com.adsamcik.riposte.core.database.dao.EmojiUsageBySharing
 import com.adsamcik.riposte.core.database.dao.EmojiUsageStats
@@ -14,9 +16,13 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.slot
+import io.mockk.unmockkStatic
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 
@@ -26,6 +32,7 @@ class GalleryRepositoryImplTest {
     private lateinit var memeDao: MemeDao
     private lateinit var emojiTagDao: EmojiTagDao
     private lateinit var memeEmbeddingDao: MemeEmbeddingDao
+    private lateinit var database: MemeDatabase
     private lateinit var repository: GalleryRepositoryImpl
 
     private val testMemeEntities =
@@ -37,16 +44,29 @@ class GalleryRepositoryImplTest {
 
     @Before
     fun setup() {
+        mockkStatic("androidx.room.RoomDatabaseKt")
         memeDao = mockk()
         emojiTagDao = mockk()
         memeEmbeddingDao = mockk()
+        database = mockk()
+        // Mock withTransaction to just execute the block
+        val transactionLambda = slot<suspend () -> Any?>()
+        coEvery { database.withTransaction(capture(transactionLambda)) } coAnswers {
+            transactionLambda.captured.invoke()
+        }
         repository =
             GalleryRepositoryImpl(
+                database = database,
                 memeDao = memeDao,
                 emojiTagDao = emojiTagDao,
                 memeEmbeddingDao = memeEmbeddingDao,
                 ioDispatcher = testDispatcher,
             )
+    }
+
+    @After
+    fun tearDown() {
+        unmockkStatic("androidx.room.RoomDatabaseKt")
     }
 
     // region getMemes Tests

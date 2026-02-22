@@ -1021,7 +1021,7 @@ private fun ZoomableImage(
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    text = "Failed to load image",
+                    text = stringResource(R.string.gallery_error_image_load_failed),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onErrorContainer,
                 )

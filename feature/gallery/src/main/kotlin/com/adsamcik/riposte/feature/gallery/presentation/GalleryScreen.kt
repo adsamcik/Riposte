@@ -1529,10 +1529,10 @@ private fun NotificationBanner(
 
         val iconDescription =
             when (notification) {
-                is GalleryNotification.ImportComplete -> "Success"
-                is GalleryNotification.ImportFailed -> "Error"
-                is GalleryNotification.IndexingComplete -> "Complete"
-                null -> "Info"
+                is GalleryNotification.ImportComplete -> stringResource(R.string.gallery_cd_notification_success)
+                is GalleryNotification.ImportFailed -> stringResource(R.string.gallery_cd_notification_error)
+                is GalleryNotification.IndexingComplete -> stringResource(R.string.gallery_cd_notification_complete)
+                null -> stringResource(R.string.gallery_cd_notification_info)
             }
 
         val text =

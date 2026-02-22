@@ -183,11 +183,12 @@ class MemeDetailViewModel
         }
 
         private fun addEmoji(emoji: String) {
-            val currentEmojis = _uiState.value.editedEmojis
-            if (!currentEmojis.contains(emoji)) {
-                _uiState.update {
-                    it.copy(
-                        editedEmojis = currentEmojis + emoji,
+            _uiState.update { state ->
+                if (emoji in state.editedEmojis) {
+                    state
+                } else {
+                    state.copy(
+                        editedEmojis = state.editedEmojis + emoji,
                         showEmojiPicker = false,
                     )
                 }

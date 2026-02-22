@@ -52,7 +52,7 @@ class GalleryViewModel
         private val galleryRepository: GalleryRepository,
         @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
         private val preferencesDataStore: PreferencesDataStore,
-        private val importRequestDao: ImportRequestDao,
+        private val importRequestDao: ImportRequestDao, // TODO: Extract to use case — Clean Architecture violation (H9)
         val searchDelegate: SearchDelegate,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(GalleryUiState())
@@ -67,8 +67,6 @@ class GalleryViewModel
 
         private val _effects = Channel<GalleryEffect>(Channel.BUFFERED)
         val effects = merge(_effects.receiveAsFlow(), searchDelegate.effects)
-
-        private var pendingDeleteIds: Set<Long> = emptySet()
 
         /** IDs of suggestions shown in the previous session (for staleness rotation). */
         private var lastSessionSuggestionIds: Set<Long> = emptySet()
@@ -164,16 +162,17 @@ class GalleryViewModel
                     .map { it.favoriteMemes }
                     .distinctUntilChanged()
                     .collectLatest { count ->
+                        var shouldReloadMemes = false
                         _uiState.update { state ->
                             // Auto-clear Favorites filter when no favorites remain
                             if (count == 0 && state.filter is GalleryFilter.Favorites) {
+                                shouldReloadMemes = true
                                 state.copy(favoritesCount = count, filter = GalleryFilter.All)
                             } else {
                                 state.copy(favoritesCount = count)
                             }
                         }
-                        // Reload memes if filter was auto-cleared
-                        if (_uiState.value.favoritesCount == 0 && _uiState.value.filter is GalleryFilter.All) {
+                        if (shouldReloadMemes) {
                             loadMemes()
                         }
                     }
@@ -523,37 +522,38 @@ class GalleryViewModel
         }
 
         private fun deleteSelected() {
-            pendingDeleteIds = _uiState.value.selectedMemeIds
+            _uiState.update { it.copy(pendingDeleteIds = it.selectedMemeIds) }
             viewModelScope.launch {
-                _effects.send(GalleryEffect.ShowDeleteConfirmation(pendingDeleteIds.size))
+                _effects.send(GalleryEffect.ShowDeleteConfirmation(_uiState.value.pendingDeleteIds.size))
             }
         }
 
         private fun confirmDelete() {
             viewModelScope.launch {
-                useCases.deleteMemes(pendingDeleteIds)
+                val deleteIds = _uiState.value.pendingDeleteIds
+                useCases.deleteMemes(deleteIds)
                     .onSuccess {
                         _effects.send(
                             GalleryEffect.ShowSnackbar(
-                                context.getString(R.string.gallery_snackbar_deleted, pendingDeleteIds.size),
+                                context.getString(R.string.gallery_snackbar_deleted, deleteIds.size),
                             ),
                         )
                         clearSelection()
                     }
                     .onFailure { error ->
-                        Timber.e(error, "Failed to delete %d memes", pendingDeleteIds.size)
+                        Timber.e(error, "Failed to delete %d memes", deleteIds.size)
                         _effects.send(
                             GalleryEffect.ShowError(
                                 error.message ?: context.getString(R.string.gallery_snackbar_delete_failed),
                             ),
                         )
                     }
-                pendingDeleteIds = emptySet()
+                _uiState.update { it.copy(pendingDeleteIds = emptySet()) }
             }
         }
 
         private fun cancelDelete() {
-            pendingDeleteIds = emptySet()
+            _uiState.update { it.copy(pendingDeleteIds = emptySet()) }
         }
 
         private fun setFilter(filter: GalleryFilter) {

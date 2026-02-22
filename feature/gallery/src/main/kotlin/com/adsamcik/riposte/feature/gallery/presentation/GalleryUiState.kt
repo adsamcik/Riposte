@@ -128,6 +128,10 @@ data class GalleryUiState(
      * Used to show the emoji filter rail even before a query is typed.
      */
     val isSearchFocused: Boolean = false,
+    /**
+     * IDs of memes pending deletion confirmation.
+     */
+    val pendingDeleteIds: Set<Long> = emptySet(),
 ) {
     /**
      * Whether any memes are selected.

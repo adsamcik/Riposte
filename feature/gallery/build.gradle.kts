@@ -50,6 +50,9 @@ dependencies {
     // Image Loading
     implementation(libs.coil.compose)
 
+    // Room (for withTransaction in repository)
+    implementation(libs.room.ktx)
+
     // Coroutines
     implementation(libs.coroutines.core)
     implementation(libs.coroutines.android)
