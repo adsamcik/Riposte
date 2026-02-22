@@ -191,8 +191,6 @@ class MlKitTextRecognizerTest {
             val result = textRecognizer.recognizeText(mockUri)
 
             assertThat(result).isEqualTo(expectedText)
-
-            unmockkStatic(InputImage::class)
         }
 
     @Test
@@ -208,8 +206,6 @@ class MlKitTextRecognizerTest {
             val result = textRecognizer.recognizeText(mockUri)
 
             assertThat(result).isNull()
-
-            unmockkStatic(InputImage::class)
         }
 
     @Test(expected = Exception::class)
@@ -221,8 +217,6 @@ class MlKitTextRecognizerTest {
             every { InputImage.fromFilePath(mockContext, mockUri) } throws Exception("Invalid URI")
 
             textRecognizer.recognizeText(mockUri)
-
-            unmockkStatic(InputImage::class)
         }
 
     @Test(expected = SecurityException::class)
@@ -234,8 +228,6 @@ class MlKitTextRecognizerTest {
             every { InputImage.fromFilePath(mockContext, mockUri) } throws SecurityException("Permission denied")
 
             textRecognizer.recognizeText(mockUri)
-
-            unmockkStatic(InputImage::class)
         }
 
     // ==================== Images with Various Text Scenarios ====================

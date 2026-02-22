@@ -33,12 +33,8 @@ class DHashCalculatorTest {
     }
 
     @Test
-    fun `calculate returns null for zero-width bitmap`() {
-        // Robolectric allows 0-dimension bitmaps via createBitmap with specific config
+    fun `calculate returns non-null for 1x1 bitmap`() {
         val bitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
-        // Use a mock-like approach: create a real bitmap then test the boundary
-        // The DHashCalculator checks width == 0 || height == 0
-        // Since we can't create a 0-size Bitmap directly, verify with 1x1 (valid)
         val hash = calculator.calculate(bitmap)
         assertThat(hash).isNotNull()
         bitmap.recycle()

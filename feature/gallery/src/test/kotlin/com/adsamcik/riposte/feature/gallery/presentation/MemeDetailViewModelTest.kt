@@ -1056,6 +1056,26 @@ class MemeDetailViewModelTest {
             }
         }
 
+    @Test
+    fun `share failure resets isSharing and emits error`() =
+        runTest {
+            coEvery { shareMemeUseCase(any()) } returns Result.failure(RuntimeException("Share failed"))
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.effects.test {
+                viewModel.onIntent(MemeDetailIntent.Share)
+                advanceUntilIdle()
+
+                val effect = awaitItem()
+                assertThat(effect).isInstanceOf(MemeDetailEffect.ShowError::class.java)
+                assertThat((effect as MemeDetailEffect.ShowError).message).contains("Share failed")
+            }
+
+            assertThat(viewModel.uiState.value.isSharing).isFalse()
+        }
+
     // endregion
 
     // region Error Handling Regression Tests
