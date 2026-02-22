@@ -215,6 +215,23 @@ fun `paged memes with duplicate IDs do not crash`() = runTest {
 }
 ```
 
+### Pattern: PagingData Compose UI Tests
+
+Unit tests CANNOT catch key collisions — they only happen during Compose composition. Any screen using `collectAsLazyPagingItems()` MUST also have an adversarial Compose UI test:
+
+```kotlin
+@Test
+fun `paging with duplicate IDs does not crash`() {
+    val dupes = listOf(testMeme(1L), testMeme(2L), testMeme(2L))
+    val flow = MutableStateFlow(PagingData.from(dupes))
+    composeTestRule.setContent {
+        val items = flow.collectAsLazyPagingItems()
+        ScreenUnderTest(pagedMemes = items)
+    }
+    composeTestRule.waitForIdle() // no crash = pass
+}
+```
+
 ### Pattern: Error Propagation in ViewModels
 Every ViewModel action that calls a use case or repository **must** be tested for error propagation. Verify errors update UI state rather than silently failing:
 ```kotlin

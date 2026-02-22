@@ -13,6 +13,7 @@ applyTo: '**/*.kt'
 - Use `requireNotNull(value) { "descriptive message" }` when nullability is a programming error
 - Use `checkNotNull()` for state validation in public APIs
 - Prefer non-nullable types in public APIs
+- `!!` is only acceptable in **test files** where a crash on null is the desired assertion behavior
 
 ```kotlin
 // ✅ Correct: requireNotNull with message
@@ -90,6 +91,20 @@ viewModelScope.launch {
     }
 }
 
+// ✅ Good: safeLaunch helper centralizes error handling
+private fun safeLaunch(block: suspend () -> Unit) {
+    viewModelScope.launch {
+        try { block() }
+        catch (e: Exception) {
+            Timber.e(e, "Operation failed")
+            _effects.send(ShowError(e.message))
+        }
+    }
+}
+
+// ✅ Good: .catch on Flow collectors
+useCase().catch { e -> Timber.e(e) }.collect { ... }
+
 // ❌ FORBIDDEN: Bare launch with no error handling
 viewModelScope.launch {
     repository.deleteMeme(id)  // If this throws, scope is silently cancelled
@@ -116,6 +131,17 @@ suspend fun getOrCompute(id: Long): Embedding {
 ```
 
 **When to use `Mutex`:** Any `MutableMap`, `MutableList`, or `var` that is read/written from multiple coroutines (e.g., embedding caches, search result caches, in-memory indexes).
+
+**When to use `synchronized`:** Non-suspend functions that need thread safety (e.g., `operator fun invoke()` without `suspend`):
+
+```kotlin
+// ✅ Correct: synchronized for non-suspend functions
+private val lock = Any()
+operator fun invoke(): Result = synchronized(lock) {
+    if (cached != null) return cached
+    compute().also { cached = it }
+}
+```
 
 ## Naming Conventions
 

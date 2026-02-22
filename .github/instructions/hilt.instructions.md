@@ -102,6 +102,7 @@ class FeatureViewModel @Inject constructor(
 3. **Surface errors in `UiState`** — never swallow silently
 4. **Provide error dismissal** — `DismissError` intent that clears the error field
 5. **Preserve existing data** — on error, keep previously loaded items visible
+6. **Use `.catch {}` before `.collect {}`** on Flow observers to prevent uncaught exceptions from cancelling the collector
 
 ## Use Cases
 
