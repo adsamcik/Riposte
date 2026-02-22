@@ -67,3 +67,17 @@ jobs:
 
       - name: Run ktlint
         run: ./gradlew ktlintCheck --no-daemon
+
+  safety-guards:
+    name: Safety Guards
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run safety guards
+        run: |
+          chmod +x scripts/safety-guards.sh
+          bash scripts/safety-guards.sh

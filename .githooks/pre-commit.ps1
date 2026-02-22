@@ -106,6 +106,39 @@ if ($todoComments) {
     }
 }
 
+# Run safety guards on staged files
+Write-Info "Running safety guards..."
+$prodFiles = $stagedKtFiles | Where-Object { $_ -notmatch '(/test/|/androidTest/)' }
+$guardErrors = 0
+
+if ($prodFiles) {
+    # Guard 1: Raw ID keys in LazyList
+    $rawKeyHits = $prodFiles | ForEach-Object {
+        Select-String -Path $_ -Pattern 'key\s*=\s*\{\s*(it|[a-z]+)\.(id|rowId|memeId)\s*\}' -AllMatches
+    } | Where-Object { $_ }
+    if ($rawKeyHits) {
+        Write-Error-Custom "Found raw ID keys in LazyList (must use prefixed string keys):"
+        $rawKeyHits | ForEach-Object { Write-Host "$($_.Filename):$($_.LineNumber): $($_.Line.Trim())" }
+        $guardErrors++
+    }
+
+    # Guard 2: !! in production code
+    $bangBangHits = $prodFiles | ForEach-Object {
+        Select-String -Path $_ -Pattern '!!' -AllMatches
+    } | Where-Object { $_ -and $_.Line -notmatch '// !!-allowed' }
+    if ($bangBangHits) {
+        Write-Warning-Custom "Found !! (non-null assertion) in production code:"
+        $bangBangHits | Select-Object -First 10 | ForEach-Object {
+            Write-Host "$($_.Filename):$($_.LineNumber): $($_.Line.Trim())"
+        }
+    }
+}
+
+if ($guardErrors -gt 0) {
+    Write-Error-Custom "Safety guards found blocking issues"
+    exit 1
+}
+
 # Check for large files (>500KB)
 $largeFiles = git diff --cached --name-only --diff-filter=ACMR | Where-Object {
     Test-Path $_ -and (Get-Item $_).Length -gt 512000
