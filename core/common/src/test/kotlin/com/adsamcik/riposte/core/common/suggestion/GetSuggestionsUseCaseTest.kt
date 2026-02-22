@@ -103,6 +103,80 @@ class GetSuggestionsUseCaseTest {
     }
 
     @Test
+    fun `invoke returns cached instance for same inputs within TTL`() {
+        val memes =
+            (1..30).map { i ->
+                testMeme(
+                    id = i.toLong(),
+                    importedAt = now - i * 86_400_000L,
+                    useCount = i % 3,
+                    viewCount = i,
+                    emojiTags = listOf(tag("😂")),
+                )
+            }
+        val context = SuggestionContext(surface = Surface.GALLERY)
+
+        val first = useCase(memes, context, now)
+        val second = useCase(memes, context, now + 1000)
+
+        // Same object identity proves the cache returned the stored result
+        assertThat(second).isSameInstanceAs(first)
+    }
+
+    @Test
+    fun `invoke recomputes when surface changes`() {
+        val memes =
+            (1..30).map { i ->
+                testMeme(
+                    id = i.toLong(),
+                    importedAt = now - i * 86_400_000L,
+                    useCount = i % 3,
+                    viewCount = i,
+                    emojiTags = listOf(tag("😂")),
+                )
+            }
+        val galleryContext = SuggestionContext(surface = Surface.GALLERY)
+        val searchContext = SuggestionContext(surface = Surface.SEARCH)
+
+        val first = useCase(memes, galleryContext, now)
+        val second = useCase(memes, searchContext, now + 1000)
+
+        // Different surface → cache miss → engine recomputes (different instance)
+        assertThat(second).isNotSameInstanceAs(first)
+    }
+
+    @Test
+    fun `invoke recomputes when meme list changes`() {
+        val memes5 =
+            (1..5).map { i ->
+                testMeme(
+                    id = i.toLong(),
+                    importedAt = now - i * 86_400_000L,
+                    useCount = i % 3,
+                    viewCount = i,
+                    emojiTags = listOf(tag("😂")),
+                )
+            }
+        val memes6 =
+            (1..6).map { i ->
+                testMeme(
+                    id = i.toLong(),
+                    importedAt = now - i * 86_400_000L,
+                    useCount = i % 3,
+                    viewCount = i,
+                    emojiTags = listOf(tag("😂")),
+                )
+            }
+        val context = SuggestionContext(surface = Surface.GALLERY)
+
+        val first = useCase(memes5, context, now)
+        val second = useCase(memes6, context, now + 1000)
+
+        // Different meme list → cache miss → engine recomputes (different instance)
+        assertThat(second).isNotSameInstanceAs(first)
+    }
+
+    @Test
     fun `cache is invalidated after TTL expires`() {
         val memes =
             (1..30).map { i ->
@@ -117,14 +191,14 @@ class GetSuggestionsUseCaseTest {
         val context = SuggestionContext(surface = Surface.GALLERY)
 
         val first = useCase(memes, context, now)
-        // 6 minutes later (TTL is 5 minutes)
+        // 6 minutes later (TTL is 5 minutes) → cache expired → recomputes
         val second = useCase(memes, context, now + 6 * 60 * 1000L)
 
-        // Both should be valid, though they may be equal since same input
-        assertThat(first).isNotNull()
-        assertThat(second).isNotNull()
+        // Both should be valid non-empty results
         assertThat(first).isNotEmpty()
         assertThat(second).isNotEmpty()
+        // Expired TTL → new instance even though inputs are the same
+        assertThat(second).isNotSameInstanceAs(first)
     }
 }
 

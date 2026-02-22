@@ -169,6 +169,26 @@ class SearchRepositoryImplTest {
             }
         }
 
+    @Test
+    fun `searchMemes caps relevance score at 1_0 when all fields match`() =
+        runTest {
+            val entity = createTestMemeEntity(
+                1L,
+                "match.jpg",
+                title = "match",
+                description = "match",
+                emojiTagsJson = "match",
+            )
+            every { memeSearchDao.searchMemes(any()) } returns flowOf(listOf(entity))
+
+            repository.searchMemes("match").test {
+                val results = awaitItem()
+                assertThat(results).hasSize(1)
+                assertThat(results[0].relevanceScore).isAtMost(1.0f)
+                awaitComplete()
+            }
+        }
+
     // endregion
 
     // region searchByText Tests
@@ -612,6 +632,58 @@ class SearchRepositoryImplTest {
 
             assertThat(result).isEqualTo(suggestions)
             coVerify { memeSearchDao.getSearchSuggestions("fun") }
+        }
+
+    @Test
+    fun `getSearchSuggestions extracts phrase when prefix at start of description`() =
+        runTest {
+            coEvery { memeSearchDao.getSearchSuggestions("hello") } returns emptyList()
+            coEvery { memeSearchDao.getDescriptionSuggestions("hello") } returns
+                listOf("hello world this is a test")
+
+            val result = repository.getSearchSuggestions("hello")
+
+            assertThat(result).hasSize(1)
+            assertThat(result[0]).startsWith("hello")
+        }
+
+    @Test
+    fun `getSearchSuggestions extracts phrase when prefix at end of description`() =
+        runTest {
+            coEvery { memeSearchDao.getSearchSuggestions("end") } returns emptyList()
+            coEvery { memeSearchDao.getDescriptionSuggestions("end") } returns
+                listOf("this is the end")
+
+            val result = repository.getSearchSuggestions("end")
+
+            assertThat(result).hasSize(1)
+            assertThat(result[0]).contains("end")
+        }
+
+    @Test
+    fun `getSearchSuggestions returns snippet when prefix not found in description`() =
+        runTest {
+            coEvery { memeSearchDao.getSearchSuggestions("xyz") } returns emptyList()
+            coEvery { memeSearchDao.getDescriptionSuggestions("xyz") } returns
+                listOf("A long description that does not contain the search prefix at all and keeps going")
+
+            val result = repository.getSearchSuggestions("xyz")
+
+            assertThat(result).hasSize(1)
+            // DESCRIPTION_SNIPPET_LENGTH is 50, so fallback truncates to first 50 chars
+            assertThat(result[0].length).isAtMost(50)
+        }
+
+    @Test
+    fun `getSearchSuggestions handles very short description`() =
+        runTest {
+            coEvery { memeSearchDao.getSearchSuggestions("hi") } returns emptyList()
+            coEvery { memeSearchDao.getDescriptionSuggestions("hi") } returns listOf("hi")
+
+            val result = repository.getSearchSuggestions("hi")
+
+            assertThat(result).hasSize(1)
+            assertThat(result[0]).isEqualTo("hi")
         }
 
     // endregion
