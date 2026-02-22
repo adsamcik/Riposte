@@ -22,6 +22,7 @@
     <string name="gallery_delete_single_title">Meme löschen?</string>
     <string name="gallery_delete_single_message">Diese Aktion kann nicht rückgängig gemacht werden.</string>
     <string name="gallery_button_delete">Löschen</string>
+    <string name="gallery_button_undo">Rückgängig</string>
     <string name="gallery_button_cancel">Abbrechen</string>
     <string name="gallery_button_save">Speichern</string>
     <string name="gallery_button_discard">Verwerfen</string>

@@ -60,6 +60,11 @@ sealed interface GalleryIntent {
     data object CancelDelete : GalleryIntent
 
     /**
+     * Undo a pending deletion (triggered from undo snackbar action).
+     */
+    data object UndoDelete : GalleryIntent
+
+    /**
      * Change the filter.
      */
     data class SetFilter(val filter: GalleryFilter) : GalleryIntent

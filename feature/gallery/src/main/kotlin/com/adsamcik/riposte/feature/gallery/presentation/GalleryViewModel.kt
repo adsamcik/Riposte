@@ -74,6 +74,9 @@ class GalleryViewModel
         /** Job for the current memes loading flow, canceled when filter changes. */
         private var memesJob: Job? = null
 
+        /** Job for the delayed deletion, canceled when user triggers undo. */
+        private var deleteJob: Job? = null
+
         init {
             loadPreferences()
             loadMemes()
@@ -101,6 +104,7 @@ class GalleryViewModel
                 is GalleryIntent.DeleteSelected -> deleteSelected()
                 is GalleryIntent.ConfirmDelete -> confirmDelete()
                 is GalleryIntent.CancelDelete -> cancelDelete()
+                is GalleryIntent.UndoDelete -> undoDelete()
                 is GalleryIntent.SetFilter -> setFilter(intent.filter)
                 is GalleryIntent.SetGridColumns -> setGridColumns(intent.columns)
                 is GalleryIntent.ShareSelected -> shareSelected()
@@ -535,27 +539,42 @@ class GalleryViewModel
         }
 
         private fun confirmDelete() {
-            viewModelScope.launch {
-                val deleteIds = _uiState.value.pendingDeleteIds
-                useCases.deleteMemes(deleteIds)
-                    .onSuccess {
-                        _effects.send(
-                            GalleryEffect.ShowSnackbar(
-                                context.getString(R.string.gallery_snackbar_deleted, deleteIds.size),
-                            ),
-                        )
-                        clearSelection()
-                    }
-                    .onFailure { error ->
-                        Timber.e(error, "Failed to delete %d memes", deleteIds.size)
-                        _effects.send(
-                            GalleryEffect.ShowError(
-                                error.message ?: context.getString(R.string.gallery_snackbar_delete_failed),
-                            ),
-                        )
-                    }
-                _uiState.update { it.copy(pendingDeleteIds = emptySet()) }
+            val deleteIds = _uiState.value.pendingDeleteIds
+            val count = deleteIds.size
+            clearSelection()
+
+            // Start delayed deletion — gives user time to undo
+            deleteJob?.cancel()
+            deleteJob = viewModelScope.launch {
+                _effects.send(
+                    GalleryEffect.ShowUndoDeleteSnackbar(
+                        message = context.getString(R.string.gallery_snackbar_deleted, count),
+                        count = count,
+                    ),
+                )
+                delay(UNDO_TIMEOUT_MS)
+                // If we reach here, user didn't undo — perform actual deletion
+                performDelete(deleteIds)
             }
+        }
+
+        private fun undoDelete() {
+            deleteJob?.cancel()
+            deleteJob = null
+            _uiState.update { it.copy(pendingDeleteIds = emptySet()) }
+        }
+
+        private suspend fun performDelete(deleteIds: Set<Long>) {
+            useCases.deleteMemes(deleteIds)
+                .onFailure { error ->
+                    Timber.e(error, "Failed to delete %d memes", deleteIds.size)
+                    _effects.send(
+                        GalleryEffect.ShowError(
+                            error.message ?: context.getString(R.string.gallery_snackbar_delete_failed),
+                        ),
+                    )
+                }
+            _uiState.update { it.copy(pendingDeleteIds = emptySet()) }
         }
 
         private fun cancelDelete() {
@@ -649,6 +668,9 @@ class GalleryViewModel
 
         companion object {
             private const val NOTIFICATION_AUTO_DISMISS_MS = 5000L
+
+            /** How long to wait before performing actual deletion, giving the user time to undo. */
+            private const val UNDO_TIMEOUT_MS = 5_000L
 
             /** Imports stuck in IN_PROGRESS for longer than this are considered stale. */
             private const val STALE_IMPORT_THRESHOLD_MS = 30L * 60 * 1000

@@ -67,8 +67,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -162,6 +164,16 @@ fun GalleryScreen(
                 is GalleryEffect.ShowDeleteConfirmation -> {
                     deleteCount = effect.count
                     showDeleteDialog = true
+                }
+                is GalleryEffect.ShowUndoDeleteSnackbar -> {
+                    val result = snackbarHostState.showSnackbar(
+                        message = effect.message,
+                        actionLabel = context.getString(R.string.gallery_button_undo),
+                        duration = SnackbarDuration.Short,
+                    )
+                    if (result == SnackbarResult.ActionPerformed) {
+                        viewModel.onIntent(GalleryIntent.UndoDelete)
+                    }
                 }
                 is GalleryEffect.ShowError -> snackbarHostState.showSnackbar(effect.message)
                 is GalleryEffect.LaunchShareIntent -> {

@@ -35,6 +35,11 @@ sealed interface GalleryEffect {
     data class LaunchShareIntent(val intent: android.content.Intent) : GalleryEffect
 
     /**
+     * Show a snackbar with an undo action for deletion.
+     */
+    data class ShowUndoDeleteSnackbar(val message: String, val count: Int) : GalleryEffect
+
+    /**
      * Trigger haptic feedback for UI interactions.
      */
     data object TriggerHapticFeedback : GalleryEffect

@@ -22,6 +22,7 @@
     <string name="gallery_delete_single_title">¿Eliminar Meme?</string>
     <string name="gallery_delete_single_message">Esta acción no se puede deshacer.</string>
     <string name="gallery_button_delete">Eliminar</string>
+    <string name="gallery_button_undo">Deshacer</string>
     <string name="gallery_button_cancel">Cancelar</string>
     <string name="gallery_button_save">Guardar</string>
     <string name="gallery_button_discard">Descartar</string>

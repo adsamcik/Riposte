@@ -22,6 +22,7 @@
     <string name="gallery_delete_single_title">Excluir Meme?</string>
     <string name="gallery_delete_single_message">Esta ação não pode ser desfeita.</string>
     <string name="gallery_button_delete">Excluir</string>
+    <string name="gallery_button_undo">Desfazer</string>
     <string name="gallery_button_cancel">Cancelar</string>
     <string name="gallery_button_save">Salvar</string>
     <string name="gallery_button_discard">Descartar</string>
