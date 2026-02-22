@@ -146,6 +146,7 @@ fun GalleryScreen(
     val pagedMemes = viewModel.pagedMemes.collectAsLazyPagingItems()
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
+    val hapticFeedback = LocalHapticFeedback.current
     var showDeleteDialog by remember { mutableStateOf(false) }
     var deleteCount by remember { mutableStateOf(0) }
     var showMenu by remember { mutableStateOf(false) }
@@ -171,7 +172,9 @@ fun GalleryScreen(
                         snackbarHostState.showSnackbar(context.getString(R.string.gallery_error_share_no_app))
                     }
                 }
-                is GalleryEffect.TriggerHapticFeedback -> { /* Handled by Compose haptic feedback */ }
+                is GalleryEffect.TriggerHapticFeedback -> {
+                    hapticFeedback.performHapticFeedback(HapticFeedbackType.Confirm)
+                }
             }
         }
     }
@@ -260,6 +263,33 @@ private fun GalleryScreenContent(
         derivedStateOf {
             gridState.firstVisibleItemIndex > 0 || gridState.firstVisibleItemScrollOffset > 0
         }
+    }
+
+    // Clear recent searches confirmation dialog
+    var showClearSearchesDialog by remember { mutableStateOf(false) }
+    if (showClearSearchesDialog) {
+        AlertDialog(
+            onDismissRequest = { showClearSearchesDialog = false },
+            title = { Text(stringResource(R.string.gallery_dialog_clear_searches_title)) },
+            text = { Text(stringResource(R.string.gallery_dialog_clear_searches_message)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showClearSearchesDialog = false
+                        onIntent(GalleryIntent.ClearRecentSearches)
+                    },
+                ) {
+                    Text(stringResource(R.string.gallery_dialog_clear_searches_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showClearSearchesDialog = false },
+                ) {
+                    Text(stringResource(R.string.gallery_button_cancel))
+                }
+            },
+        )
     }
 
     // Delete confirmation dialog
@@ -549,7 +579,7 @@ private fun GalleryScreenContent(
                                 ) {
                                     item(span = { GridItemSpan(maxLineSpan) }, key = "recent_header") {
                                         RecentSearchesHeader(
-                                            onClearAll = { onIntent(GalleryIntent.ClearRecentSearches) },
+                                            onClearAll = { showClearSearchesDialog = true },
                                         )
                                     }
                                     items(

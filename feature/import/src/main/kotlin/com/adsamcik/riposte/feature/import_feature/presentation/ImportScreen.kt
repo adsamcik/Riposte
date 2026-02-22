@@ -888,7 +888,8 @@ internal fun ImportProgressContent(
         modifier =
             modifier
                 .fillMaxSize()
-                .padding(32.dp),
+                .padding(32.dp)
+                .semantics { liveRegion = LiveRegionMode.Polite },
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {

@@ -89,4 +89,7 @@
     <string name="gallery_indexing_complete">Index vyhledávání aktualizován — %1$d memů připraveno 🔍</string>
     <string name="gallery_cd_dismiss_notification">Zavřít oznámení</string>
     <string name="gallery_cd_loading_more">Načítám další memy</string>
+    <string name="gallery_dialog_clear_searches_title">Vymazat nedávná hledání?</string>
+    <string name="gallery_dialog_clear_searches_message">Tímto odstraníte celou historii hledání.</string>
+    <string name="gallery_dialog_clear_searches_confirm">Vymazat</string>
 </resources>

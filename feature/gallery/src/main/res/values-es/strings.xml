@@ -89,4 +89,7 @@
     <string name="gallery_indexing_complete">Índice de búsqueda actualizado — %1$d memes listos 🔍</string>
     <string name="gallery_cd_dismiss_notification">Cerrar notificación</string>
     <string name="gallery_cd_loading_more">Cargando más memes</string>
+    <string name="gallery_dialog_clear_searches_title">¿Borrar búsquedas recientes?</string>
+    <string name="gallery_dialog_clear_searches_message">Esto eliminará todo tu historial de búsqueda reciente.</string>
+    <string name="gallery_dialog_clear_searches_confirm">Borrar</string>
 </resources>

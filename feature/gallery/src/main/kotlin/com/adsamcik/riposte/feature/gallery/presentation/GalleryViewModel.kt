@@ -511,7 +511,9 @@ class GalleryViewModel
 
         private fun toggleFavorite(memeId: Long) {
             viewModelScope.launch {
-                useCases.toggleFavorite(memeId).onFailure { error ->
+                useCases.toggleFavorite(memeId).onSuccess {
+                    _effects.send(GalleryEffect.TriggerHapticFeedback)
+                }.onFailure { error ->
                     _effects.send(
                         GalleryEffect.ShowError(
                             error.message ?: context.getString(R.string.gallery_snackbar_favorite_failed),
