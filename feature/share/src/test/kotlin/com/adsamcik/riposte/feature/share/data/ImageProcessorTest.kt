@@ -184,6 +184,7 @@ class ImageProcessorTest {
     fun `processImage returns error when source file cannot be decoded`() {
         mockkStatic(BitmapFactory::class)
         every { BitmapFactory.decodeFile(any()) } returns null
+        every { BitmapFactory.decodeFile(any(), any()) } returns null
 
         val outputFile = File.createTempFile("test", ".jpg")
         val config = ShareConfig()
@@ -208,6 +209,16 @@ class ImageProcessorTest {
         val inputBitmap = createRealBitmap(1000, 1000)
         mockkStatic(BitmapFactory::class)
         every { BitmapFactory.decodeFile(any()) } returns inputBitmap
+        every { BitmapFactory.decodeFile(any(), any()) } answers {
+            val opts = secondArg<BitmapFactory.Options>()
+            if (opts.inJustDecodeBounds) {
+                opts.outWidth = inputBitmap.width
+                opts.outHeight = inputBitmap.height
+                null
+            } else {
+                inputBitmap
+            }
+        }
 
         val outputFile = File.createTempFile("test", ".jpg")
         val config =
@@ -371,6 +382,16 @@ class ImageProcessorTest {
 
         mockkStatic(BitmapFactory::class)
         every { BitmapFactory.decodeFile(any()) } returns sourceBitmap
+        every { BitmapFactory.decodeFile(any(), any()) } answers {
+            val opts = secondArg<BitmapFactory.Options>()
+            if (opts.inJustDecodeBounds) {
+                opts.outWidth = 500
+                opts.outHeight = 500
+                null
+            } else {
+                sourceBitmap
+            }
+        }
 
         val outputFile = File.createTempFile("test", ".jpg")
         val config =
@@ -398,6 +419,16 @@ class ImageProcessorTest {
         val inputBitmap = createRealBitmap(800, 600)
         mockkStatic(BitmapFactory::class)
         every { BitmapFactory.decodeFile(any()) } returns inputBitmap
+        every { BitmapFactory.decodeFile(any(), any()) } answers {
+            val opts = secondArg<BitmapFactory.Options>()
+            if (opts.inJustDecodeBounds) {
+                opts.outWidth = inputBitmap.width
+                opts.outHeight = inputBitmap.height
+                null
+            } else {
+                inputBitmap
+            }
+        }
 
         val outputFile = File.createTempFile("test", ".jpg")
         val config =
@@ -425,6 +456,16 @@ class ImageProcessorTest {
         val inputBitmap = createRealBitmap(1920, 1080)
         mockkStatic(BitmapFactory::class)
         every { BitmapFactory.decodeFile(any()) } returns inputBitmap
+        every { BitmapFactory.decodeFile(any(), any()) } answers {
+            val opts = secondArg<BitmapFactory.Options>()
+            if (opts.inJustDecodeBounds) {
+                opts.outWidth = inputBitmap.width
+                opts.outHeight = inputBitmap.height
+                null
+            } else {
+                inputBitmap
+            }
+        }
 
         val outputFile = File.createTempFile("test", ".jpg")
         val config =
