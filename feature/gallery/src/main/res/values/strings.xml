@@ -64,6 +64,7 @@
     <string name="gallery_error_share_no_app">Unable to share — app not found</string>
     <string name="gallery_error_search_not_supported">Semantic search is not supported on this device</string>
     <string name="gallery_error_search_index_failed">Search index failed to load — try reinstalling</string>
+    <string name="gallery_error_search_generic">Something went wrong with search — please try again</string>
     <string name="gallery_snackbar_deleted">%d meme(s) deleted</string>
     <string name="gallery_snackbar_save_or_discard">Save or discard changes first</string>
     <string name="gallery_snackbar_favorite_failed">Failed to update favorite</string>

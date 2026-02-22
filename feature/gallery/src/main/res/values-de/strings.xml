@@ -79,6 +79,7 @@
     <string name="gallery_error_share_no_app">Teilen nicht möglich — App nicht gefunden</string>
     <string name="gallery_error_search_not_supported">Semantische Suche wird auf diesem Gerät nicht unterstützt</string>
     <string name="gallery_error_search_index_failed">Suchindex konnte nicht geladen werden — versuchen Sie eine Neuinstallation</string>
+    <string name="gallery_error_search_generic">Bei der Suche ist etwas schiefgelaufen — bitte versuchen Sie es erneut</string>
     <string name="gallery_detail_action_cancel">Abbrechen</string>
     <string name="gallery_detail_empty_emoji_tags">Keine Emoji-Tags — tippe auf Bearbeiten, um welche hinzuzufügen ✨</string>
     <string name="gallery_import_in_progress">Memes werden importiert… %1$d von %2$d</string>

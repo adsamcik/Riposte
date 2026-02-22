@@ -79,6 +79,7 @@
     <string name="gallery_error_share_no_app">No se puede compartir — app no encontrada</string>
     <string name="gallery_error_search_not_supported">La búsqueda semántica no es compatible con este dispositivo</string>
     <string name="gallery_error_search_index_failed">El índice de búsqueda no se pudo cargar — intente reinstalar</string>
+    <string name="gallery_error_search_generic">Algo salió mal con la búsqueda — inténtelo de nuevo</string>
     <string name="gallery_detail_action_cancel">Cancelar</string>
     <string name="gallery_detail_empty_emoji_tags">Sin etiquetas emoji — toca Editar para añadir ✨</string>
     <string name="gallery_import_in_progress">Importando memes… %1$d de %2$d</string>

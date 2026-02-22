@@ -594,7 +594,8 @@ private fun GalleryScreenContent(
                                                     stringResource(R.string.gallery_error_search_not_supported)
                                                 is SearchError.IndexFailed ->
                                                     stringResource(R.string.gallery_error_search_index_failed)
-                                                is SearchError.Generic -> error.message
+                                                is SearchError.Generic ->
+                                                    stringResource(R.string.gallery_error_search_generic)
                                             },
                                             onRetry = if (error.isRetryable) {
                                                 { onIntent(GalleryIntent.UpdateSearchQuery(uiState.searchState.query)) }

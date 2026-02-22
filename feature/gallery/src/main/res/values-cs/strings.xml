@@ -81,6 +81,7 @@
     <string name="gallery_error_share_no_app">Nelze sdílet — aplikace nenalezena</string>
     <string name="gallery_error_search_not_supported">Sémantické vyhledávání není na tomto zařízení podporováno</string>
     <string name="gallery_error_search_index_failed">Index vyhledávání se nepodařilo načíst — zkuste přeinstalovat</string>
+    <string name="gallery_error_search_generic">Při vyhledávání se něco pokazilo — zkuste to znovu</string>
     <string name="gallery_import_in_progress">Importuji memy… %1$d z %2$d</string>
     <string name="gallery_import_completed">%1$d memů importováno ✓</string>
     <string name="gallery_import_completed_with_errors">%1$d memů importováno, %2$d selhalo</string>
