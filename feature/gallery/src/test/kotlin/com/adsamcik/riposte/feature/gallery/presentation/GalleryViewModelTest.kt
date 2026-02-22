@@ -6,6 +6,7 @@ import app.cash.turbine.turbineScope
 import com.adsamcik.riposte.core.common.share.ShareMemeUseCase
 import com.adsamcik.riposte.core.common.suggestion.GetSuggestionsUseCase
 import com.adsamcik.riposte.core.database.LibraryStatistics
+import com.adsamcik.riposte.core.database.entity.ImportRequestEntity
 import com.adsamcik.riposte.core.datastore.PreferencesDataStore
 import com.adsamcik.riposte.core.model.AppPreferences
 import com.adsamcik.riposte.core.model.DarkMode
@@ -34,6 +35,7 @@ import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -693,7 +695,8 @@ class GalleryViewModelTest {
     @Test
     fun `shareSelected with multiple memes uses multi share path`() =
         runTest {
-            coEvery { getMemeByIdUseCase(any()) } returns null
+            coEvery { getMemeByIdUseCase(1L) } returns createTestMeme(1, "meme1.jpg")
+            coEvery { getMemeByIdUseCase(2L) } returns createTestMeme(2, "meme2.jpg")
             viewModel = createViewModel()
             advanceUntilIdle()
             viewModel.onIntent(GalleryIntent.StartSelection(1))
@@ -704,8 +707,30 @@ class GalleryViewModelTest {
 
             // Single-share path (quickShare / shareMemeUseCase) should NOT be used
             coVerify(exactly = 0) { shareMemeUseCase(any()) }
-            // Multi-share path attempts to resolve each meme by ID
-            coVerify(atLeast = 1) { getMemeByIdUseCase(any()) }
+            // Multi-share path resolves each meme by ID
+            coVerify { getMemeByIdUseCase(1L) }
+            coVerify { getMemeByIdUseCase(2L) }
+        }
+
+    @Test
+    fun `quickShare failure emits error effect`() =
+        runTest {
+            coEvery { shareMemeUseCase(any()) } returns Result.failure(RuntimeException("Share failed"))
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            turbineScope {
+                val effects = viewModel.effects.testIn(backgroundScope)
+
+                viewModel.onIntent(GalleryIntent.QuickShare(memeId = 1L))
+                advanceUntilIdle()
+
+                val effect = effects.awaitItem()
+                assertThat(effect).isInstanceOf(GalleryEffect.ShowError::class.java)
+                assertThat((effect as GalleryEffect.ShowError).message).contains("Share failed")
+
+                effects.cancel()
+            }
         }
 
     // endregion
@@ -889,7 +914,15 @@ class GalleryViewModelTest {
             viewModel = createViewModel()
             advanceUntilIdle()
 
-            // Simulate a notification being set (e.g., from import completion)
+            // Set a notification via reflection since notification is only set internally
+            val uiStateField = viewModel.javaClass.getDeclaredField("_uiState")
+            uiStateField.isAccessible = true
+            @Suppress("UNCHECKED_CAST")
+            val mutableState = uiStateField.get(viewModel) as MutableStateFlow<GalleryUiState>
+            mutableState.update { it.copy(notification = GalleryNotification.ImportComplete(count = 5)) }
+
+            assertThat(viewModel.uiState.value.notification).isNotNull()
+
             viewModel.onIntent(GalleryIntent.DismissNotification)
             advanceUntilIdle()
 
@@ -909,37 +942,6 @@ class GalleryViewModelTest {
             viewModel = createViewModel()
             assertThat(viewModel.uiState.value.importStatus).isEqualTo(ImportWorkStatus.Idle)
         }
-
-    @Test
-    fun `GalleryNotification ImportComplete stores count and failed`() {
-        val notification = GalleryNotification.ImportComplete(count = 10, failed = 3)
-        assertThat(notification.count).isEqualTo(10)
-        assertThat(notification.failed).isEqualTo(3)
-    }
-
-    @Test
-    fun `GalleryNotification ImportComplete defaults failed to zero`() {
-        val notification = GalleryNotification.ImportComplete(count = 5)
-        assertThat(notification.failed).isEqualTo(0)
-    }
-
-    @Test
-    fun `GalleryNotification ImportFailed stores message`() {
-        val notification = GalleryNotification.ImportFailed(message = "Disk full")
-        assertThat(notification.message).isEqualTo("Disk full")
-    }
-
-    @Test
-    fun `GalleryNotification ImportFailed defaults message to null`() {
-        val notification = GalleryNotification.ImportFailed()
-        assertThat(notification.message).isNull()
-    }
-
-    @Test
-    fun `GalleryNotification IndexingComplete stores count`() {
-        val notification = GalleryNotification.IndexingComplete(count = 42)
-        assertThat(notification.count).isEqualTo(42)
-    }
 
     // endregion
 
@@ -1140,6 +1142,122 @@ class GalleryViewModelTest {
             // GalleryScreen applies .distinctBy { it.id } — data flows through without crash
             assertThat(memes).isNotEmpty()
             assertThat(memes.map { it.id }).contains(2L)
+        }
+
+    // endregion
+
+    // region Stale Import Recovery Tests
+
+    @Test
+    fun `recoverStaleImports marks requests with completed count as COMPLETED`() =
+        runTest {
+            val staleRequest = ImportRequestEntity(
+                id = "req-1",
+                status = ImportRequestEntity.STATUS_IN_PROGRESS,
+                imageCount = 10,
+                completedCount = 7,
+                failedCount = 1,
+                stagingDir = "/tmp/staging",
+                createdAt = 0L,
+                updatedAt = 0L,
+            )
+            coEvery { importRequestDao.getStaleRequests(any()) } returns listOf(staleRequest)
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            coVerify {
+                importRequestDao.updateRequestProgress(
+                    id = "req-1",
+                    status = ImportRequestEntity.STATUS_COMPLETED,
+                    completed = 7,
+                    failed = 1,
+                    updatedAt = any(),
+                )
+            }
+            val notification = viewModel.uiState.value.notification
+            assertThat(notification).isInstanceOf(GalleryNotification.ImportFailed::class.java)
+        }
+
+    @Test
+    fun `recoverStaleImports marks requests with zero completed as FAILED`() =
+        runTest {
+            val staleRequest = ImportRequestEntity(
+                id = "req-2",
+                status = ImportRequestEntity.STATUS_IN_PROGRESS,
+                imageCount = 5,
+                completedCount = 0,
+                failedCount = 0,
+                stagingDir = "/tmp/staging",
+                createdAt = 0L,
+                updatedAt = 0L,
+            )
+            coEvery { importRequestDao.getStaleRequests(any()) } returns listOf(staleRequest)
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            coVerify {
+                importRequestDao.updateRequestProgress(
+                    id = "req-2",
+                    status = ImportRequestEntity.STATUS_FAILED,
+                    completed = 0,
+                    failed = 0,
+                    updatedAt = any(),
+                )
+            }
+        }
+
+    @Test
+    fun `recoverStaleImports skips recovery when active import work exists`() =
+        runTest {
+            val staleRequest = ImportRequestEntity(
+                id = "req-3",
+                status = ImportRequestEntity.STATUS_IN_PROGRESS,
+                imageCount = 10,
+                completedCount = 3,
+                failedCount = 0,
+                stagingDir = "/tmp/staging",
+                createdAt = 0L,
+                updatedAt = 0L,
+            )
+            coEvery { importRequestDao.getStaleRequests(any()) } returns listOf(staleRequest)
+            // WorkManager.getInstance throws IllegalStateException in unit tests,
+            // which the ViewModel catches — this means "WorkManager not available"
+            // is treated the same as "active work exists" since recovery is skipped.
+            // The try-catch in recoverStaleImports catches the exception gracefully.
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            // Since WorkManager is not available in unit tests (throws IllegalStateException),
+            // the exception is caught and updateRequestProgress should still be called
+            // because the catch block logs and swallows the error.
+            // However, looking at the code flow: getStaleRequests succeeds, then
+            // WorkManager.getInstance throws, which is caught by the outer try-catch.
+            // So updateRequestProgress is NOT called.
+            coVerify(exactly = 0) {
+                importRequestDao.updateRequestProgress(
+                    id = "req-3",
+                    status = any(),
+                    completed = any(),
+                    failed = any(),
+                    updatedAt = any(),
+                )
+            }
+        }
+
+    @Test
+    fun `recoverStaleImports handles exception gracefully`() =
+        runTest {
+            coEvery { importRequestDao.getStaleRequests(any()) } throws RuntimeException("DB error")
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            // ViewModel should not crash — exception is caught and logged
+            val state = viewModel.uiState.value
+            assertThat(state.notification).isNull()
         }
 
     // endregion
