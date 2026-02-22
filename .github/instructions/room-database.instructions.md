@@ -170,3 +170,48 @@ Room.databaseBuilder(context, MemeDatabase::class.java, "meme_db")
 5. **Use transactions for related operations**
 6. **Index frequently queried columns**
 7. **Avoid complex queries in DAOs** - prefer simpler queries
+8. **Remove unused DAO methods** — dead code in DAOs is misleading and increases maintenance cost. If a method has no callers, delete it.
+
+## JOIN Query Safety
+
+**All DAO queries with JOINs MUST use `SELECT DISTINCT` or `GROUP BY`.** JOINs across one-to-many relations (e.g., memes → tags, memes → embeddings) produce row multiplication that causes duplicate results and Compose key crashes.
+
+```kotlin
+// ✅ Correct: DISTINCT prevents row multiplication
+@Query("""
+    SELECT DISTINCT memes.* FROM memes
+    JOIN meme_tags ON memes.id = meme_tags.memeId
+    WHERE meme_tags.emoji IN (:emojis)
+""")
+fun getMemesByEmojis(emojis: List<String>): Flow<List<MemeEntity>>
+
+// ✅ Correct: GROUP BY for aggregation
+@Query("""
+    SELECT memes.*, COUNT(meme_tags.id) as tagCount FROM memes
+    JOIN meme_tags ON memes.id = meme_tags.memeId
+    GROUP BY memes.id
+    ORDER BY tagCount DESC
+""")
+fun getMemesByTagCount(): Flow<List<MemeEntity>>
+
+// ❌ FORBIDDEN: Bare JOIN without DISTINCT or GROUP BY
+@Query("""
+    SELECT memes.* FROM memes
+    JOIN meme_embeddings ON memes.id = meme_embeddings.memeId
+    WHERE meme_embeddings.similarity > :threshold
+""")
+fun getMemesAboveThreshold(threshold: Float): Flow<List<MemeEntity>>
+// ^ If a meme has multiple embeddings, this returns duplicate rows
+```
+
+## Repository Deduplication
+
+Repository methods returning lists from JOINs **SHOULD** apply `distinctBy` as a defense-in-depth layer, even when the DAO query uses DISTINCT:
+
+```kotlin
+// ✅ Defense in depth: dedup at repository layer
+override fun getMemesByEmojis(emojis: List<String>): Flow<List<Meme>> =
+    memeDao.getMemesByEmojis(emojis)
+        .map { entities -> entities.distinctBy { it.id }.map { it.toDomain() } }
+        .flowOn(ioDispatcher)
+```

@@ -62,6 +62,47 @@ class GalleryViewModel @Inject constructor(
 }
 ```
 
+## ViewModel Error Handling
+
+**Every `viewModelScope.launch` MUST catch exceptions and route them to UI state.** Silent failures are bugs — the user must always see feedback.
+
+```kotlin
+@HiltViewModel
+class FeatureViewModel @Inject constructor(
+    private val doActionUseCase: DoActionUseCase,
+) : ViewModel() {
+
+    private val _uiState = MutableStateFlow(FeatureUiState())
+    val uiState: StateFlow<FeatureUiState> = _uiState.asStateFlow()
+
+    fun onIntent(intent: FeatureIntent) {
+        when (intent) {
+            is FeatureIntent.DeleteItem -> deleteItem(intent.id)
+            is FeatureIntent.DismissError -> _uiState.update { it.copy(error = null) }
+        }
+    }
+
+    private fun deleteItem(id: Long) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            try {
+                doActionUseCase(id)
+                _uiState.update { it.copy(isLoading = false, deleteSuccess = true) }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false, error = e.message) }
+            }
+        }
+    }
+}
+```
+
+**Error handling rules for ViewModels:**
+1. **Wrap all `launch` bodies** in try-catch (or use a Result-returning use case)
+2. **Always clear loading state** in both success and error paths
+3. **Surface errors in `UiState`** — never swallow silently
+4. **Provide error dismissal** — `DismissError` intent that clears the error field
+5. **Preserve existing data** — on error, keep previously loaded items visible
+
 ## Use Cases
 
 ```kotlin

@@ -184,6 +184,10 @@ Reusable Gradle plugins in `buildSrc/` extract shared build configuration:
 - Use `collectAsStateWithLifecycle` (not `collectAsState`) when collecting Flows in Compose
 - **LazyList key safety**: Never use raw IDs as keys in `LazyColumn`/`LazyRow`/`LazyVerticalGrid`/`HorizontalPager`. ALWAYS: (1) `distinctBy { it.id }` before `items(key = ...)`, (2) prefix keys as `"section_${it.id}"` — never raw Long/Int, (3) for paging loops, track seen IDs with a `mutableSetOf` to skip duplicates. See `compose.instructions.md` for examples.
 - **Compose lint**: Slack `compose-lint-checks` is enabled project-wide — fix warnings before merging.
+- **Coroutine error handling**: Every `viewModelScope.launch` MUST have try-catch or use a Result-returning use case. Silent failures are bugs. See `hilt.instructions.md` for the pattern.
+- **Thread-safe caches**: Any `MutableMap`/`MutableList` shared across coroutines MUST be guarded with `Mutex`. See `kotlin.instructions.md` for the pattern.
+- **DAO JOIN dedup**: All DAO queries with JOINs MUST use `SELECT DISTINCT` or `GROUP BY`. Repository methods SHOULD also `distinctBy` as defense-in-depth. See `room-database.instructions.md`.
+- **Effect collection**: Collect `Channel`/`SharedFlow` effects in `LaunchedEffect(Unit)`, NOT with `collectAsStateWithLifecycle`. See `compose.instructions.md`.
 
 ### Bug Fix Protocol
 

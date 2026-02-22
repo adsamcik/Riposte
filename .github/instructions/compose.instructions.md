@@ -105,6 +105,27 @@ Always use for collecting flows:
 val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 ```
 
+### Effect Collection Safety
+One-shot effects (navigation, snackbars) use a `Channel` in the ViewModel. **Always** collect them in a `LaunchedEffect`, never with `collectAsStateWithLifecycle`:
+```kotlin
+// ✅ Correct: LaunchedEffect for Channel-based effects
+LaunchedEffect(Unit) {
+    viewModel.effects.collect { effect ->
+        when (effect) {
+            is FeatureEffect.NavigateToDetail -> navController.navigate(...)
+            is FeatureEffect.ShowSnackbar -> snackbarHostState.showSnackbar(effect.message)
+        }
+    }
+}
+
+// ❌ WRONG: collectAsStateWithLifecycle loses events — Channel is not a StateFlow
+val effect by viewModel.effects.collectAsStateWithLifecycle(initialValue = null)
+```
+
+**Rules:**
+- `StateFlow<UiState>` → `collectAsStateWithLifecycle` (survives config changes, lifecycle-aware)
+- `Channel<Effect>` / `SharedFlow<Effect>` → `LaunchedEffect(Unit) { flow.collect { ... } }` (consumes once, no replay)
+
 ## Performance
 
 ### Remember Expensive Calculations
