@@ -96,6 +96,7 @@
     <string name="gallery_cd_notification_complete">Complete</string>
     <string name="gallery_cd_notification_info">Info</string>
     <string name="gallery_error_image_load_failed">Failed to load image</string>
+    <string name="gallery_import_stalled">Import didn\'t finish — %1$d of %2$d memes saved</string>
     <string name="gallery_dialog_clear_searches_title">Clear recent searches?</string>
     <string name="gallery_dialog_clear_searches_message">This will remove all your recent search history.</string>
     <string name="gallery_dialog_clear_searches_confirm">Clear</string>

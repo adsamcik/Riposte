@@ -338,7 +338,11 @@ class GalleryViewModel
                         _uiState.update {
                             it.copy(
                                 notification = GalleryNotification.ImportFailed(
-                                    "Import stalled — ${request.completedCount} of ${request.imageCount} saved",
+                                    context.getString(
+                                        R.string.gallery_import_stalled,
+                                        request.completedCount,
+                                        request.imageCount,
+                                    ),
                                 ),
                             )
                         }

@@ -89,6 +89,7 @@
     <string name="gallery_indexing_complete">Suchindex aktualisiert — %1$d Memes bereit 🔍</string>
     <string name="gallery_cd_dismiss_notification">Benachrichtigung schließen</string>
     <string name="gallery_cd_loading_more">Weitere Memes werden geladen</string>
+    <string name="gallery_import_stalled">Import nicht abgeschlossen — %1$d von %2$d Memes gespeichert</string>
     <string name="gallery_dialog_clear_searches_title">Letzte Suchanfragen löschen?</string>
     <string name="gallery_dialog_clear_searches_message">Dadurch wird Ihr gesamter Suchverlauf entfernt.</string>
     <string name="gallery_dialog_clear_searches_confirm">Löschen</string>
