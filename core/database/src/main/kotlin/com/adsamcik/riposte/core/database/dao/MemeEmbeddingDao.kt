@@ -61,9 +61,9 @@ interface MemeEmbeddingDao {
     fun observeAllValidEmbeddings(): Flow<List<MemeEmbeddingEntity>>
 
     /**
-     * Get memes with their embeddings for search operations.
-     * Joins meme data with embeddings for efficient search.
-     * Returns one row per (meme, embeddingType) — callers needing unique memes must group by memeId.
+     * Returns meme data joined with embeddings. **Returns multiple rows per meme**
+     * when a meme has multiple embedding types (e.g., "content" + "intent").
+     * Callers MUST group by [MemeWithEmbeddingData.memeId] before use.
      */
     @Transaction
     @Query(
@@ -72,6 +72,14 @@ interface MemeEmbeddingDao {
             m.id as memeId,
             m.filePath,
             m.fileName,
+            m.mimeType,
+            m.width,
+            m.height,
+            m.fileSizeBytes,
+            m.importedAt,
+            m.isFavorite,
+            m.createdAt,
+            m.useCount,
             m.title,
             m.description,
             m.textContent,
@@ -106,31 +114,6 @@ interface MemeEmbeddingDao {
     """,
     )
     suspend fun getContentEmbeddingsExcluding(excludeMemeId: Long): List<MemeIdWithEmbedding>
-
-    /**
-     * Get memes with their embeddings as a Flow.
-     */
-    @Transaction
-    @Query(
-        """
-        SELECT 
-            m.id as memeId,
-            m.filePath,
-            m.fileName,
-            m.title,
-            m.description,
-            m.textContent,
-            m.emojiTagsJson,
-            e.embedding,
-            e.embeddingType,
-            e.dimension,
-            e.modelVersion
-        FROM memes m
-        LEFT JOIN meme_embeddings e ON m.id = e.memeId
-        WHERE e.embedding IS NOT NULL AND e.needsRegeneration = 0
-    """,
-    )
-    fun observeMemesWithEmbeddings(): Flow<List<MemeWithEmbeddingData>>
 
     // ============ Update Operations ============
 

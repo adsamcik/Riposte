@@ -12,7 +12,6 @@ import com.google.mlkit.vision.label.ImageLabeling
 import com.google.mlkit.vision.label.defaults.ImageLabelerOptions
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -55,18 +54,20 @@ class MediaPipeEmbeddingGenerator
         }
 
         /** Lazily initialized image labeler to avoid native library loading issues in tests. */
+        @Volatile
         private var _imageLabeler: com.google.mlkit.vision.label.ImageLabeler? = null
+        private val imageLabelerLock = Any()
         private val imageLabeler: com.google.mlkit.vision.label.ImageLabeler
             get() {
-                if (_imageLabeler == null) {
-                    _imageLabeler =
-                        ImageLabeling.getClient(
-                            ImageLabelerOptions.Builder()
-                                .setConfidenceThreshold(IMAGE_LABEL_CONFIDENCE_THRESHOLD)
-                                .build(),
-                        )
+                _imageLabeler?.let { return it }
+                synchronized(imageLabelerLock) {
+                    _imageLabeler?.let { return it }
+                    return ImageLabeling.getClient(
+                        ImageLabelerOptions.Builder()
+                            .setConfidenceThreshold(IMAGE_LABEL_CONFIDENCE_THRESHOLD)
+                            .build(),
+                    ).also { _imageLabeler = it }
                 }
-                return _imageLabeler!!
             }
 
         /** Mutex to ensure thread-safe access to the TextEmbedder. */
@@ -91,6 +92,11 @@ class MediaPipeEmbeddingGenerator
                 }
 
                 mutex.withLock {
+                    if (closed) {
+                        releaseResources()
+                        return@withLock createZeroEmbedding()
+                    }
+
                     ensureInitialized()
 
                     val embedder = textEmbedder
@@ -177,16 +183,28 @@ class MediaPipeEmbeddingGenerator
             }
         }
 
+        @Volatile
+        private var closed = false
+
         override fun close() {
-            runBlocking {
-                mutex.withLock {
-                    textEmbedder?.close()
-                    textEmbedder = null
-                    initializationAttempted = false
-                    _imageLabeler?.close()
-                    _imageLabeler = null
+            closed = true
+            if (mutex.tryLock()) {
+                try {
+                    releaseResources()
+                } finally {
+                    mutex.unlock()
                 }
+            } else {
+                Timber.w("MediaPipeEmbeddingGenerator.close() called while mutex held; resources will be released after current operation")
             }
+        }
+
+        private fun releaseResources() {
+            textEmbedder?.close()
+            textEmbedder = null
+            initializationAttempted = false
+            _imageLabeler?.close()
+            _imageLabeler = null
         }
 
         /**

@@ -47,7 +47,7 @@ class SearchRepositoryImpl
                             matchType = matchType,
                         )
                     }.sortedByDescending { it.relevanceScore }
-                prioritizeFavorites(results)
+                prioritizeFavorites(results).distinctBy { it.meme.id }
             }
         }
 
@@ -81,16 +81,19 @@ class SearchRepositoryImpl
                             id = first.memeId,
                             filePath = first.filePath,
                             fileName = first.fileName,
-                            mimeType = "image/jpeg",
-                            width = 0,
-                            height = 0,
-                            fileSizeBytes = 0,
-                            importedAt = 0,
+                            mimeType = first.mimeType,
+                            width = first.width,
+                            height = first.height,
+                            fileSizeBytes = first.fileSizeBytes,
+                            importedAt = first.importedAt,
                             emojiTags =
                                 MemeMapper.parseEmojiTagsJson(first.emojiTagsJson),
                             title = first.title,
                             description = first.description,
                             textContent = first.textContent,
+                            isFavorite = first.isFavorite,
+                            createdAt = first.createdAt,
+                            useCount = first.useCount,
                         )
 
                     val embeddingsByType =
@@ -159,7 +162,7 @@ class SearchRepositoryImpl
                             matchType = MatchType.EMOJI,
                         )
                     }
-                prioritizeFavorites(results)
+                prioritizeFavorites(results).distinctBy { it.meme.id }
             }
         }
 
@@ -250,24 +253,29 @@ class SearchRepositoryImpl
             val resultMap = mutableMapOf<Long, SearchResult>()
 
             ftsResults.forEach { result ->
+                val normalizedScore =
+                    (result.relevanceScore - BASE_MATCH_SCORE) / (1.0f - BASE_MATCH_SCORE)
                 resultMap[result.meme.id] =
                     result.copy(
-                        relevanceScore = result.relevanceScore * FTS_WEIGHT,
+                        relevanceScore = normalizedScore * FTS_WEIGHT,
                     )
             }
 
             semanticResults.forEach { result ->
+                val normalizedScore =
+                    (result.relevanceScore - DEFAULT_SEMANTIC_THRESHOLD) /
+                        (1.0f - DEFAULT_SEMANTIC_THRESHOLD)
                 val existing = resultMap[result.meme.id]
                 if (existing != null) {
                     resultMap[result.meme.id] =
                         existing.copy(
-                            relevanceScore = existing.relevanceScore + (result.relevanceScore * SEMANTIC_WEIGHT),
+                            relevanceScore = existing.relevanceScore + (normalizedScore * SEMANTIC_WEIGHT),
                             matchType = MatchType.HYBRID,
                         )
                 } else {
                     resultMap[result.meme.id] =
                         result.copy(
-                            relevanceScore = result.relevanceScore * SEMANTIC_WEIGHT,
+                            relevanceScore = normalizedScore * SEMANTIC_WEIGHT,
                         )
                 }
             }
@@ -316,7 +324,7 @@ class SearchRepositoryImpl
 
         override fun getAllMemes(): Flow<List<Meme>> {
             return memeDao.getAllMemes().map { entities ->
-                entities.map { it.toDomain() }
+                entities.map { it.toDomain() }.distinctBy { it.id }
             }
         }
 
@@ -329,7 +337,7 @@ class SearchRepositoryImpl
                             1.0f - (index * POSITION_RELEVANCE_DECAY).coerceAtMost(MAX_POSITION_DECAY),
                         matchType = MatchType.TEXT,
                     )
-                }
+                }.distinctBy { it.meme.id }
             }
         }
 
@@ -342,7 +350,7 @@ class SearchRepositoryImpl
                             1.0f - (index * POSITION_RELEVANCE_DECAY).coerceAtMost(MAX_POSITION_DECAY),
                         matchType = MatchType.TEXT,
                     )
-                }
+                }.distinctBy { it.meme.id }
             }
         }
 
@@ -372,7 +380,7 @@ class SearchRepositoryImpl
             private const val FTS_WEIGHT = 0.6f
             private const val SEMANTIC_WEIGHT = 0.4f
             private const val FAVORITE_BOOST_THRESHOLD = 0.5f
-            private const val BASE_MATCH_SCORE = 0.5f
+            private const val BASE_MATCH_SCORE = 0.45f
             private const val TITLE_MATCH_BONUS = 0.3f
             private const val DESCRIPTION_MATCH_BONUS = 0.15f
             private const val EMOJI_MATCH_BONUS = 0.1f
@@ -382,5 +390,6 @@ class SearchRepositoryImpl
             private const val MAX_SEARCH_SUGGESTIONS = 10
             private const val DESCRIPTION_SNIPPET_LENGTH = 50
             private const val PHRASE_CONTEXT_CHARS = 40
+            private const val DEFAULT_SEMANTIC_THRESHOLD = 0.3f
         }
     }

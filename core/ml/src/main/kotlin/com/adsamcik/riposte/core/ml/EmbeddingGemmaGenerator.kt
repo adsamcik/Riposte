@@ -15,6 +15,7 @@ import com.google.mlkit.vision.label.ImageLabeling
 import com.google.mlkit.vision.label.defaults.ImageLabelerOptions
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -265,12 +266,17 @@ class EmbeddingGemmaGenerator
         }
 
         override fun close() {
-            embeddingModel = null
-            initializationAttempted = false
-            _imageLabeler?.close()
-            _imageLabeler = null
-            callbackExecutor.shutdown()
-            callbackExecutor = Executors.newSingleThreadExecutor()
+            runBlocking {
+                mutex.withLock {
+                    embeddingModel = null
+                    initializationAttempted = false
+                    _initializationError = null
+                    _imageLabeler?.close()
+                    _imageLabeler = null
+                    callbackExecutor.shutdown()
+                    callbackExecutor = Executors.newSingleThreadExecutor()
+                }
+            }
         }
 
         /**

@@ -90,9 +90,10 @@ class TriSignalScorerTest {
         val galleryScore = scorer.score(meme, gallery, now)
         val searchScore = scorer.score(meme, search, now)
 
-        // Both should be positive, but gallery emphasizes engagement more
+        // Gallery surface weights engagement higher — score should differ
         assertThat(galleryScore).isGreaterThan(0.0)
         assertThat(searchScore).isGreaterThan(0.0)
+        assertThat(galleryScore).isNotEqualTo(searchScore)
     }
 
     @Test
@@ -363,9 +364,10 @@ class SuggestionEngineTest {
                 now,
             )
 
-        // Both return results but likely different orderings
+        // Both return results but with different orderings due to surface weighting
         assertThat(gallery).isNotEmpty()
         assertThat(search).isNotEmpty()
+        assertThat(gallery.map { it.id }).isNotEqualTo(search.map { it.id })
     }
 
     @Test
@@ -438,6 +440,53 @@ class SuggestionEngineTest {
         val secondIds = secondRun.map { it.id }.toSet()
         val overlap = firstIds.intersect(secondIds)
         assertThat(overlap.size).isLessThan(firstIds.size)
+    }
+
+    @Test
+    fun `library with high useCount but low viewCount is not treated as cold start`() {
+        // 25 memes × useCount=10 = 250 total interactions (well above coldStartInteractionThreshold=10)
+        // viewCount=0 for all — tests that useCount contributes to totalInteractions
+        // Kills the + → - mutation where totalInteractions would become negative
+        val memes =
+            (1..25).map {
+                testMeme(
+                    id = it.toLong(),
+                    importedAt = now - it * MS_PER_DAY,
+                    useCount = 10,
+                    viewCount = 0,
+                    lastViewedAt = now - (it % 5).toLong() * MS_PER_DAY,
+                    emojiTags = listOf(tag(listOf("😂", "🔥", "❤️", "🎉", "😎")[it % 5])),
+                )
+            }
+        val context = SuggestionContext(surface = Surface.GALLERY)
+        val result = engine.suggest(memes, context, now)
+
+        // Full algorithm returns exactly handSize (12), not cold-start's 8+diverse pattern
+        assertThat(result).hasSize(12)
+    }
+
+    @Test
+    fun `library at exactly coldStartInteractionThreshold uses full algorithm`() {
+        // coldStartInteractionThreshold = 10
+        // 25 memes, 10 with viewCount=1 each, rest with 0 → total = 10
+        // At threshold: 10 < 10 is false → full algorithm, not cold start
+        // Kills < → <= mutation on coldStartInteractionThreshold check
+        val memes =
+            (1..25).map {
+                testMeme(
+                    id = it.toLong(),
+                    importedAt = now - it * MS_PER_DAY,
+                    viewCount = if (it <= 10) 1 else 0,
+                    useCount = 0,
+                    lastViewedAt = if (it <= 10) now - (it % 5).toLong() * MS_PER_DAY else null,
+                    emojiTags = listOf(tag(listOf("😂", "🔥", "❤️", "🎉", "😎")[it % 5])),
+                )
+            }
+        val context = SuggestionContext(surface = Surface.GALLERY)
+        val result = engine.suggest(memes, context, now)
+
+        // Full algorithm returns exactly handSize (12)
+        assertThat(result).hasSize(12)
     }
 }
 

@@ -114,6 +114,19 @@ class ImageProcessorTest {
         originalBitmap.recycle()
     }
 
+    @Test
+    fun `resizeBitmap returns same bitmap when exactly at max dimensions`() {
+        // Bitmap dimensions exactly match maxWidth × maxHeight
+        // Kills <= → < mutation on `if (width <= maxWidth && height <= maxHeight)`
+        val originalBitmap = createRealBitmap(1000, 800)
+
+        val result = imageProcessor.resizeBitmap(originalBitmap, 1000, 800)
+
+        assertThat(result).isSameInstanceAs(originalBitmap)
+
+        originalBitmap.recycle()
+    }
+
     // endregion
 
     // region estimateFileSize Tests

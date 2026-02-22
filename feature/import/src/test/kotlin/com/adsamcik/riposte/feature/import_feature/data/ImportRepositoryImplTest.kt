@@ -270,6 +270,31 @@ class ImportRepositoryImplTest {
             assertThat(results[1].isSuccess).isTrue()
         }
 
+    @Test
+    fun `importImage handles panoramic image where only width is oversized`() =
+        runTest {
+            // Create a wide panoramic image (width=5000, height=100)
+            // Only width exceeds MAX_IMAGE_DIMENSION (2048); exercises calculateInSampleSize
+            // Note: The || → && mutation on `if (height > reqHeight || width > reqWidth)` is
+            // equivalent because the inner while loop requires BOTH half-dimensions to exceed
+            // requirements, so downsampling only triggers when both dimensions are large anyway.
+            val wideBitmap = Bitmap.createBitmap(5000, 100, Bitmap.Config.ARGB_8888)
+            val tempFile = File(context.cacheDir, "test_wide_${System.currentTimeMillis()}.jpg")
+            java.io.FileOutputStream(tempFile).use { out ->
+                wideBitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
+            }
+            wideBitmap.recycle()
+            val uri = Uri.fromFile(tempFile)
+
+            coEvery { memeDao.insertMeme(any()) } returns 1L
+            coEvery { textRecognizer.recognizeText(any<Bitmap>()) } returns null
+
+            val result = repository.importImage(uri, null)
+
+            assertThat(result.isSuccess).isTrue()
+            tempFile.delete()
+        }
+
     // endregion
 
     // region Metadata Extraction Tests

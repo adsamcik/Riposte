@@ -196,6 +196,7 @@ object FtsQuerySanitizer {
         // Remove FTS special characters while preserving emoji
         val sanitized =
             emoji
+                .replace(RTL_MARKS_REGEX, "")
                 .replace(FTS_SPECIAL_CHARS_REGEX, "")
                 .replace(VARIATION_SELECTORS_REGEX, "")
                 .trim()
