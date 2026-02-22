@@ -16,6 +16,7 @@ import timber.log.Timber
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import java.util.UUID
 import java.util.zip.ZipInputStream
 import javax.inject.Inject
 
@@ -136,6 +137,11 @@ class DefaultZipImporter
              * Maximum size for a JSON sidecar file (1 MB).
              */
             const val MAX_JSON_SIZE = 1L * BYTES_PER_KB * BYTES_PER_KB
+
+            /**
+             * Maximum total extraction size across all entries (2 GB).
+             */
+            const val MAX_TOTAL_EXTRACTION_SIZE = 2_000_000_000L
         }
 
         /**
@@ -167,13 +173,10 @@ class DefaultZipImporter
                 // Maps image filename -> parsed metadata
                 val metadataMap = mutableMapOf<String, MemeMetadata>()
 
-                // Clear previous extraction
-                val existingFiles = extractDir.listFiles()
-                Timber.d(
-                    "extractBundle: clearing %d existing files from %s",
-                    existingFiles?.size ?: 0, extractDir.absolutePath,
-                )
-                existingFiles?.forEach { it.delete() }
+                // Use unique subdirectory to avoid conflicts with parallel extractions
+                val uniqueExtractDir = File(extractDir, UUID.randomUUID().toString())
+                uniqueExtractDir.mkdirs()
+                var totalExtractedBytes = 0L
 
                 try {
                     context.contentResolver.openInputStream(zipUri)?.use { inputStream ->
@@ -204,7 +207,16 @@ class DefaultZipImporter
                                 }
 
                                 try {
-                                    processZipEntry(entryName, entry, zipInput, extractedImages, metadataMap, errors)
+                                    val bytesExtracted = processZipEntry(
+                                        entryName, entry, zipInput, extractedImages,
+                                        metadataMap, errors, uniqueExtractDir,
+                                    )
+                                    totalExtractedBytes += bytesExtracted
+                                    if (totalExtractedBytes > MAX_TOTAL_EXTRACTION_SIZE) {
+                                        errors["bundle"] =
+                                            "Total extraction size limit exceeded (max: ${MAX_TOTAL_EXTRACTION_SIZE / BYTES_PER_KB / BYTES_PER_KB}MB)"
+                                        break
+                                    }
                                 } catch (
                                     @Suppress("TooGenericExceptionCaught") // I/O + parsing may throw various exceptions
                                     e: Exception,
@@ -262,6 +274,11 @@ class DefaultZipImporter
                 // Track which images have been emitted (for JSON arriving after image)
                 val emittedImages = mutableSetOf<String>()
 
+                // Use unique subdirectory to avoid conflicts with parallel extractions
+                val uniqueExtractDir = File(extractDir, UUID.randomUUID().toString())
+                uniqueExtractDir.mkdirs()
+                var totalExtractedBytes = 0L
+
                 try {
                     context.contentResolver.openInputStream(zipUri)?.use { inputStream ->
                         ZipInputStream(inputStream).use { zipInput ->
@@ -294,9 +311,11 @@ class DefaultZipImporter
                                 }
 
                                 try {
-                                    val events = processStreamZipEntry(
-                                        entryName, entry, zipInput, pendingMetadata, emittedImages,
+                                    val (events, bytesExtracted) = processStreamZipEntry(
+                                        entryName, entry, zipInput, pendingMetadata,
+                                        emittedImages, uniqueExtractDir,
                                     )
+                                    totalExtractedBytes += bytesExtracted
                                     for (event in events) {
                                         emit(event)
                                         when (event) {
@@ -304,6 +323,16 @@ class DefaultZipImporter
                                             is ZipExtractionEvent.Error -> errorCount++
                                             else -> {}
                                         }
+                                    }
+                                    if (totalExtractedBytes > MAX_TOTAL_EXTRACTION_SIZE) {
+                                        emit(
+                                            ZipExtractionEvent.Error(
+                                                "bundle",
+                                                "Total extraction size limit exceeded",
+                                            ),
+                                        )
+                                        errorCount++
+                                        break
                                     }
                                 } catch (
                                     @Suppress("TooGenericExceptionCaught") // I/O + parsing may throw various exceptions
@@ -351,7 +380,9 @@ class DefaultZipImporter
             extractedImages: MutableMap<String, File>,
             metadataMap: MutableMap<String, MemeMetadata>,
             errors: MutableMap<String, String>,
-        ) {
+            baseDir: File,
+        ): Long {
+            var bytesExtracted = 0L
             when {
                 entryName.endsWith(".json") -> {
                     val declaredSize = entry.size
@@ -384,7 +415,7 @@ class DefaultZipImporter
                         if (safeFileName == null) {
                             errors[entryName] = "Path traversal attempt blocked"
                         } else {
-                            val outputFile = getSafeOutputFile(safeFileName)
+                            val outputFile = getSafeOutputFile(safeFileName, baseDir)
                             if (outputFile == null) {
                                 errors[entryName] = "Path traversal attempt blocked"
                             } else {
@@ -399,6 +430,7 @@ class DefaultZipImporter
                                         "File size limit exceeded (max: ${maxMb}MB)"
                                     outputFile.delete()
                                 } else {
+                                    bytesExtracted = written
                                     extractedImages[safeFileName] = outputFile
                                 }
                             }
@@ -406,6 +438,7 @@ class DefaultZipImporter
                     }
                 }
             }
+            return bytesExtracted
         }
 
         /**
@@ -432,7 +465,9 @@ class DefaultZipImporter
             zipInput: ZipInputStream,
             pendingMetadata: MutableMap<String, MemeMetadata>,
             emittedImages: MutableSet<String>,
-        ): List<ZipExtractionEvent> {
+            baseDir: File,
+        ): Pair<List<ZipExtractionEvent>, Long> {
+            var bytesExtracted = 0L
             val events = mutableListOf<ZipExtractionEvent>()
             when {
                 entryName.endsWith(".json") -> {
@@ -468,7 +503,7 @@ class DefaultZipImporter
                                 ZipExtractionEvent.Error(entryName, "Path traversal attempt blocked"),
                             )
                         } else {
-                            val outputFile = getSafeOutputFile(safeFileName)
+                            val outputFile = getSafeOutputFile(safeFileName, baseDir)
                             if (outputFile == null) {
                                 events.add(
                                     ZipExtractionEvent.Error(entryName, "Path traversal attempt blocked"),
@@ -482,6 +517,7 @@ class DefaultZipImporter
                                     )
                                     outputFile.delete()
                                 } else {
+                                    bytesExtracted = written
                                     val metadata = pendingMetadata.remove(safeFileName)
                                     emittedImages.add(safeFileName)
                                     events.add(
@@ -499,7 +535,7 @@ class DefaultZipImporter
                     }
                 }
             }
-            return events
+            return Pair(events, bytesExtracted)
         }
 
         /**
@@ -601,9 +637,9 @@ class DefaultZipImporter
          * @param fileName The sanitized file name.
          * @return A File within extractDir, or null if path would escape.
          */
-        private fun getSafeOutputFile(fileName: String): File? {
-            val outputFile = File(extractDir, fileName)
-            val canonicalExtractDir = extractDir.canonicalPath
+        private fun getSafeOutputFile(fileName: String, baseDir: File): File? {
+            val outputFile = File(baseDir, fileName)
+            val canonicalExtractDir = baseDir.canonicalPath
             val canonicalOutputPath = outputFile.canonicalPath
 
             // Ensure the output path is within the extract directory

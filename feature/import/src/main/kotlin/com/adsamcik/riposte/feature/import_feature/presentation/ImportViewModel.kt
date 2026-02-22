@@ -395,15 +395,21 @@ class ImportViewModel
         }
 
         private fun startImport() {
-            // Guard against duplicate imports - check and set synchronously
-            if (_uiState.value.isImporting) return
-            _uiState.update {
-                it.copy(
-                    isImporting = true,
-                    importProgress = -1f,
-                    statusMessage = context.getString(R.string.import_status_checking_duplicates),
-                )
+            // Guard against duplicate imports atomically inside the update block
+            var wasAlreadyImporting = false
+            _uiState.update { state ->
+                if (state.isImporting) {
+                    wasAlreadyImporting = true
+                    state
+                } else {
+                    state.copy(
+                        isImporting = true,
+                        importProgress = -1f,
+                        statusMessage = context.getString(R.string.import_status_checking_duplicates),
+                    )
+                }
             }
+            if (wasAlreadyImporting) return
 
             importJob =
                 viewModelScope.launch {
