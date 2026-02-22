@@ -13,6 +13,7 @@ import com.adsamcik.riposte.feature.settings.domain.repository.DuplicateDetectio
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import timber.log.Timber
 import java.io.File
 import javax.inject.Inject
 
@@ -166,8 +167,8 @@ class DefaultDuplicateDetectionRepository @Inject constructor(
         // Clean up the loser's file from disk
         try {
             File(merged.loserFilePath).delete()
-        } catch (_: Exception) {
-            // Best-effort cleanup
+        } catch (e: Exception) {
+            Timber.w(e, "Failed to delete loser file: %s", merged.loserFilePath)
         }
 
         return MergeResult(
@@ -190,8 +191,8 @@ class DefaultDuplicateDetectionRepository @Inject constructor(
         for (dup in pending) {
             try {
                 results.add(mergeDuplicates(dup.id))
-            } catch (_: Exception) {
-                // Skip pairs that can't be merged (already deleted, etc.)
+            } catch (e: Exception) {
+                Timber.w(e, "Skipped merge for duplicate %d: %s", dup.id, e.message)
             }
         }
         return results
