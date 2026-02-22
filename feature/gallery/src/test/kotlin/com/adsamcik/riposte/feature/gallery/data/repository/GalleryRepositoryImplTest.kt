@@ -640,6 +640,115 @@ class GalleryRepositoryImplTest {
 
     // endregion
 
+    // region Deduplication Tests
+
+    @Test
+    fun `getMemes deduplicates memes with same id`() =
+        runTest(testDispatcher) {
+            val duplicateEntities =
+                listOf(
+                    createTestMemeEntity(1, "meme1.jpg"),
+                    createTestMemeEntity(1, "meme1.jpg"),
+                    createTestMemeEntity(2, "meme2.jpg"),
+                    createTestMemeEntity(2, "meme2.jpg"),
+                    createTestMemeEntity(2, "meme2.jpg"),
+                )
+            every { memeDao.getAllMemes() } returns flowOf(duplicateEntities)
+
+            repository.getMemes().test {
+                val memes = awaitItem()
+                assertThat(memes.map { it.id }).containsNoDuplicates()
+                assertThat(memes).hasSize(2)
+                awaitComplete()
+            }
+        }
+
+    @Test
+    fun `getFavorites deduplicates memes with same id`() =
+        runTest(testDispatcher) {
+            val duplicateEntities =
+                listOf(
+                    createTestMemeEntity(1, "fav1.jpg", isFavorite = true),
+                    createTestMemeEntity(1, "fav1.jpg", isFavorite = true),
+                    createTestMemeEntity(3, "fav3.jpg", isFavorite = true),
+                )
+            every { memeDao.getFavoriteMemes() } returns flowOf(duplicateEntities)
+
+            repository.getFavorites().test {
+                val memes = awaitItem()
+                assertThat(memes.map { it.id }).containsNoDuplicates()
+                assertThat(memes).hasSize(2)
+                awaitComplete()
+            }
+        }
+
+    @Test
+    fun `getMemesByEmoji deduplicates memes with same id`() =
+        runTest(testDispatcher) {
+            val duplicateEntities =
+                listOf(
+                    createTestMemeEntity(1, "meme1.jpg"),
+                    createTestMemeEntity(1, "meme1.jpg"),
+                    createTestMemeEntity(2, "meme2.jpg"),
+                )
+            every { memeDao.getMemesByEmoji("😂") } returns flowOf(duplicateEntities)
+
+            repository.getMemesByEmoji("😂").test {
+                val memes = awaitItem()
+                assertThat(memes.map { it.id }).containsNoDuplicates()
+                assertThat(memes).hasSize(2)
+                awaitComplete()
+            }
+        }
+
+    @Test
+    fun `getRecentlyViewed deduplicates memes with same id`() =
+        runTest(testDispatcher) {
+            val duplicateEntities =
+                listOf(
+                    createTestMemeEntity(1, "recent1.jpg"),
+                    createTestMemeEntity(1, "recent1.jpg"),
+                    createTestMemeEntity(2, "recent2.jpg"),
+                    createTestMemeEntity(2, "recent2.jpg"),
+                )
+            every { memeDao.getRecentlyViewedMemes(any()) } returns flowOf(duplicateEntities)
+
+            repository.getRecentlyViewed().test {
+                val memes = awaitItem()
+                assertThat(memes.map { it.id }).containsNoDuplicates()
+                assertThat(memes).hasSize(2)
+                awaitComplete()
+            }
+        }
+
+    @Test
+    fun `getEmbeddingsExcluding deduplicates results with same meme id`() =
+        runTest(testDispatcher) {
+            val duplicateEmbeddings =
+                listOf(
+                    com.adsamcik.riposte.core.database.entity.MemeIdWithEmbedding(
+                        memeId = 2L,
+                        embedding = byteArrayOf(1, 2, 3),
+                    ),
+                    com.adsamcik.riposte.core.database.entity.MemeIdWithEmbedding(
+                        memeId = 2L,
+                        embedding = byteArrayOf(4, 5, 6),
+                    ),
+                    com.adsamcik.riposte.core.database.entity.MemeIdWithEmbedding(
+                        memeId = 3L,
+                        embedding = byteArrayOf(7, 8, 9),
+                    ),
+                )
+            coEvery { memeEmbeddingDao.getContentEmbeddingsExcluding(1L) } returns duplicateEmbeddings
+
+            val result = repository.getEmbeddingsExcluding(1L)
+
+            assertThat(result.map { it.memeId }).containsNoDuplicates()
+            assertThat(result).hasSize(2)
+        }
+
+    // endregion
+
     // region Helper Functions
 
     private fun createTestMemeEntity(

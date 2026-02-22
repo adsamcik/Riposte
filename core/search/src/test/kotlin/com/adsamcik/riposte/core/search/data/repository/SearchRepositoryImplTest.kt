@@ -519,6 +519,60 @@ class SearchRepositoryImplTest {
             assertThat(results[0].meme.id).isEqualTo(1)
         }
 
+    @Test
+    fun `searchHybrid combined score is greater than individual FTS score for overlapping result`() =
+        runTest {
+            val overlappingEntity = createTestMemeEntity(1, "test.jpg", title = "test meme")
+            every { memeSearchDao.searchMemes(any()) } returns flowOf(listOf(overlappingEntity))
+
+            val embedding = createTestEmbedding(128)
+            val testEmbeddingData = listOf(createMemeWithEmbeddingData(overlappingEntity, embedding))
+            coEvery { memeEmbeddingDao.getMemesWithEmbeddings() } returns testEmbeddingData
+
+            val semanticScore = 0.8f
+            val semanticResult =
+                listOf(
+                    SearchResult(
+                        meme = overlappingEntity.toDomainMeme(),
+                        relevanceScore = semanticScore,
+                        matchType = MatchType.SEMANTIC,
+                    ),
+                )
+            coEvery { semanticSearchEngine.findSimilarMultiVector(any(), any(), any()) } returns semanticResult
+
+            // Get FTS-only score by disabling semantic search
+            val ftsOnlyPrefs = defaultPreferences.copy(enableSemanticSearch = false)
+            every { preferencesDataStore.appPreferences } returns flowOf(ftsOnlyPrefs)
+            val ftsOnlyRepo =
+                SearchRepositoryImpl(
+                    memeDao = memeDao,
+                    memeSearchDao = memeSearchDao,
+                    memeEmbeddingDao = memeEmbeddingDao,
+                    emojiTagDao = emojiTagDao,
+                    semanticSearchEngine = semanticSearchEngine,
+                    preferencesDataStore = preferencesDataStore,
+                )
+            val ftsOnlyResults = ftsOnlyRepo.searchHybrid("test", 20)
+            val ftsOnlyScore = ftsOnlyResults.first().relevanceScore
+
+            // Get hybrid (combined) score
+            every { preferencesDataStore.appPreferences } returns flowOf(defaultPreferences)
+            val hybridRepo =
+                SearchRepositoryImpl(
+                    memeDao = memeDao,
+                    memeSearchDao = memeSearchDao,
+                    memeEmbeddingDao = memeEmbeddingDao,
+                    emojiTagDao = emojiTagDao,
+                    semanticSearchEngine = semanticSearchEngine,
+                    preferencesDataStore = preferencesDataStore,
+                )
+            val hybridResults = hybridRepo.searchHybrid("test", 20)
+            val combinedScore = hybridResults.first().relevanceScore
+
+            assertThat(combinedScore).isGreaterThan(ftsOnlyScore)
+            assertThat(hybridResults.first().matchType).isEqualTo(MatchType.HYBRID)
+        }
+
     // endregion
 
     // region searchByEmoji Tests
@@ -1155,6 +1209,110 @@ class SearchRepositoryImplTest {
                 val result = awaitItem()
                 // Order should be preserved: highest usage first
                 assertThat(result.map { it.first }).containsExactly("🎉", "🔥", "😂").inOrder()
+                awaitComplete()
+            }
+        }
+
+    // endregion
+
+    // region Deduplication Tests
+
+    @Test
+    fun `searchMemes deduplicates results with same meme id`() =
+        runTest {
+            val duplicateEntities =
+                listOf(
+                    createTestMemeEntity(1, "meme1.jpg", title = "Funny cat"),
+                    createTestMemeEntity(1, "meme1.jpg", title = "Funny cat"),
+                    createTestMemeEntity(2, "meme2.jpg", description = "Dog meme"),
+                    createTestMemeEntity(2, "meme2.jpg", description = "Dog meme"),
+                    createTestMemeEntity(3, "meme3.jpg"),
+                )
+            every { memeSearchDao.searchMemes(any()) } returns flowOf(duplicateEntities)
+
+            repository.searchMemes("funny").test {
+                val results = awaitItem()
+                assertThat(results.map { it.meme.id }).containsNoDuplicates()
+                assertThat(results).hasSize(3)
+                awaitComplete()
+            }
+        }
+
+    @Test
+    fun `searchByEmoji deduplicates results with same meme id`() =
+        runTest {
+            val duplicateEntities =
+                listOf(
+                    createTestMemeEntity(1, "meme1.jpg", emojiTagsJson = "😂"),
+                    createTestMemeEntity(1, "meme1.jpg", emojiTagsJson = "😂"),
+                    createTestMemeEntity(2, "meme2.jpg", emojiTagsJson = "😂"),
+                )
+            every { memeSearchDao.searchByEmoji(any()) } returns flowOf(duplicateEntities)
+
+            repository.searchByEmoji("😂").test {
+                val results = awaitItem()
+                assertThat(results.map { it.meme.id }).containsNoDuplicates()
+                assertThat(results).hasSize(2)
+                awaitComplete()
+            }
+        }
+
+    @Test
+    fun `getAllMemes deduplicates memes with same id`() =
+        runTest {
+            val duplicateEntities =
+                listOf(
+                    createTestMemeEntity(1, "meme1.jpg"),
+                    createTestMemeEntity(1, "meme1.jpg"),
+                    createTestMemeEntity(2, "meme2.jpg"),
+                    createTestMemeEntity(2, "meme2.jpg"),
+                    createTestMemeEntity(2, "meme2.jpg"),
+                )
+            every { memeDao.getAllMemes() } returns flowOf(duplicateEntities)
+
+            repository.getAllMemes().test {
+                val results = awaitItem()
+                assertThat(results.map { it.id }).containsNoDuplicates()
+                assertThat(results).hasSize(2)
+                awaitComplete()
+            }
+        }
+
+    @Test
+    fun `getFavoriteMemes deduplicates results with same meme id`() =
+        runTest {
+            val duplicateEntities =
+                listOf(
+                    createTestMemeEntity(1, "fav1.jpg", isFavorite = true),
+                    createTestMemeEntity(1, "fav1.jpg", isFavorite = true),
+                    createTestMemeEntity(2, "fav2.jpg", isFavorite = true),
+                )
+            every { memeDao.getFavoriteMemes() } returns flowOf(duplicateEntities)
+
+            repository.getFavoriteMemes().test {
+                val results = awaitItem()
+                assertThat(results.map { it.meme.id }).containsNoDuplicates()
+                assertThat(results).hasSize(2)
+                awaitComplete()
+            }
+        }
+
+    @Test
+    fun `getRecentMemes deduplicates results with same meme id`() =
+        runTest {
+            val duplicateEntities =
+                listOf(
+                    createTestMemeEntity(3, "recent1.jpg"),
+                    createTestMemeEntity(3, "recent1.jpg"),
+                    createTestMemeEntity(4, "recent2.jpg"),
+                    createTestMemeEntity(4, "recent2.jpg"),
+                )
+            every { memeDao.getRecentlyViewedMemes(any()) } returns flowOf(duplicateEntities)
+
+            repository.getRecentMemes().test {
+                val results = awaitItem()
+                assertThat(results.map { it.meme.id }).containsNoDuplicates()
+                assertThat(results).hasSize(2)
                 awaitComplete()
             }
         }
