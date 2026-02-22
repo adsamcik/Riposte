@@ -14,6 +14,7 @@ import com.adsamcik.riposte.core.model.EmojiTag
 import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.core.model.UserDensityPreference
 import com.adsamcik.riposte.core.testing.MainDispatcherRule
+import com.adsamcik.riposte.core.testing.TestDataFactory
 import com.adsamcik.riposte.feature.gallery.domain.usecase.DeleteMemesUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GalleryViewModelUseCases
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GetAllEmojisWithCountsUseCase
@@ -31,6 +32,8 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -71,9 +74,9 @@ class GalleryViewModelTest {
 
     private val testMemes =
         listOf(
-            createTestMeme(1, "meme1.jpg"),
-            createTestMeme(2, "meme2.jpg"),
-            createTestMeme(3, "meme3.jpg", isFavorite = true),
+            TestDataFactory.createMeme(id = 1, fileName = "meme1.jpg", filePath = "/storage/memes/meme1.jpg"),
+            TestDataFactory.createMeme(id = 2, fileName = "meme2.jpg", filePath = "/storage/memes/meme2.jpg"),
+            TestDataFactory.createMeme(id = 3, fileName = "meme3.jpg", filePath = "/storage/memes/meme3.jpg", isFavorite = true),
         )
 
     private val defaultPreferences =
@@ -695,8 +698,8 @@ class GalleryViewModelTest {
     @Test
     fun `shareSelected with multiple memes uses multi share path`() =
         runTest {
-            coEvery { getMemeByIdUseCase(1L) } returns createTestMeme(1, "meme1.jpg")
-            coEvery { getMemeByIdUseCase(2L) } returns createTestMeme(2, "meme2.jpg")
+            coEvery { getMemeByIdUseCase(1L) } returns TestDataFactory.createMeme(id = 1, fileName = "meme1.jpg", filePath = "/storage/memes/meme1.jpg")
+            coEvery { getMemeByIdUseCase(2L) } returns TestDataFactory.createMeme(id = 2, fileName = "meme2.jpg", filePath = "/storage/memes/meme2.jpg")
             viewModel = createViewModel()
             advanceUntilIdle()
             viewModel.onIntent(GalleryIntent.StartSelection(1))
@@ -843,11 +846,12 @@ class GalleryViewModelTest {
         runTest {
             val memesWithEmojis =
                 listOf(
-                    createTestMeme(1, "a.jpg", emojiTags = listOf(EmojiTag.fromEmoji("😂"), EmojiTag.fromEmoji("🔥"))),
-                    createTestMeme(2, "b.jpg", emojiTags = listOf(EmojiTag.fromEmoji("😂"))),
-                    createTestMeme(
-                        3,
-                        "c.jpg",
+                    TestDataFactory.createMeme(id = 1, fileName = "a.jpg", filePath = "/storage/memes/a.jpg", emojiTags = listOf(EmojiTag.fromEmoji("😂"), EmojiTag.fromEmoji("🔥"))),
+                    TestDataFactory.createMeme(id = 2, fileName = "b.jpg", filePath = "/storage/memes/b.jpg", emojiTags = listOf(EmojiTag.fromEmoji("😂"))),
+                    TestDataFactory.createMeme(
+                        id = 3,
+                        fileName = "c.jpg",
+                        filePath = "/storage/memes/c.jpg",
                         isFavorite = true,
                         emojiTags = listOf(EmojiTag.fromEmoji("🔥"), EmojiTag.fromEmoji("💀")),
                     ),
@@ -1137,10 +1141,10 @@ class GalleryViewModelTest {
         runTest {
             val dupeMememes =
                 listOf(
-                    createTestMeme(1, "meme1.jpg", isFavorite = true),
-                    createTestMeme(2, "meme2.jpg", isFavorite = true),
-                    createTestMeme(2, "meme2_dupe.jpg", isFavorite = true), // duplicate ID from DAO JOIN
-                    createTestMeme(3, "meme3.jpg", isFavorite = true),
+                    TestDataFactory.createMeme(id = 1, fileName = "meme1.jpg", filePath = "/storage/memes/meme1.jpg", isFavorite = true),
+                    TestDataFactory.createMeme(id = 2, fileName = "meme2.jpg", filePath = "/storage/memes/meme2.jpg", isFavorite = true),
+                    TestDataFactory.createMeme(id = 2, fileName = "meme2_dupe.jpg", filePath = "/storage/memes/meme2_dupe.jpg", isFavorite = true), // duplicate ID from DAO JOIN
+                    TestDataFactory.createMeme(id = 3, fileName = "meme3.jpg", filePath = "/storage/memes/meme3.jpg", isFavorite = true),
                 )
             every { getFavoritesUseCase() } returns flowOf(dupeMememes)
             every { getLibraryStatsUseCase() } returns flowOf(LibraryStatistics(totalMemes = 4, favoriteMemes = 4))
@@ -1176,20 +1180,35 @@ class GalleryViewModelTest {
             )
             coEvery { importRequestDao.getStaleRequests(any()) } returns listOf(staleRequest)
 
-            viewModel = createViewModel()
-            advanceUntilIdle()
+            // Mock WorkManager to return no active work (all finished)
+            val mockWorkManager = mockk<androidx.work.WorkManager>()
+            mockkStatic(androidx.work.WorkManager::class)
+            every { androidx.work.WorkManager.getInstance(any<Context>()) } returns mockWorkManager
+            // For observe* methods that use Flow
+            every { mockWorkManager.getWorkInfosForUniqueWorkFlow(any()) } returns kotlinx.coroutines.flow.emptyFlow()
+            // For recoverStaleImports that uses blocking Future
+            val mockFuture = mockk<com.google.common.util.concurrent.ListenableFuture<List<androidx.work.WorkInfo>>>()
+            every { mockFuture.get() } returns emptyList()
+            every { mockWorkManager.getWorkInfosForUniqueWork(any()) } returns mockFuture
 
-            coVerify {
-                importRequestDao.updateRequestProgress(
-                    id = "req-1",
-                    status = ImportRequestEntity.STATUS_COMPLETED,
-                    completed = 7,
-                    failed = 1,
-                    updatedAt = any(),
-                )
+            try {
+                viewModel = createViewModel()
+                advanceUntilIdle()
+
+                coVerify {
+                    importRequestDao.updateRequestProgress(
+                        id = "req-1",
+                        status = ImportRequestEntity.STATUS_COMPLETED,
+                        completed = 7,
+                        failed = 1,
+                        updatedAt = any(),
+                    )
+                }
+                val notification = viewModel.uiState.value.notification
+                assertThat(notification).isInstanceOf(GalleryNotification.ImportFailed::class.java)
+            } finally {
+                unmockkStatic(androidx.work.WorkManager::class)
             }
-            val notification = viewModel.uiState.value.notification
-            assertThat(notification).isInstanceOf(GalleryNotification.ImportFailed::class.java)
         }
 
     @Test
@@ -1207,17 +1226,30 @@ class GalleryViewModelTest {
             )
             coEvery { importRequestDao.getStaleRequests(any()) } returns listOf(staleRequest)
 
-            viewModel = createViewModel()
-            advanceUntilIdle()
+            // Mock WorkManager to return no active work
+            val mockWorkManager = mockk<androidx.work.WorkManager>()
+            mockkStatic(androidx.work.WorkManager::class)
+            every { androidx.work.WorkManager.getInstance(any<Context>()) } returns mockWorkManager
+            every { mockWorkManager.getWorkInfosForUniqueWorkFlow(any()) } returns kotlinx.coroutines.flow.emptyFlow()
+            val mockFuture = mockk<com.google.common.util.concurrent.ListenableFuture<List<androidx.work.WorkInfo>>>()
+            every { mockFuture.get() } returns emptyList()
+            every { mockWorkManager.getWorkInfosForUniqueWork(any()) } returns mockFuture
 
-            coVerify {
-                importRequestDao.updateRequestProgress(
-                    id = "req-2",
-                    status = ImportRequestEntity.STATUS_FAILED,
-                    completed = 0,
-                    failed = 0,
-                    updatedAt = any(),
-                )
+            try {
+                viewModel = createViewModel()
+                advanceUntilIdle()
+
+                coVerify {
+                    importRequestDao.updateRequestProgress(
+                        id = "req-2",
+                        status = ImportRequestEntity.STATUS_FAILED,
+                        completed = 0,
+                        failed = 0,
+                        updatedAt = any(),
+                    )
+                }
+            } finally {
+                unmockkStatic(androidx.work.WorkManager::class)
             }
         }
 
@@ -1331,35 +1363,6 @@ class GalleryViewModelTest {
             // No snackbar effect should be emitted for share tip
             coVerify(exactly = 0) { preferencesDataStore.setShareTipShown() }
         }
-
-    // endregion
-
-    // region Helper Functions
-
-    private fun createTestMeme(
-        id: Long,
-        fileName: String,
-        isFavorite: Boolean = false,
-        emojiTags: List<EmojiTag> = listOf(EmojiTag.fromEmoji("😂")),
-        title: String? = "Test Meme $id",
-        useCount: Int = 0,
-    ): Meme =
-        Meme(
-            id = id,
-            filePath = "/storage/memes/$fileName",
-            fileName = fileName,
-            mimeType = "image/jpeg",
-            width = 1080,
-            height = 1080,
-            fileSizeBytes = 1024L,
-            importedAt = System.currentTimeMillis() - (id * 1000),
-            emojiTags = emojiTags,
-            title = title,
-            description = null,
-            textContent = null,
-            isFavorite = isFavorite,
-            useCount = useCount,
-        )
 
     // endregion
 }

@@ -8,6 +8,7 @@ import com.adsamcik.riposte.core.common.share.ShareMemeUseCase
 import com.adsamcik.riposte.core.model.EmojiTag
 import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.core.testing.MainDispatcherRule
+import com.adsamcik.riposte.core.testing.TestDataFactory
 import com.adsamcik.riposte.feature.gallery.R
 import com.adsamcik.riposte.feature.gallery.domain.usecase.DeleteMemesUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GetAllMemeIdsUseCase
@@ -54,7 +55,7 @@ class MemeDetailViewModelTest {
     private lateinit var context: Context
     private lateinit var viewModel: MemeDetailViewModel
 
-    private val testMeme = createTestMeme(1L)
+    private val testMeme = TestDataFactory.createMeme(id = 1L)
 
     @Before
     fun setup() {
@@ -570,7 +571,7 @@ class MemeDetailViewModelTest {
     @Test
     fun `hasUnsavedChanges is false when editedTitle equals empty string and original title is null`() =
         runTest {
-            val memeWithNullTitle = createTestMeme(1L).copy(title = null)
+            val memeWithNullTitle = TestDataFactory.createMeme(id = 1L).copy(title = null)
             coEvery { getMemeByIdUseCase(1L) } returns memeWithNullTitle
 
             viewModel = createViewModel()
@@ -586,7 +587,7 @@ class MemeDetailViewModelTest {
     @Test
     fun `hasUnsavedChanges is false when editedDescription equals empty string and original description is null`() =
         runTest {
-            val memeWithNullDescription = createTestMeme(1L).copy(description = null)
+            val memeWithNullDescription = TestDataFactory.createMeme(id = 1L).copy(description = null)
             coEvery { getMemeByIdUseCase(1L) } returns memeWithNullDescription
 
             viewModel = createViewModel()
@@ -602,7 +603,7 @@ class MemeDetailViewModelTest {
     @Test
     fun `save button is disabled when isSaving`() {
         // Verify that isSaving prevents hasUnsavedChanges from enabling save
-        val meme = createTestMeme(1L)
+        val meme = TestDataFactory.createMeme(id = 1L)
         val state =
             MemeDetailUiState(
                 meme = meme,
@@ -662,7 +663,7 @@ class MemeDetailViewModelTest {
     @Test
     fun `when meme has no emoji tags then empty state is exposed`() =
         runTest {
-            val memeWithNoEmojis = createTestMeme(1L).copy(emojiTags = emptyList())
+            val memeWithNoEmojis = TestDataFactory.createMeme(id = 1L).copy(emojiTags = emptyList())
             coEvery { getMemeByIdUseCase(1L) } returns memeWithNoEmojis
 
             viewModel = createViewModel()
@@ -788,7 +789,7 @@ class MemeDetailViewModelTest {
     @Test
     fun `loading a different meme resets edit state`() =
         runTest {
-            val meme2 = createTestMeme(2L).copy(title = "Different Meme", description = "Different description")
+            val meme2 = TestDataFactory.createMeme(id = 2L).copy(title = "Different Meme", description = "Different description")
             savedStateHandle = SavedStateHandle(mapOf("memeId" to 2L))
             coEvery { getMemeByIdUseCase(2L) } returns meme2
 
@@ -804,7 +805,7 @@ class MemeDetailViewModelTest {
     fun `loading meme with different emojis updates editedEmojis`() =
         runTest {
             val memeWithEmojis =
-                createTestMeme(1L).copy(
+                TestDataFactory.createMeme(id = 1L).copy(
                     emojiTags =
                         listOf(
                             EmojiTag(emoji = "🔥", name = "fire"),
@@ -841,7 +842,7 @@ class MemeDetailViewModelTest {
     @Test
     fun `hasUnsavedChanges resets when meme changes`() =
         runTest {
-            val meme2 = createTestMeme(2L)
+            val meme2 = TestDataFactory.createMeme(id = 2L)
             savedStateHandle = SavedStateHandle(mapOf("memeId" to 2L))
             coEvery { getMemeByIdUseCase(2L) } returns meme2
 
@@ -997,8 +998,8 @@ class MemeDetailViewModelTest {
     @Test
     fun `similar memes with duplicate IDs are safe for LazyRow keys`() =
         runTest {
-            val meme2 = createTestMeme(2L)
-            val meme3 = createTestMeme(3L)
+            val meme2 = TestDataFactory.createMeme(id = 2L)
+            val meme3 = TestDataFactory.createMeme(id = 3L)
             // UseCase returns duplicates (e.g. from JOIN expansion or race condition)
             coEvery { getSimilarMemesUseCase(any(), any()) } returns
                 SimilarMemesStatus.Found(listOf(meme2, meme2, meme3))
@@ -1165,7 +1166,7 @@ class MemeDetailViewModelTest {
     @Test
     fun `ChangeMeme loads new meme data`() =
         runTest {
-            val meme2 = createTestMeme(2L).copy(title = "Second Meme")
+            val meme2 = TestDataFactory.createMeme(id = 2L).copy(title = "Second Meme")
             coEvery { getMemeByIdUseCase(2L) } returns meme2
 
             viewModel = createViewModel()
@@ -1183,7 +1184,7 @@ class MemeDetailViewModelTest {
     @Test
     fun `ChangeMeme resets edit state for new meme`() =
         runTest {
-            val meme2 = createTestMeme(2L)
+            val meme2 = TestDataFactory.createMeme(id = 2L)
             coEvery { getMemeByIdUseCase(2L) } returns meme2
 
             viewModel = createViewModel()
@@ -1215,7 +1216,7 @@ class MemeDetailViewModelTest {
     @Test
     fun `ChangeMeme reloads similar memes for new meme`() =
         runTest {
-            val meme2 = createTestMeme(2L)
+            val meme2 = TestDataFactory.createMeme(id = 2L)
             coEvery { getMemeByIdUseCase(2L) } returns meme2
 
             viewModel = createViewModel()
@@ -1230,7 +1231,7 @@ class MemeDetailViewModelTest {
     @Test
     fun `ChangeMeme records view for new meme`() =
         runTest {
-            val meme2 = createTestMeme(2L)
+            val meme2 = TestDataFactory.createMeme(id = 2L)
             coEvery { getMemeByIdUseCase(2L) } returns meme2
 
             viewModel = createViewModel()
@@ -1245,7 +1246,7 @@ class MemeDetailViewModelTest {
     @Test
     fun `operations use current meme ID after ChangeMeme`() =
         runTest {
-            val meme2 = createTestMeme(2L)
+            val meme2 = TestDataFactory.createMeme(id = 2L)
             coEvery { getMemeByIdUseCase(2L) } returns meme2
             coEvery { toggleFavoriteUseCase(2L) } returns Result.success(Unit)
 
@@ -1288,26 +1289,4 @@ class MemeDetailViewModelTest {
         }
 
     // endregion
-
-    companion object {
-        private fun createTestMeme(id: Long) =
-            Meme(
-                id = id,
-                filePath = "/test/path/meme$id.jpg",
-                fileName = "meme$id.jpg",
-                mimeType = "image/jpeg",
-                width = 1080,
-                height = 1920,
-                fileSizeBytes = 1024L,
-                importedAt = System.currentTimeMillis(),
-                emojiTags =
-                    listOf(
-                        EmojiTag(emoji = "😀", name = "grinning"),
-                    ),
-                title = "Test Meme $id",
-                description = "Test description",
-                textContent = "test text",
-                isFavorite = false,
-            )
-    }
 }

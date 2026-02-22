@@ -9,11 +9,11 @@ import com.adsamcik.riposte.core.database.dao.MemeDao
 import com.adsamcik.riposte.core.database.entity.MemeEntity
 import com.adsamcik.riposte.core.datastore.PreferencesDataStore
 import com.adsamcik.riposte.core.ml.XmpMetadataHandler
-import com.adsamcik.riposte.core.model.EmojiTag
 import com.adsamcik.riposte.core.model.ImageFormat
 import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.core.model.ShareConfig
 import com.adsamcik.riposte.core.model.SharingPreferences
+import com.adsamcik.riposte.core.testing.TestDataFactory
 import com.adsamcik.riposte.feature.share.R
 import com.google.common.truth.Truth.assertThat
 import io.mockk.coEvery
@@ -200,7 +200,7 @@ class ShareRepositoryImplTest {
     @Test
     fun `prepareForSharing with valid meme returns success`() =
         runTest {
-            val meme = createTestMeme(1L)
+            val meme = TestDataFactory.createMeme(id = 1L)
             val config = ShareConfig(stripMetadata = false)
             val expectedUri = Uri.parse("content://com.adsamcik.riposte.fileprovider/share.jpg")
 
@@ -222,7 +222,7 @@ class ShareRepositoryImplTest {
     @Test
     fun `prepareForSharing when imageProcessor returns Error returns failure`() =
         runTest {
-            val meme = createTestMeme(1L)
+            val meme = TestDataFactory.createMeme(id = 1L)
             val config = ShareConfig.DEFAULT
 
             every { imageProcessor.processImage(any(), any(), any()) } returns
@@ -237,7 +237,7 @@ class ShareRepositoryImplTest {
     @Test
     fun `prepareForSharing with stripMetadata true skips XMP write`() =
         runTest {
-            val meme = createTestMeme(1L)
+            val meme = TestDataFactory.createMeme(id = 1L)
             val config = ShareConfig(stripMetadata = true)
             val expectedUri = Uri.parse("content://com.adsamcik.riposte.fileprovider/share.jpg")
 
@@ -259,7 +259,7 @@ class ShareRepositoryImplTest {
     @Test
     fun `prepareForSharing when source file is missing returns failure`() =
         runTest {
-            val meme = createTestMeme(1L)
+            val meme = TestDataFactory.createMeme(id = 1L)
             val config = ShareConfig.DEFAULT
 
             every { imageProcessor.processImage(any(), any(), any()) } throws
@@ -278,7 +278,7 @@ class ShareRepositoryImplTest {
     @Test
     fun `saveToGallery with valid meme processes and returns success`() =
         runTest {
-            val meme = createTestMeme(1L)
+            val meme = TestDataFactory.createMeme(id = 1L)
             val config = ShareConfig.DEFAULT
             val galleryUri = Uri.parse("content://media/external/images/media/42")
             val mockResolver = mockk<ContentResolver>()
@@ -307,7 +307,7 @@ class ShareRepositoryImplTest {
     @Test
     fun `saveToGallery when MediaStore insert fails returns failure`() =
         runTest {
-            val meme = createTestMeme(1L)
+            val meme = TestDataFactory.createMeme(id = 1L)
             val config = ShareConfig.DEFAULT
             val mockResolver = mockk<ContentResolver>()
 
@@ -344,26 +344,6 @@ class ShareRepositoryImplTest {
             textContent = null,
             embedding = null,
             isFavorite = false,
-        )
-    }
-
-    private fun createTestMeme(
-        id: Long,
-        width: Int = 1080,
-        height: Int = 1920,
-    ): Meme {
-        return Meme(
-            id = id,
-            filePath = "/test/path/meme_$id.jpg",
-            fileName = "meme_$id.jpg",
-            mimeType = "image/jpeg",
-            width = width,
-            height = height,
-            fileSizeBytes = 100_000,
-            importedAt = System.currentTimeMillis(),
-            emojiTags = listOf(EmojiTag.fromEmoji("😂")),
-            title = "Test Meme $id",
-            description = "Description for meme $id",
         )
     }
 

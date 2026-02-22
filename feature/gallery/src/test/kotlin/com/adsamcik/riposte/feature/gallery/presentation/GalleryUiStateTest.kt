@@ -1,7 +1,6 @@
 package com.adsamcik.riposte.feature.gallery.presentation
 
-import com.adsamcik.riposte.core.model.EmojiTag
-import com.adsamcik.riposte.core.model.Meme
+import com.adsamcik.riposte.core.testing.TestDataFactory
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
@@ -12,9 +11,9 @@ import org.junit.Test
 class GalleryUiStateTest {
 
     private val testMemes = listOf(
-        createTestMeme(1L, isFavorite = true),
-        createTestMeme(2L),
-        createTestMeme(3L),
+        TestDataFactory.createMeme(id = 1L, isFavorite = true),
+        TestDataFactory.createMeme(id = 2L),
+        TestDataFactory.createMeme(id = 3L),
     )
 
     // ── isEmpty ──
@@ -245,22 +244,4 @@ class GalleryUiStateTest {
         assertThat(state.isSearchFocused).isTrue()
     }
 
-    // ── Helpers ──
-
-    private fun createTestMeme(
-        id: Long,
-        isFavorite: Boolean = false,
-    ) = Meme(
-        id = id,
-        filePath = "/test/meme$id.jpg",
-        fileName = "meme$id.jpg",
-        mimeType = "image/jpeg",
-        width = 500,
-        height = 500,
-        fileSizeBytes = 50_000L,
-        importedAt = System.currentTimeMillis(),
-        emojiTags = listOf(EmojiTag("😂", "laughing")),
-        title = "Test Meme $id",
-        isFavorite = isFavorite,
-    )
 }

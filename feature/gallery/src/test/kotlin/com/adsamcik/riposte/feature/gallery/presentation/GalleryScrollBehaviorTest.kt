@@ -8,8 +8,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import com.adsamcik.riposte.core.model.EmojiTag
-import com.adsamcik.riposte.core.model.Meme
+import com.adsamcik.riposte.core.testing.TestDataFactory
 import com.adsamcik.riposte.core.ui.theme.RiposteTheme
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
@@ -38,7 +37,7 @@ class GalleryScrollBehaviorTest {
     private val emojis = listOf("😂" to 10, "🔥" to 5, "💀" to 3)
 
     // Generate enough memes to enable scrolling
-    private val manyMemes = (1L..30L).map { createTestMeme(it) }
+    private val manyMemes = (1L..30L).map { TestDataFactory.createMeme(id = it) }
 
     // ============ Emoji Rail Visibility by Screen Mode ============
 
@@ -582,22 +581,4 @@ class GalleryScrollBehaviorTest {
         assertThat(emojiRailBounds.top.value).isAtLeast(searchBarBounds.bottom.value)
     }
 
-    // ============ Helpers ============
-
-    private fun createTestMeme(
-        id: Long,
-        isFavorite: Boolean = false,
-    ) = Meme(
-        id = id,
-        filePath = "/test/meme$id.jpg",
-        fileName = "meme$id.jpg",
-        mimeType = "image/jpeg",
-        width = 500,
-        height = 500,
-        fileSizeBytes = 50_000L,
-        importedAt = System.currentTimeMillis(),
-        emojiTags = listOf(EmojiTag("😂", "laughing")),
-        title = "Test Meme $id",
-        isFavorite = isFavorite,
-    )
 }
