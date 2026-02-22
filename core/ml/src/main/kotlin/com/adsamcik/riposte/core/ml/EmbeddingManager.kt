@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.nio.ByteBuffer
@@ -52,6 +53,8 @@ class EmbeddingManager
         private val versionManager: EmbeddingModelVersionManager,
         private val appLifecycleTracker: AppLifecycleTracker,
     ) {
+        private var foregroundObserverJob: Job? = null
+
         companion object {
             private const val BYTES_PER_FLOAT = 4
             private const val HASH_BYTE_LENGTH = 16
@@ -104,7 +107,8 @@ class EmbeddingManager
             }
 
             // 3. Re-check for pending work whenever the app returns to foreground
-            observeForegroundResume(scope)
+            foregroundObserverJob?.cancel()
+            foregroundObserverJob = observeForegroundResume(scope)
         }
 
         /**
@@ -228,8 +232,8 @@ class EmbeddingManager
          * - New memes were added while the app was backgrounded
          * - The previous worker batch completed but more work remains
          */
-        private fun observeForegroundResume(scope: CoroutineScope) {
-            scope.launch {
+        private fun observeForegroundResume(scope: CoroutineScope): Job {
+            return scope.launch {
                 appLifecycleTracker.isInBackground
                     // Drop the initial value to only react to transitions
                     .drop(1)

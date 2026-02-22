@@ -54,18 +54,20 @@ class EmbeddingGemmaGenerator
         @param:ApplicationContext private val context: Context,
     ) : EmbeddingGenerator {
         /** Lazily initialized image labeler for extracting features from images. */
+        @Volatile
         private var _imageLabeler: com.google.mlkit.vision.label.ImageLabeler? = null
+        private val imageLabelerLock = Any()
         private val imageLabeler: com.google.mlkit.vision.label.ImageLabeler
             get() {
-                if (_imageLabeler == null) {
-                    _imageLabeler =
-                        ImageLabeling.getClient(
-                            ImageLabelerOptions.Builder()
-                                .setConfidenceThreshold(IMAGE_LABEL_CONFIDENCE_THRESHOLD)
-                                .build(),
-                        )
+                _imageLabeler?.let { return it }
+                synchronized(imageLabelerLock) {
+                    _imageLabeler?.let { return it }
+                    return ImageLabeling.getClient(
+                        ImageLabelerOptions.Builder()
+                            .setConfidenceThreshold(IMAGE_LABEL_CONFIDENCE_THRESHOLD)
+                            .build(),
+                    ).also { _imageLabeler = it }
                 }
-                return _imageLabeler!!
             }
 
         /** Mutex to ensure thread-safe access to the embedding model. */
@@ -95,6 +97,8 @@ class EmbeddingGemmaGenerator
         private var callbackExecutor = Executors.newSingleThreadExecutor()
 
         override val embeddingDimension: Int = DEFAULT_EMBEDDING_DIMENSION
+
+        override val modelVersion: String = EmbeddingModelVersionManager.CURRENT_VERSION
 
         override suspend fun generateFromText(text: String): FloatArray =
             withContext(Dispatchers.Default) {
@@ -698,18 +702,19 @@ class EmbeddingGemmaGenerator
              * L2-normalizes an embedding vector.
              */
             fun normalize(embedding: FloatArray): FloatArray {
+                val result = embedding.copyOf()
                 var sumSquares = 0f
-                for (value in embedding) {
+                for (value in result) {
                     sumSquares += value * value
                 }
                 val norm = sqrt(sumSquares)
 
                 if (norm > 0f) {
-                    for (i in embedding.indices) {
-                        embedding[i] /= norm
+                    for (i in result.indices) {
+                        result[i] /= norm
                     }
                 }
-                return embedding
+                return result
             }
         }
     }

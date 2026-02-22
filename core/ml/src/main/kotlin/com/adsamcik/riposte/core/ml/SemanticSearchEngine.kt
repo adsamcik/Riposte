@@ -63,6 +63,12 @@ interface SemanticSearchEngine {
     suspend fun initialize()
 
     /**
+     * Clears any cached query embeddings.
+     * Call when the embedding model changes to avoid stale results.
+     */
+    fun clearCache() {}
+
+    /**
      * Releases resources.
      */
     fun close()

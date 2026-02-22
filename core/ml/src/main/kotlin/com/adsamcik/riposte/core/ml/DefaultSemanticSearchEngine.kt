@@ -27,6 +27,31 @@ class DefaultSemanticSearchEngine
                 },
             )
 
+        /** Model version when cache entries were created; cleared on mismatch. */
+        private var cachedModelVersion: String = ""
+
+        /**
+         * Returns a cached query embedding if the model version hasn't changed,
+         * otherwise invalidates the cache and returns null.
+         */
+        private fun getCachedQueryEmbedding(query: String): FloatArray? {
+            val currentVersion = embeddingGenerator.modelVersion
+            if (currentVersion.isNotEmpty() && currentVersion != cachedModelVersion) {
+                queryEmbeddingCache.clear()
+                cachedModelVersion = currentVersion
+                return null
+            }
+            return queryEmbeddingCache[query]
+        }
+
+        private fun putCachedQueryEmbedding(query: String, embedding: FloatArray) {
+            val currentVersion = embeddingGenerator.modelVersion
+            if (currentVersion.isNotEmpty()) {
+                cachedModelVersion = currentVersion
+            }
+            queryEmbeddingCache[query] = embedding
+        }
+
         override suspend fun findSimilar(
             query: String,
             candidates: List<MemeWithEmbedding>,
@@ -39,9 +64,9 @@ class DefaultSemanticSearchEngine
                 // Generate query embedding (cache to avoid regenerating for repeated queries)
                 val queryEmbedding =
                     try {
-                        queryEmbeddingCache[query]
+                        getCachedQueryEmbedding(query)
                             ?: embeddingGenerator.generateFromText(query).also {
-                                queryEmbeddingCache[query] = it
+                                putCachedQueryEmbedding(query, it)
                             }
                     } catch (
                         @Suppress("TooGenericExceptionCaught") // ML libraries throw unpredictable exceptions
@@ -53,6 +78,7 @@ class DefaultSemanticSearchEngine
 
                 // Calculate similarities and filter
                 candidates
+                    .filter { it.embedding.size == queryEmbedding.size }
                     .map { candidate ->
                         val similarity = cosineSimilarity(queryEmbedding, candidate.embedding)
                         SearchResult(
@@ -77,9 +103,9 @@ class DefaultSemanticSearchEngine
 
                 val queryEmbedding =
                     try {
-                        queryEmbeddingCache[query]
+                        getCachedQueryEmbedding(query)
                             ?: embeddingGenerator.generateFromText(query).also {
-                                queryEmbeddingCache[query] = it
+                                putCachedQueryEmbedding(query, it)
                             }
                     } catch (
                         @Suppress("TooGenericExceptionCaught") // ML libraries throw unpredictable exceptions
@@ -140,7 +166,7 @@ class DefaultSemanticSearchEngine
          * Clears the query embedding cache.
          * Call when the embedding model changes.
          */
-        fun clearCache() {
+        override fun clearCache() {
             queryEmbeddingCache.clear()
         }
 
