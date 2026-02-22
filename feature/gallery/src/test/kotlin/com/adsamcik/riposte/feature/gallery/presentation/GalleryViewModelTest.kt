@@ -943,6 +943,19 @@ class GalleryViewModelTest {
             assertThat(viewModel.uiState.value.importStatus).isEqualTo(ImportWorkStatus.Idle)
         }
 
+    @Test
+    fun `import and embedding status remain Idle when WorkManager unavailable`() =
+        runTest {
+            // WorkManager.getInstance(context) throws IllegalStateException in unit tests
+            // The ViewModel catches this and keeps status at Idle
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertThat(state.importStatus).isEqualTo(ImportWorkStatus.Idle)
+            assertThat(state.embeddingStatus).isEqualTo(EmbeddingWorkStatus.Idle)
+        }
+
     // endregion
 
     // region Emoji Usage Sorting Tests
@@ -1258,6 +1271,65 @@ class GalleryViewModelTest {
             // ViewModel should not crash — exception is caught and logged
             val state = viewModel.uiState.value
             assertThat(state.notification).isNull()
+        }
+
+    // endregion
+
+    // region Suggestions Tests
+
+    @Test
+    fun `loadSuggestions populates uiState suggestions from memes`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertThat(state.suggestions).isNotEmpty()
+            assertThat(state.suggestions.size).isAtMost(12)
+        }
+
+    @Test
+    fun `loadSuggestions persists suggestion ids to datastore`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            coVerify { preferencesDataStore.updateLastSessionSuggestionIds(any()) }
+        }
+
+    // endregion
+
+    // region Share Tip Tests
+
+    @Test
+    fun `checkShareTip shows snackbar when tip not yet shown and memes exist`() =
+        runTest {
+            every { preferencesDataStore.hasShownShareTip } returns flowOf(false)
+
+            viewModel = createViewModel()
+
+            turbineScope {
+                val effects = viewModel.effects.testIn(backgroundScope)
+                advanceUntilIdle()
+
+                val effect = effects.awaitItem()
+                assertThat(effect).isInstanceOf(GalleryEffect.ShowSnackbar::class.java)
+                assertThat((effect as GalleryEffect.ShowSnackbar).message).contains("Tip")
+
+                coVerify { preferencesDataStore.setShareTipShown() }
+                effects.cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `checkShareTip does not show snackbar when tip already shown`() =
+        runTest {
+            // Default setup already sets hasShownShareTip = true
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            // No snackbar effect should be emitted for share tip
+            coVerify(exactly = 0) { preferencesDataStore.setShareTipShown() }
         }
 
     // endregion
