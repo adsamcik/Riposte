@@ -530,6 +530,8 @@ private fun ImportGridContent(
             ImportImageCard(
                 image = image,
                 isSelected = index == editingIndex,
+                index = index,
+                totalCount = images.size,
                 onClick = { onImageClick(index) },
                 onRemove = { onRemoveImage(index) },
             )
@@ -545,6 +547,8 @@ private fun ImportGridContent(
 private fun ImportImageCard(
     image: ImportImage,
     isSelected: Boolean,
+    index: Int,
+    totalCount: Int,
     onClick: () -> Unit,
     onRemove: () -> Unit,
     modifier: Modifier = Modifier,
@@ -579,7 +583,7 @@ private fun ImportImageCard(
         Box(modifier = Modifier.fillMaxSize()) {
             AsyncImage(
                 model = image.uri,
-                contentDescription = stringResource(R.string.import_content_description_image_to_import),
+                contentDescription = stringResource(R.string.import_content_description_image_to_import_indexed, index + 1, totalCount),
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize(),
             )

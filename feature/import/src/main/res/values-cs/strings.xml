@@ -7,6 +7,7 @@
     <string name="import_content_description_back">Zpět</string>
     <string name="import_content_description_remove">Odebrat</string>
     <string name="import_content_description_image_to_import">Obrázek k importu</string>
+    <string name="import_content_description_image_to_import_indexed">Obrázek %1$d z %2$d</string>
     <string name="import_content_description_image_preview">Náhled obrázku</string>
     <string name="import_content_description_error">Chyba zpracování</string>
 

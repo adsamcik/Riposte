@@ -35,7 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+
 import com.adsamcik.riposte.feature.gallery.R
 
 /**
@@ -232,7 +232,7 @@ private fun EmojiChip(
     ) {
         Text(
             text = emoji,
-            fontSize = 20.sp,
+            style = MaterialTheme.typography.titleMedium,
         )
 
         if (isSelected && showRemove) {
