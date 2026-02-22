@@ -45,19 +45,14 @@ android {
         create("lite") {
             dimension = "embedding"
             isDefault = true
-            buildConfigField("boolean", "INCLUDE_EMBEDDINGGEMMA", "false")
         }
 
         create("standard") {
             dimension = "embedding"
-            buildConfigField("boolean", "INCLUDE_EMBEDDINGGEMMA", "true")
-            buildConfigField("String", "INCLUDED_SOC_MODELS", "\"none\"")
         }
 
         create("googleplay") {
             dimension = "embedding"
-            buildConfigField("boolean", "INCLUDE_EMBEDDINGGEMMA", "true")
-            buildConfigField("String", "INCLUDED_SOC_MODELS", "\"all\"")
         }
     }
 
@@ -83,7 +78,8 @@ android {
         }
     }
 
-    // AI Packs for Google Play distribution (install-time delivery)
+    // AI Packs for Google Play distribution (install-time delivery).
+    // Global setting — only affects AAB builds (googleplay flavor); ignored for APK builds.
     assetPacks += listOf(":aipacks:generic_embedding", ":aipacks:soc_optimized")
 
     // Device targeting for SoC-optimized AI Pack delivery
