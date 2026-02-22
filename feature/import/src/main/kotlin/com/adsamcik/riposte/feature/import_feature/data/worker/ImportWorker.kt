@@ -6,7 +6,6 @@ import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.Data
 import androidx.work.ExistingWorkPolicy
-import androidx.work.ForegroundInfo
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
@@ -104,12 +103,6 @@ class ImportWorker
             } else {
                 finalizeImport(request, requestId, completed, failed)
             }
-        }
-
-        override suspend fun getForegroundInfo(): ForegroundInfo {
-            notificationManager.createChannel()
-            val notification = notificationManager.buildProgressNotification(0, 0)
-            return ForegroundInfo(ImportNotificationManager.NOTIFICATION_ID, notification)
         }
 
         /**

@@ -8,7 +8,6 @@ import androidx.work.CoroutineWorker
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
-import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import com.adsamcik.riposte.core.common.lifecycle.AppLifecycleTracker
@@ -47,14 +46,6 @@ class EmbeddingGenerationWorker
         private val appLifecycleTracker: AppLifecycleTracker,
         private val notificationManager: EmbeddingNotificationManager,
     ) : CoroutineWorker(context, params) {
-        override suspend fun getForegroundInfo(): ForegroundInfo {
-            notificationManager.createChannel()
-            return ForegroundInfo(
-                EmbeddingNotificationManager.NOTIFICATION_ID,
-                notificationManager.buildProgressNotification(0, 0),
-            )
-        }
-
         override suspend fun doWork(): Result =
             withContext(Dispatchers.Default) {
                 try {
