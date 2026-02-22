@@ -669,13 +669,16 @@ private fun GalleryScreenContent(
 
                                 // Remaining paged items (emoji filtering now happens at SQL level)
                                 val pagedItemCount = pagedMemes.itemCount
+                                val seenPagedIds = mutableSetOf<Long>()
                                 for (index in 0 until pagedItemCount) {
                                     val peeked = pagedMemes.peek(index)
                                     // Skip suggestions — they are already shown above
                                     if (peeked != null && peeked.id in suggestionIds) continue
+                                    // Skip duplicate IDs (defense-in-depth against JOIN duplication)
+                                    if (peeked != null && !seenPagedIds.add(peeked.id)) continue
 
                                     item(
-                                        key = peeked?.id ?: "paged_$index",
+                                        key = peeked?.let { "paged_${it.id}" } ?: "paged_loading_$index",
                                     ) {
                                         val meme = pagedMemes[index]
                                         if (meme != null) {
@@ -748,7 +751,7 @@ private fun GalleryScreenContent(
                                 // Remaining items
                                 items(
                                     items = nonSuggestionMemes,
-                                    key = { it.id },
+                                    key = { "meme_${it.id}" },
                                 ) { meme ->
                                     val isSelected = meme.id in uiState.selectedMemeIds
                                     MemeGridItem(

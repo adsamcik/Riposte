@@ -106,9 +106,10 @@ fun QuickAccessSection(
                 contentPadding = PaddingValues(horizontal = Spacing.lg),
                 horizontalArrangement = Arrangement.spacedBy(Spacing.md),
             ) {
+                val uniqueMemes = memes.distinctBy { it.id }
                 items(
-                    items = memes,
-                    key = { it.id },
+                    items = uniqueMemes,
+                    key = { "quick_${it.id}" },
                 ) { meme ->
                     QuickAccessItem(
                         meme = meme,

@@ -1078,7 +1078,7 @@ private fun SimilarMemesSection(
                     ) {
                         items(
                             items = uniqueMemes,
-                            key = { it.id },
+                            key = { "similar_${it.id}" },
                         ) { meme ->
                             SimilarMemeCard(
                                 meme = meme,
