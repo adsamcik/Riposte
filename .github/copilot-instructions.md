@@ -182,18 +182,18 @@ Reusable Gradle plugins in `buildSrc/` extract shared build configuration:
 - Metadata schema is v1.3 — supports `primaryLanguage`, `localizations` for i18n, and `basedOn` for meme origin
 - **Database schema versioning**: Only one schema version bump per release cycle. If the database version was already bumped since the last release, add changes to the existing migration instead of creating a new one. The released version is tracked in `core/database/released-schema-version.txt` (currently v5) and enforced by the `validateDatabaseSchema` Gradle task.
 - Use `collectAsStateWithLifecycle` (not `collectAsState`) when collecting Flows in Compose
-- **LazyList key safety**: Never trust data uniqueness for `key = { ... }` in `LazyColumn`/`LazyRow`/`LazyVerticalGrid`. Always `distinctBy { it.id }` before passing data to `items(key = ...)`, and prefer prefixed keys (`"section_${it.id}"`) over raw IDs. DAO JOINs can produce duplicate rows.
+- **LazyList key safety**: Never use raw IDs as keys in `LazyColumn`/`LazyRow`/`LazyVerticalGrid`/`HorizontalPager`. ALWAYS: (1) `distinctBy { it.id }` before `items(key = ...)`, (2) prefix keys as `"section_${it.id}"` — never raw Long/Int, (3) for paging loops, track seen IDs with a `mutableSetOf` to skip duplicates. See `compose.instructions.md` for examples.
 - **Compose lint**: Slack `compose-lint-checks` is enabled project-wide — fix warnings before merging.
 
 ### Bug Fix Protocol
 
 When fixing bugs, follow this protocol to avoid incomplete fixes:
 
-1. **Blast radius check** — trace the defective data/function to ALL consumers, not just the crash site
+1. **Blast radius check** — trace the defective data/function to ALL consumers, not just the crash site. Include **paging paths** (Paging3 loops) which have separate code from regular list paths.
 2. **Fix at the source** — fix the query/producer, not just a downstream workaround
 3. **Defend in depth** — add defensive guards (e.g., `distinctBy`) at the UI layer too
-4. **Regression test with adversarial data** — mock realistic bad data (duplicates, nulls, empty lists), not just clean happy-path data
-5. **Audit instructions** — if `.github/instructions/` files recommend the broken pattern, update them
+4. **Regression test with adversarial data** — mock realistic bad data (duplicates, nulls, empty lists), not just clean happy-path data. Test BOTH paged and non-paged code paths.
+5. **Audit instructions** — if `.github/instructions/` files recommend the broken pattern, update them. Strengthen "prefer" to "always" when the pattern caused a production crash.
 
 ### Testing
 

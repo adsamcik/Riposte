@@ -133,21 +133,27 @@ LazyColumn {
     }
 }
 
-// ❌ Avoid: Trusting data uniqueness without dedup
-LazyColumn {
-    items(
-        items = memes,
-        key = { it.id }  // Crashes if duplicates exist
-    ) { meme ->
-        MemeCard(meme = meme)
-    }
+// ✅ Good: Paging items with dedup tracking and prefixed keys
+val seenIds = mutableSetOf<Long>()
+for (index in 0 until pagedMemes.itemCount) {
+    val peeked = pagedMemes.peek(index)
+    if (peeked != null && !seenIds.add(peeked.id)) continue
+    item(key = peeked?.let { "paged_${it.id}" } ?: "paged_loading_$index") { ... }
 }
+
+// ❌ FORBIDDEN: Raw IDs as keys
+items(items = memes, key = { it.id })  // Crashes if duplicates exist
+
+// ❌ FORBIDDEN: Paged items with raw nullable IDs
+item(key = peeked?.id ?: "fallback_$index")  // No dedup, raw ID
 ```
 
-**Key safety rules:**
+**Key safety rules (mandatory — not optional):**
 1. **Always dedup defensively** — use `.distinctBy { it.id }` before passing to `items(key = ...)`
-2. **Prefer prefixed keys** — `"section_${it.id}"` over raw `it.id` to avoid cross-list collisions
+2. **Always prefix keys** — `"section_${it.id}"` not raw `it.id` — prevents cross-list collisions
 3. **Never trust data uniqueness** — DAO JOINs, race conditions, and multi-embedding rows can produce duplicates
+4. **Paging items need explicit dedup** — use a `seenIds` set to track emitted IDs in paging loops
+5. **Never use raw Long/Int as a key** — always convert to a prefixed String
 
 ## Material 3
 
