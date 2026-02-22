@@ -29,6 +29,7 @@ import com.adsamcik.riposte.feature.settings.domain.usecase.SetGridDensityUseCas
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetSaveSearchHistoryUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetSortEmojisByUsageUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetStripMetadataUseCase
+import com.adsamcik.riposte.core.common.util.formatFileSize
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
@@ -333,9 +334,6 @@ class SettingsViewModel
             }
             return size
         }
-
-        internal fun formatFileSize(bytes: Long): String =
-            com.adsamcik.riposte.core.common.util.formatFileSize(bytes)
 
         private fun showClearCacheDialog() {
             _uiState.update { it.copy(showClearCacheDialog = true) }
