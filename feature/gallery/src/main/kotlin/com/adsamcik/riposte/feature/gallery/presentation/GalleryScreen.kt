@@ -661,9 +661,9 @@ private fun GalleryScreenContent(
                                                     uiState.searchState.query,
                                                 ),
                                             actionLabel = stringResource(
-                                                com.adsamcik.riposte.core.ui.R.string.ui_loading_no_results_clear,
+                                                R.string.gallery_button_import_memes,
                                             ),
-                                            onAction = { onIntent(GalleryIntent.ClearSearch) },
+                                            onAction = { onIntent(GalleryIntent.NavigateToImport) },
                                         )
                                     }
                                 } else if (uiState.searchState.results.isNotEmpty()) {
@@ -1490,6 +1490,7 @@ private fun EmbeddingProgressBanner(
         exit = slideOutVertically() + fadeOut(),
     ) {
         val inProgress = status as? EmbeddingWorkStatus.InProgress
+        val total = inProgress?.let { it.processed + it.remaining } ?: 0
         Row(
             modifier =
                 modifier
@@ -1499,18 +1500,30 @@ private fun EmbeddingProgressBanner(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.md),
         ) {
-            LinearProgressIndicator(
-                modifier = Modifier
-                    .width(40.dp)
-                    .height(4.dp)
-                    .clip(MaterialTheme.shapes.extraSmall),
-                color = MaterialTheme.colorScheme.onTertiaryContainer,
-                trackColor = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.3f),
-            )
+            if (inProgress != null && total > 0) {
+                LinearProgressIndicator(
+                    progress = { inProgress.processed.toFloat() / total },
+                    modifier = Modifier
+                        .width(40.dp)
+                        .height(4.dp)
+                        .clip(MaterialTheme.shapes.extraSmall),
+                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                    trackColor = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.3f),
+                )
+            } else {
+                LinearProgressIndicator(
+                    modifier = Modifier
+                        .width(40.dp)
+                        .height(4.dp)
+                        .clip(MaterialTheme.shapes.extraSmall),
+                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                    trackColor = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.3f),
+                )
+            }
             Text(
                 text =
-                    if (inProgress != null && inProgress.processed > 0) {
-                        stringResource(R.string.gallery_indexing_in_progress_count, inProgress.processed)
+                    if (inProgress != null && total > 0) {
+                        stringResource(R.string.gallery_indexing_in_progress_count, inProgress.processed, total)
                     } else {
                         stringResource(R.string.gallery_indexing_in_progress)
                     },
