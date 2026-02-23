@@ -436,7 +436,9 @@ private fun GalleryScreenContent(
                     }
                 val nonSuggestionMemes =
                     remember(uiState.memes, suggestionIds) {
-                        uiState.memes.filter { it.id !in suggestionIds }
+                        uiState.memes
+                            .filter { it.id !in suggestionIds }
+                            .distinctBy { it.id }
                     }
 
                 when {
@@ -652,10 +654,13 @@ private fun GalleryScreenContent(
 
                                 // Remaining paged items (emoji filtering now happens at SQL level)
                                 val pagedItemCount = pagedMemes.itemCount
+                                val seenPagedIds = mutableSetOf<Long>()
                                 for (index in 0 until pagedItemCount) {
                                     val peeked = pagedMemes.peek(index)
                                     // Skip suggestions — they are already shown above
                                     if (peeked != null && peeked.id in suggestionIds) continue
+                                    // Skip duplicates that Paging may produce during invalidation
+                                    if (peeked != null && !seenPagedIds.add(peeked.id)) continue
 
                                     item(
                                         key = peeked?.id ?: "paged_$index",

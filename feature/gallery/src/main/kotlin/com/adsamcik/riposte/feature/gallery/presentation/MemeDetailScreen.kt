@@ -1049,11 +1049,14 @@ private fun SimilarMemesSection(
         } else {
             when (status) {
                 is SimilarMemesStatus.Found -> {
+                    val uniqueMemes = remember(status.memes) {
+                        status.memes.distinctBy { it.id }
+                    }
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         items(
-                            items = status.memes,
+                            items = uniqueMemes,
                             key = { it.id },
                         ) { meme ->
                             SimilarMemeCard(
