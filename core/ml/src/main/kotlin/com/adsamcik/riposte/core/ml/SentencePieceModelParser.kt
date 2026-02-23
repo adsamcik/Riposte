@@ -1,7 +1,9 @@
 package com.adsamcik.riposte.core.ml
 
+import timber.log.Timber
 import java.io.File
 import java.io.InputStream
+import java.nio.BufferUnderflowException
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
@@ -59,27 +61,49 @@ internal object SentencePieceModelParser {
 
     /**
      * Parses raw bytes of a SentencePiece `.model` protobuf.
+     *
+     * @throws IllegalArgumentException if the data is empty or produces no vocabulary pieces.
+     * @throws IllegalStateException if the protobuf data is malformed.
      */
     fun parse(data: ByteArray): SentencePieceTokenizer {
+        require(data.isNotEmpty()) { "SentencePiece model data is empty" }
+
         val pieces = mutableListOf<SentencePieceTokenizer.ParsedPiece>()
         val buffer = ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN)
         var pieceId = 0
 
-        while (buffer.hasRemaining()) {
-            val tag = readVarint(buffer).toInt()
-            val fieldNumber = tag ushr TAG_FIELD_SHIFT
-            val wireType = tag and TAG_WIRE_MASK
+        try {
+            while (buffer.hasRemaining()) {
+                val tag = readVarint(buffer).toInt()
+                val fieldNumber = tag ushr TAG_FIELD_SHIFT
+                val wireType = tag and TAG_WIRE_MASK
 
-            when {
-                fieldNumber == FIELD_PIECES && wireType == WIRE_LENGTH_DELIMITED -> {
-                    val length = readVarint(buffer).toInt()
-                    val pieceBytes = ByteArray(length)
-                    buffer.get(pieceBytes)
-                    val (token, score, type) = parseSentencePiece(pieceBytes)
-                    pieces.add(SentencePieceTokenizer.ParsedPiece(token, pieceId++, score, type))
+                when {
+                    fieldNumber == FIELD_PIECES && wireType == WIRE_LENGTH_DELIMITED -> {
+                        val length = readVarint(buffer).toInt()
+                        check(length >= 0 && length <= buffer.remaining()) {
+                            "Invalid piece length: $length (remaining: ${buffer.remaining()})"
+                        }
+                        val pieceBytes = ByteArray(length)
+                        buffer.get(pieceBytes)
+                        val (token, score, type) = parseSentencePiece(pieceBytes)
+                        pieces.add(SentencePieceTokenizer.ParsedPiece(token, pieceId++, score, type))
+                    }
+                    else -> skipField(buffer, wireType)
                 }
-                else -> skipField(buffer, wireType)
             }
+        } catch (e: BufferUnderflowException) {
+            Timber.w(
+                e,
+                "Truncated protobuf data at offset %d — parsed %d pieces before error",
+                buffer.position(),
+                pieces.size,
+            )
+            // Use whatever pieces we successfully parsed
+        }
+
+        check(pieces.isNotEmpty()) {
+            "SentencePiece model contains no vocabulary pieces (parsed ${data.size} bytes)"
         }
 
         return SentencePieceTokenizer.build(pieces)

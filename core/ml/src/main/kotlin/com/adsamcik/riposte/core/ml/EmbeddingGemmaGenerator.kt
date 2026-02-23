@@ -12,6 +12,7 @@ import com.google.mlkit.vision.label.ImageLabeling
 import com.google.mlkit.vision.label.defaults.ImageLabelerOptions
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -34,10 +35,10 @@ import kotlin.math.sqrt
  * - GPU-accelerated inference (with CPU fallback)
  * - 768-dimension embeddings (best quality)
  * - 100+ language support
- * - SentencePiece BPE tokenization via pure Java sentencepiece4j
+ * - Custom SentencePiece BPE tokenization (Viterbi, HashMap-based, ~40MB)
  *
  * Model files required:
- * - embeddinggemma_512_mixed.tflite (~179MB)
+ * - embeddinggemma-300M_seq512_mixed-precision.tflite (~179MB)
  * - sentencepiece.model (~4MB)
  *
  * @property context Application context for accessing model files and content resolver.
@@ -71,6 +72,10 @@ class EmbeddingGemmaGenerator
 
         /** The SentencePiece tokenizer, lazily initialized. */
         private var tokenizer: SentencePieceTokenizer? = null
+
+        /** Cached input/output buffers to avoid per-inference native allocation. */
+        private var cachedInputBuffers: List<com.google.ai.edge.litert.TensorBuffer>? = null
+        private var cachedOutputBuffers: List<com.google.ai.edge.litert.TensorBuffer>? = null
 
         /** Flag indicating whether initialization has been attempted. */
         private var initializationAttempted = false
@@ -121,10 +126,9 @@ class EmbeddingGemmaGenerator
 
         /**
          * Generates an embedding for a document (meme description, tags, etc.).
-         * Uses RETRIEVAL_DOCUMENT task type prefix for optimal retrieval quality.
          *
          * @param text The document text to embed.
-         * @param title Optional title for the document (improves embedding quality).
+         * @param title Optional title prepended to text for richer context.
          * @return The embedding vector.
          */
         suspend fun generateFromDocument(
@@ -135,6 +139,9 @@ class EmbeddingGemmaGenerator
                 if (text.isBlank()) {
                     return@withContext createZeroEmbedding()
                 }
+
+                val inputText =
+                    if (!title.isNullOrBlank()) "$title: $text" else text
 
                 mutex.withLock {
                     ensureInitialized()
@@ -147,7 +154,7 @@ class EmbeddingGemmaGenerator
                             )
 
                     try {
-                        runInference(model, text)
+                        runInference(model, inputText)
                     } catch (
                         @Suppress("TooGenericExceptionCaught")
                         e: Exception,
@@ -224,10 +231,18 @@ class EmbeddingGemmaGenerator
         }
 
         override fun close() {
-            compiledModel?.close()
-            compiledModel = null
-            tokenizer = null
-            initializationAttempted = false
+            // Acquire mutex to wait for any in-flight inference to complete,
+            // preventing use-after-free of the native CompiledModel handle.
+            runBlocking {
+                mutex.withLock {
+                    cachedInputBuffers = null
+                    cachedOutputBuffers = null
+                    compiledModel?.close()
+                    compiledModel = null
+                    tokenizer = null
+                    initializationAttempted = false
+                }
+            }
             _imageLabeler?.close()
             _imageLabeler = null
         }
@@ -271,6 +286,11 @@ class EmbeddingGemmaGenerator
 
                 initializeTokenizer(tokenizerPath)
 
+                if (tokenizer == null) {
+                    // Tokenizer failed to load — skip model initialization
+                    return
+                }
+
                 if (!tryInitializeWithGpu(modelPath) && shouldUseGpu()) {
                     initializeWithCpu(modelPath)
                 }
@@ -287,8 +307,17 @@ class EmbeddingGemmaGenerator
 
         private fun initializeTokenizer(tokenizerPath: String) {
             Timber.d("Loading SentencePiece tokenizer from: $tokenizerPath")
-            tokenizer = SentencePieceModelParser.parse(File(tokenizerPath))
-            Timber.i("SentencePiece tokenizer loaded")
+            try {
+                tokenizer = SentencePieceModelParser.parse(File(tokenizerPath))
+                Timber.i("SentencePiece tokenizer loaded")
+            } catch (
+                @Suppress("TooGenericExceptionCaught")
+                e: Exception,
+            ) {
+                Timber.e(e, "Failed to parse SentencePiece tokenizer")
+                tokenizer = null
+                _initializationError = ERROR_FAILED_TO_LOAD
+            }
         }
 
         private fun tryInitializeWithGpu(modelPath: String): Boolean {
@@ -350,6 +379,7 @@ class EmbeddingGemmaGenerator
 
         /**
          * Tokenizes text and runs inference through the LiteRT model.
+         * Caches input/output buffers across calls to avoid per-inference native allocation.
          *
          * @param model The initialized CompiledModel.
          * @param text The input text to embed.
@@ -373,9 +403,13 @@ class EmbeddingGemmaGenerator
             }
             val realTokenCount = 1 + copyLen // BOS + actual tokens
 
-            // Create input/output buffers and run inference
-            val inputBuffers = model.createInputBuffers()
-            val outputBuffers = model.createOutputBuffers()
+            // Reuse or create input/output buffers
+            val inputBuffers = cachedInputBuffers ?: model.createInputBuffers().also {
+                cachedInputBuffers = it
+            }
+            val outputBuffers = cachedOutputBuffers ?: model.createOutputBuffers().also {
+                cachedOutputBuffers = it
+            }
 
             require(inputBuffers.isNotEmpty()) { "Model has no input tensors" }
             require(outputBuffers.isNotEmpty()) { "Model has no output tensors" }
@@ -399,7 +433,12 @@ class EmbeddingGemmaGenerator
             }
 
             model.run(inputBuffers, outputBuffers)
-            return outputBuffers[0].readFloat()
+
+            val embedding = outputBuffers[0].readFloat()
+            check(embedding.size == embeddingDimension) {
+                "Model output dimension mismatch: expected $embeddingDimension, got ${embedding.size}"
+            }
+            return embedding
         }
 
         /**
