@@ -34,6 +34,8 @@ class DuplicateScanWorker
 
     override suspend fun doWork(): Result {
         val maxDistance = inputData.getInt(KEY_MAX_HAMMING_DISTANCE, DEFAULT_MAX_DISTANCE)
+        Timber.i("Duplicate scan starting (maxDistance=%d, attempt=%d)", maxDistance, runAttemptCount + 1)
+        val startTime = System.currentTimeMillis()
 
         return try {
             repository.runDuplicateScan(maxDistance)
@@ -51,12 +53,15 @@ class DuplicateScanWorker
                     )
                 }
                 .collect()
+            val elapsed = System.currentTimeMillis() - startTime
+            Timber.i("Duplicate scan completed in %dms", elapsed)
             Result.success()
         } catch (
             @Suppress("TooGenericExceptionCaught") // Worker must not crash - reports failure instead
             e: Exception,
         ) {
-            Timber.e(e, "Duplicate scan failed")
+            val elapsed = System.currentTimeMillis() - startTime
+            Timber.e(e, "Duplicate scan failed after %dms (attempt %d/%d)", elapsed, runAttemptCount + 1, MAX_RETRIES)
             if (runAttemptCount < MAX_RETRIES) {
                 Result.retry()
             } else {

@@ -83,6 +83,7 @@ class PreferencesDataStore
             context.dataStore.data
                 .catch { exception ->
                     if (exception is IOException) {
+                        Timber.w(exception, "DataStore read failed, using defaults")
                         emit(emptyPreferences())
                     } else {
                         throw exception
@@ -121,6 +122,7 @@ class PreferencesDataStore
             context.dataStore.data
                 .catch { exception ->
                     if (exception is IOException) {
+                        Timber.w(exception, "DataStore read failed, using defaults")
                         emit(emptyPreferences())
                     } else {
                         throw exception
@@ -188,6 +190,7 @@ class PreferencesDataStore
             context.dataStore.data
                 .catch { exception ->
                     if (exception is IOException) {
+                        Timber.w(exception, "DataStore read failed, using defaults")
                         emit(emptyPreferences())
                     } else {
                         throw exception
@@ -262,6 +265,7 @@ class PreferencesDataStore
             context.dataStore.data
                 .catch { exception ->
                     if (exception is IOException) {
+                        Timber.w(exception, "DataStore read failed, using defaults")
                         emit(emptyPreferences())
                     } else {
                         throw exception
@@ -292,6 +296,7 @@ class PreferencesDataStore
             context.dataStore.data
                 .catch { exception ->
                     if (exception is IOException) {
+                        Timber.w(exception, "DataStore read failed, using defaults")
                         emit(emptyPreferences())
                     } else {
                         throw exception
@@ -306,6 +311,7 @@ class PreferencesDataStore
             context.dataStore.data
                 .catch { exception ->
                     if (exception is IOException) {
+                        Timber.w(exception, "DataStore read failed, using defaults")
                         emit(emptyPreferences())
                     } else {
                         throw exception
@@ -320,6 +326,7 @@ class PreferencesDataStore
             context.dataStore.data
                 .catch { exception ->
                     if (exception is IOException) {
+                        Timber.w(exception, "DataStore read failed, using defaults")
                         emit(emptyPreferences())
                     } else {
                         throw exception
@@ -365,6 +372,7 @@ class PreferencesDataStore
             context.dataStore.data
                 .catch { exception ->
                     if (exception is IOException) {
+                        Timber.w(exception, "DataStore read failed, using defaults")
                         emit(emptyPreferences())
                     } else {
                         throw exception

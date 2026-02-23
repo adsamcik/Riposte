@@ -52,6 +52,11 @@ class EmbeddingGenerationWorker
     ) : CoroutineWorker(context, params) {
         override suspend fun doWork(): Result =
             withContext(Dispatchers.Default) {
+                val startTime = System.currentTimeMillis()
+                Timber.i(
+                    "Embedding generation starting (batchSize=%d, attempt=%d)",
+                    BATCH_SIZE, runAttemptCount + 1,
+                )
                 try {
                     notificationManager.createChannel()
 
@@ -59,6 +64,7 @@ class EmbeddingGenerationWorker
                     val pendingMemes = embeddingRepository.getMemesNeedingEmbeddings(BATCH_SIZE)
 
                     if (pendingMemes.isEmpty()) {
+                        Timber.d("No memes need embeddings, finishing early")
                         return@withContext Result.success(
                             workDataOf(
                                 KEY_PROCESSED_COUNT to 0,
@@ -66,6 +72,8 @@ class EmbeddingGenerationWorker
                             ),
                         )
                     }
+
+                    Timber.d("Found %d memes needing embeddings", pendingMemes.size)
 
                     // Promote to foreground if app is already backgrounded
                     maybePromoteToForeground(0, pendingMemes.size)
@@ -82,16 +90,28 @@ class EmbeddingGenerationWorker
                             KEY_REMAINING_COUNT to remainingCount,
                         )
 
+                    val elapsed = System.currentTimeMillis() - startTime
+
                     // Only schedule continuation if we made progress this batch.
                     // If no memes succeeded, the model is likely unavailable and
                     // re-scheduling immediately would create an infinite loop that
                     // floods the main thread with WorkManager overhead, causing ANR.
                     if (remainingCount > 0 && successCount > 0) {
+                        Timber.i(
+                            "Embedding batch done in %dms: %d ok, %d failed, %d remaining — scheduling next",
+                            elapsed, successCount, failureCount, remainingCount,
+                        )
                         enqueueContinuation(context)
                     } else if (remainingCount > 0) {
                         Timber.w(
-                            "Batch had no successes ($failureCount failures), " +
+                            "Embedding batch done in %dms: 0 ok, %d failed, %d remaining — " +
                                 "not scheduling continuation to avoid busy loop",
+                            elapsed, failureCount, remainingCount,
+                        )
+                    } else {
+                        Timber.i(
+                            "Embedding generation complete in %dms: %d ok, %d failed, 0 remaining",
+                            elapsed, successCount, failureCount,
                         )
                     }
 
@@ -105,7 +125,12 @@ class EmbeddingGenerationWorker
                     @Suppress("TooGenericExceptionCaught") // Worker must not crash - reports failure instead
                     e: Exception,
                 ) {
-                    Timber.e(e, "Embedding generation work failed")
+                    val elapsed = System.currentTimeMillis() - startTime
+                    Timber.e(
+                        e,
+                        "Embedding generation failed after %dms (attempt %d/%d)",
+                        elapsed, runAttemptCount + 1, MAX_RETRY_COUNT,
+                    )
                     if (runAttemptCount < MAX_RETRY_COUNT) {
                         Result.retry()
                     } else {

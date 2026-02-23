@@ -13,6 +13,7 @@ import com.adsamcik.riposte.feature.settings.domain.repository.DuplicateDetectio
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import timber.log.Timber
 import java.io.File
 import javax.inject.Inject
 
@@ -45,11 +46,13 @@ class DefaultDuplicateDetectionRepository @Inject constructor(
 
     @Suppress("CyclomaticComplexMethod", "LongMethod")
     override fun runDuplicateScan(maxHammingDistance: Int): Flow<ScanProgress> = flow {
+        Timber.i("Duplicate scan starting (maxHammingDistance=%d)", maxHammingDistance)
         // Phase 1: Compute perceptual hashes for un-hashed memes
         val unhashed = dao.getMemesWithoutPerceptualHash()
         val totalToHash = unhashed.size
         var hashedCount = 0
         var duplicatesFound = 0
+        Timber.d("Phase 1: hashing %d unhashed memes", totalToHash)
 
         emit(ScanProgress(hashedCount = 0, totalToHash = totalToHash, duplicatesFound = 0))
 
@@ -72,6 +75,7 @@ class DefaultDuplicateDetectionRepository @Inject constructor(
         dao.clearPendingDuplicates()
 
         val allHashed = dao.getMemesWithPerceptualHash()
+        Timber.d("Phase 2: comparing %d hashed memes", allHashed.size)
         val now = System.currentTimeMillis()
         val newDuplicates = mutableListOf<PotentialDuplicateEntity>()
 
@@ -124,6 +128,8 @@ class DefaultDuplicateDetectionRepository @Inject constructor(
             dao.insertPotentialDuplicates(newDuplicates)
         }
 
+        Timber.i("Duplicate scan complete: hashed=%d, duplicates=%d", totalToHash, newDuplicates.size)
+
         emit(
             ScanProgress(
                 hashedCount = totalToHash,
@@ -166,8 +172,11 @@ class DefaultDuplicateDetectionRepository @Inject constructor(
         // Clean up the loser's file from disk
         try {
             File(merged.loserFilePath).delete()
-        } catch (_: Exception) {
-            // Best-effort cleanup
+        } catch (
+            @Suppress("TooGenericExceptionCaught")
+            e: Exception,
+        ) {
+            Timber.w(e, "Best-effort cleanup failed for %s", merged.loserFilePath)
         }
 
         return MergeResult(
@@ -190,8 +199,11 @@ class DefaultDuplicateDetectionRepository @Inject constructor(
         for (dup in pending) {
             try {
                 results.add(mergeDuplicates(dup.id))
-            } catch (_: Exception) {
-                // Skip pairs that can't be merged (already deleted, etc.)
+            } catch (
+                @Suppress("TooGenericExceptionCaught")
+                e: Exception,
+            ) {
+                Timber.w(e, "Skipping merge for duplicate %d", dup.id)
             }
         }
         return results

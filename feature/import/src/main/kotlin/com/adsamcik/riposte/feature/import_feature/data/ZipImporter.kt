@@ -209,6 +209,7 @@ class DefaultZipImporter
                                     @Suppress("TooGenericExceptionCaught") // I/O + parsing may throw various exceptions
                                     e: Exception,
                                 ) {
+                                    Timber.w(e, "extractBundle: failed to process entry '%s'", entryName)
                                     errors[entryName] = e.message ?: "Unknown error"
                                 }
 
@@ -309,6 +310,7 @@ class DefaultZipImporter
                                     @Suppress("TooGenericExceptionCaught") // I/O + parsing may throw various exceptions
                                     e: Exception,
                                 ) {
+                                    Timber.w(e, "extractBundleStream: failed to process entry '%s'", entryName)
                                     emit(ZipExtractionEvent.Error(entryName, e.message ?: "Unknown error"))
                                     errorCount++
                                 }

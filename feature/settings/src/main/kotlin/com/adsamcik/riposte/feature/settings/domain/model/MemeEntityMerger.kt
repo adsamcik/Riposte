@@ -4,6 +4,7 @@ import com.adsamcik.riposte.core.database.entity.MemeEntity
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.jsonPrimitive
+import timber.log.Timber
 import javax.inject.Inject
 
 /**
@@ -90,7 +91,11 @@ class MemeEntityMerger @Inject constructor() {
         try {
             json.decodeFromString(JsonArray.serializer(), jsonStr)
                 .map { it.jsonPrimitive.content }
-        } catch (_: Exception) {
+        } catch (
+            @Suppress("TooGenericExceptionCaught")
+            e: Exception,
+        ) {
+            Timber.w(e, "Failed to parse JSON string array during merge")
             emptyList()
         }
 }
