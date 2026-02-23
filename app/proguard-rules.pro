@@ -55,10 +55,6 @@
 -dontwarn org.tensorflow.lite.**
 -keepclassmembers class * implements org.tensorflow.lite.InterpreterApi { *; }
 
-# Local Agents RAG (GenKit AI)
--keep class com.google.ai.edge.localagents.** { *; }
--dontwarn com.google.ai.edge.localagents.**
-
 # ============================================================
 # PROTOBUF
 # ============================================================

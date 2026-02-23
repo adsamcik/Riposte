@@ -5,11 +5,8 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
-import com.google.ai.edge.localagents.rag.models.EmbedData
-import com.google.ai.edge.localagents.rag.models.EmbeddingRequest
-import com.google.ai.edge.localagents.rag.models.GemmaEmbeddingModel
-import com.google.common.util.concurrent.FutureCallback
-import com.google.common.util.concurrent.Futures
+import com.google.ai.edge.litert.Accelerator
+import com.google.ai.edge.litert.CompiledModel
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.label.ImageLabeling
 import com.google.mlkit.vision.label.defaults.ImageLabelerOptions
@@ -21,15 +18,13 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.File
-import java.util.concurrent.Executors
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 import kotlin.math.sqrt
 
 /**
- * Embedding generator using Google's EmbeddingGemma model via the AI Edge RAG SDK.
+ * Embedding generator using Google's EmbeddingGemma model via LiteRT (CompiledModel API).
  *
  * EmbeddingGemma is a 308M parameter embedding model that produces high-quality
  * 768-dimensional embeddings. It supports Matryoshka Representation Learning (MRL),
@@ -39,7 +34,7 @@ import kotlin.math.sqrt
  * - GPU-accelerated inference (with CPU fallback)
  * - 768-dimension embeddings (best quality)
  * - 100+ language support
- * - ~119ms inference time on GPU (Samsung S25 Ultra benchmark)
+ * - SentencePiece BPE tokenization via pure Java sentencepiece4j
  *
  * Model files required:
  * - embeddinggemma_512_mixed.tflite (~179MB)
@@ -71,8 +66,11 @@ class EmbeddingGemmaGenerator
         /** Mutex to ensure thread-safe access to the embedding model. */
         private val mutex = Mutex()
 
-        /** The GemmaEmbeddingModel instance from AI Edge RAG SDK, lazily initialized. */
-        private var embeddingModel: GemmaEmbeddingModel? = null
+        /** The LiteRT CompiledModel instance, lazily initialized. */
+        private var compiledModel: CompiledModel? = null
+
+        /** The SentencePiece tokenizer, lazily initialized. */
+        private var tokenizer: SentencePieceTokenizer? = null
 
         /** Flag indicating whether initialization has been attempted. */
         private var initializationAttempted = false
@@ -91,9 +89,6 @@ class EmbeddingGemmaGenerator
             return available
         }
 
-        /** Executor for handling ListenableFuture callbacks. */
-        private var callbackExecutor = Executors.newSingleThreadExecutor()
-
         override val embeddingDimension: Int = DEFAULT_EMBEDDING_DIMENSION
 
         override suspend fun generateFromText(text: String): FloatArray =
@@ -106,29 +101,16 @@ class EmbeddingGemmaGenerator
                     ensureInitialized()
 
                     val model =
-                        embeddingModel
+                        compiledModel
                             ?: throw IllegalStateException(
                                 "EmbeddingGemma model not initialized. " +
                                     "Model files may be missing.",
                             )
 
                     try {
-                        // Create embedding request with query task type
-                        val embedData =
-                            EmbedData.create(
-                                text,
-                                EmbedData.TaskType.RETRIEVAL_QUERY,
-                            )
-                        val request = EmbeddingRequest.create(listOf(embedData))
-
-                        // Get embeddings using ListenableFuture
-                        val future = model.getEmbeddings(request)
-                        val embedding = awaitListenableFuture(future)
-
-                        // Convert ImmutableList<Float> to FloatArray
-                        embedding.map { it }.toFloatArray()
+                        runInference(model, text)
                     } catch (
-                        @Suppress("TooGenericExceptionCaught") // ML libraries throw unpredictable exceptions
+                        @Suppress("TooGenericExceptionCaught")
                         e: Exception,
                     ) {
                         Timber.e(e, "Failed to generate text embedding")
@@ -139,7 +121,7 @@ class EmbeddingGemmaGenerator
 
         /**
          * Generates an embedding for a document (meme description, tags, etc.).
-         * Uses RETRIEVAL_DOCUMENT task type for optimal retrieval quality.
+         * Uses RETRIEVAL_DOCUMENT task type prefix for optimal retrieval quality.
          *
          * @param text The document text to embed.
          * @param title Optional title for the document (improves embedding quality).
@@ -158,35 +140,16 @@ class EmbeddingGemmaGenerator
                     ensureInitialized()
 
                     val model =
-                        embeddingModel
+                        compiledModel
                             ?: throw IllegalStateException(
                                 "EmbeddingGemma model not initialized. " +
                                     "Model files may be missing.",
                             )
 
                     try {
-                        // Create embedding request with document task type
-                        val embedDataBuilder =
-                            EmbedData.builder<String>()
-                                .setData(text)
-                                .setTask(EmbedData.TaskType.RETRIEVAL_DOCUMENT)
-                                .setIsQuery(false)
-
-                        // Add title metadata if provided
-                        if (!title.isNullOrBlank()) {
-                            embedDataBuilder.setMetadata(
-                                mapOf(GemmaEmbeddingModel.TITLE_KEY to title),
-                            )
-                        }
-
-                        val request = EmbeddingRequest.create(listOf(embedDataBuilder.build()))
-
-                        val future = model.getEmbeddings(request)
-                        val embedding = awaitListenableFuture(future)
-
-                        embedding.map { it }.toFloatArray()
+                        runInference(model, text)
                     } catch (
-                        @Suppress("TooGenericExceptionCaught") // ML libraries throw unpredictable exceptions
+                        @Suppress("TooGenericExceptionCaught")
                         e: Exception,
                     ) {
                         Timber.e(e, "Failed to generate document embedding")
@@ -209,7 +172,7 @@ class EmbeddingGemmaGenerator
                     val labelText = labels.joinToString(" ")
                     generateFromDocument(labelText, title = "Image labels")
                 } catch (
-                    @Suppress("TooGenericExceptionCaught") // ML libraries throw unpredictable exceptions
+                    @Suppress("TooGenericExceptionCaught")
                     e: Exception,
                 ) {
                     Timber.e(e, "Failed to generate image embedding")
@@ -236,7 +199,7 @@ class EmbeddingGemmaGenerator
                         bitmap.recycle()
                     }
                 } catch (
-                    @Suppress("TooGenericExceptionCaught") // ML libraries throw unpredictable exceptions
+                    @Suppress("TooGenericExceptionCaught")
                     e: Exception,
                 ) {
                     Timber.e(e, "Failed to generate embedding from URI")
@@ -246,12 +209,12 @@ class EmbeddingGemmaGenerator
 
         override suspend fun isReady(): Boolean =
             mutex.withLock {
-                embeddingModel != null
+                compiledModel != null
             }
 
         override suspend fun initialize() {
             mutex.withLock {
-                if (embeddingModel != null) {
+                if (compiledModel != null) {
                     Timber.d("EmbeddingGemma already initialized")
                     return
                 }
@@ -261,12 +224,12 @@ class EmbeddingGemmaGenerator
         }
 
         override fun close() {
-            embeddingModel = null
+            compiledModel?.close()
+            compiledModel = null
+            tokenizer = null
             initializationAttempted = false
             _imageLabeler?.close()
             _imageLabeler = null
-            callbackExecutor.shutdown()
-            callbackExecutor = Executors.newSingleThreadExecutor()
         }
 
         /**
@@ -274,13 +237,13 @@ class EmbeddingGemmaGenerator
          * Must be called while holding the mutex.
          */
         private fun ensureInitialized() {
-            if (embeddingModel == null && !initializationAttempted) {
+            if (compiledModel == null && !initializationAttempted) {
                 initializeEmbeddingModel()
             }
         }
 
         /**
-         * Initializes the GemmaEmbeddingModel with the model files.
+         * Initializes the LiteRT CompiledModel and SentencePiece tokenizer.
          * Must be called while holding the mutex.
          */
         private fun initializeEmbeddingModel() {
@@ -306,83 +269,137 @@ class EmbeddingGemmaGenerator
                     return
                 }
 
-                if (!tryInitializeWithGpu(modelPath, tokenizerPath) && shouldUseGpu()) {
-                    initializeWithCpu()
+                initializeTokenizer(tokenizerPath)
+
+                if (!tryInitializeWithGpu(modelPath) && shouldUseGpu()) {
+                    initializeWithCpu(modelPath)
                 }
             } catch (e: UnsatisfiedLinkError) {
                 Timber.e(e, "Native library not available for EmbeddingGemma (unsupported ABI?)")
-                embeddingModel = null
+                compiledModel = null
                 _initializationError = ERROR_NOT_COMPATIBLE
             } catch (e: ExceptionInInitializerError) {
                 Timber.e(e, "EmbeddingGemma static initialization failed")
-                embeddingModel = null
+                compiledModel = null
                 _initializationError = ERROR_FAILED_TO_LOAD
             }
         }
 
-        private fun tryInitializeWithGpu(
-            modelPath: String,
-            tokenizerPath: String,
-        ): Boolean {
-            return try {
-                Timber.d("Initializing EmbeddingGemma with GPU=${shouldUseGpu()}")
-                Timber.d("Model path: $modelPath")
-                Timber.d("Tokenizer path: $tokenizerPath")
+        private fun initializeTokenizer(tokenizerPath: String) {
+            Timber.d("Loading SentencePiece tokenizer from: $tokenizerPath")
+            tokenizer = SentencePieceModelParser.parse(File(tokenizerPath))
+            Timber.i("SentencePiece tokenizer loaded")
+        }
 
-                embeddingModel =
-                    GemmaEmbeddingModel(
+        private fun tryInitializeWithGpu(modelPath: String): Boolean {
+            return try {
+                val accelerator = if (shouldUseGpu()) Accelerator.GPU else Accelerator.CPU
+                Timber.d("Initializing EmbeddingGemma with LiteRT (accelerator=$accelerator)")
+                Timber.d("Model path: $modelPath")
+
+                compiledModel =
+                    CompiledModel.create(
                         modelPath,
-                        tokenizerPath,
-                        shouldUseGpu(),
+                        CompiledModel.Options(accelerator),
                     )
 
                 Timber.i("EmbeddingGemma initialized successfully (dimension: $embeddingDimension)")
                 _initializationError = null
                 true
             } catch (
-                @Suppress("TooGenericExceptionCaught") // ML libraries throw unpredictable exceptions
+                @Suppress("TooGenericExceptionCaught")
                 e: Exception,
             ) {
                 Timber.e(e, "Failed to initialize EmbeddingGemma")
                 if (!shouldUseGpu()) {
-                    embeddingModel = null
+                    compiledModel = null
                     _initializationError = ERROR_INIT_FAILED
                 }
                 false
             }
         }
 
-        private fun initializeWithCpu() {
+        private fun initializeWithCpu(modelPath: String) {
             Timber.i("Retrying with CPU...")
             useGpu = false
             try {
-                val modelPath = getModelPath()
-                val tokenizerPath = getTokenizerPath()
-
-                embeddingModel =
-                    GemmaEmbeddingModel(
+                compiledModel =
+                    CompiledModel.create(
                         modelPath,
-                        tokenizerPath,
-                        false,
+                        CompiledModel.Options(Accelerator.CPU),
                     )
                 Timber.i("EmbeddingGemma initialized with CPU fallback")
                 _initializationError = null
             } catch (cpuError: UnsatisfiedLinkError) {
                 Timber.e(cpuError, "CPU fallback failed: native library not available")
-                embeddingModel = null
+                compiledModel = null
                 _initializationError = ERROR_NOT_COMPATIBLE
             } catch (cpuError: ExceptionInInitializerError) {
                 Timber.e(cpuError, "CPU fallback failed: static initialization error")
-                embeddingModel = null
+                compiledModel = null
                 _initializationError = ERROR_FAILED_TO_LOAD
             } catch (
-                @Suppress("TooGenericExceptionCaught") // GPU/CPU fallback catches unpredictable errors
+                @Suppress("TooGenericExceptionCaught")
                 cpuError: Exception,
             ) {
                 Timber.e(cpuError, "CPU fallback also failed")
-                embeddingModel = null
+                compiledModel = null
                 _initializationError = ERROR_INIT_FAILED
             }
+        }
+
+        /**
+         * Tokenizes text and runs inference through the LiteRT model.
+         *
+         * @param model The initialized CompiledModel.
+         * @param text The input text to embed.
+         * @return The embedding vector as FloatArray.
+         */
+        private fun runInference(
+            model: CompiledModel,
+            text: String,
+        ): FloatArray {
+            val spTokenizer = requireNotNull(tokenizer) { "Tokenizer not initialized" }
+
+            // Tokenize text using SentencePiece BPE
+            val tokenIds = spTokenizer.encode(text)
+
+            // Build token sequence: BOS + tokens, padded/truncated to MODEL_SEQ_LENGTH
+            val paddedIds = IntArray(MODEL_SEQ_LENGTH) // filled with 0 (PAD)
+            paddedIds[0] = BOS_TOKEN_ID
+            val copyLen = minOf(tokenIds.size, MODEL_SEQ_LENGTH - 1) // -1 for BOS
+            for (i in 0 until copyLen) {
+                paddedIds[i + 1] = tokenIds[i]
+            }
+            val realTokenCount = 1 + copyLen // BOS + actual tokens
+
+            // Create input/output buffers and run inference
+            val inputBuffers = model.createInputBuffers()
+            val outputBuffers = model.createOutputBuffers()
+
+            require(inputBuffers.isNotEmpty()) { "Model has no input tensors" }
+            require(outputBuffers.isNotEmpty()) { "Model has no output tensors" }
+
+            when (inputBuffers.size) {
+                1 -> {
+                    inputBuffers[0].writeInt(paddedIds)
+                }
+                2 -> {
+                    // Second input is attention_mask: 1 for real tokens, 0 for padding
+                    val attentionMask = IntArray(MODEL_SEQ_LENGTH)
+                    for (i in 0 until realTokenCount) {
+                        attentionMask[i] = 1
+                    }
+                    inputBuffers[0].writeInt(paddedIds)
+                    inputBuffers[1].writeInt(attentionMask)
+                }
+                else -> {
+                    error("Unsupported input tensor count: ${inputBuffers.size}")
+                }
+            }
+
+            model.run(inputBuffers, outputBuffers)
+            return outputBuffers[0].readFloat()
         }
 
         /**
@@ -433,7 +450,7 @@ class EmbeddingGemmaGenerator
                 Timber.d("Copied asset: $assetName (${targetFile.length() / BYTES_PER_KB / BYTES_PER_KB} MB)")
                 true
             } catch (
-                @Suppress("TooGenericExceptionCaught") // ML libraries throw unpredictable exceptions
+                @Suppress("TooGenericExceptionCaught")
                 e: Exception,
             ) {
                 Timber.d(e, "Asset not found in assets: $assetName")
@@ -474,32 +491,6 @@ class EmbeddingGemmaGenerator
         }
 
         /**
-         * Awaits a ListenableFuture and returns its result.
-         */
-        private suspend fun <T> awaitListenableFuture(
-            future: com.google.common.util.concurrent.ListenableFuture<T>,
-        ): T =
-            suspendCancellableCoroutine { continuation ->
-                Futures.addCallback(
-                    future,
-                    object : FutureCallback<T> {
-                        override fun onSuccess(result: T) {
-                            continuation.resume(result)
-                        }
-
-                        override fun onFailure(t: Throwable) {
-                            continuation.resumeWithException(t)
-                        }
-                    },
-                    callbackExecutor,
-                )
-
-                continuation.invokeOnCancellation {
-                    future.cancel(true)
-                }
-            }
-
-        /**
          * Gets image labels using ML Kit Image Labeling.
          */
         private suspend fun getImageLabels(bitmap: Bitmap): List<String> {
@@ -531,10 +522,8 @@ class EmbeddingGemmaGenerator
 
             /**
              * Checks whether OpenCL is available on this device.
-             * The AI Edge RAG SDK's native code fatally aborts (CHECK failure) if the GPU
-             * delegate cannot be created. Since this is a native abort, it cannot be caught
-             * by Java/Kotlin exception handlers. We proactively check for OpenCL availability
-             * to avoid passing useGpu=true on devices where it would crash.
+             * LiteRT's GPU delegate may fatally abort if OpenCL is not available.
+             * We proactively check to avoid passing GPU accelerator on unsupported devices.
              */
             private fun isOpenClAvailable(): Boolean =
                 try {
@@ -550,6 +539,12 @@ class EmbeddingGemmaGenerator
 
             /** Generic EmbeddingGemma model filename (works on all devices). */
             const val MODEL_FILENAME_GENERIC = "embeddinggemma-300M_seq512_mixed-precision.tflite"
+
+            /** Model sequence length (must match the TFLite model's input shape). */
+            private const val MODEL_SEQ_LENGTH = 512
+
+            /** BOS (beginning-of-sequence) token ID for EmbeddingGemma's SentencePiece vocabulary. */
+            private const val BOS_TOKEN_ID = 2
 
             /** Platform-specific model filenames for optimized performance. */
             private val PLATFORM_MODELS =

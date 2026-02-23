@@ -24,7 +24,7 @@ abstract class MlModule {
 
     /**
      * Bind the primary embedding generator.
-     * Uses EmbeddingGemma via Google AI Edge RAG SDK for high-quality semantic embeddings.
+     * Uses EmbeddingGemma via LiteRT CompiledModel for high-quality semantic embeddings.
      * EmbeddingGemma (2025) provides 768-dimensional embeddings with excellent multilingual support.
      */
     @Binds

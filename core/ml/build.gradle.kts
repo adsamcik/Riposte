@@ -41,17 +41,8 @@ dependencies {
     // MediaPipe (for semantic text embeddings - legacy USE model)
     implementation(libs.mediapipe.tasks.text)
 
-    // Google AI Edge RAG SDK (for EmbeddingGemma)
-    implementation(libs.ai.edge.rag)
-
-    // LiteRT (for semantic embeddings - replaces TensorFlow Lite)
+    // LiteRT (for semantic embeddings - on-device AI runtime)
     implementation(libs.litert.runtime)
-
-    // DJL HuggingFace Tokenizers (for EmbeddingGemma tokenization)
-    implementation(libs.djl.tokenizers)
-
-    // ExifInterface for metadata handling
-    implementation(libs.exifinterface)
 
     // Kotlinx Serialization
     implementation(libs.kotlinx.serialization.json)
