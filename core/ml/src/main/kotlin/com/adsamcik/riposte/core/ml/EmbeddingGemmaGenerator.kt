@@ -47,6 +47,7 @@ class EmbeddingGemmaGenerator
     @Inject
     constructor(
         @param:ApplicationContext private val context: Context,
+        private val acceleratorStrategy: AcceleratorStrategy,
     ) : EmbeddingGenerator {
         /** Lazily initialized image labeler for extracting features from images. */
         private var _imageLabeler: com.google.mlkit.vision.label.ImageLabeler? = null
@@ -84,17 +85,6 @@ class EmbeddingGemmaGenerator
 
         private var _initializationError: String? = null
         override val initializationError: String? get() = _initializationError
-
-        /** Whether GPU acceleration is enabled (auto-detected on first use). */
-        private var useGpu: Boolean? = null
-
-        private fun shouldUseGpu(): Boolean {
-            val current = useGpu
-            if (current != null) return current
-            val available = isOpenClAvailable()
-            useGpu = available
-            return available
-        }
 
         override val embeddingDimension: Int = DEFAULT_EMBEDDING_DIMENSION
 
@@ -296,7 +286,9 @@ class EmbeddingGemmaGenerator
                     return
                 }
 
-                if (!tryInitializeWithGpu(modelPath) && shouldUseGpu()) {
+                if (!tryInitializeWithGpu(modelPath) &&
+                    acceleratorStrategy.getBestAccelerator() != Accelerator.CPU
+                ) {
                     initializeWithCpu(modelPath)
                 }
             } catch (e: UnsatisfiedLinkError) {
@@ -343,7 +335,7 @@ class EmbeddingGemmaGenerator
 
         private fun tryInitializeWithGpu(modelPath: String): Boolean {
             return try {
-                val accelerator = if (shouldUseGpu()) Accelerator.GPU else Accelerator.CPU
+                val accelerator = acceleratorStrategy.getBestAccelerator()
                 Timber.d("Initializing EmbeddingGemma with LiteRT (accelerator=$accelerator)")
                 Timber.d("Model path: $modelPath")
 
@@ -360,18 +352,13 @@ class EmbeddingGemmaGenerator
                 @Suppress("TooGenericExceptionCaught")
                 e: Exception,
             ) {
-                Timber.e(e, "Failed to initialize EmbeddingGemma")
-                if (!shouldUseGpu()) {
-                    compiledModel = null
-                    _initializationError = ERROR_INIT_FAILED
-                }
+                Timber.e(e, "Failed to initialize EmbeddingGemma with preferred accelerator")
                 false
             }
         }
 
         private fun initializeWithCpu(modelPath: String) {
             Timber.i("Retrying with CPU...")
-            useGpu = false
             try {
                 compiledModel =
                     CompiledModel.create(
@@ -578,20 +565,6 @@ class EmbeddingGemmaGenerator
         private fun createZeroEmbedding(): FloatArray = FloatArray(embeddingDimension)
 
         companion object {
-
-            /**
-             * Checks whether OpenCL is available on this device.
-             * LiteRT's GPU delegate may fatally abort if OpenCL is not available.
-             * We proactively check to avoid passing GPU accelerator on unsupported devices.
-             */
-            private fun isOpenClAvailable(): Boolean =
-                try {
-                    System.loadLibrary("OpenCL")
-                    true
-                } catch (_: UnsatisfiedLinkError) {
-                    Timber.w("OpenCL not available, disabling GPU acceleration")
-                    false
-                }
 
             /** Directory where model files are stored. */
             const val MODEL_DIRECTORY = "embedding_models"
