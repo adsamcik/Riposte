@@ -2,6 +2,7 @@ package com.adsamcik.riposte.feature.settings.presentation
 
 import com.adsamcik.riposte.core.model.DarkMode
 import com.adsamcik.riposte.core.model.ImageFormat
+import com.adsamcik.riposte.core.model.SearchMode
 import com.adsamcik.riposte.core.model.UserDensityPreference
 
 /**
@@ -54,6 +55,7 @@ data class SettingsUiState(
     val enableSemanticSearch: Boolean = true,
     val saveSearchHistory: Boolean = true,
     val sortEmojisByUsage: Boolean = true,
+    val searchMode: SearchMode = SearchMode.HYBRID,
     val embeddingSearchState: EmbeddingSearchState? = null,
     // Library
     val totalMemeCount: Int = 0,

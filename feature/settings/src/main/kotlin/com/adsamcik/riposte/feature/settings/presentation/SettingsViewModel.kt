@@ -11,6 +11,7 @@ import com.adsamcik.riposte.core.common.crash.CrashLogManager
 import com.adsamcik.riposte.core.common.di.IoDispatcher
 import com.adsamcik.riposte.core.model.DarkMode
 import com.adsamcik.riposte.core.model.ImageFormat
+import com.adsamcik.riposte.core.model.SearchMode
 import com.adsamcik.riposte.core.model.UserDensityPreference
 import com.adsamcik.riposte.feature.settings.R
 import com.adsamcik.riposte.feature.settings.domain.usecase.ExportPreferencesUseCase
@@ -27,6 +28,7 @@ import com.adsamcik.riposte.feature.settings.domain.usecase.SetDynamicColorsUseC
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetEnableSemanticSearchUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetGridDensityUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetSaveSearchHistoryUseCase
+import com.adsamcik.riposte.feature.settings.domain.usecase.SetSearchModeUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetSortEmojisByUsageUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetStripMetadataUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -65,6 +67,7 @@ class SettingsViewModel
         private val setEnableSemanticSearchUseCase: SetEnableSemanticSearchUseCase,
         private val setSaveSearchHistoryUseCase: SetSaveSearchHistoryUseCase,
         private val setSortEmojisByUsageUseCase: SetSortEmojisByUsageUseCase,
+        private val setSearchModeUseCase: SetSearchModeUseCase,
         private val setDefaultFormatUseCase: SetDefaultFormatUseCase,
         private val setDefaultQualityUseCase: SetDefaultQualityUseCase,
         private val setDefaultMaxDimensionUseCase: SetDefaultMaxDimensionUseCase,
@@ -172,6 +175,7 @@ class SettingsViewModel
                         enableSemanticSearch = appPrefs.enableSemanticSearch,
                         saveSearchHistory = appPrefs.saveSearchHistory,
                         sortEmojisByUsage = appPrefs.sortEmojisByUsage,
+                        searchMode = appPrefs.searchMode,
                         appVersion = getAppVersion(),
                         isLoading = false,
                     )
@@ -215,6 +219,7 @@ class SettingsViewModel
                 is SettingsIntent.SetEnableSemanticSearch -> setEnableSemanticSearch(intent.enabled)
                 is SettingsIntent.SetSaveSearchHistory -> setSaveSearchHistory(intent.save)
                 is SettingsIntent.SetSortEmojisByUsage -> setSortEmojisByUsage(intent.enabled)
+                is SettingsIntent.SetSearchMode -> setSearchMode(intent.mode)
 
                 // Storage
                 is SettingsIntent.CalculateCacheSize -> calculateCacheSize()
@@ -297,6 +302,12 @@ class SettingsViewModel
         private fun setSortEmojisByUsage(enabled: Boolean) {
             viewModelScope.launch {
                 setSortEmojisByUsageUseCase(enabled)
+            }
+        }
+
+        private fun setSearchMode(mode: SearchMode) {
+            viewModelScope.launch {
+                setSearchModeUseCase(mode)
             }
         }
 

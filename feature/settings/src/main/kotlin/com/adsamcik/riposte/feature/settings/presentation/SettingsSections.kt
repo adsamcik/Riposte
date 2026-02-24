@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Psychology
+import androidx.compose.material.icons.filled.Science
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -25,6 +26,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.adsamcik.riposte.core.ml.EmbeddingGemmaGenerator
 import com.adsamcik.riposte.core.model.DarkMode
+import com.adsamcik.riposte.core.model.SearchMode
 import com.adsamcik.riposte.core.model.UserDensityPreference
 import com.adsamcik.riposte.feature.settings.R
 import com.adsamcik.riposte.feature.settings.presentation.component.DialogSettingItem
@@ -162,6 +164,21 @@ internal fun LazyListScope.searchSection(
                 checked = uiState.sortEmojisByUsage,
                 onCheckedChange = { onIntent(SettingsIntent.SetSortEmojisByUsage(it)) },
                 icon = Icons.AutoMirrored.Filled.TrendingUp,
+            )
+
+            DialogSettingItem(
+                title = stringResource(R.string.settings_search_mode_title),
+                selectedValue = uiState.searchMode,
+                values = SearchMode.entries,
+                onValueChange = { onIntent(SettingsIntent.SetSearchMode(it)) },
+                icon = Icons.Default.Science,
+                valueLabel = { mode ->
+                    when (mode) {
+                        SearchMode.HYBRID -> stringResource(R.string.settings_search_mode_hybrid)
+                        SearchMode.FTS_ONLY -> stringResource(R.string.settings_search_mode_fts_only)
+                        SearchMode.SEMANTIC_ONLY -> stringResource(R.string.settings_search_mode_semantic_only)
+                    }
+                },
             )
         }
     }

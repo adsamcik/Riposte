@@ -2,6 +2,7 @@ package com.adsamcik.riposte.feature.settings.presentation
 
 import com.adsamcik.riposte.core.model.DarkMode
 import com.adsamcik.riposte.core.model.ImageFormat
+import com.adsamcik.riposte.core.model.SearchMode
 import com.adsamcik.riposte.core.model.UserDensityPreference
 
 sealed interface SettingsIntent {
@@ -30,6 +31,8 @@ sealed interface SettingsIntent {
     data class SetSaveSearchHistory(val save: Boolean) : SettingsIntent
 
     data class SetSortEmojisByUsage(val enabled: Boolean) : SettingsIntent
+
+    data class SetSearchMode(val mode: SearchMode) : SettingsIntent
 
     // Storage
     data object CalculateCacheSize : SettingsIntent

@@ -18,7 +18,24 @@ data class AppPreferences(
     val holdToShareDelayMs: Long = 600L,
     val sortEmojisByUsage: Boolean = true,
     val searchQualityLevel: DeviceTier = DeviceTier.AUTO,
+    val searchMode: SearchMode = SearchMode.HYBRID,
 )
+
+/**
+ * Controls which search strategies the orchestrator runs.
+ * Useful for debugging and quality testing of individual strategies.
+ */
+@Serializable
+enum class SearchMode {
+    /** Run all available strategies and fuse with RRF (default). */
+    HYBRID,
+
+    /** Run only FTS text search. */
+    FTS_ONLY,
+
+    /** Run only semantic (AI embedding) search. */
+    SEMANTIC_ONLY,
+}
 
 /**
  * User preference for grid density override.

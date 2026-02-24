@@ -3,6 +3,7 @@ package com.adsamcik.riposte.feature.settings.domain.usecase
 import com.adsamcik.riposte.core.model.AppPreferences
 import com.adsamcik.riposte.core.model.DarkMode
 import com.adsamcik.riposte.core.model.ImageFormat
+import com.adsamcik.riposte.core.model.SearchMode
 import com.adsamcik.riposte.core.model.SharingPreferences
 import com.adsamcik.riposte.core.model.UserDensityPreference
 import com.adsamcik.riposte.feature.settings.domain.repository.SettingsRepository
@@ -150,6 +151,17 @@ class SetSortEmojisByUsageUseCase
         private val repository: SettingsRepository,
     ) {
         suspend operator fun invoke(enabled: Boolean) = repository.setSortEmojisByUsage(enabled)
+    }
+
+/**
+ * Use case for updating search mode preference.
+ */
+class SetSearchModeUseCase
+    @Inject
+    constructor(
+        private val repository: SettingsRepository,
+    ) {
+        suspend operator fun invoke(mode: SearchMode) = repository.setSearchMode(mode)
     }
 
 /**

@@ -27,6 +27,7 @@ import com.adsamcik.riposte.feature.settings.domain.usecase.SetDynamicColorsUseC
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetEnableSemanticSearchUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetGridDensityUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetSaveSearchHistoryUseCase
+import com.adsamcik.riposte.feature.settings.domain.usecase.SetSearchModeUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetSortEmojisByUsageUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetStripMetadataUseCase
 import com.google.common.truth.Truth.assertThat
@@ -67,6 +68,7 @@ class SettingsViewModelTest {
     private lateinit var setEnableSemanticSearchUseCase: SetEnableSemanticSearchUseCase
     private lateinit var setSaveSearchHistoryUseCase: SetSaveSearchHistoryUseCase
     private lateinit var setSortEmojisByUsageUseCase: SetSortEmojisByUsageUseCase
+    private lateinit var setSearchModeUseCase: SetSearchModeUseCase
     private lateinit var setDefaultFormatUseCase: SetDefaultFormatUseCase
     private lateinit var setDefaultQualityUseCase: SetDefaultQualityUseCase
     private lateinit var setDefaultMaxDimensionUseCase: SetDefaultMaxDimensionUseCase
@@ -109,6 +111,7 @@ class SettingsViewModelTest {
         setEnableSemanticSearchUseCase = mockk(relaxed = true)
         setSaveSearchHistoryUseCase = mockk(relaxed = true)
         setSortEmojisByUsageUseCase = mockk(relaxed = true)
+        setSearchModeUseCase = mockk(relaxed = true)
         setDefaultFormatUseCase = mockk(relaxed = true)
         setDefaultQualityUseCase = mockk(relaxed = true)
         setDefaultMaxDimensionUseCase = mockk(relaxed = true)
@@ -141,6 +144,7 @@ class SettingsViewModelTest {
             setEnableSemanticSearchUseCase = setEnableSemanticSearchUseCase,
             setSaveSearchHistoryUseCase = setSaveSearchHistoryUseCase,
             setSortEmojisByUsageUseCase = setSortEmojisByUsageUseCase,
+            setSearchModeUseCase = setSearchModeUseCase,
             setDefaultFormatUseCase = setDefaultFormatUseCase,
             setDefaultQualityUseCase = setDefaultQualityUseCase,
             setDefaultMaxDimensionUseCase = setDefaultMaxDimensionUseCase,
@@ -421,6 +425,7 @@ class SettingsViewModelTest {
                 is SettingsIntent.ShareCrashLogs,
                 is SettingsIntent.ClearCrashLogs,
                 is SettingsIntent.OpenDuplicateDetection,
+                is SettingsIntent.SetSearchMode,
                 -> false
             }
         assertThat(isKeepMetadata).isFalse()

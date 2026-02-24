@@ -33,6 +33,10 @@
     <string name="settings_search_history_subtitle">Save recent searches</string>
     <string name="settings_sort_emojis_by_usage_title">Sort Emojis by Usage</string>
     <string name="settings_sort_emojis_by_usage_subtitle">Show most-shared emoji categories first</string>
+    <string name="settings_search_mode_title">Search Mode</string>
+    <string name="settings_search_mode_hybrid">Hybrid (Text + AI)</string>
+    <string name="settings_search_mode_fts_only">Text Only</string>
+    <string name="settings_search_mode_semantic_only">AI Only</string>
     <string name="settings_share_format_title">Image Format</string>
     <string name="settings_share_format_jpeg">Standard (JPEG)</string>
     <string name="settings_share_format_png">Lossless (PNG)</string>

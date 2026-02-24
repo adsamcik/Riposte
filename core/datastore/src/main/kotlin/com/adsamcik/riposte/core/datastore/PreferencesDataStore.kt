@@ -15,6 +15,7 @@ import com.adsamcik.riposte.core.model.AppPreferences
 import com.adsamcik.riposte.core.model.DarkMode
 import com.adsamcik.riposte.core.model.DeviceTier
 import com.adsamcik.riposte.core.model.ImageFormat
+import com.adsamcik.riposte.core.model.SearchMode
 import com.adsamcik.riposte.core.model.SharingPreferences
 import com.adsamcik.riposte.core.model.UserDensityPreference
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -62,6 +63,7 @@ class PreferencesDataStore
             val HOLD_TO_SHARE_DELAY_MS = longPreferencesKey("hold_to_share_delay_ms")
             val SORT_EMOJIS_BY_USAGE = booleanPreferencesKey("sort_emojis_by_usage")
             val SEARCH_QUALITY_LEVEL = stringPreferencesKey("search_quality_level")
+            val SEARCH_MODE = stringPreferencesKey("search_mode")
 
             // Search preferences - use string key with JSON to preserve order
             val RECENT_SEARCHES = stringPreferencesKey("recent_searches_json")
@@ -150,6 +152,10 @@ class PreferencesDataStore
                             prefs[PreferencesKeys.SEARCH_QUALITY_LEVEL]?.let {
                                 DeviceTier.valueOf(it)
                             } ?: DeviceTier.AUTO,
+                        searchMode =
+                            prefs[PreferencesKeys.SEARCH_MODE]?.let {
+                                runCatching { SearchMode.valueOf(it) }.getOrNull()
+                            } ?: SearchMode.HYBRID,
                     )
                 }
 
@@ -169,6 +175,7 @@ class PreferencesDataStore
                 prefs[PreferencesKeys.HOLD_TO_SHARE_DELAY_MS] = preferences.holdToShareDelayMs
                 prefs[PreferencesKeys.SORT_EMOJIS_BY_USAGE] = preferences.sortEmojisByUsage
                 prefs[PreferencesKeys.SEARCH_QUALITY_LEVEL] = preferences.searchQualityLevel.name
+                prefs[PreferencesKeys.SEARCH_MODE] = preferences.searchMode.name
             }
         }
 

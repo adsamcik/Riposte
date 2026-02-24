@@ -4,6 +4,7 @@ import com.adsamcik.riposte.core.datastore.PreferencesDataStore
 import com.adsamcik.riposte.core.model.AppPreferences
 import com.adsamcik.riposte.core.model.DarkMode
 import com.adsamcik.riposte.core.model.ImageFormat
+import com.adsamcik.riposte.core.model.SearchMode
 import com.adsamcik.riposte.core.model.SharingPreferences
 import com.adsamcik.riposte.core.model.UserDensityPreference
 import com.adsamcik.riposte.feature.settings.domain.repository.SettingsRepository
@@ -85,6 +86,11 @@ class DefaultSettingsRepository
         override suspend fun setSortEmojisByUsage(enabled: Boolean) {
             val current = preferencesDataStore.appPreferences.first()
             preferencesDataStore.updateAppPreferences(current.copy(sortEmojisByUsage = enabled))
+        }
+
+        override suspend fun setSearchMode(mode: SearchMode) {
+            val current = preferencesDataStore.appPreferences.first()
+            preferencesDataStore.updateAppPreferences(current.copy(searchMode = mode))
         }
 
         override suspend fun exportPreferences(): String {

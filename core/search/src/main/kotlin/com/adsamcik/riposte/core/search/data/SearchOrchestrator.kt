@@ -1,6 +1,7 @@
 package com.adsamcik.riposte.core.search.data
 
 import com.adsamcik.riposte.core.model.MatchType
+import com.adsamcik.riposte.core.model.SearchMode
 import com.adsamcik.riposte.core.model.SearchResult
 import com.adsamcik.riposte.core.model.SearchStrategy
 import kotlinx.coroutines.async
@@ -26,16 +27,21 @@ class SearchOrchestrator @Inject constructor(
     private val strategies: Set<@JvmSuppressWildcards SearchStrategy>,
 ) {
     /**
-     * Run all available strategies in parallel and fuse results.
+     * Run available strategies in parallel and fuse results.
      *
      * @param query User search query (already trimmed, never blank).
      * @param limit Maximum number of results to return.
+     * @param searchMode Which strategies to run. Defaults to [SearchMode.HYBRID] (all).
      * @return Fused list of [SearchResult] sorted by combined score.
      */
-    suspend fun search(query: String, limit: Int = DEFAULT_LIMIT): List<SearchResult> {
+    suspend fun search(
+        query: String,
+        limit: Int = DEFAULT_LIMIT,
+        searchMode: SearchMode = SearchMode.HYBRID,
+    ): List<SearchResult> {
         if (query.isBlank()) return emptyList()
 
-        val available = strategies.filter { it.isAvailable() }
+        val available = strategies.filter { it.isAvailable() && matchesMode(it, searchMode) }
         if (available.isEmpty()) return emptyList()
 
         Timber.d(
@@ -113,5 +119,18 @@ class SearchOrchestrator @Inject constructor(
 
         /** Normalize priority to a weight multiplier. */
         private const val PRIORITY_DIVISOR = 100f
+
+        /** Strategy name used by FTS search. */
+        private const val FTS_STRATEGY_NAME = "fts"
+
+        /** Strategy name used by semantic/vector search. */
+        private const val SEMANTIC_STRATEGY_NAME = "semantic"
+
+        private fun matchesMode(strategy: SearchStrategy, mode: SearchMode): Boolean =
+            when (mode) {
+                SearchMode.HYBRID -> true
+                SearchMode.FTS_ONLY -> strategy.name == FTS_STRATEGY_NAME
+                SearchMode.SEMANTIC_ONLY -> strategy.name == SEMANTIC_STRATEGY_NAME
+            }
     }
 }

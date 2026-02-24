@@ -3,6 +3,7 @@ package com.adsamcik.riposte.feature.settings.domain.repository
 import com.adsamcik.riposte.core.model.AppPreferences
 import com.adsamcik.riposte.core.model.DarkMode
 import com.adsamcik.riposte.core.model.ImageFormat
+import com.adsamcik.riposte.core.model.SearchMode
 import com.adsamcik.riposte.core.model.SharingPreferences
 import com.adsamcik.riposte.core.model.UserDensityPreference
 import kotlinx.coroutines.flow.Flow
@@ -75,6 +76,11 @@ interface SettingsRepository {
      * Updates the sort emojis by usage preference.
      */
     suspend fun setSortEmojisByUsage(enabled: Boolean)
+
+    /**
+     * Updates the search mode (hybrid, FTS-only, semantic-only).
+     */
+    suspend fun setSearchMode(mode: SearchMode)
 
     /**
      * Exports preferences to a JSON string.

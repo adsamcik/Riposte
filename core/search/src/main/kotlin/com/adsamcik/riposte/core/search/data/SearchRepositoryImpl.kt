@@ -11,6 +11,7 @@ import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.core.model.SearchResult
 import com.adsamcik.riposte.core.search.domain.repository.SearchRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -54,8 +55,8 @@ class SearchRepositoryImpl
             limit: Int,
         ): List<SearchResult> {
             if (query.isBlank()) return emptyList()
-            // Delegate to orchestrator which will use SemanticSearchStrategy
-            return searchOrchestrator.search(query, limit)
+            val searchMode = preferencesDataStore.appPreferences.first().searchMode
+            return searchOrchestrator.search(query, limit, searchMode)
         }
 
         override suspend fun searchHybrid(
@@ -63,8 +64,8 @@ class SearchRepositoryImpl
             limit: Int,
         ): List<SearchResult> {
             if (query.isBlank()) return emptyList()
-            // Orchestrator runs all available strategies in parallel and fuses via RRF
-            return searchOrchestrator.search(query, limit)
+            val searchMode = preferencesDataStore.appPreferences.first().searchMode
+            return searchOrchestrator.search(query, limit, searchMode)
         }
 
         override fun searchByEmoji(emoji: String): Flow<List<SearchResult>> {
