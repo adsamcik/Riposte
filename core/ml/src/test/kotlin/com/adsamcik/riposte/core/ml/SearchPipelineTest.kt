@@ -37,6 +37,8 @@ class SearchPipelineTest {
     @Before
     fun setUp() {
         MockKAnnotations.init(this, relaxed = true)
+        // Explicitly stub persistent cache to return null (miss) so tests hit the generator
+        coEvery { mockPersistentCache.get(any()) } returns null
         engine = DefaultSemanticSearchEngine(mockGenerator, mockPersistentCache)
     }
 
