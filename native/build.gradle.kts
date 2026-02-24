@@ -18,11 +18,11 @@
 val nativeDir = rootProject.file("native")
 val jniLibsDir = rootProject.file("app/src/main/jniLibs")
 
-data class RustTarget(val abi: String, val triple: String)
+data class RustTarget(val abi: String, val triple: String, val ndkTriple: String)
 
 val rustTargets = listOf(
-    RustTarget("arm64-v8a", "aarch64-linux-android"),
-    RustTarget("x86_64", "x86_64-linux-android"),
+    RustTarget("arm64-v8a", "aarch64-linux-android", "aarch64-linux-android"),
+    RustTarget("x86_64", "x86_64-linux-android", "x86_64-linux-android"),
 )
 
 fun findCargoNdk(): String {
@@ -98,6 +98,22 @@ tasks.register("buildRustNative") {
                 )
             }
 
+            // Copy libc++_shared.so from NDK (required by USearch C++ dependency)
+            val hostTag = when {
+                org.gradle.internal.os.OperatingSystem.current().isWindows -> "windows-x86_64"
+                org.gradle.internal.os.OperatingSystem.current().isMacOsX -> "darwin-x86_64"
+                else -> "linux-x86_64"
+            }
+            val libcppSrc = file(
+                "$ndkHome/toolchains/llvm/prebuilt/$hostTag/sysroot/usr/lib/${target.ndkTriple}/libc++_shared.so"
+            )
+            if (libcppSrc.exists()) {
+                libcppSrc.copyTo(outputDir.resolve("libc++_shared.so"), overwrite = true)
+                logger.lifecycle("Bundled libc++_shared.so for ${target.abi}")
+            } else {
+                logger.warn("libc++_shared.so not found at: ${libcppSrc.path}")
+            }
+
             logger.lifecycle("Built riposte-jni for ${target.abi}")
         }
     }
@@ -125,6 +141,19 @@ tasks.register("buildRustNativeDebug") {
                     "build",
                     "-p", "riposte-jni",
                 )
+            }
+
+            // Copy libc++_shared.so from NDK (required by USearch C++ dependency)
+            val hostTag = when {
+                org.gradle.internal.os.OperatingSystem.current().isWindows -> "windows-x86_64"
+                org.gradle.internal.os.OperatingSystem.current().isMacOsX -> "darwin-x86_64"
+                else -> "linux-x86_64"
+            }
+            val libcppSrc = file(
+                "$ndkHome/toolchains/llvm/prebuilt/$hostTag/sysroot/usr/lib/${target.ndkTriple}/libc++_shared.so"
+            )
+            if (libcppSrc.exists()) {
+                libcppSrc.copyTo(outputDir.resolve("libc++_shared.so"), overwrite = true)
             }
         }
     }

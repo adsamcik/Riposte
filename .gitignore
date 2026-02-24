@@ -45,6 +45,8 @@ native/target/
 
 # JNI shared libraries (built from Rust source)
 app/src/main/jniLibs/
+# But track libc++_shared.so (required C++ runtime for USearch)
+!app/src/main/jniLibs/*/libc++_shared.so
 
 # ML Models - platform-specific variants (download with tools/download-embeddinggemma.ps1 -AllVariants)
 # Generic model + tokenizer are tracked via Git LFS
