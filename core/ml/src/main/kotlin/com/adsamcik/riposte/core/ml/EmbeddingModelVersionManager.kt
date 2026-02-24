@@ -159,7 +159,7 @@ class EmbeddingModelVersionManager
              * Current model version.
              * UPDATE THIS when changing the embedding model.
              */
-            const val CURRENT_VERSION = "embeddinggemma:1.0.0"
+            const val CURRENT_VERSION = "embeddinggemma:1.1.0"
 
             private const val EMBEDDING_GEMMA_DIMENSION = 768
             private const val USE_MODEL_DIMENSION = 512

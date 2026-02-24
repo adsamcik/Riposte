@@ -54,6 +54,12 @@ android {
             buildConfigField("String", "INCLUDED_SOC_MODELS", "\"none\"")
         }
 
+        create("sm8650") {
+            dimension = "embedding"
+            buildConfigField("boolean", "INCLUDE_EMBEDDINGGEMMA", "true")
+            buildConfigField("String", "INCLUDED_SOC_MODELS", "\"sm8650\"")
+        }
+
         create("googleplay") {
             dimension = "embedding"
             buildConfigField("boolean", "INCLUDE_EMBEDDINGGEMMA", "true")
@@ -73,6 +79,16 @@ android {
                 listOf(
                     "src/main/assets",
                     "src/main/assets_standard",
+                ),
+            )
+        }
+
+        // SM8650: Snapdragon 8 Gen 3 optimized model only (S24 Ultra, etc.)
+        getByName("sm8650") {
+            assets.setSrcDirs(
+                listOf(
+                    "src/main/assets",
+                    "src/main/assets_sm8650",
                 ),
             )
         }
@@ -230,3 +246,17 @@ dependencies {
 //     automaticGenerationDuringBuild = false
 //     dexLayoutOptimization = true
 // }
+
+// Sync SoC-specific model from aipacks into sm8650 flavor assets at build time.
+// This avoids duplicating the 181 MB tflite file in the repository.
+val syncSm8650Model by tasks.registering(Copy::class) {
+    from("${rootProject.projectDir}/aipacks/soc_optimized/src/main/assets/embedding_models#group_qualcomm_sm8650") {
+        include("*.tflite")
+    }
+    into("${projectDir}/src/main/assets_sm8650/embedding_models")
+}
+
+afterEvaluate {
+    tasks.matching { it.name.contains("Sm8650") && it.name.startsWith("merge") && it.name.contains("Assets") }
+        .configureEach { dependsOn(syncSm8650Model) }
+}

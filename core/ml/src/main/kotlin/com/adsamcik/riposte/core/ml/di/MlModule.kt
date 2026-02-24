@@ -3,7 +3,6 @@ package com.adsamcik.riposte.core.ml.di
 import com.adsamcik.riposte.core.ml.DefaultSemanticSearchEngine
 import com.adsamcik.riposte.core.ml.EmbeddingGemmaGenerator
 import com.adsamcik.riposte.core.ml.EmbeddingGenerator
-import com.adsamcik.riposte.core.ml.MediaPipeEmbeddingGenerator
 import com.adsamcik.riposte.core.ml.MlKitTextRecognizer
 import com.adsamcik.riposte.core.ml.search.SemanticSearchStrategy
 import com.adsamcik.riposte.core.ml.SemanticSearchEngine
@@ -11,11 +10,9 @@ import com.adsamcik.riposte.core.ml.TextRecognizer
 import com.adsamcik.riposte.core.model.SearchStrategy
 import dagger.Binds
 import dagger.Module
-import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import dagger.multibindings.IntoSet
-import javax.inject.Named
 import javax.inject.Singleton
 
 @Module
@@ -42,16 +39,7 @@ abstract class MlModule {
     @IntoSet
     abstract fun bindSemanticSearchStrategy(impl: SemanticSearchStrategy): SearchStrategy
 
-    companion object {
-        /**
-         * Provides MediaPipe-based embedding generator as legacy fallback.
-         * Uses Universal Sentence Encoder (USE-QA) - older model but proven reliable.
-         */
-        @Provides
-        @Singleton
-        @Named("mediapipe")
-        fun provideMediaPipeEmbeddingGenerator(impl: MediaPipeEmbeddingGenerator): EmbeddingGenerator {
-            return impl
-        }
-    }
+    // NOTE: MediaPipeEmbeddingGenerator class is retained but NOT provided by Hilt.
+    // It was causing DISPATCH_OP errors at startup because Hilt eagerly constructed it,
+    // loading an incompatible TFLite model. The primary generator is EmbeddingGemma.
 }

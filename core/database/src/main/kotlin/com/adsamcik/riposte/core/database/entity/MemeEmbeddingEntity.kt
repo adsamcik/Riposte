@@ -136,7 +136,7 @@ data class MemeEmbeddingEntity(
          * Current model version string.
          * Update this when the embedding model changes.
          */
-        const val CURRENT_MODEL_VERSION = "embeddinggemma:1.0.0"
+        const val CURRENT_MODEL_VERSION = "embeddinggemma:1.1.0"
 
         /**
          * Default embedding dimension for the current model.

@@ -279,7 +279,7 @@ class EmbeddingGenerationWorker
             const val WORK_NAME = "embedding_generation_work"
             const val BATCH_SIZE = 20
             const val MAX_RETRY_COUNT = 3
-            const val CURRENT_MODEL_VERSION = "embeddinggemma:1.0.0"
+            const val CURRENT_MODEL_VERSION = "embeddinggemma:1.1.0"
             private const val CONTINUATION_DELAY_SECONDS = 5L
             private const val PERCENTAGE_MULTIPLIER = 100
             private const val BYTES_PER_FLOAT = 4
