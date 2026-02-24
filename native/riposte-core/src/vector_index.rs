@@ -121,6 +121,29 @@ impl VectorIndex {
     }
 }
 
+/// Quantizes a float32 vector to int8 using symmetric min-max quantization.
+/// Returns (quantized_bytes, scale).
+pub fn quantize_f32_to_int8(vector: &[f32]) -> (Vec<i8>, f32) {
+    if vector.is_empty() {
+        return (Vec::new(), 1.0);
+    }
+
+    let max_abs = vector.iter().fold(0.0f32, |acc, &v| acc.max(v.abs()));
+    let scale = if max_abs > 0.0 { max_abs } else { 1.0 };
+
+    let quantized: Vec<i8> = vector
+        .iter()
+        .map(|&v| ((v / scale) * 127.0).round().clamp(-128.0, 127.0) as i8)
+        .collect();
+
+    (quantized, scale)
+}
+
+/// Dequantizes int8 values back to float32.
+pub fn dequantize_int8_to_f32(bytes: &[i8], scale: f32) -> Vec<f32> {
+    bytes.iter().map(|&b| (b as f32 / 127.0) * scale).collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -489,5 +512,44 @@ mod tests {
         let index = VectorIndex::new(3).unwrap();
         index.reserve(0).unwrap();
         assert!(index.is_empty());
+    }
+
+    #[test]
+    fn test_quantize_roundtrip_preserves_direction() {
+        let original = vec![0.5, -0.3, 0.8, -0.1, 0.0];
+        let (quantized, scale) = quantize_f32_to_int8(&original);
+        let reconstructed = dequantize_int8_to_f32(&quantized, scale);
+        for (o, r) in original.iter().zip(reconstructed.iter()) {
+            assert!((o - r).abs() < 0.02, "Too much error: {} vs {}", o, r);
+        }
+    }
+
+    #[test]
+    fn test_quantize_empty_vector() {
+        let (q, s) = quantize_f32_to_int8(&[]);
+        assert!(q.is_empty());
+        assert_eq!(s, 1.0);
+    }
+
+    #[test]
+    fn test_quantize_all_zeros() {
+        let (q, s) = quantize_f32_to_int8(&[0.0, 0.0, 0.0]);
+        assert_eq!(q, vec![0, 0, 0]);
+        assert_eq!(s, 1.0);
+    }
+
+    #[test]
+    fn test_quantize_extreme_values() {
+        let (q, s) = quantize_f32_to_int8(&[1.0, -1.0]);
+        assert_eq!(q, vec![127, -127]);
+        assert_eq!(s, 1.0);
+    }
+
+    #[test]
+    fn test_quantize_preserves_relative_magnitudes() {
+        let original = vec![0.1, 0.5, 1.0];
+        let (q, _) = quantize_f32_to_int8(&original);
+        assert!(q[0] < q[1]);
+        assert!(q[1] < q[2]);
     }
 }

@@ -1,5 +1,7 @@
 package com.adsamcik.riposte.core.ml
 
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import kotlin.math.sqrt
 
 /**
@@ -74,6 +76,75 @@ object EmbeddingUtils {
 
         val truncated = embedding.copyOfRange(0, targetDimension)
         return normalize(truncated)
+    }
+
+    /**
+     * Quantizes a float32 embedding to int8 representation.
+     * Uses symmetric min-max quantization: value → round((value / scale) * 127)
+     * where scale = max(abs(min), abs(max)) of the embedding.
+     *
+     * Returns a Pair of (int8 ByteArray, scale Float) needed for dequantization.
+     *
+     * This provides ~4x storage reduction compared to float32.
+     */
+    fun quantizeToInt8(embedding: FloatArray): Pair<ByteArray, Float> {
+        if (embedding.isEmpty()) return Pair(ByteArray(0), 1f)
+
+        var maxAbs = 0f
+        for (value in embedding) {
+            val abs = if (value < 0) -value else value
+            if (abs > maxAbs) maxAbs = abs
+        }
+
+        val scale = if (maxAbs > 0f) maxAbs else 1f
+        val bytes = ByteArray(embedding.size)
+
+        for (i in embedding.indices) {
+            val quantized = (embedding[i] / scale * 127f).toInt().coerceIn(-128, 127)
+            bytes[i] = quantized.toByte()
+        }
+
+        return Pair(bytes, scale)
+    }
+
+    /**
+     * Dequantizes an int8 embedding back to float32.
+     *
+     * @param bytes The quantized int8 values.
+     * @param scale The scale factor from quantization.
+     * @return The reconstructed float32 embedding.
+     */
+    fun dequantizeFromInt8(bytes: ByteArray, scale: Float): FloatArray {
+        val embedding = FloatArray(bytes.size)
+        for (i in bytes.indices) {
+            embedding[i] = (bytes[i].toFloat() / 127f) * scale
+        }
+        return embedding
+    }
+
+    /**
+     * Encodes a float32 embedding to little-endian ByteArray for Room storage.
+     */
+    fun encodeFloat32(embedding: FloatArray): ByteArray {
+        val buffer = ByteBuffer.allocate(embedding.size * 4)
+            .order(ByteOrder.LITTLE_ENDIAN)
+        for (value in embedding) {
+            buffer.putFloat(value)
+        }
+        return buffer.array()
+    }
+
+    /**
+     * Decodes a little-endian float32 ByteArray back to FloatArray.
+     */
+    fun decodeFloat32(bytes: ByteArray): FloatArray {
+        val count = bytes.size / 4
+        val array = FloatArray(count)
+        ByteBuffer.wrap(bytes)
+            .order(ByteOrder.LITTLE_ENDIAN)
+            .asFloatBuffer()
+            .get(array)
+        return array
     }
 
     /** Valid dimensions for Matryoshka Representation Learning truncation. */

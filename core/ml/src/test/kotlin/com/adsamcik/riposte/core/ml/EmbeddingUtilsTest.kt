@@ -318,6 +318,93 @@ class EmbeddingUtilsTest {
 
     // endregion
 
+    // endregion
+
+    // region quantizeToInt8
+
+    @Test
+    fun `quantizeToInt8 returns correct byte size`() {
+        val embedding = floatArrayOf(0.5f, -0.3f, 0.8f, -0.1f)
+        val (bytes, _) = EmbeddingUtils.quantizeToInt8(embedding)
+        assertThat(bytes.size).isEqualTo(embedding.size)
+    }
+
+    @Test
+    fun `quantizeToInt8 and dequantizeFromInt8 roundtrip preserves direction`() {
+        val original = floatArrayOf(0.5f, -0.3f, 0.8f, -0.1f, 0.0f)
+        val (bytes, scale) = EmbeddingUtils.quantizeToInt8(original)
+        val reconstructed = EmbeddingUtils.dequantizeFromInt8(bytes, scale)
+        val similarity = EmbeddingUtils.cosineSimilarity(original, reconstructed)
+        assertThat(similarity).isGreaterThan(0.99f)
+    }
+
+    @Test
+    fun `quantizeToInt8 handles empty array`() {
+        val (bytes, scale) = EmbeddingUtils.quantizeToInt8(FloatArray(0))
+        assertThat(bytes).isEmpty()
+        assertThat(scale).isEqualTo(1f)
+    }
+
+    @Test
+    fun `quantizeToInt8 handles all-zero array`() {
+        val (bytes, scale) = EmbeddingUtils.quantizeToInt8(floatArrayOf(0f, 0f, 0f))
+        assertThat(bytes.toList()).containsExactly(0.toByte(), 0.toByte(), 0.toByte())
+        assertThat(scale).isEqualTo(1f)
+    }
+
+    @Test
+    fun `quantizeToInt8 extreme values map to byte range`() {
+        val (bytes, _) = EmbeddingUtils.quantizeToInt8(floatArrayOf(1f, -1f))
+        assertThat(bytes[0]).isEqualTo(127.toByte())
+        assertThat(bytes[1]).isEqualTo((-127).toByte())
+    }
+
+    @Test
+    fun `quantizeToInt8 preserves relative magnitudes`() {
+        val (bytes, _) = EmbeddingUtils.quantizeToInt8(floatArrayOf(0.1f, 0.5f, 1.0f))
+        assertThat(bytes[0].toInt()).isLessThan(bytes[1].toInt())
+        assertThat(bytes[1].toInt()).isLessThan(bytes[2].toInt())
+    }
+
+    @Test
+    fun `quantizeToInt8 with 768-dimensional embedding maintains similarity`() {
+        val original = FloatArray(768) { (it % 17 - 8).toFloat() / 10f }
+        val normalized = EmbeddingUtils.normalize(original)
+        val (bytes, scale) = EmbeddingUtils.quantizeToInt8(normalized)
+        val reconstructed = EmbeddingUtils.dequantizeFromInt8(bytes, scale)
+        val similarity = EmbeddingUtils.cosineSimilarity(normalized, reconstructed)
+        assertThat(similarity).isGreaterThan(0.99f)
+    }
+
+    @Test
+    fun `int8 storage is 4x smaller than float32`() {
+        val embedding = FloatArray(768) { it.toFloat() / 768f }
+        val float32Bytes = EmbeddingUtils.encodeFloat32(embedding)
+        val (int8Bytes, _) = EmbeddingUtils.quantizeToInt8(embedding)
+        assertThat(float32Bytes.size).isEqualTo(768 * 4)
+        assertThat(int8Bytes.size).isEqualTo(768)
+    }
+
+    // endregion
+
+    // region encodeFloat32 / decodeFloat32
+
+    @Test
+    fun `encodeFloat32 and decodeFloat32 roundtrip correctly`() {
+        val original = floatArrayOf(1.0f, -0.5f, 3.14f, 0.0f)
+        val bytes = EmbeddingUtils.encodeFloat32(original)
+        val decoded = EmbeddingUtils.decodeFloat32(bytes)
+        assertThat(decoded).isEqualTo(original)
+    }
+
+    @Test
+    fun `encodeFloat32 produces correct byte size`() {
+        val bytes = EmbeddingUtils.encodeFloat32(FloatArray(256))
+        assertThat(bytes.size).isEqualTo(256 * 4)
+    }
+
+    // endregion
+
     // region Helpers
 
     private fun l2Norm(v: FloatArray): Float {
