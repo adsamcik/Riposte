@@ -3,7 +3,7 @@ title: "Privacy Policy"
 description: "Privacy policy for the Riposte Android app"
 ---
 
-**Last updated: February 21, 2026**
+**Last updated: February 24, 2026**
 
 ## Overview
 
@@ -25,7 +25,7 @@ The App uses on-device machine learning for features such as:
 
 - **Text recognition** (ML Kit) — extracts text visible in meme images
 - **Image labeling** (ML Kit) — suggests emoji tags for imported memes
-- **Semantic search** (MediaPipe / LiteRT) — enables natural language search across your collection
+- **Semantic search** (LiteRT / EmbeddingGemma) — enables natural language search across your collection
 
 All ML processing runs entirely on your device. No images, text, or search queries are ever sent to external servers.
 
@@ -56,7 +56,7 @@ The App requests the following Android permissions:
 The App uses the following on-device libraries. None of these transmit your data:
 
 - **Google ML Kit** — on-device text recognition and image labeling
-- **MediaPipe / LiteRT** — on-device embedding generation for semantic search
+- **LiteRT (EmbeddingGemma)** — on-device embedding generation for semantic search
 - **Coil** — image loading and caching (local files only in practice)
 
 The App may use **Google Play In-App Review API** to prompt you for a rating. This is handled entirely by Google Play and does not transmit any app data.
@@ -71,8 +71,8 @@ If this privacy policy changes, the updated version will be posted at this URL w
 
 ## Contact
 
-If you have questions about this privacy policy, please open an issue on the [GitHub repository](https://github.com/adsamcik/meme-my-mood/issues).
+If you have questions about this privacy policy, please open an issue on the [GitHub repository](https://github.com/adsamcik/Riposte/issues).
 
 ## Open Source
 
-Riposte is free software licensed under the [GNU GPL v3.0](https://github.com/adsamcik/meme-my-mood/blob/main/LICENSE). You can inspect the complete source code to verify these privacy claims.
+Riposte is free software licensed under the [GNU GPL v3.0](https://github.com/adsamcik/Riposte/blob/main/LICENSE). You can inspect the complete source code to verify these privacy claims.
