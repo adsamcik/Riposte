@@ -79,6 +79,7 @@ class ImportWorkerTest {
                 importRequestDao = importRequestDao,
                 appLifecycleTracker = appLifecycleTracker,
                 notificationManager = notificationManager,
+                eventBus = com.adsamcik.riposte.core.events.EventBus(),
             )
         }
     }

@@ -33,6 +33,7 @@ dependencies {
     implementation(project(":core:ui"))
     implementation(project(":core:database"))
     implementation(project(":core:datastore"))
+    implementation(project(":core:events"))
     implementation(project(":core:ml"))
     implementation(project(":core:search"))
 

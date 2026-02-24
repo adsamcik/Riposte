@@ -14,6 +14,8 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import com.adsamcik.riposte.core.common.lifecycle.AppLifecycleTracker
+import com.adsamcik.riposte.core.events.EmbeddingsReady
+import com.adsamcik.riposte.core.events.EventBus
 import com.adsamcik.riposte.core.ml.EmbeddingGenerator
 import com.adsamcik.riposte.core.model.EmbeddingType
 import dagger.assisted.Assisted
@@ -49,6 +51,7 @@ class EmbeddingGenerationWorker
         private val embeddingRepository: EmbeddingWorkRepository,
         private val appLifecycleTracker: AppLifecycleTracker,
         private val notificationManager: EmbeddingNotificationManager,
+        private val eventBus: EventBus,
     ) : CoroutineWorker(context, params) {
         override suspend fun doWork(): Result =
             withContext(Dispatchers.Default) {
@@ -120,6 +123,13 @@ class EmbeddingGenerationWorker
                         notificationManager.showCompleteNotification(successCount, failureCount)
                     }
 
+                    eventBus.emit(
+                        EmbeddingsReady(
+                            processedCount = successCount,
+                            failedCount = failureCount,
+                            remainingCount = remainingCount,
+                        ),
+                    )
                     Result.success(outputData)
                 } catch (
                     @Suppress("TooGenericExceptionCaught") // Worker must not crash - reports failure instead

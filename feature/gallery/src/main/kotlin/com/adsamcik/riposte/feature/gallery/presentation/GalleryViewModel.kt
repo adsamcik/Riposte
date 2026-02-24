@@ -12,6 +12,10 @@ import com.adsamcik.riposte.core.common.suggestion.GetSuggestionsUseCase
 import com.adsamcik.riposte.core.common.suggestion.SuggestionContext
 import com.adsamcik.riposte.core.common.suggestion.Surface
 import com.adsamcik.riposte.core.datastore.PreferencesDataStore
+import com.adsamcik.riposte.core.events.EmbeddingsReady
+import com.adsamcik.riposte.core.events.EventBus
+import com.adsamcik.riposte.core.events.MemeImported
+import com.adsamcik.riposte.core.events.MemeShared
 import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.feature.gallery.R
 import com.adsamcik.riposte.feature.gallery.domain.repository.GalleryRepository
@@ -50,6 +54,7 @@ class GalleryViewModel
         private val galleryRepository: GalleryRepository,
         @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
         private val preferencesDataStore: PreferencesDataStore,
+        private val eventBus: EventBus,
         val searchDelegate: SearchDelegate,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(GalleryUiState())
@@ -84,6 +89,7 @@ class GalleryViewModel
             observeEmbeddingWork()
             observeUniqueEmojis()
             observeFavoritesCount()
+            observeEvents()
         }
 
         fun onIntent(intent: GalleryIntent) {
@@ -260,6 +266,40 @@ class GalleryViewModel
                 } catch (_: IllegalStateException) {
                     Timber.d("WorkManager not available, skipping embedding work observation")
                 }
+            }
+        }
+
+        /**
+         * React to domain events for cross-feature coordination.
+         * Refreshes suggestions when memes are shared, imported, or newly searchable.
+         */
+        private fun observeEvents() {
+            viewModelScope.launch {
+                merge(
+                    eventBus.on<MemeShared>(),
+                    eventBus.on<MemeImported>(),
+                    eventBus.on<EmbeddingsReady>(),
+                ).collect {
+                    refreshSuggestions()
+                }
+            }
+        }
+
+        private fun refreshSuggestions() {
+            viewModelScope.launch {
+                val allMemes = useCases.getMemes().first()
+                val suggestions =
+                    withContext(defaultDispatcher) {
+                        val ctx =
+                            SuggestionContext(
+                                surface = Surface.GALLERY,
+                                lastSessionSuggestionIds = lastSessionSuggestionIds,
+                            )
+                        getSuggestionsUseCase(allMemes, ctx)
+                    }
+                lastSessionSuggestionIds = suggestions.map { it.id }.toSet()
+                preferencesDataStore.updateLastSessionSuggestionIds(lastSessionSuggestionIds)
+                _uiState.update { it.copy(suggestions = suggestions) }
             }
         }
 

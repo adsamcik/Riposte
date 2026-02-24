@@ -150,6 +150,7 @@ class GalleryViewModelTest {
             galleryRepository = galleryRepository,
             defaultDispatcher = mainDispatcherRule.testDispatcher,
             preferencesDataStore = preferencesDataStore,
+            eventBus = com.adsamcik.riposte.core.events.EventBus(),
             searchDelegate = searchDelegate,
         )
     }

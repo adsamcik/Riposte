@@ -18,6 +18,8 @@ import com.adsamcik.riposte.core.database.dao.ImportRequestDao
 import com.adsamcik.riposte.core.database.entity.ImportRequestEntity
 import com.adsamcik.riposte.core.database.entity.ImportRequestItemEntity
 import com.adsamcik.riposte.core.model.MemeMetadata
+import com.adsamcik.riposte.core.events.EventBus
+import com.adsamcik.riposte.core.events.MemeImported
 import com.adsamcik.riposte.feature.import_feature.domain.repository.ImportRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
@@ -43,6 +45,7 @@ class ImportWorker
         private val importRequestDao: ImportRequestDao,
         private val appLifecycleTracker: AppLifecycleTracker,
         private val notificationManager: ImportNotificationManager,
+        private val eventBus: EventBus,
     ) : CoroutineWorker(appContext, params) {
         override suspend fun doWork(): Result {
             val requestId = inputData.getString(KEY_REQUEST_ID) ?: return Result.failure()
@@ -157,6 +160,9 @@ class ImportWorker
                 val result = importRepository.importImage(uri, metadata)
                 if (result.isSuccess) {
                     completed++
+                    result.getOrNull()?.let { meme ->
+                        eventBus.emit(MemeImported(memeId = meme.id, source = "import_worker"))
+                    }
                     importRequestDao.updateItemStatus(
                         itemId = item.id,
                         status = ImportRequestEntity.STATUS_COMPLETED,

@@ -73,6 +73,7 @@ class EmbeddingGenerationWorkerTest {
                 embeddingRepository = embeddingRepository,
                 appLifecycleTracker = appLifecycleTracker,
                 notificationManager = notificationManager,
+                eventBus = com.adsamcik.riposte.core.events.EventBus(),
             )
         }
     }

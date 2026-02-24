@@ -1,6 +1,8 @@
 package com.adsamcik.riposte.core.common.share
 
 import android.content.Intent
+import com.adsamcik.riposte.core.events.EventBus
+import com.adsamcik.riposte.core.events.MemeShared
 import javax.inject.Inject
 
 /**
@@ -11,6 +13,7 @@ import javax.inject.Inject
  */
 class ShareMemeUseCase @Inject constructor(
     private val repository: ShareRepository,
+    private val eventBus: EventBus,
 ) {
     /**
      * Prepare and return a share intent for a single meme.
@@ -32,6 +35,7 @@ class ShareMemeUseCase @Inject constructor(
         val mimeType = config.format.mimeType
         val intent = repository.createShareIntent(uri, mimeType)
 
+        eventBus.emit(MemeShared(memeId = memeId))
         return Result.success(intent)
     }
 }

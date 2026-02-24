@@ -2,6 +2,7 @@ package com.adsamcik.riposte.core.common.share
 
 import android.content.Intent
 import android.net.Uri
+import com.adsamcik.riposte.core.events.EventBus
 import com.adsamcik.riposte.core.model.ImageFormat
 import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.core.model.ShareConfig
@@ -51,7 +52,7 @@ class ShareMemeUseCaseTest {
     @Before
     fun setup() {
         repository = mockk()
-        useCase = ShareMemeUseCase(repository)
+        useCase = ShareMemeUseCase(repository, EventBus())
 
         coEvery { repository.getMeme(1L) } returns testMeme
         coEvery { repository.getDefaultShareConfig() } returns testConfig

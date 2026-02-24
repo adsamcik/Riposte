@@ -23,6 +23,7 @@ android {
 dependencies {
     // Domain models (for suggestion engine)
     api(project(":core:model"))
+    implementation(project(":core:events"))
 
     // Hilt
     implementation(libs.hilt.android)
