@@ -272,4 +272,93 @@ mod tests {
             }
         }
     }
+
+    #[test]
+    fn test_read_varint_eof() {
+        let result = read_varint(&[], 0);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_malformed_utf8_token() {
+        // Build a piece whose token bytes are invalid UTF-8
+        let mut piece_buf = Vec::new();
+        piece_buf.push(0x0A); // field 1, wire type 2
+        let bad_bytes: &[u8] = &[0xFF, 0xFE];
+        encode_varint(bad_bytes.len() as u64, &mut piece_buf);
+        piece_buf.extend_from_slice(bad_bytes);
+        piece_buf.push(0x15); // field 2 (score), wire type 5
+        piece_buf.extend_from_slice(&0.0f32.to_le_bytes());
+        piece_buf.push(0x18); // field 3 (type), wire type 0
+        encode_varint(1, &mut piece_buf);
+
+        let mut model = Vec::new();
+        model.push(0x0A);
+        encode_varint(piece_buf.len() as u64, &mut model);
+        model.extend_from_slice(&piece_buf);
+
+        let pieces = parse(&model).unwrap();
+        assert_eq!(pieces.len(), 1);
+        // from_utf8_lossy should insert replacement characters
+        assert!(pieces[0].token.contains('\u{FFFD}'));
+    }
+
+    #[test]
+    fn test_empty_token_string() {
+        let piece_bytes = build_piece_bytes("", 0.0, 1);
+        let mut model = Vec::new();
+        model.push(0x0A);
+        encode_varint(piece_bytes.len() as u64, &mut model);
+        model.extend_from_slice(&piece_bytes);
+
+        let pieces = parse(&model).unwrap();
+        assert_eq!(pieces.len(), 1);
+        assert_eq!(pieces[0].token, "");
+    }
+
+    #[test]
+    fn test_unknown_fields_skipped() {
+        let mut model = Vec::new();
+
+        // Valid piece (field 1)
+        let piece = build_piece_bytes("test", -1.0, 1);
+        model.push(0x0A);
+        encode_varint(piece.len() as u64, &mut model);
+        model.extend_from_slice(&piece);
+
+        // Unknown field 2 (varint) → tag = (2 << 3) | 0 = 0x10
+        model.push(0x10);
+        encode_varint(42, &mut model);
+
+        // Unknown field 3 (length-delimited) → tag = (3 << 3) | 2 = 0x1A
+        model.push(0x1A);
+        let dummy = b"dummy";
+        encode_varint(dummy.len() as u64, &mut model);
+        model.extend_from_slice(dummy);
+
+        let pieces = parse(&model).unwrap();
+        assert_eq!(pieces.len(), 1);
+        assert_eq!(pieces[0].token, "test");
+    }
+
+    #[test]
+    fn test_truncated_piece_length() {
+        let mut model = Vec::new();
+
+        // Valid piece first
+        let piece = build_piece_bytes("ok", -1.0, 1);
+        model.push(0x0A);
+        encode_varint(piece.len() as u64, &mut model);
+        model.extend_from_slice(&piece);
+
+        // Truncated piece: claim length 100 but only have a few bytes
+        model.push(0x0A);
+        encode_varint(100u64, &mut model);
+        model.extend_from_slice(b"short");
+
+        // Should gracefully return just the first piece
+        let pieces = parse(&model).unwrap();
+        assert_eq!(pieces.len(), 1);
+        assert_eq!(pieces[0].token, "ok");
+    }
 }

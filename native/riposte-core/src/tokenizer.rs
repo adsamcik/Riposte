@@ -403,4 +403,84 @@ mod tests {
         let ids = tok.encode("  ");
         assert_eq!(ids, vec![4, 4]);
     }
+
+    #[test]
+    fn test_user_defined_tokens() {
+        let pieces = vec![
+            ParsedPiece { token: "<unk>".into(), id: 0, score: 0.0, piece_type: TYPE_UNKNOWN },
+            ParsedPiece { token: "x".into(), id: 1, score: 1.0, piece_type: TYPE_NORMAL },
+            ParsedPiece { token: "a".into(), id: 2, score: -5.0, piece_type: TYPE_NORMAL },
+            ParsedPiece { token: "b".into(), id: 3, score: -5.0, piece_type: TYPE_NORMAL },
+            ParsedPiece { token: "ab".into(), id: 4, score: -100.0, piece_type: TYPE_USER_DEFINED },
+        ];
+        let tok = SentencePieceTokenizer::build(&pieces).unwrap();
+        let ids = tok.encode("ab");
+        // USER_DEFINED boost: 2 * max_score(1.0) - 0.1 = 1.9 > "a"+"b" = -10.0
+        assert_eq!(ids, vec![4]);
+    }
+
+    #[test]
+    fn test_all_unknown_text() {
+        let tok = build_test_tokenizer();
+        // 'z' is not in vocab → byte fallback for each character
+        let ids = tok.encode("zzz");
+        assert_eq!(ids.len(), 3);
+        for &id in &ids {
+            assert_eq!(id, 100 + 0x7A);
+        }
+    }
+
+    #[test]
+    fn test_long_text() {
+        let tok = build_test_tokenizer();
+        let text = "hello ".repeat(167); // ~1002 chars
+        let ids = tok.encode(&text);
+        assert!(!ids.is_empty());
+        assert!(ids.len() > 1);
+    }
+
+    #[test]
+    fn test_max_piece_length_boundary() {
+        let long_token = "a".repeat(10);
+        let pieces = vec![
+            ParsedPiece { token: "<unk>".into(), id: 0, score: 0.0, piece_type: TYPE_UNKNOWN },
+            ParsedPiece { token: long_token.clone(), id: 1, score: -1.0, piece_type: TYPE_NORMAL },
+            ParsedPiece { token: "a".into(), id: 2, score: -5.0, piece_type: TYPE_NORMAL },
+        ];
+        let tok = SentencePieceTokenizer::build(&pieces).unwrap();
+
+        // Text exactly matching the longest token
+        let ids = tok.encode(&long_token);
+        assert_eq!(ids, vec![1]);
+
+        // Text one char longer must split into two tokens
+        let longer = "a".repeat(11);
+        let ids = tok.encode(&longer);
+        assert_eq!(ids.len(), 2);
+        assert!(ids.contains(&1) && ids.contains(&2));
+    }
+
+    #[test]
+    fn test_build_empty_pieces_fails() {
+        let result = SentencePieceTokenizer::build(&[]);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_build_minimal_vocab() {
+        let pieces = vec![
+            ParsedPiece { token: "a".into(), id: 0, score: 0.0, piece_type: TYPE_NORMAL },
+        ];
+        let tok = SentencePieceTokenizer::build(&pieces).unwrap();
+        assert_eq!(tok.vocab_size(), 1);
+        let ids = tok.encode("a");
+        assert_eq!(ids, vec![0]);
+    }
+
+    #[test]
+    fn test_from_model_data_invalid() {
+        let garbage = vec![0xFF, 0xFF, 0xFF, 0xFF, 0xFF];
+        let result = SentencePieceTokenizer::from_model_data(&garbage);
+        assert!(result.is_err());
+    }
 }

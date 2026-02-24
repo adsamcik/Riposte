@@ -421,4 +421,73 @@ mod tests {
         let result = index.save("");
         assert!(result.is_err());
     }
+
+    #[test]
+    fn test_zero_vector() {
+        let index = VectorIndex::new(4).unwrap();
+        index.reserve(1).unwrap();
+        let zero = vec![0.0f32; 4];
+        index.add(1, &zero).unwrap();
+
+        let (keys, _) = index.search(&zero, 1).unwrap();
+        assert_eq!(keys.len(), 1);
+        assert_eq!(keys[0], 1);
+    }
+
+    #[test]
+    fn test_search_after_remove_all() {
+        let index = VectorIndex::new(3).unwrap();
+        index.reserve(3).unwrap();
+
+        let v1 = normalized(&[1.0, 0.0, 0.0]);
+        let v2 = normalized(&[0.0, 1.0, 0.0]);
+        let v3 = normalized(&[0.0, 0.0, 1.0]);
+        index.add(1, &v1).unwrap();
+        index.add(2, &v2).unwrap();
+        index.add(3, &v3).unwrap();
+
+        index.remove(1).unwrap();
+        index.remove(2).unwrap();
+        index.remove(3).unwrap();
+
+        let (keys, _) = index.search(&v1, 5).unwrap();
+        assert!(keys.is_empty());
+    }
+
+    #[test]
+    fn test_large_batch_100_vectors() {
+        let dims = 256;
+        let count = 100usize;
+        let index = VectorIndex::new(dims).unwrap();
+        index.reserve(count).unwrap();
+
+        for i in 0..count {
+            let mut v = vec![0.01f32; dims];
+            v[i % dims] += 1.0;
+            let v = normalized(&v);
+            index.add(i as u64, &v).unwrap();
+        }
+
+        assert_eq!(index.len(), count);
+
+        let mut q = vec![0.01f32; dims];
+        q[0] += 1.0;
+        let q = normalized(&q);
+        let (keys, _) = index.search(&q, 10).unwrap();
+        assert_eq!(keys.len(), 10);
+    }
+
+    #[test]
+    fn test_load_nonexistent_file() {
+        let index = VectorIndex::new(3).unwrap();
+        let result = index.load("nonexistent_path_12345.usearch");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_reserve_zero() {
+        let index = VectorIndex::new(3).unwrap();
+        index.reserve(0).unwrap();
+        assert!(index.is_empty());
+    }
 }
