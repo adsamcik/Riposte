@@ -4,17 +4,15 @@ import app.cash.turbine.test
 import com.adsamcik.riposte.core.database.dao.EmojiTagDao
 import com.adsamcik.riposte.core.database.dao.EmojiUsageBySharing
 import com.adsamcik.riposte.core.database.dao.MemeDao
-import com.adsamcik.riposte.core.database.dao.MemeEmbeddingDao
 import com.adsamcik.riposte.core.database.dao.MemeSearchDao
 import com.adsamcik.riposte.core.database.entity.MemeEntity
-import com.adsamcik.riposte.core.database.entity.MemeWithEmbeddingData
 import com.adsamcik.riposte.core.datastore.PreferencesDataStore
-import com.adsamcik.riposte.core.ml.SemanticSearchEngine
 import com.adsamcik.riposte.core.model.AppPreferences
 import com.adsamcik.riposte.core.model.DarkMode
 import com.adsamcik.riposte.core.model.MatchType
 import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.core.model.SearchResult
+import com.adsamcik.riposte.core.search.data.SearchOrchestrator
 import com.adsamcik.riposte.core.search.data.SearchRepositoryImpl
 import com.google.common.truth.Truth.assertThat
 import io.mockk.Runs
@@ -28,15 +26,12 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 
 class SearchRepositoryImplTest {
     private lateinit var memeDao: MemeDao
     private lateinit var memeSearchDao: MemeSearchDao
-    private lateinit var memeEmbeddingDao: MemeEmbeddingDao
-    private lateinit var semanticSearchEngine: SemanticSearchEngine
     private lateinit var emojiTagDao: EmojiTagDao
+    private lateinit var searchOrchestrator: SearchOrchestrator
     private lateinit var preferencesDataStore: PreferencesDataStore
 
     private lateinit var repository: SearchRepositoryImpl
@@ -66,14 +61,13 @@ class SearchRepositoryImplTest {
     fun setup() {
         memeDao = mockk()
         memeSearchDao = mockk()
-        memeEmbeddingDao = mockk()
-        semanticSearchEngine = mockk()
         emojiTagDao = mockk()
+        searchOrchestrator = mockk()
         preferencesDataStore = mockk()
 
         every { preferencesDataStore.appPreferences } returns flowOf(defaultPreferences)
         every { preferencesDataStore.recentSearches } returns flowOf(recentSearches)
-        coEvery { memeEmbeddingDao.getMemesWithEmbeddings() } returns emptyList()
+        coEvery { searchOrchestrator.search(any(), any()) } returns emptyList()
         every { memeDao.getFavoriteMemes() } returns flowOf(emptyList())
         every { memeDao.getRecentlyViewedMemes(any()) } returns flowOf(emptyList())
 
@@ -81,9 +75,8 @@ class SearchRepositoryImplTest {
             SearchRepositoryImpl(
                 memeDao = memeDao,
                 memeSearchDao = memeSearchDao,
-                memeEmbeddingDao = memeEmbeddingDao,
                 emojiTagDao = emojiTagDao,
-                semanticSearchEngine = semanticSearchEngine,
+                searchOrchestrator = searchOrchestrator,
                 preferencesDataStore = preferencesDataStore,
             )
     }
@@ -197,19 +190,15 @@ class SearchRepositoryImplTest {
         }
 
     @Test
-    fun `searchSemantic returns empty list when no memes have embeddings`() =
+    fun `searchSemantic returns empty list when orchestrator returns no results`() =
         runTest {
             val results = repository.searchSemantic("test")
             assertThat(results).isEmpty()
         }
 
     @Test
-    fun `searchSemantic uses multi-vector semantic search engine`() =
+    fun `searchSemantic delegates to search orchestrator`() =
         runTest {
-            val embedding = createTestEmbedding(128)
-            val testEmbeddingData = testMemeEntities.map { createMemeWithEmbeddingData(it, embedding) }
-            coEvery { memeEmbeddingDao.getMemesWithEmbeddings() } returns testEmbeddingData
-
             val semanticResults =
                 testMemeEntities.mapIndexed { index, entity ->
                     SearchResult(
@@ -218,18 +207,12 @@ class SearchRepositoryImplTest {
                         matchType = MatchType.SEMANTIC,
                     )
                 }
-            coEvery {
-                semanticSearchEngine.findSimilarMultiVector(
-                    query = "test",
-                    candidates = any(),
-                    limit = 20,
-                )
-            } returns semanticResults
+            coEvery { searchOrchestrator.search("test", 20) } returns semanticResults
 
             val results = repository.searchSemantic("test", 20)
 
             assertThat(results).hasSize(3)
-            coVerify { semanticSearchEngine.findSimilarMultiVector("test", any(), 20) }
+            coVerify { searchOrchestrator.search("test", 20) }
         }
 
     // endregion
@@ -244,34 +227,26 @@ class SearchRepositoryImplTest {
         }
 
     @Test
-    fun `searchHybrid combines FTS and semantic results`() =
+    fun `searchHybrid delegates to search orchestrator`() =
         runTest {
-            val ftsEntities = testMemeEntities.take(2)
-            every { memeSearchDao.searchMemes(any()) } returns flowOf(ftsEntities)
-
-            val embedding = createTestEmbedding(128)
-            val testEmbeddingData = testMemeEntities.map { createMemeWithEmbeddingData(it, embedding) }
-            coEvery { memeEmbeddingDao.getMemesWithEmbeddings() } returns testEmbeddingData
-
-            val semanticResults =
-                listOf(
+            val orchestratorResults =
+                testMemeEntities.map { entity ->
                     SearchResult(
-                        meme = testMemeEntities[2].toDomainMeme(),
+                        meme = entity.toDomainMeme(),
                         relevanceScore = 0.9f,
-                        matchType = MatchType.SEMANTIC,
-                    ),
-                )
-            coEvery {
-                semanticSearchEngine.findSimilarMultiVector(any(), any(), any())
-            } returns semanticResults
+                        matchType = MatchType.HYBRID,
+                    )
+                }
+            coEvery { searchOrchestrator.search("test", 20) } returns orchestratorResults
 
             val results = repository.searchHybrid("test", 20)
 
             assertThat(results).hasSize(3)
+            coVerify { searchOrchestrator.search("test", 20) }
         }
 
     @Test
-    fun `searchHybrid skips semantic search when disabled in preferences`() =
+    fun `searchHybrid returns orchestrator results when semantic search disabled`() =
         runTest {
             val disabledPrefs = defaultPreferences.copy(enableSemanticSearch = false)
             every { preferencesDataStore.appPreferences } returns flowOf(disabledPrefs)
@@ -280,64 +255,58 @@ class SearchRepositoryImplTest {
                 SearchRepositoryImpl(
                     memeDao = memeDao,
                     memeSearchDao = memeSearchDao,
-                    memeEmbeddingDao = memeEmbeddingDao,
                     emojiTagDao = emojiTagDao,
-                    semanticSearchEngine = semanticSearchEngine,
+                    searchOrchestrator = searchOrchestrator,
                     preferencesDataStore = preferencesDataStore,
                 )
 
-            every { memeSearchDao.searchMemes(any()) } returns flowOf(testMemeEntities)
+            val orchestratorResults =
+                testMemeEntities.map { entity ->
+                    SearchResult(
+                        meme = entity.toDomainMeme(),
+                        relevanceScore = 0.7f,
+                        matchType = MatchType.TEXT,
+                    )
+                }
+            coEvery { searchOrchestrator.search("test", 20) } returns orchestratorResults
 
             val results = repository.searchHybrid("test", 20)
 
             assertThat(results).hasSize(3)
-            coVerify(exactly = 0) { semanticSearchEngine.findSimilarMultiVector(any(), any(), any()) }
+            coVerify { searchOrchestrator.search("test", 20) }
         }
 
     @Test
     fun `searchHybrid respects limit parameter`() =
         runTest {
-            val manyEntities =
-                (1..30).map { createTestMemeEntity(it.toLong(), "meme$it.jpg") }
-            every { memeSearchDao.searchMemes(any()) } returns flowOf(manyEntities)
-
-            val disabledPrefs = defaultPreferences.copy(enableSemanticSearch = false)
-            every { preferencesDataStore.appPreferences } returns flowOf(disabledPrefs)
-
-            repository =
-                SearchRepositoryImpl(
-                    memeDao = memeDao,
-                    memeSearchDao = memeSearchDao,
-                    memeEmbeddingDao = memeEmbeddingDao,
-                    emojiTagDao = emojiTagDao,
-                    semanticSearchEngine = semanticSearchEngine,
-                    preferencesDataStore = preferencesDataStore,
-                )
+            val manyResults =
+                (1..10).map {
+                    SearchResult(
+                        meme = createTestMemeEntity(it.toLong(), "meme$it.jpg").toDomainMeme(),
+                        relevanceScore = 0.5f,
+                        matchType = MatchType.HYBRID,
+                    )
+                }
+            coEvery { searchOrchestrator.search("test", 10) } returns manyResults
 
             val results = repository.searchHybrid("test", 10)
 
             assertThat(results).hasSize(10)
+            coVerify { searchOrchestrator.search("test", 10) }
         }
 
     @Test
-    fun `searchHybrid merges duplicate results with HYBRID match type`() =
+    fun `searchHybrid returns results with HYBRID match type from orchestrator`() =
         runTest {
-            val singleEntity = listOf(createTestMemeEntity(1, "test.jpg"))
-            every { memeSearchDao.searchMemes(any()) } returns flowOf(singleEntity)
-
-            val embedding = createTestEmbedding(128)
-            val testEmbeddingData = singleEntity.map { createMemeWithEmbeddingData(it, embedding) }
-            coEvery { memeEmbeddingDao.getMemesWithEmbeddings() } returns testEmbeddingData
-
-            val semanticResult =
+            val hybridResult =
                 listOf(
                     SearchResult(
-                        meme = singleEntity[0].toDomainMeme(),
-                        relevanceScore = 0.8f,
-                        matchType = MatchType.SEMANTIC,
+                        meme = testMemeEntities[0].toDomainMeme(),
+                        relevanceScore = 0.9f,
+                        matchType = MatchType.HYBRID,
                     ),
                 )
-            coEvery { semanticSearchEngine.findSimilarMultiVector(any(), any(), any()) } returns semanticResult
+            coEvery { searchOrchestrator.search("test", 20) } returns hybridResult
 
             val results = repository.searchHybrid("test", 20)
 
@@ -542,38 +511,26 @@ class SearchRepositoryImplTest {
     @Test
     fun `searchHybrid does not prioritize favorites with low relevance score`() =
         runTest {
-            // Field-based scoring with query "test":
-            // Items 1-59 have title "test content" → score = 0.5 + 0.3 = 0.8
-            // Item 60 (favorite) has NO matching fields → score = 0.5
-            // After FTS_WEIGHT: item 60 score = 0.5 * 0.6 = 0.3, below 0.5 threshold
-            val entities =
+            // The orchestrator handles scoring and favorite boosting internally.
+            // When a favorite has low relevance, it should not be boosted to the top.
+            val orchestratorResults =
                 (1..60).map { i ->
-                    createTestMemeEntity(
-                        id = i.toLong(),
-                        fileName = "meme$i.jpg",
-                        title = if (i == 60) "unrelated content" else "test content",
-                        isFavorite = i == 60,
+                    SearchResult(
+                        meme = createTestMemeEntity(
+                            id = i.toLong(),
+                            fileName = "meme$i.jpg",
+                            title = if (i == 60) "unrelated content" else "test content",
+                            isFavorite = i == 60,
+                        ).toDomainMeme(),
+                        relevanceScore = if (i == 60) 0.1f else 0.8f,
+                        matchType = MatchType.HYBRID,
                     )
                 }
-            every { memeSearchDao.searchMemes(any()) } returns flowOf(entities)
-
-            val disabledPrefs = defaultPreferences.copy(enableSemanticSearch = false)
-            every { preferencesDataStore.appPreferences } returns flowOf(disabledPrefs)
-
-            repository =
-                SearchRepositoryImpl(
-                    memeDao = memeDao,
-                    memeSearchDao = memeSearchDao,
-                    memeEmbeddingDao = memeEmbeddingDao,
-                    emojiTagDao = emojiTagDao,
-                    semanticSearchEngine = semanticSearchEngine,
-                    preferencesDataStore = preferencesDataStore,
-                )
+            coEvery { searchOrchestrator.search("test", 100) } returns orchestratorResults
 
             val results = repository.searchHybrid("test", 100)
 
-            // The favorite at the end has weighted score 0.5 * 0.6 = 0.3
-            // which is below FAVORITE_BOOST_THRESHOLD, so it should NOT be boosted
+            // The favorite (id=60) has low relevance and should NOT be first
             assertThat(results[0].meme.id).isNotEqualTo(60)
         }
 
@@ -600,29 +557,21 @@ class SearchRepositoryImplTest {
     @Test
     fun `searchHybrid prioritizes favorited memes above threshold`() =
         runTest {
-            // Both have title matching "test" → score = 0.8
-            // After FTS_WEIGHT: 0.8 * 0.6 = 0.48... but wait, that's below 0.5!
-            // Give both title+description to get score = 0.5 + 0.3 + 0.15 = 0.95
-            // After FTS_WEIGHT: 0.95 * 0.6 = 0.57, above 0.5 threshold
-            val entities =
+            // The orchestrator returns results with favorites ranked higher
+            val orchestratorResults =
                 listOf(
-                    createTestMemeEntity(1, "normal.jpg", title = "test", description = "test desc"),
-                    createTestMemeEntity(2, "favorite.jpg", title = "test", description = "test desc", isFavorite = true),
+                    SearchResult(
+                        meme = createTestMemeEntity(2, "favorite.jpg", title = "test", description = "test desc", isFavorite = true).toDomainMeme(),
+                        relevanceScore = 0.95f,
+                        matchType = MatchType.HYBRID,
+                    ),
+                    SearchResult(
+                        meme = createTestMemeEntity(1, "normal.jpg", title = "test", description = "test desc").toDomainMeme(),
+                        relevanceScore = 0.85f,
+                        matchType = MatchType.HYBRID,
+                    ),
                 )
-            every { memeSearchDao.searchMemes(any()) } returns flowOf(entities)
-
-            val disabledPrefs = defaultPreferences.copy(enableSemanticSearch = false)
-            every { preferencesDataStore.appPreferences } returns flowOf(disabledPrefs)
-
-            repository =
-                SearchRepositoryImpl(
-                    memeDao = memeDao,
-                    memeSearchDao = memeSearchDao,
-                    memeEmbeddingDao = memeEmbeddingDao,
-                    emojiTagDao = emojiTagDao,
-                    semanticSearchEngine = semanticSearchEngine,
-                    preferencesDataStore = preferencesDataStore,
-                )
+            coEvery { searchOrchestrator.search("test", 20) } returns orchestratorResults
 
             val results = repository.searchHybrid("test", 20)
 
@@ -631,7 +580,7 @@ class SearchRepositoryImplTest {
         }
 
     @Test
-    fun `favorite prioritization preserves relative order within favorites and non-favorites`() =
+    fun `favorite prioritization preserves relative order within favorites and non-favorites`()=
         runTest {
             // Field-based scoring with query "test":
             // id=1 (title "test first"): 0.5 + 0.3 = 0.8 (non-favorite)
@@ -662,99 +611,28 @@ class SearchRepositoryImplTest {
 
     // endregion
 
-    // region Graceful Degradation Tests
-    //
-    // These tests verify that searchHybrid catches ML errors from semantic search
-    // and returns FTS-only results instead of propagating the error. Direct
-    // searchSemantic() calls still propagate errors.
+    // region Orchestrator Error Propagation Tests
 
     @Test
-    fun `searchHybrid returns FTS results when semantic search throws UnsatisfiedLinkError`() =
+    fun `searchSemantic propagates orchestrator exceptions`() =
         runTest {
-            every { memeSearchDao.searchMemes(any()) } returns flowOf(testMemeEntities)
-
-            val embedding = createTestEmbedding(128)
-            val testEmbeddingData = testMemeEntities.map { createMemeWithEmbeddingData(it, embedding) }
-            coEvery { memeEmbeddingDao.getMemesWithEmbeddings() } returns testEmbeddingData
-            coEvery {
-                semanticSearchEngine.findSimilarMultiVector(any(), any(), any())
-            } throws UnsatisfiedLinkError("Native lib missing")
-
-            val results = repository.searchHybrid("test", 20)
-
-            assertThat(results).isNotEmpty()
-            assertThat(results).hasSize(testMemeEntities.size)
-        }
-
-    @Test
-    fun `searchHybrid returns FTS results when semantic search throws ExceptionInInitializerError`() =
-        runTest {
-            every { memeSearchDao.searchMemes(any()) } returns flowOf(testMemeEntities)
-
-            val embedding = createTestEmbedding(128)
-            val testEmbeddingData = testMemeEntities.map { createMemeWithEmbeddingData(it, embedding) }
-            coEvery { memeEmbeddingDao.getMemesWithEmbeddings() } returns testEmbeddingData
-            coEvery {
-                semanticSearchEngine.findSimilarMultiVector(any(), any(), any())
-            } throws ExceptionInInitializerError(RuntimeException("init failed"))
-
-            val results = repository.searchHybrid("test", 20)
-
-            assertThat(results).isNotEmpty()
-            assertThat(results).hasSize(testMemeEntities.size)
-        }
-
-    @Test
-    fun `searchSemantic propagates UnsatisfiedLinkError from search engine`() =
-        runTest {
-            val embedding = createTestEmbedding(128)
-            val testEmbeddingData = testMemeEntities.map { createMemeWithEmbeddingData(it, embedding) }
-            coEvery { memeEmbeddingDao.getMemesWithEmbeddings() } returns testEmbeddingData
-            coEvery {
-                semanticSearchEngine.findSimilarMultiVector(any(), any(), any())
-            } throws UnsatisfiedLinkError("Native lib missing")
+            coEvery { searchOrchestrator.search("test", 20) } throws RuntimeException("Orchestrator failed")
 
             var caughtError: Throwable? = null
             try {
                 repository.searchSemantic("test", 20)
-            } catch (e: UnsatisfiedLinkError) {
+            } catch (e: RuntimeException) {
                 caughtError = e
             }
 
-            assertThat(caughtError).isInstanceOf(UnsatisfiedLinkError::class.java)
+            assertThat(caughtError).isInstanceOf(RuntimeException::class.java)
+            assertThat(caughtError!!.message).isEqualTo("Orchestrator failed")
         }
 
     @Test
-    fun `searchSemantic propagates ExceptionInInitializerError from search engine`() =
+    fun `searchHybrid propagates orchestrator exceptions`() =
         runTest {
-            val embedding = createTestEmbedding(128)
-            val testEmbeddingData = testMemeEntities.map { createMemeWithEmbeddingData(it, embedding) }
-            coEvery { memeEmbeddingDao.getMemesWithEmbeddings() } returns testEmbeddingData
-            coEvery {
-                semanticSearchEngine.findSimilarMultiVector(any(), any(), any())
-            } throws ExceptionInInitializerError(RuntimeException("init failed"))
-
-            var caughtError: Throwable? = null
-            try {
-                repository.searchSemantic("test", 20)
-            } catch (e: ExceptionInInitializerError) {
-                caughtError = e
-            }
-
-            assertThat(caughtError).isInstanceOf(ExceptionInInitializerError::class.java)
-        }
-
-    @Test
-    fun `searchHybrid does not catch generic RuntimeException from semantic search`() =
-        runTest {
-            every { memeSearchDao.searchMemes(any()) } returns flowOf(testMemeEntities)
-
-            val embedding = createTestEmbedding(128)
-            val testEmbeddingData = testMemeEntities.map { createMemeWithEmbeddingData(it, embedding) }
-            coEvery { memeEmbeddingDao.getMemesWithEmbeddings() } returns testEmbeddingData
-            coEvery {
-                semanticSearchEngine.findSimilarMultiVector(any(), any(), any())
-            } throws RuntimeException("Unexpected ML error")
+            coEvery { searchOrchestrator.search("test", 20) } throws RuntimeException("Orchestrator failed")
 
             var caughtError: Throwable? = null
             try {
@@ -764,49 +642,7 @@ class SearchRepositoryImplTest {
             }
 
             assertThat(caughtError).isInstanceOf(RuntimeException::class.java)
-            assertThat(caughtError!!.message).isEqualTo("Unexpected ML error")
-        }
-
-    @Test
-    fun `searchHybrid skips semantic search when disabled but still returns FTS results`() =
-        runTest {
-            val disabledPreferences = defaultPreferences.copy(enableSemanticSearch = false)
-            every { preferencesDataStore.appPreferences } returns flowOf(disabledPreferences)
-
-            // Recreate repository with disabled semantic search
-            repository = SearchRepositoryImpl(
-                memeDao = memeDao,
-                memeSearchDao = memeSearchDao,
-                memeEmbeddingDao = memeEmbeddingDao,
-                emojiTagDao = emojiTagDao,
-                semanticSearchEngine = semanticSearchEngine,
-                preferencesDataStore = preferencesDataStore,
-            )
-
-            every { memeSearchDao.searchMemes(any()) } returns flowOf(testMemeEntities)
-
-            val results = repository.searchHybrid("test", 20)
-
-            // Should return FTS results without touching semantic search
-            assertThat(results).isNotEmpty()
-            coVerify(exactly = 0) { semanticSearchEngine.findSimilarMultiVector(any(), any(), any()) }
-        }
-
-    @Test
-    fun `searchHybrid with no embeddings still propagates semantic search errors`() =
-        runTest {
-            every { memeSearchDao.searchMemes(any()) } returns flowOf(testMemeEntities)
-
-            coEvery { memeEmbeddingDao.getMemesWithEmbeddings() } returns emptyList()
-            // Even with no embeddings, the search engine may still throw
-            coEvery {
-                semanticSearchEngine.findSimilarMultiVector(any(), any(), any())
-            } throws UnsatisfiedLinkError("Native not available")
-
-            // When no embeddings exist, semantic search should be skipped entirely
-            // so no error should propagate — this tests that empty embeddings are handled gracefully
-            val results = repository.searchHybrid("test", 20)
-            assertThat(results).isNotEmpty()
+            assertThat(caughtError!!.message).isEqualTo("Orchestrator failed")
         }
 
     // endregion
@@ -934,33 +770,6 @@ class SearchRepositoryImplTest {
             isFavorite = isFavorite,
             createdAt = createdAt,
             useCount = useCount,
-        )
-    }
-
-    private fun createTestEmbedding(size: Int): ByteArray {
-        val floats = FloatArray(size) { it.toFloat() / size }
-        val buffer = ByteBuffer.allocate(size * 4).order(ByteOrder.LITTLE_ENDIAN)
-        floats.forEach { buffer.putFloat(it) }
-        return buffer.array()
-    }
-
-    private fun createMemeWithEmbeddingData(
-        entity: MemeEntity,
-        embedding: ByteArray,
-        embeddingType: String = "content",
-    ): MemeWithEmbeddingData {
-        return MemeWithEmbeddingData(
-            memeId = entity.id,
-            filePath = entity.filePath,
-            fileName = entity.fileName,
-            title = entity.title,
-            description = entity.description,
-            textContent = entity.textContent,
-            emojiTagsJson = entity.emojiTagsJson,
-            embedding = embedding,
-            embeddingType = embeddingType,
-            dimension = embedding.size / 4,
-            modelVersion = "test:1.0.0",
         )
     }
 

@@ -22,7 +22,6 @@ dependencies {
     implementation(project(":core:common"))
     implementation(project(":core:model"))
     implementation(project(":core:database"))
-    implementation(project(":core:ml"))
     implementation(project(":core:datastore"))
 
     // Hilt
@@ -32,6 +31,9 @@ dependencies {
     // Coroutines
     implementation(libs.coroutines.core)
     implementation(libs.coroutines.android)
+
+    // Logging
+    implementation(libs.timber)
 
     // Testing
     testImplementation(libs.bundles.testing)

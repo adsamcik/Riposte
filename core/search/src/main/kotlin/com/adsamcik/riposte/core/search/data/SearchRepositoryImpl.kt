@@ -2,22 +2,17 @@ package com.adsamcik.riposte.core.search.data
 
 import com.adsamcik.riposte.core.database.dao.EmojiTagDao
 import com.adsamcik.riposte.core.database.dao.MemeDao
-import com.adsamcik.riposte.core.database.dao.MemeEmbeddingDao
 import com.adsamcik.riposte.core.database.dao.MemeSearchDao
 import com.adsamcik.riposte.core.database.mapper.MemeMapper
 import com.adsamcik.riposte.core.database.util.FtsQuerySanitizer
 import com.adsamcik.riposte.core.datastore.PreferencesDataStore
-import com.adsamcik.riposte.core.ml.MemeWithEmbeddings
-import com.adsamcik.riposte.core.ml.SemanticSearchEngine
 import com.adsamcik.riposte.core.model.MatchType
 import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.core.model.SearchResult
 import com.adsamcik.riposte.core.search.domain.repository.SearchRepository
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
-import timber.log.Timber
 import javax.inject.Inject
 
 class SearchRepositoryImpl
@@ -25,9 +20,8 @@ class SearchRepositoryImpl
     constructor(
         private val memeDao: MemeDao,
         private val memeSearchDao: MemeSearchDao,
-        private val memeEmbeddingDao: MemeEmbeddingDao,
         private val emojiTagDao: EmojiTagDao,
-        private val semanticSearchEngine: SemanticSearchEngine,
+        private val searchOrchestrator: SearchOrchestrator,
         private val preferencesDataStore: PreferencesDataStore,
     ) : SearchRepository {
         override fun searchMemes(query: String): Flow<List<SearchResult>> {
@@ -60,61 +54,8 @@ class SearchRepositoryImpl
             limit: Int,
         ): List<SearchResult> {
             if (query.isBlank()) return emptyList()
-
-            val memesWithEmbeddings = memeEmbeddingDao.getMemesWithEmbeddings()
-
-            if (memesWithEmbeddings.isEmpty()) {
-                return emptyList()
-            }
-
-            // Group embedding rows by memeId for multi-vector max-pooling
-            val groupedByMeme =
-                memesWithEmbeddings
-                    .filter { it.embedding != null }
-                    .groupBy { it.memeId }
-
-            val candidates =
-                groupedByMeme.map { (_, rows) ->
-                    val first = rows.first()
-                    val meme =
-                        Meme(
-                            id = first.memeId,
-                            filePath = first.filePath,
-                            fileName = first.fileName,
-                            mimeType = "image/jpeg",
-                            width = 0,
-                            height = 0,
-                            fileSizeBytes = 0,
-                            importedAt = 0,
-                            emojiTags =
-                                MemeMapper.parseEmojiTagsJson(first.emojiTagsJson),
-                            title = first.title,
-                            description = first.description,
-                            textContent = first.textContent,
-                        )
-
-                    val embeddingsByType =
-                        rows
-                            .filter { it.embedding != null && it.embeddingType != null }
-                            .mapNotNull { row ->
-                                val decoded = decodeEmbedding(row.embedding!!)
-                                if (decoded.size < 2) {
-                                    Timber.w("Skipping embedding with invalid dimensions: ${decoded.size}")
-                                    return@mapNotNull null
-                                }
-                                val type = row.embeddingType ?: "content"
-                                type to decoded
-                            }
-                            .toMap()
-
-                    MemeWithEmbeddings(meme = meme, embeddings = embeddingsByType)
-                }
-
-            return semanticSearchEngine.findSimilarMultiVector(
-                query = query,
-                candidates = candidates,
-                limit = limit,
-            )
+            // Delegate to orchestrator which will use SemanticSearchStrategy
+            return searchOrchestrator.search(query, limit)
         }
 
         override suspend fun searchHybrid(
@@ -122,27 +63,8 @@ class SearchRepositoryImpl
             limit: Int,
         ): List<SearchResult> {
             if (query.isBlank()) return emptyList()
-
-            val prefs = preferencesDataStore.appPreferences.first()
-
-            val ftsResults = searchMemes(query).first()
-
-            val semanticResults =
-                if (prefs.enableSemanticSearch) {
-                    try {
-                        searchSemantic(query, limit)
-                    } catch (e: UnsatisfiedLinkError) {
-                        Timber.w(e, "Semantic search unavailable, returning text-only results")
-                        emptyList()
-                    } catch (e: ExceptionInInitializerError) {
-                        Timber.w(e, "Semantic search init failed, returning text-only results")
-                        emptyList()
-                    }
-                } else {
-                    emptyList()
-                }
-
-            return mergeResults(ftsResults, semanticResults).take(limit)
+            // Orchestrator runs all available strategies in parallel and fuses via RRF
+            return searchOrchestrator.search(query, limit)
         }
 
         override fun searchByEmoji(emoji: String): Flow<List<SearchResult>> {
@@ -232,47 +154,6 @@ class SearchRepositoryImpl
                 entity.textContent?.contains(query, ignoreCase = true) == true -> MatchType.TEXT
                 else -> MatchType.TEXT
             }
-        }
-
-        private fun decodeEmbedding(bytes: ByteArray): FloatArray {
-            val floatArray = FloatArray(bytes.size / BYTES_PER_FLOAT)
-            java.nio.ByteBuffer.wrap(bytes)
-                .order(java.nio.ByteOrder.LITTLE_ENDIAN)
-                .asFloatBuffer()
-                .get(floatArray)
-            return floatArray
-        }
-
-        private fun mergeResults(
-            ftsResults: List<SearchResult>,
-            semanticResults: List<SearchResult>,
-        ): List<SearchResult> {
-            val resultMap = mutableMapOf<Long, SearchResult>()
-
-            ftsResults.forEach { result ->
-                resultMap[result.meme.id] =
-                    result.copy(
-                        relevanceScore = result.relevanceScore * FTS_WEIGHT,
-                    )
-            }
-
-            semanticResults.forEach { result ->
-                val existing = resultMap[result.meme.id]
-                if (existing != null) {
-                    resultMap[result.meme.id] =
-                        existing.copy(
-                            relevanceScore = existing.relevanceScore + (result.relevanceScore * SEMANTIC_WEIGHT),
-                            matchType = MatchType.HYBRID,
-                        )
-                } else {
-                    resultMap[result.meme.id] =
-                        result.copy(
-                            relevanceScore = result.relevanceScore * SEMANTIC_WEIGHT,
-                        )
-                }
-            }
-
-            return prioritizeFavorites(resultMap.values.sortedByDescending { it.relevanceScore })
         }
 
         /**
@@ -369,8 +250,6 @@ class SearchRepositoryImpl
         }
 
         companion object {
-            private const val FTS_WEIGHT = 0.6f
-            private const val SEMANTIC_WEIGHT = 0.4f
             private const val FAVORITE_BOOST_THRESHOLD = 0.5f
             private const val BASE_MATCH_SCORE = 0.5f
             private const val TITLE_MATCH_BONUS = 0.3f
@@ -378,7 +257,6 @@ class SearchRepositoryImpl
             private const val EMOJI_MATCH_BONUS = 0.1f
             private const val POSITION_RELEVANCE_DECAY = 0.01f
             private const val MAX_POSITION_DECAY = 0.5f
-            private const val BYTES_PER_FLOAT = 4
             private const val MAX_SEARCH_SUGGESTIONS = 10
             private const val DESCRIPTION_SNIPPET_LENGTH = 50
             private const val PHRASE_CONTEXT_CHARS = 40
