@@ -10,6 +10,7 @@ import com.adsamcik.riposte.core.database.dao.ImportRequestDao
 import com.adsamcik.riposte.core.database.dao.MemeDao
 import com.adsamcik.riposte.core.database.dao.MemeEmbeddingDao
 import com.adsamcik.riposte.core.database.dao.MemeSearchDao
+import com.adsamcik.riposte.core.database.dao.QueryEmbeddingCacheDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -68,5 +69,11 @@ object DatabaseModule {
     @Singleton
     fun provideDuplicateDetectionDao(database: MemeDatabase): DuplicateDetectionDao {
         return database.duplicateDetectionDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideQueryEmbeddingCacheDao(database: MemeDatabase): QueryEmbeddingCacheDao {
+        return database.queryEmbeddingCacheDao()
     }
 }

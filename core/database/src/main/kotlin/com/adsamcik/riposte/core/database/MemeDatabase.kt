@@ -8,6 +8,7 @@ import com.adsamcik.riposte.core.database.dao.ImportRequestDao
 import com.adsamcik.riposte.core.database.dao.MemeDao
 import com.adsamcik.riposte.core.database.dao.MemeEmbeddingDao
 import com.adsamcik.riposte.core.database.dao.MemeSearchDao
+import com.adsamcik.riposte.core.database.dao.QueryEmbeddingCacheDao
 import com.adsamcik.riposte.core.database.entity.EmojiTagEntity
 import com.adsamcik.riposte.core.database.entity.ImportRequestEntity
 import com.adsamcik.riposte.core.database.entity.ImportRequestItemEntity
@@ -15,6 +16,7 @@ import com.adsamcik.riposte.core.database.entity.MemeEmbeddingEntity
 import com.adsamcik.riposte.core.database.entity.MemeEntity
 import com.adsamcik.riposte.core.database.entity.MemeFtsEntity
 import com.adsamcik.riposte.core.database.entity.PotentialDuplicateEntity
+import com.adsamcik.riposte.core.database.entity.QueryEmbeddingCacheEntity
 
 /**
  * Room database for Riposte app.
@@ -28,8 +30,9 @@ import com.adsamcik.riposte.core.database.entity.PotentialDuplicateEntity
         ImportRequestEntity::class,
         ImportRequestItemEntity::class,
         PotentialDuplicateEntity::class,
+        QueryEmbeddingCacheEntity::class,
     ],
-    version = 7,
+    version = 8,
     exportSchema = true,
 )
 abstract class MemeDatabase : RoomDatabase() {
@@ -38,7 +41,7 @@ abstract class MemeDatabase : RoomDatabase() {
          * Current database version. Must match the version in the @Database annotation.
          * Referenced by migration tests to verify the migration chain is complete.
          */
-        const val LATEST_VERSION = 7
+        const val LATEST_VERSION = 8
     }
 
     /**
@@ -70,4 +73,9 @@ abstract class MemeDatabase : RoomDatabase() {
      * DAO for duplicate detection operations.
      */
     abstract fun duplicateDetectionDao(): DuplicateDetectionDao
+
+    /**
+     * DAO for query embedding cache operations.
+     */
+    abstract fun queryEmbeddingCacheDao(): QueryEmbeddingCacheDao
 }

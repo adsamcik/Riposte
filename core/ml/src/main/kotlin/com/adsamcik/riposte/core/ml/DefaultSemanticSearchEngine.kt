@@ -16,6 +16,7 @@ class DefaultSemanticSearchEngine
     @Inject
     constructor(
         private val embeddingGenerator: EmbeddingGenerator,
+        private val persistentCache: PersistentQueryEmbeddingCache,
     ) : SemanticSearchEngine {
         private val queryEmbeddingCache: MutableMap<String, FloatArray> =
             java.util.Collections.synchronizedMap(
@@ -38,8 +39,10 @@ class DefaultSemanticSearchEngine
                 val queryEmbedding =
                     try {
                         queryEmbeddingCache[query]
+                            ?: persistentCache.get(query)?.also { queryEmbeddingCache[query] = it }
                             ?: embeddingGenerator.generateFromQuery(query).also {
                                 queryEmbeddingCache[query] = it
+                                persistentCache.put(query, it)
                             }
                     } catch (
                         @Suppress("TooGenericExceptionCaught") // ML libraries throw unpredictable exceptions
@@ -76,8 +79,10 @@ class DefaultSemanticSearchEngine
                 val queryEmbedding =
                     try {
                         queryEmbeddingCache[query]
+                            ?: persistentCache.get(query)?.also { queryEmbeddingCache[query] = it }
                             ?: embeddingGenerator.generateFromQuery(query).also {
                                 queryEmbeddingCache[query] = it
+                                persistentCache.put(query, it)
                             }
                     } catch (
                         @Suppress("TooGenericExceptionCaught") // ML libraries throw unpredictable exceptions

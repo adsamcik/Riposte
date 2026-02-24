@@ -28,12 +28,15 @@ class DefaultSemanticSearchEngineTest {
     @MockK
     private lateinit var mockEmbeddingGenerator: EmbeddingGenerator
 
+    @MockK(relaxed = true)
+    private lateinit var mockPersistentCache: PersistentQueryEmbeddingCache
+
     private lateinit var searchEngine: DefaultSemanticSearchEngine
 
     @Before
     fun setUp() {
         MockKAnnotations.init(this, relaxed = true)
-        searchEngine = DefaultSemanticSearchEngine(mockEmbeddingGenerator)
+        searchEngine = DefaultSemanticSearchEngine(mockEmbeddingGenerator, mockPersistentCache)
     }
 
     @After

@@ -5,7 +5,9 @@ import android.graphics.Bitmap
 import android.net.Uri
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.adsamcik.riposte.core.database.dao.QueryEmbeddingCacheDao
 import com.google.common.truth.Truth.assertThat
+import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
@@ -32,7 +34,8 @@ class MlIntegrationTest {
         context = ApplicationProvider.getApplicationContext()
         textRecognizer = MlKitTextRecognizer()
         embeddingGenerator = TestHashEmbeddingGenerator()
-        semanticSearchEngine = DefaultSemanticSearchEngine(embeddingGenerator)
+        val persistentCache = PersistentQueryEmbeddingCache(mockk(relaxed = true))
+        semanticSearchEngine = DefaultSemanticSearchEngine(embeddingGenerator, persistentCache)
     }
 
     // ============ Text Extraction Tests ============

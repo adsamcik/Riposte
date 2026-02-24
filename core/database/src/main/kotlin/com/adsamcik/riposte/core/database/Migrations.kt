@@ -323,7 +323,39 @@ val MIGRATION_6_7 =
     }
 
 /**
+ * Migration from version 7 to 8:
+ * - Adds query_embedding_cache table for persistent caching of query embeddings
+ */
+@Suppress("MagicNumber")
+val MIGRATION_7_8 =
+    object : Migration(7, 8) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """CREATE TABLE IF NOT EXISTS `query_embedding_cache` (
+                    `queryHash` TEXT NOT NULL,
+                    `query` TEXT NOT NULL,
+                    `modelVersion` TEXT NOT NULL,
+                    `embedding` BLOB NOT NULL,
+                    `dimension` INTEGER NOT NULL,
+                    `createdAt` INTEGER NOT NULL,
+                    `accessedAt` INTEGER NOT NULL,
+                    PRIMARY KEY(`queryHash`)
+                )""",
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_query_embedding_cache_modelVersion` " +
+                    "ON `query_embedding_cache` (`modelVersion`)",
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_query_embedding_cache_accessedAt` " +
+                    "ON `query_embedding_cache` (`accessedAt`)",
+            )
+        }
+    }
+
+/**
  * All migrations in order. Used by [DatabaseModule] and migration tests
  * to ensure the full chain is registered and validated.
  */
-val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
+val ALL_MIGRATIONS =
+    arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
