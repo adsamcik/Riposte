@@ -13,6 +13,7 @@ import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.adsamcik.riposte.core.model.AppPreferences
 import com.adsamcik.riposte.core.model.DarkMode
+import com.adsamcik.riposte.core.model.DeviceTier
 import com.adsamcik.riposte.core.model.ImageFormat
 import com.adsamcik.riposte.core.model.SharingPreferences
 import com.adsamcik.riposte.core.model.UserDensityPreference
@@ -60,6 +61,7 @@ class PreferencesDataStore
             val USER_DENSITY_PREFERENCE = stringPreferencesKey("user_density_preference")
             val HOLD_TO_SHARE_DELAY_MS = longPreferencesKey("hold_to_share_delay_ms")
             val SORT_EMOJIS_BY_USAGE = booleanPreferencesKey("sort_emojis_by_usage")
+            val SEARCH_QUALITY_LEVEL = stringPreferencesKey("search_quality_level")
 
             // Search preferences - use string key with JSON to preserve order
             val RECENT_SEARCHES = stringPreferencesKey("recent_searches_json")
@@ -144,6 +146,10 @@ class PreferencesDataStore
                         holdToShareDelayMs =
                             prefs[PreferencesKeys.HOLD_TO_SHARE_DELAY_MS] ?: DEFAULT_HOLD_TO_SHARE_DELAY_MS,
                         sortEmojisByUsage = prefs[PreferencesKeys.SORT_EMOJIS_BY_USAGE] ?: true,
+                        searchQualityLevel =
+                            prefs[PreferencesKeys.SEARCH_QUALITY_LEVEL]?.let {
+                                DeviceTier.valueOf(it)
+                            } ?: DeviceTier.AUTO,
                     )
                 }
 
@@ -162,6 +168,7 @@ class PreferencesDataStore
                 prefs[PreferencesKeys.USER_DENSITY_PREFERENCE] = preferences.userDensityPreference.name
                 prefs[PreferencesKeys.HOLD_TO_SHARE_DELAY_MS] = preferences.holdToShareDelayMs
                 prefs[PreferencesKeys.SORT_EMOJIS_BY_USAGE] = preferences.sortEmojisByUsage
+                prefs[PreferencesKeys.SEARCH_QUALITY_LEVEL] = preferences.searchQualityLevel.name
             }
         }
 

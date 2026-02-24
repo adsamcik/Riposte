@@ -2,6 +2,7 @@ package com.adsamcik.riposte.core.ml.search
 
 import com.adsamcik.riposte.core.database.dao.MemeEmbeddingDao
 import com.adsamcik.riposte.core.database.mapper.MemeMapper
+import com.adsamcik.riposte.core.ml.DeviceTierDetector
 import com.adsamcik.riposte.core.ml.EmbeddingUtils
 import com.adsamcik.riposte.core.ml.MemeWithEmbeddings
 import com.adsamcik.riposte.core.ml.RustVectorIndex
@@ -28,6 +29,7 @@ import javax.inject.Inject
 class SemanticSearchStrategy @Inject constructor(
     private val semanticSearchEngine: SemanticSearchEngine,
     private val memeEmbeddingDao: MemeEmbeddingDao,
+    private val deviceTierDetector: DeviceTierDetector,
 ) : SearchStrategy {
 
     override val name = "semantic"
@@ -64,9 +66,9 @@ class SemanticSearchStrategy @Inject constructor(
 
     /**
      * Attempts two-stage Matryoshka retrieval:
-     * 1. Generate query embedding, truncate to 256d
-     * 2. ANN search top-100 with 256d index
-     * 3. Rerank with full 768d brute-force on the 100 candidates
+     * 1. Generate query embedding, truncate to ANN dimension
+     * 2. ANN search top-K with truncated index
+     * 3. Rerank with full 768d brute-force on the K candidates
      *
      * @return Results if ANN index is available, null to fall back to brute-force.
      */
@@ -75,6 +77,9 @@ class SemanticSearchStrategy @Inject constructor(
         allCandidates: List<MemeWithEmbeddings>,
         limit: Int,
     ): List<SearchResult>? {
+        val profile = deviceTierDetector.resolveProfile()
+        if (!profile.useAnn) return null
+
         val index = getOrBuildIndex(allCandidates) ?: return null
 
         if (index.size() == 0) return null
@@ -126,22 +131,24 @@ class SemanticSearchStrategy @Inject constructor(
         }
 
         return try {
-            val index = RustVectorIndex.create(ANN_INDEX_DIMENSIONS)
+            val profile = deviceTierDetector.resolveProfile()
+            val dimensions = profile.annIndexDimension
+            val index = RustVectorIndex.create(dimensions)
             index.reserve(candidates.size)
 
             var added = 0
             for (candidate in candidates) {
                 // Use the "content" embedding slot for indexing
                 val fullEmbedding = candidate.embeddings["content"] ?: continue
-                if (fullEmbedding.size < ANN_INDEX_DIMENSIONS) continue
+                if (fullEmbedding.size < dimensions) continue
 
-                val truncated = EmbeddingUtils.truncateEmbedding(fullEmbedding, ANN_INDEX_DIMENSIONS)
+                val truncated = EmbeddingUtils.truncateEmbedding(fullEmbedding, dimensions)
                 val key = candidate.meme.id.hashCode().toLong() and KEY_MASK
                 index.add(key, truncated)
                 added++
             }
 
-            Timber.i("Built ANN index: %d vectors at %dd", added, ANN_INDEX_DIMENSIONS)
+            Timber.i("Built ANN index: %d vectors at %dd", added, dimensions)
             annIndex = index
             index
         } catch (e: Exception) {
@@ -203,13 +210,6 @@ class SemanticSearchStrategy @Inject constructor(
     companion object {
         const val PRIORITY = 200
         private const val BYTES_PER_FLOAT = 4
-
-        /** Matryoshka truncation dimension for fast ANN first-pass. */
-        private const val ANN_INDEX_DIMENSIONS = 256
-
-        /** Number of ANN candidates to retrieve before full-dimension rerank. */
-        @Suppress("unused")
-        private const val ANN_FIRST_PASS_K = 100
 
         /** Mask to ensure positive key values for USearch. */
         private const val KEY_MASK = 0x7FFFFFFFFFFFFFFFL

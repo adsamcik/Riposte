@@ -2,6 +2,7 @@ package com.adsamcik.riposte.core.ml.search
 
 import com.adsamcik.riposte.core.database.dao.MemeEmbeddingDao
 import com.adsamcik.riposte.core.database.entity.MemeWithEmbeddingData
+import com.adsamcik.riposte.core.ml.DeviceTierDetector
 import com.adsamcik.riposte.core.ml.MemeWithEmbeddings
 import com.adsamcik.riposte.core.ml.SemanticSearchEngine
 import com.adsamcik.riposte.core.model.MatchType
@@ -28,12 +29,15 @@ class SemanticSearchStrategyTest {
     @MockK
     private lateinit var memeEmbeddingDao: MemeEmbeddingDao
 
+    @MockK
+    private lateinit var deviceTierDetector: DeviceTierDetector
+
     private lateinit var strategy: SemanticSearchStrategy
 
     @Before
     fun setUp() {
         MockKAnnotations.init(this, relaxed = true)
-        strategy = SemanticSearchStrategy(semanticSearchEngine, memeEmbeddingDao)
+        strategy = SemanticSearchStrategy(semanticSearchEngine, memeEmbeddingDao, deviceTierDetector)
     }
 
     @After

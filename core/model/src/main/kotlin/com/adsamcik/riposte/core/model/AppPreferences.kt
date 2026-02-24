@@ -17,6 +17,7 @@ data class AppPreferences(
     val userDensityPreference: UserDensityPreference = UserDensityPreference.AUTO,
     val holdToShareDelayMs: Long = 600L,
     val sortEmojisByUsage: Boolean = true,
+    val searchQualityLevel: DeviceTier = DeviceTier.AUTO,
 )
 
 /**
