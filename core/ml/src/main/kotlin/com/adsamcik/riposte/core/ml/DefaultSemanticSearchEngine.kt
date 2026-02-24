@@ -7,7 +7,6 @@ import kotlinx.coroutines.withContext
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlin.math.sqrt
 
 /**
  * Default implementation of semantic search using cosine similarity.
@@ -36,11 +35,10 @@ class DefaultSemanticSearchEngine
             withContext(Dispatchers.Default) {
                 if (candidates.isEmpty()) return@withContext emptyList()
 
-                // Generate query embedding (cache to avoid regenerating for repeated queries)
                 val queryEmbedding =
                     try {
                         queryEmbeddingCache[query]
-                            ?: embeddingGenerator.generateFromText(query).also {
+                            ?: embeddingGenerator.generateFromQuery(query).also {
                                 queryEmbeddingCache[query] = it
                             }
                     } catch (
@@ -78,7 +76,7 @@ class DefaultSemanticSearchEngine
                 val queryEmbedding =
                     try {
                         queryEmbeddingCache[query]
-                            ?: embeddingGenerator.generateFromText(query).also {
+                            ?: embeddingGenerator.generateFromQuery(query).also {
                                 queryEmbeddingCache[query] = it
                             }
                     } catch (
@@ -111,24 +109,7 @@ class DefaultSemanticSearchEngine
         override fun cosineSimilarity(
             embedding1: FloatArray,
             embedding2: FloatArray,
-        ): Float {
-            require(embedding1.size == embedding2.size) {
-                "Embedding dimensions must match: ${embedding1.size} vs ${embedding2.size}"
-            }
-
-            var dotProduct = 0f
-            var norm1 = 0f
-            var norm2 = 0f
-
-            for (i in embedding1.indices) {
-                dotProduct += embedding1[i] * embedding2[i]
-                norm1 += embedding1[i] * embedding1[i]
-                norm2 += embedding2[i] * embedding2[i]
-            }
-
-            val denominator = sqrt(norm1) * sqrt(norm2)
-            return if (denominator > 0) dotProduct / denominator else 0f
-        }
+        ): Float = EmbeddingUtils.cosineSimilarity(embedding1, embedding2)
 
         override suspend fun isReady(): Boolean = embeddingGenerator.isReady()
 

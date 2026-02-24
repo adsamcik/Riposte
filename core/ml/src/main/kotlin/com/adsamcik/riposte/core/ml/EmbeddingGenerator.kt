@@ -16,6 +16,20 @@ interface EmbeddingGenerator {
     suspend fun generateFromText(text: String): FloatArray
 
     /**
+     * Generates an embedding vector from text with an optional title for context.
+     * Models that support structured prompts (e.g. EmbeddingGemma) will format
+     * the title and text into the model's document prompt format.
+     *
+     * @param text The text content to generate an embedding for.
+     * @param title Optional title providing additional context.
+     * @return A float array representing the embedding vector.
+     */
+    suspend fun generateFromText(
+        text: String,
+        title: String?,
+    ): FloatArray = generateFromText(text)
+
+    /**
      * Generates an embedding vector from an image.
      * This uses image labeling to extract features, then generates text embeddings.
      *
@@ -52,6 +66,16 @@ interface EmbeddingGenerator {
      * Initializes the embedding model.
      */
     suspend fun initialize()
+
+    /**
+     * Generates an embedding vector from a search query.
+     * Models that support asymmetric prompts (e.g. EmbeddingGemma) will format the
+     * query with a task-specific prompt prefix for better retrieval accuracy.
+     *
+     * @param query The search query text.
+     * @return A float array representing the embedding vector.
+     */
+    suspend fun generateFromQuery(query: String): FloatArray = generateFromText(query)
 
     /**
      * Releases resources.

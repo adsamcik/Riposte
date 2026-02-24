@@ -157,10 +157,10 @@ class EmbeddingGenerationWorker
 
             pendingMemes.forEach { memeData ->
                 try {
-                    val contentText = buildContentText(memeData)
-                    if (contentText.isNotBlank()) {
-                        val embedding = embeddingGenerator.generateFromText(contentText)
-                        val sourceHash = generateHash(contentText)
+                    val (title, contentBody) = buildContentParts(memeData)
+                    if (contentBody.isNotBlank()) {
+                        val embedding = embeddingGenerator.generateFromText(contentBody, title)
+                        val sourceHash = generateHash(contentBody)
                         embeddingRepository.saveEmbedding(
                             memeId = memeData.id,
                             embedding = encodeEmbedding(embedding),
@@ -173,7 +173,7 @@ class EmbeddingGenerationWorker
 
                     val intentText = buildIntentText(memeData)
                     if (intentText.isNotBlank()) {
-                        val embedding = embeddingGenerator.generateFromText(intentText)
+                        val embedding = embeddingGenerator.generateFromQuery(intentText)
                         val sourceHash = generateHash(intentText)
                         embeddingRepository.saveEmbedding(
                             memeId = memeData.id,
@@ -208,14 +208,15 @@ class EmbeddingGenerationWorker
         }
 
         /**
-         * Build text for content embedding slot: title + description.
+         * Build title and content body for the content embedding slot.
+         * Returns a Pair of (title, body) where title may be null.
          */
-        private fun buildContentText(memeData: MemeDataForEmbedding): String {
-            return buildString {
-                memeData.title?.let { append(it).append(". ") }
+        private fun buildContentParts(memeData: MemeDataForEmbedding): Pair<String?, String> {
+            val body = buildString {
                 memeData.description?.let { append(it).append(". ") }
                 memeData.textContent?.let { append(it).append(". ") }
             }.trim().trimEnd('.')
+            return Pair(memeData.title, body.ifBlank { memeData.title ?: "" })
         }
 
         /**

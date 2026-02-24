@@ -22,7 +22,6 @@ import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.resume
-import kotlin.math.sqrt
 
 /**
  * Embedding generator using Google's EmbeddingGemma model via LiteRT (CompiledModel API).
@@ -97,71 +96,72 @@ class EmbeddingGemmaGenerator
         override val embeddingDimension: Int = DEFAULT_EMBEDDING_DIMENSION
 
         override suspend fun generateFromText(text: String): FloatArray =
-            withContext(Dispatchers.Default) {
-                if (text.isBlank()) {
-                    return@withContext createZeroEmbedding()
-                }
-
-                mutex.withLock {
-                    ensureInitialized()
-
-                    val model =
-                        compiledModel
-                            ?: throw IllegalStateException(
-                                "EmbeddingGemma model not initialized. " +
-                                    "Model files may be missing.",
-                            )
-
-                    try {
-                        runInference(model, text)
-                    } catch (
-                        @Suppress("TooGenericExceptionCaught")
-                        e: Exception,
-                    ) {
-                        Timber.e(e, "Failed to generate text embedding")
-                        throw e
-                    }
-                }
-            }
+            generateFromText(text, title = null)
 
         /**
-         * Generates an embedding for a document (meme description, tags, etc.).
+         * Generates an embedding for document content using EmbeddingGemma's document prompt format.
          *
          * @param text The document text to embed.
-         * @param title Optional title prepended to text for richer context.
+         * @param title Optional title for richer context. If null/blank, "none" is used.
          * @return The embedding vector.
          */
-        suspend fun generateFromDocument(
+        override suspend fun generateFromText(
             text: String,
-            title: String? = null,
+            title: String?,
         ): FloatArray =
             withContext(Dispatchers.Default) {
                 if (text.isBlank()) {
                     return@withContext createZeroEmbedding()
                 }
 
-                val inputText =
-                    if (!title.isNullOrBlank()) "$title: $text" else text
+                val titlePart = if (!title.isNullOrBlank()) title else "none"
+                val formattedText = "title: $titlePart | text: $text"
 
-                mutex.withLock {
-                    ensureInitialized()
+                runLockedInference(formattedText, "document")
+            }
 
-                    val model =
-                        compiledModel
-                            ?: throw IllegalStateException(
-                                "EmbeddingGemma model not initialized. " +
-                                    "Model files may be missing.",
-                            )
+        /**
+         * Generates an embedding for a search query using EmbeddingGemma's query prompt format.
+         *
+         * @param query The search query text.
+         * @return The embedding vector.
+         */
+        override suspend fun generateFromQuery(query: String): FloatArray =
+            withContext(Dispatchers.Default) {
+                if (query.isBlank()) {
+                    return@withContext createZeroEmbedding()
+                }
 
-                    try {
-                        runInference(model, inputText)
-                    } catch (
-                        @Suppress("TooGenericExceptionCaught")
-                        e: Exception,
-                    ) {
-                        Timber.e(e, "Failed to generate document embedding")
-                        throw e
-                    }
+                val formattedText = "task: search result | query: $query"
+
+                runLockedInference(formattedText, "query")
+            }
+
+        /**
+         * Acquires the model mutex and runs inference with error handling.
+         */
+        private suspend fun runLockedInference(
+            formattedText: String,
+            kind: String,
+        ): FloatArray =
+            mutex.withLock {
+                ensureInitialized()
+
+                val model =
+                    compiledModel
+                        ?: throw IllegalStateException(
+                            "EmbeddingGemma model not initialized. " +
+                                "Model files may be missing.",
+                        )
+
+                try {
+                    runInference(model, formattedText)
+                } catch (
+                    @Suppress("TooGenericExceptionCaught")
+                    e: Exception,
+                ) {
+                    Timber.e(e, "Failed to generate $kind embedding")
+                    throw e
                 }
             }
 
@@ -177,7 +177,7 @@ class EmbeddingGemmaGenerator
 
                     // Concatenate labels with spaces for embedding as a document
                     val labelText = labels.joinToString(" ")
-                    generateFromDocument(labelText, title = "Image labels")
+                    generateFromText(labelText, title = "Image labels")
                 } catch (
                     @Suppress("TooGenericExceptionCaught")
                     e: Exception,
@@ -438,7 +438,7 @@ class EmbeddingGemmaGenerator
             check(embedding.size == embeddingDimension) {
                 "Model output dimension mismatch: expected $embeddingDimension, got ${embedding.size}"
             }
-            return embedding
+            return EmbeddingUtils.normalize(embedding)
         }
 
         /**
@@ -642,9 +642,6 @@ class EmbeddingGemmaGenerator
             /** Bytes per kilobyte for file size logging. */
             private const val BYTES_PER_KB = 1024
 
-            /** Valid dimensions for Matryoshka Representation Learning truncation. */
-            private val VALID_TRUNCATION_DIMENSIONS = listOf(128, 256, 384, 512, DEFAULT_EMBEDDING_DIMENSION)
-
             /**
              * Detects the device's SoC model and returns the best model filename.
              * Falls back to generic model if no optimized variant is available.
@@ -678,72 +675,26 @@ class EmbeddingGemmaGenerator
 
             /**
              * Computes cosine similarity between two embeddings.
-             *
-             * @param embedding1 First embedding vector.
-             * @param embedding2 Second embedding vector.
-             * @return Cosine similarity score between -1 and 1.
+             * Delegates to [EmbeddingUtils.cosineSimilarity].
              */
             fun cosineSimilarity(
                 embedding1: FloatArray,
                 embedding2: FloatArray,
-            ): Float {
-                require(embedding1.size == embedding2.size) {
-                    "Embeddings must have the same dimension: ${embedding1.size} vs ${embedding2.size}"
-                }
-
-                var dotProduct = 0f
-                var norm1 = 0f
-                var norm2 = 0f
-
-                for (i in embedding1.indices) {
-                    dotProduct += embedding1[i] * embedding2[i]
-                    norm1 += embedding1[i] * embedding1[i]
-                    norm2 += embedding2[i] * embedding2[i]
-                }
-
-                val magnitude = sqrt(norm1) * sqrt(norm2)
-                return if (magnitude.isFinite() && magnitude > 0f) dotProduct / magnitude else 0f
-            }
+            ): Float = EmbeddingUtils.cosineSimilarity(embedding1, embedding2)
 
             /**
              * Truncates an embedding to a smaller dimension using Matryoshka Representation Learning.
-             * The truncated embedding should be re-normalized for optimal performance.
-             *
-             * @param embedding The original 768-dim embedding.
-             * @param targetDimension The target dimension (128, 256, 384, or 512).
-             * @return The truncated and normalized embedding.
+             * Delegates to [EmbeddingUtils.truncateEmbedding].
              */
             fun truncateEmbedding(
                 embedding: FloatArray,
                 targetDimension: Int,
-            ): FloatArray {
-                require(targetDimension <= embedding.size) {
-                    "Target dimension ($targetDimension) must be <= embedding size (${embedding.size})"
-                }
-                require(targetDimension in VALID_TRUNCATION_DIMENSIONS) {
-                    "Target dimension must be one of: $VALID_TRUNCATION_DIMENSIONS"
-                }
-
-                val truncated = embedding.copyOfRange(0, targetDimension)
-                return normalize(truncated)
-            }
+            ): FloatArray = EmbeddingUtils.truncateEmbedding(embedding, targetDimension)
 
             /**
-             * L2-normalizes an embedding vector.
+             * L2-normalizes an embedding vector, returning a new array.
+             * Delegates to [EmbeddingUtils.normalize].
              */
-            fun normalize(embedding: FloatArray): FloatArray {
-                var sumSquares = 0f
-                for (value in embedding) {
-                    sumSquares += value * value
-                }
-                val norm = sqrt(sumSquares)
-
-                if (norm > 0f) {
-                    for (i in embedding.indices) {
-                        embedding[i] /= norm
-                    }
-                }
-                return embedding
-            }
+            fun normalize(embedding: FloatArray): FloatArray = EmbeddingUtils.normalize(embedding)
         }
     }

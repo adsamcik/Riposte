@@ -322,31 +322,11 @@ class MediaPipeEmbeddingGenerator
 
             /**
              * Computes cosine similarity between two embeddings.
-             *
-             * @param embedding1 First embedding vector.
-             * @param embedding2 Second embedding vector.
-             * @return Cosine similarity score between -1 and 1.
+             * Delegates to [EmbeddingUtils.cosineSimilarity].
              */
             fun cosineSimilarity(
                 embedding1: FloatArray,
                 embedding2: FloatArray,
-            ): Float {
-                require(embedding1.size == embedding2.size) {
-                    "Embeddings must have the same dimension: ${embedding1.size} vs ${embedding2.size}"
-                }
-
-                var dotProduct = 0f
-                var norm1 = 0f
-                var norm2 = 0f
-
-                for (i in embedding1.indices) {
-                    dotProduct += embedding1[i] * embedding2[i]
-                    norm1 += embedding1[i] * embedding1[i]
-                    norm2 += embedding2[i] * embedding2[i]
-                }
-
-                val magnitude = kotlin.math.sqrt(norm1) * kotlin.math.sqrt(norm2)
-                return if (magnitude.isFinite() && magnitude > 0f) dotProduct / magnitude else 0f
-            }
+            ): Float = EmbeddingUtils.cosineSimilarity(embedding1, embedding2)
         }
     }

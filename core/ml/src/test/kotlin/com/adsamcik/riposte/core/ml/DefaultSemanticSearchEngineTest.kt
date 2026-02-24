@@ -138,7 +138,7 @@ class DefaultSemanticSearchEngineTest {
     @Test
     fun `findSimilar returns empty list when candidates is empty`() =
         runTest {
-            coEvery { mockEmbeddingGenerator.generateFromText(any()) } returns FloatArray(128)
+            coEvery { mockEmbeddingGenerator.generateFromQuery(any()) } returns FloatArray(128)
 
             val results =
                 searchEngine.findSimilar(
@@ -153,7 +153,7 @@ class DefaultSemanticSearchEngineTest {
     fun `findSimilar returns results sorted by relevance descending`() =
         runTest {
             val queryEmbedding = floatArrayOf(1f, 0f, 0f)
-            coEvery { mockEmbeddingGenerator.generateFromText("test") } returns queryEmbedding
+            coEvery { mockEmbeddingGenerator.generateFromQuery("test") } returns queryEmbedding
 
             // Create candidates with different similarities
             val candidates =
@@ -181,7 +181,7 @@ class DefaultSemanticSearchEngineTest {
     fun `findSimilar filters results below threshold`() =
         runTest {
             val queryEmbedding = floatArrayOf(1f, 0f, 0f)
-            coEvery { mockEmbeddingGenerator.generateFromText("test") } returns queryEmbedding
+            coEvery { mockEmbeddingGenerator.generateFromQuery("test") } returns queryEmbedding
 
             val candidates =
                 listOf(
@@ -210,7 +210,7 @@ class DefaultSemanticSearchEngineTest {
     fun `findSimilar respects limit parameter`() =
         runTest {
             val queryEmbedding = floatArrayOf(1f, 0f, 0f)
-            coEvery { mockEmbeddingGenerator.generateFromText("test") } returns queryEmbedding
+            coEvery { mockEmbeddingGenerator.generateFromQuery("test") } returns queryEmbedding
 
             val candidates =
                 (1..10).map { id ->
@@ -232,7 +232,7 @@ class DefaultSemanticSearchEngineTest {
     fun `findSimilar returns top results when limit is less than candidates`() =
         runTest {
             val queryEmbedding = floatArrayOf(1f, 0f, 0f)
-            coEvery { mockEmbeddingGenerator.generateFromText("test") } returns queryEmbedding
+            coEvery { mockEmbeddingGenerator.generateFromQuery("test") } returns queryEmbedding
 
             val candidates =
                 listOf(
@@ -264,7 +264,7 @@ class DefaultSemanticSearchEngineTest {
     fun `findSimilar sets match type to SEMANTIC`() =
         runTest {
             val queryEmbedding = floatArrayOf(1f, 0f, 0f)
-            coEvery { mockEmbeddingGenerator.generateFromText("test") } returns queryEmbedding
+            coEvery { mockEmbeddingGenerator.generateFromQuery("test") } returns queryEmbedding
 
             val candidates =
                 listOf(
@@ -286,7 +286,7 @@ class DefaultSemanticSearchEngineTest {
     fun `findSimilar calculates correct relevance score`() =
         runTest {
             val queryEmbedding = floatArrayOf(1f, 0f, 0f)
-            coEvery { mockEmbeddingGenerator.generateFromText("test") } returns queryEmbedding
+            coEvery { mockEmbeddingGenerator.generateFromQuery("test") } returns queryEmbedding
 
             val candidates =
                 listOf(
@@ -308,7 +308,7 @@ class DefaultSemanticSearchEngineTest {
     fun `findSimilar uses default limit of 20`() =
         runTest {
             val queryEmbedding = floatArrayOf(1f, 0f, 0f)
-            coEvery { mockEmbeddingGenerator.generateFromText("test") } returns queryEmbedding
+            coEvery { mockEmbeddingGenerator.generateFromQuery("test") } returns queryEmbedding
 
             val candidates =
                 (1..50).map { id ->
@@ -329,7 +329,7 @@ class DefaultSemanticSearchEngineTest {
     fun `findSimilar uses default threshold of 0_3`() =
         runTest {
             val queryEmbedding = floatArrayOf(1f, 0f, 0f)
-            coEvery { mockEmbeddingGenerator.generateFromText("test") } returns queryEmbedding
+            coEvery { mockEmbeddingGenerator.generateFromQuery("test") } returns queryEmbedding
 
             val candidates =
                 listOf(
@@ -357,7 +357,7 @@ class DefaultSemanticSearchEngineTest {
         runTest {
             val dimension = 128
             val queryEmbedding = FloatArray(dimension) { 1f / sqrt(dimension.toFloat()) }
-            coEvery { mockEmbeddingGenerator.generateFromText("test") } returns queryEmbedding
+            coEvery { mockEmbeddingGenerator.generateFromQuery("test") } returns queryEmbedding
 
             val candidates =
                 listOf(
@@ -379,7 +379,7 @@ class DefaultSemanticSearchEngineTest {
     fun `findSimilar excludes all results when threshold is too high`() =
         runTest {
             val queryEmbedding = floatArrayOf(1f, 0f, 0f)
-            coEvery { mockEmbeddingGenerator.generateFromText("test") } returns queryEmbedding
+            coEvery { mockEmbeddingGenerator.generateFromQuery("test") } returns queryEmbedding
 
             val candidates =
                 listOf(
@@ -401,7 +401,7 @@ class DefaultSemanticSearchEngineTest {
     fun `findSimilar handles negative similarity scores`() =
         runTest {
             val queryEmbedding = floatArrayOf(1f, 0f, 0f)
-            coEvery { mockEmbeddingGenerator.generateFromText("test") } returns queryEmbedding
+            coEvery { mockEmbeddingGenerator.generateFromQuery("test") } returns queryEmbedding
 
             val candidates =
                 listOf(
@@ -430,7 +430,7 @@ class DefaultSemanticSearchEngineTest {
     @Test
     fun `findSimilarMultiVector returns empty list when candidates is empty`() =
         runTest {
-            coEvery { mockEmbeddingGenerator.generateFromText(any()) } returns FloatArray(3)
+            coEvery { mockEmbeddingGenerator.generateFromQuery(any()) } returns FloatArray(3)
 
             val results =
                 searchEngine.findSimilarMultiVector(
@@ -445,7 +445,7 @@ class DefaultSemanticSearchEngineTest {
     fun `findSimilarMultiVector uses max-pooling across slots`() =
         runTest {
             val queryEmbedding = floatArrayOf(1f, 0f, 0f)
-            coEvery { mockEmbeddingGenerator.generateFromText("test") } returns queryEmbedding
+            coEvery { mockEmbeddingGenerator.generateFromQuery("test") } returns queryEmbedding
 
             val candidates =
                 listOf(
@@ -489,7 +489,7 @@ class DefaultSemanticSearchEngineTest {
     fun `findSimilarMultiVector filters below threshold`() =
         runTest {
             val queryEmbedding = floatArrayOf(1f, 0f, 0f)
-            coEvery { mockEmbeddingGenerator.generateFromText("test") } returns queryEmbedding
+            coEvery { mockEmbeddingGenerator.generateFromQuery("test") } returns queryEmbedding
 
             val candidates =
                 listOf(
@@ -519,7 +519,7 @@ class DefaultSemanticSearchEngineTest {
     fun `findSimilarMultiVector skips slots with mismatched dimensions`() =
         runTest {
             val queryEmbedding = floatArrayOf(1f, 0f, 0f)
-            coEvery { mockEmbeddingGenerator.generateFromText("test") } returns queryEmbedding
+            coEvery { mockEmbeddingGenerator.generateFromQuery("test") } returns queryEmbedding
 
             val candidates =
                 listOf(
@@ -551,7 +551,7 @@ class DefaultSemanticSearchEngineTest {
     fun `findSimilarMultiVector sets match type to SEMANTIC`() =
         runTest {
             val queryEmbedding = floatArrayOf(1f, 0f, 0f)
-            coEvery { mockEmbeddingGenerator.generateFromText("test") } returns queryEmbedding
+            coEvery { mockEmbeddingGenerator.generateFromQuery("test") } returns queryEmbedding
 
             val candidates =
                 listOf(
@@ -576,7 +576,7 @@ class DefaultSemanticSearchEngineTest {
     @Test
     fun `findSimilar propagates UnsatisfiedLinkError`() =
         runTest {
-            coEvery { mockEmbeddingGenerator.generateFromText("test") } throws
+            coEvery { mockEmbeddingGenerator.generateFromQuery("test") } throws
                 UnsatisfiedLinkError("libgemma_embedding_model_jni.so not found")
 
             val candidates =
@@ -601,7 +601,7 @@ class DefaultSemanticSearchEngineTest {
     @Test
     fun `findSimilar propagates ExceptionInInitializerError`() =
         runTest {
-            coEvery { mockEmbeddingGenerator.generateFromText("test") } throws
+            coEvery { mockEmbeddingGenerator.generateFromQuery("test") } throws
                 ExceptionInInitializerError(UnsatisfiedLinkError("libgemma_embedding_model_jni.so not found"))
 
             val candidates =
@@ -626,7 +626,7 @@ class DefaultSemanticSearchEngineTest {
     @Test
     fun `findSimilar propagates general exception during embedding`() =
         runTest {
-            coEvery { mockEmbeddingGenerator.generateFromText("test") } throws
+            coEvery { mockEmbeddingGenerator.generateFromQuery("test") } throws
                 RuntimeException("Model initialization failed")
 
             val candidates =
