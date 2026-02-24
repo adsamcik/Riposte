@@ -195,6 +195,140 @@ class SearchOrchestratorTest {
         assertThat(results[0].relevanceScore).isGreaterThan(results[1].relevanceScore)
     }
 
+    @Test
+    fun `search with empty string returns empty`() = runTest {
+        val orchestrator = SearchOrchestrator(
+            strategies = setOf(fakeStrategy("fts", priority = 100, available = true)),
+        )
+
+        val results = orchestrator.search("")
+
+        assertThat(results).isEmpty()
+    }
+
+    @Test
+    fun `search respects limit parameter`() = runTest {
+        val memes = (1L..10L).map { id ->
+            SearchResult(
+                meme = createTestMeme(id),
+                relevanceScore = 1.0f - id * 0.05f,
+                matchType = MatchType.TEXT,
+            )
+        }
+        val strategy = fakeStrategy(
+            name = "fts",
+            priority = 100,
+            available = true,
+            results = memes,
+        )
+        val orchestrator = SearchOrchestrator(strategies = setOf(strategy))
+
+        val results = orchestrator.search("funny", limit = 3)
+
+        assertThat(results).hasSize(3)
+    }
+
+    @Test
+    fun `all strategies fail returns empty list`() = runTest {
+        val fail1 = fakeStrategy(
+            name = "fts",
+            priority = 100,
+            available = true,
+            throwOnSearch = true,
+        )
+        val fail2 = fakeStrategy(
+            name = "semantic",
+            priority = 200,
+            available = true,
+            throwOnSearch = true,
+        )
+        val orchestrator = SearchOrchestrator(strategies = setOf(fail1, fail2))
+
+        val results = orchestrator.search("funny")
+
+        assertThat(results).isEmpty()
+    }
+
+    @Test
+    fun `single result from each strategy fuses correctly`() = runTest {
+        val meme1 = createTestMeme(1)
+        val meme2 = createTestMeme(2)
+        val meme3 = createTestMeme(3)
+        val strategies = (1..3).map { i ->
+            fakeStrategy(
+                name = "strategy$i",
+                priority = i * 100,
+                available = true,
+                results = listOf(
+                    SearchResult(
+                        meme = listOf(meme1, meme2, meme3)[i - 1],
+                        relevanceScore = 0.5f,
+                        matchType = MatchType.TEXT,
+                    ),
+                ),
+            )
+        }.toSet()
+        val orchestrator = SearchOrchestrator(strategies = strategies)
+
+        val results = orchestrator.search("funny")
+
+        assertThat(results).hasSize(3)
+        // Highest priority strategy result should rank first
+        assertThat(results[0].meme.id).isEqualTo(3L)
+        assertThat(results[1].meme.id).isEqualTo(2L)
+        assertThat(results[2].meme.id).isEqualTo(1L)
+    }
+
+    @Test
+    fun `search with only unavailable strategies returns empty`() = runTest {
+        val strategies = (1..3).map { i ->
+            fakeStrategy(
+                name = "strategy$i",
+                priority = i * 100,
+                available = false,
+            )
+        }.toSet()
+        val orchestrator = SearchOrchestrator(strategies = strategies)
+
+        val results = orchestrator.search("funny")
+
+        assertThat(results).isEmpty()
+    }
+
+    @Test
+    fun `search with empty strategy set returns empty`() = runTest {
+        val orchestrator = SearchOrchestrator(strategies = emptySet())
+
+        val results = orchestrator.search("funny")
+
+        assertThat(results).isEmpty()
+    }
+
+    @Test
+    fun `duplicate meme from three strategies becomes HYBRID`() = runTest {
+        val meme = createTestMeme(1)
+        val strategies = listOf("fts", "semantic", "emoji").mapIndexed { i, name ->
+            fakeStrategy(
+                name = name,
+                priority = (i + 1) * 100,
+                available = true,
+                results = listOf(
+                    SearchResult(
+                        meme = meme,
+                        relevanceScore = 0.5f,
+                        matchType = MatchType.TEXT,
+                    ),
+                ),
+            )
+        }.toSet()
+        val orchestrator = SearchOrchestrator(strategies = strategies)
+
+        val results = orchestrator.search("funny")
+
+        assertThat(results).hasSize(1)
+        assertThat(results[0].matchType).isEqualTo(MatchType.HYBRID)
+    }
+
     // region Helpers
 
     private fun createTestMeme(id: Long): Meme = Meme(
