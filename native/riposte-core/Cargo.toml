@@ -1,0 +1,12 @@
+[package]
+name = "riposte-core"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "riposte_core"
+
+[dependencies]
+rustc-hash = "2"
+
+[dev-dependencies]

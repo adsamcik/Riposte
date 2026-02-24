@@ -40,6 +40,12 @@ Desktop.ini
 # Kotlin
 *.kotlin_module
 
+# Rust build artifacts
+native/target/
+
+# JNI shared libraries (built from Rust source)
+app/src/main/jniLibs/
+
 # ML Models - platform-specific variants (download with tools/download-embeddinggemma.ps1 -AllVariants)
 # Generic model + tokenizer are tracked via Git LFS
 app/src/main/assets/embedding_models/*.qualcomm.*.tflite

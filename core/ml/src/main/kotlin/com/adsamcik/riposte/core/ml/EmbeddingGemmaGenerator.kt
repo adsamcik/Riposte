@@ -72,6 +72,9 @@ class EmbeddingGemmaGenerator
         /** The SentencePiece tokenizer, lazily initialized. */
         private var tokenizer: SentencePieceTokenizer? = null
 
+        /** Rust-native tokenizer (preferred over Kotlin for performance). */
+        private var rustTokenizer: RustTokenizer? = null
+
         /** Cached input/output buffers to avoid per-inference native allocation. */
         private var cachedInputBuffers: List<com.google.ai.edge.litert.TensorBuffer>? = null
         private var cachedOutputBuffers: List<com.google.ai.edge.litert.TensorBuffer>? = null
@@ -239,6 +242,8 @@ class EmbeddingGemmaGenerator
                     cachedOutputBuffers = null
                     compiledModel?.close()
                     compiledModel = null
+                    rustTokenizer?.close()
+                    rustTokenizer = null
                     tokenizer = null
                     initializationAttempted = false
                 }
@@ -307,9 +312,25 @@ class EmbeddingGemmaGenerator
 
         private fun initializeTokenizer(tokenizerPath: String) {
             Timber.d("Loading SentencePiece tokenizer from: $tokenizerPath")
+            // Prefer Rust tokenizer for lower memory and faster encoding
+            try {
+                val modelBytes = File(tokenizerPath).readBytes()
+                rustTokenizer = RustTokenizer.parse(modelBytes)
+                Timber.i("Rust SentencePiece tokenizer loaded (vocab=%d)", rustTokenizer!!.vocabSize())
+                return
+            } catch (e: UnsatisfiedLinkError) {
+                Timber.w("Rust tokenizer unavailable — native library not loaded: %s", e.message)
+            } catch (
+                @Suppress("TooGenericExceptionCaught")
+                e: Exception,
+            ) {
+                Timber.w(e, "Rust tokenizer failed — falling back to Kotlin")
+            }
+
+            // Kotlin fallback
             try {
                 tokenizer = SentencePieceModelParser.parse(File(tokenizerPath))
-                Timber.i("SentencePiece tokenizer loaded")
+                Timber.i("Kotlin SentencePiece tokenizer loaded (fallback)")
             } catch (
                 @Suppress("TooGenericExceptionCaught")
                 e: Exception,
@@ -389,10 +410,9 @@ class EmbeddingGemmaGenerator
             model: CompiledModel,
             text: String,
         ): FloatArray {
-            val spTokenizer = requireNotNull(tokenizer) { "Tokenizer not initialized" }
-
-            // Tokenize text using SentencePiece BPE
-            val tokenIds = spTokenizer.encode(text)
+            // Tokenize text — prefer Rust, fall back to Kotlin
+            val tokenIds: List<Int> = rustTokenizer?.encode(text)
+                ?: requireNotNull(tokenizer) { "No tokenizer initialized (Rust or Kotlin)" }.encode(text)
 
             // Build token sequence: BOS + tokens, padded/truncated to MODEL_SEQ_LENGTH
             val paddedIds = IntArray(MODEL_SEQ_LENGTH) // filled with 0 (PAD)

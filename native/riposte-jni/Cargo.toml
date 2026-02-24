@@ -1,0 +1,12 @@
+[package]
+name = "riposte-jni"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "riposte_jni"
+crate-type = ["cdylib"]
+
+[dependencies]
+riposte-core = { path = "../riposte-core" }
+jni = "0.21"
