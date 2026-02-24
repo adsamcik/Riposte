@@ -281,8 +281,8 @@ class EmbeddingGemmaGenerator
 
                 initializeTokenizer(tokenizerPath)
 
-                if (tokenizer == null) {
-                    // Tokenizer failed to load — skip model initialization
+                if (tokenizer == null && rustTokenizer == null) {
+                    // Both tokenizers failed to load — skip model initialization
                     return
                 }
 
