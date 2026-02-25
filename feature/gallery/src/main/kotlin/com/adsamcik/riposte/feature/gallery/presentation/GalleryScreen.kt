@@ -1430,8 +1430,8 @@ private fun ImportProgressBanner(
 ) {
     AnimatedVisibility(
         visible = status is ImportWorkStatus.InProgress,
-        enter = slideInVertically() + fadeIn(),
-        exit = slideOutVertically() + fadeOut(),
+        enter = slideInVertically(),
+        exit = slideOutVertically(),
     ) {
         val inProgress = status as? ImportWorkStatus.InProgress
         Row(
@@ -1486,8 +1486,8 @@ private fun EmbeddingProgressBanner(
 ) {
     AnimatedVisibility(
         visible = status is EmbeddingWorkStatus.InProgress,
-        enter = slideInVertically() + fadeIn(),
-        exit = slideOutVertically() + fadeOut(),
+        enter = slideInVertically(),
+        exit = slideOutVertically(),
     ) {
         val inProgress = status as? EmbeddingWorkStatus.InProgress
         val total = inProgress?.let { it.processed + it.remaining } ?: 0
