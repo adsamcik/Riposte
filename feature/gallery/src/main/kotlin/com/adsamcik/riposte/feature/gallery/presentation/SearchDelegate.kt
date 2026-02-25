@@ -5,6 +5,8 @@ import com.adsamcik.riposte.core.search.domain.usecase.SearchUseCases
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.Job
+import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -38,6 +40,7 @@ class SearchDelegate
 
         private val queryFlow = MutableStateFlow("")
         private var initScope: CoroutineScope? = null
+        private var currentSearchJob: Job? = null
 
         /**
          * Initialize reactive flows. Must be called once from the coordinator's viewModelScope.
@@ -112,6 +115,7 @@ class SearchDelegate
             scope.launch {
                 searchUseCases.addRecentSearch(query)
             }
+            // Search is triggered immediately rather than waiting for debounce
             performSearch(query, scope = scope)
         }
 
@@ -139,7 +143,8 @@ class SearchDelegate
             scope: CoroutineScope? = null,
         ) {
             val searchScope = scope ?: return
-            searchScope.launch {
+            currentSearchJob?.cancel()
+            currentSearchJob = searchScope.launch {
                 _state.update { it.copy(isSearching = true, searchError = null) }
                 val startTime = System.currentTimeMillis()
 
@@ -180,6 +185,8 @@ class SearchDelegate
                             searchError = SearchError.IndexFailed,
                         )
                     }
+                } catch (e: CancellationException) {
+                    throw e
                 } catch (
                     @Suppress("TooGenericExceptionCaught") // Catches all to show error state
                     e: Exception,
