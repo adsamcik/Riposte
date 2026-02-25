@@ -183,12 +183,51 @@ interface MemeEmbeddingDao {
      */
     @Query(
         """
-        SELECT memeId FROM meme_embeddings
+        SELECT DISTINCT memeId FROM meme_embeddings
         WHERE needsRegeneration = 1
         LIMIT :limit
     """,
     )
     suspend fun getMemeIdsNeedingRegeneration(limit: Int = 50): List<Long>
+
+    /**
+     * Get meme IDs that have embeddings but fewer than [expectedTypeCount] valid types.
+     * These memes had partial failures during generation and need retrying.
+     */
+    @Query(
+        """
+        SELECT m.id FROM memes m
+        INNER JOIN meme_embeddings e ON m.id = e.memeId
+        WHERE e.needsRegeneration = 0 AND e.modelVersion = :currentVersion
+        GROUP BY m.id
+        HAVING COUNT(DISTINCT e.embeddingType) < :expectedTypeCount
+        LIMIT :limit
+    """,
+    )
+    suspend fun getMemeIdsWithIncompleteEmbeddings(
+        expectedTypeCount: Int,
+        currentVersion: String,
+        limit: Int = 50,
+    ): List<Long>
+
+    /**
+     * Count memes that have embeddings but fewer than [expectedTypeCount] valid types.
+     */
+    @Query(
+        """
+        SELECT COUNT(*) FROM (
+            SELECT m.id FROM memes m
+            INNER JOIN meme_embeddings e ON m.id = e.memeId
+            WHERE e.needsRegeneration = 0 AND e.modelVersion = :currentVersion
+            GROUP BY m.id
+            HAVING COUNT(DISTINCT e.embeddingType) < :expectedTypeCount
+        )
+    """,
+    )
+    suspend fun countMemesWithIncompleteEmbeddings(
+        expectedTypeCount: Int,
+        currentVersion: String,
+    ): Int
 
     /**
      * Get total count of memes without embeddings.

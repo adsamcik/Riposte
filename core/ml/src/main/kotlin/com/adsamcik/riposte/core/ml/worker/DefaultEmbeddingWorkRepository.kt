@@ -20,14 +20,26 @@ class DefaultEmbeddingWorkRepository
         private val memeEmbeddingDao: MemeEmbeddingDao,
     ) : EmbeddingWorkRepository {
         override suspend fun getMemesNeedingEmbeddings(limit: Int): List<MemeDataForEmbedding> {
-            // Get memes without embeddings
-            val memesWithoutEmbeddings = memeEmbeddingDao.getMemeIdsWithoutEmbeddings(limit / 2)
+            // Split budget across three sources
+            val third = (limit / 3).coerceAtLeast(1)
 
-            // Get memes needing regeneration
-            val memesNeedingRegeneration = memeEmbeddingDao.getMemeIdsNeedingRegeneration(limit / 2)
+            // Get memes without any embeddings
+            val memesWithoutEmbeddings = memeEmbeddingDao.getMemeIdsWithoutEmbeddings(third)
+
+            // Get memes needing regeneration (version change)
+            val memesNeedingRegeneration = memeEmbeddingDao.getMemeIdsNeedingRegeneration(third)
+
+            // Get memes with incomplete type coverage (partial failures)
+            val memesIncomplete = memeEmbeddingDao.getMemeIdsWithIncompleteEmbeddings(
+                expectedTypeCount = EXPECTED_EMBEDDING_TYPES,
+                currentVersion = EmbeddingGenerationWorker.CURRENT_MODEL_VERSION,
+                limit = third,
+            )
 
             // Combine and get meme data
-            val allMemeIds = (memesWithoutEmbeddings + memesNeedingRegeneration).distinct().take(limit)
+            val allMemeIds = (memesWithoutEmbeddings + memesNeedingRegeneration + memesIncomplete)
+                .distinct()
+                .take(limit)
 
             return allMemeIds.mapNotNull { memeId ->
                 memeDao.getMemeById(memeId)?.let { entity ->
@@ -70,10 +82,19 @@ class DefaultEmbeddingWorkRepository
 
         override suspend fun countMemesNeedingEmbeddings(): Int {
             return memeEmbeddingDao.countMemesWithoutEmbeddings() +
-                memeEmbeddingDao.countEmbeddingsNeedingRegeneration()
+                memeEmbeddingDao.countEmbeddingsNeedingRegeneration() +
+                memeEmbeddingDao.countMemesWithIncompleteEmbeddings(
+                    expectedTypeCount = EXPECTED_EMBEDDING_TYPES,
+                    currentVersion = EmbeddingGenerationWorker.CURRENT_MODEL_VERSION,
+                )
         }
 
         override suspend fun markOutdatedEmbeddings(currentVersion: String) {
             memeEmbeddingDao.markOutdatedForRegeneration(currentVersion)
+        }
+
+        companion object {
+            /** Number of embedding types the generator produces per meme. */
+            private const val EXPECTED_EMBEDDING_TYPES = 4
         }
     }

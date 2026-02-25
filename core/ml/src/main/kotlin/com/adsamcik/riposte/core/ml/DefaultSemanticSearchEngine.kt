@@ -114,7 +114,7 @@ class DefaultSemanticSearchEngine
                     topScores.joinToString { "%.4f".format(it.relevanceScore) },
                 )
 
-                applyDynamicThreshold(scored, limit)
+                applyDynamicThreshold(scored, limit, threshold)
             }
 
         override fun cosineSimilarity(
@@ -150,10 +150,14 @@ class DefaultSemanticSearchEngine
          * Dynamic threshold using z-score normalization and gap detection.
          * Returns only results significantly above the mean similarity,
          * with a minimum floor to always show some results.
+         *
+         * @param absoluteFloor Hard minimum similarity — results below this are always excluded
+         *                      (except when needed to reach [MIN_RESULTS]).
          */
         private fun applyDynamicThreshold(
             scored: List<SearchResult>,
             limit: Int,
+            absoluteFloor: Float = 0f,
         ): List<SearchResult> {
             if (scored.isEmpty()) return emptyList()
 
@@ -176,18 +180,22 @@ class DefaultSemanticSearchEngine
                 findGapCutoff(scores) ?: scores.last()
             }
 
-            val zFiltered = sorted.filter { it.relevanceScore >= zCutoff }
+            // Effective cutoff is the stricter of dynamic and absolute floor
+            val effectiveCutoff = maxOf(zCutoff, absoluteFloor)
 
-            // Ensure minimum results
-            val result = if (zFiltered.size >= minResults) {
-                zFiltered
+            val filtered = sorted.filter { it.relevanceScore >= effectiveCutoff }
+
+            // Ensure minimum results (from candidates above absolute floor if possible)
+            val result = if (filtered.size >= minResults) {
+                filtered
             } else {
+                // Take top minResults, but respect absolute floor for the extras
                 sorted.take(minResults)
             }
 
             Timber.d(
-                "Dynamic threshold: mean=%.4f, stddev=%.4f, cutoff=%.4f, %d/%d kept",
-                mean, stddev, zCutoff, result.size, sorted.size,
+                "Dynamic threshold: mean=%.4f, stddev=%.4f, zCutoff=%.4f, floor=%.4f, %d/%d kept",
+                mean, stddev, zCutoff, absoluteFloor, result.size, sorted.size,
             )
 
             return result.take(limit)

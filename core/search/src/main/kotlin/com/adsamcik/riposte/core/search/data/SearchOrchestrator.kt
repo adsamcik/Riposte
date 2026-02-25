@@ -55,7 +55,8 @@ class SearchOrchestrator @Inject constructor(
             available.map { strategy ->
                 async {
                     try {
-                        strategy to strategy.search(query, limit)
+                        // Fetch wider window so usage reranking can promote borderline candidates
+                        strategy to strategy.search(query, limit * RERANK_WINDOW_MULTIPLIER)
                     } catch (
                         @Suppress("TooGenericExceptionCaught")
                         e: Exception,
@@ -67,7 +68,10 @@ class SearchOrchestrator @Inject constructor(
             }.map { it.await() }
         }
 
-        return applyUsageReranking(fuseResults(resultsByStrategy, limit))
+        return applyUsageReranking(
+            fuseResults(resultsByStrategy, limit * RERANK_WINDOW_MULTIPLIER),
+            limit,
+        )
     }
 
     /**
@@ -117,7 +121,7 @@ class SearchOrchestrator @Inject constructor(
      * memes float up when relevance scores are close.
      * The boost is capped to prevent popular memes from overriding relevance.
      */
-    private fun applyUsageReranking(results: List<SearchResult>): List<SearchResult> {
+    private fun applyUsageReranking(results: List<SearchResult>, limit: Int): List<SearchResult> {
         return results
             .map { result ->
                 val boost = computeUsageBoost(result.meme)
@@ -128,6 +132,7 @@ class SearchOrchestrator @Inject constructor(
                 }
             }
             .sortedByDescending { it.relevanceScore }
+            .take(limit)
     }
 
     private fun computeUsageBoost(meme: com.adsamcik.riposte.core.model.Meme): Float {
@@ -142,6 +147,9 @@ class SearchOrchestrator @Inject constructor(
 
     companion object {
         private const val DEFAULT_LIMIT = 20
+
+        /** Wider candidate window for usage reranking (fetch 2× limit, rerank, then trim). */
+        private const val RERANK_WINDOW_MULTIPLIER = 2
 
         /** RRF constant k — controls how much rank position matters. */
         private const val RRF_K = 60f
