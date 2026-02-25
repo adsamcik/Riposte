@@ -215,6 +215,95 @@ class MemeEmbeddingDaoTest {
             assertThat(v2Count!!.count).isEqualTo(1)
         }
 
+    // ============ Adversarial / Duplicate Data Tests ============
+
+    @Test
+    fun `getMemesWithEmbeddings returns multiple rows for meme with multiple embedding types`() =
+        runTest {
+            // Given
+            val memeId = insertTestMeme()
+            val contentEmbedding = createTestEmbedding(memeId).copy(embeddingType = "content")
+            val intentEmbedding = createTestEmbedding(memeId).copy(embeddingType = "intent")
+            embeddingDao.insertEmbedding(contentEmbedding)
+            embeddingDao.insertEmbedding(intentEmbedding)
+
+            // When
+            val results = embeddingDao.getMemesWithEmbeddings()
+
+            // Then — one row per (meme, embeddingType)
+            assertThat(results).hasSize(2)
+            assertThat(results.map { it.memeId }.distinct()).containsExactly(memeId)
+            assertThat(results.map { it.embeddingType }).containsExactly("content", "intent")
+        }
+
+    @Test
+    fun `getContentEmbeddingsExcluding returns only content embeddings`() =
+        runTest {
+            // Given
+            val memeId = insertTestMeme()
+            val contentEmbedding = createTestEmbedding(memeId).copy(embeddingType = "content")
+            val intentEmbedding = createTestEmbedding(memeId).copy(embeddingType = "intent")
+            embeddingDao.insertEmbedding(contentEmbedding)
+            embeddingDao.insertEmbedding(intentEmbedding)
+
+            // When — excludeMemeId = -1 so nothing is excluded
+            val results = embeddingDao.getContentEmbeddingsExcluding(excludeMemeId = -1)
+
+            // Then — only content embedding returned
+            assertThat(results).hasSize(1)
+            assertThat(results[0].memeId).isEqualTo(memeId)
+        }
+
+    @Test
+    fun `getContentEmbeddingsExcluding excludes specified meme`() =
+        runTest {
+            // Given
+            val meme1Id = insertTestMeme("meme1")
+            val meme2Id = insertTestMeme("meme2")
+            embeddingDao.insertEmbedding(createTestEmbedding(meme1Id))
+            embeddingDao.insertEmbedding(createTestEmbedding(meme2Id))
+
+            // When — exclude meme1
+            val results = embeddingDao.getContentEmbeddingsExcluding(excludeMemeId = meme1Id)
+
+            // Then — only meme2 returned
+            assertThat(results).hasSize(1)
+            assertThat(results[0].memeId).isEqualTo(meme2Id)
+        }
+
+    @Test
+    fun `getMemeIdsWithoutEmbeddings ignores memes with any embedding type`() =
+        runTest {
+            // Given — meme1 has only "intent" embedding (no "content"), meme2 has no embeddings
+            val meme1Id = insertTestMeme("meme1")
+            val meme2Id = insertTestMeme("meme2")
+            val intentEmbedding = createTestEmbedding(meme1Id).copy(embeddingType = "intent")
+            embeddingDao.insertEmbedding(intentEmbedding)
+
+            // When
+            val idsWithout = embeddingDao.getMemeIdsWithoutEmbeddings()
+
+            // Then — meme1 has an embedding row so is NOT in the result
+            assertThat(idsWithout).containsExactly(meme2Id)
+        }
+
+    @Test
+    fun `countValidEmbeddings counts distinct memes not total embeddings`() =
+        runTest {
+            // Given — one meme with two valid embeddings (content + intent)
+            val memeId = insertTestMeme()
+            val contentEmbedding = createTestEmbedding(memeId).copy(embeddingType = "content")
+            val intentEmbedding = createTestEmbedding(memeId).copy(embeddingType = "intent")
+            embeddingDao.insertEmbedding(contentEmbedding)
+            embeddingDao.insertEmbedding(intentEmbedding)
+
+            // When
+            val count = embeddingDao.countValidEmbeddings()
+
+            // Then — COUNT(DISTINCT memeId) means 1, not 2
+            assertThat(count).isEqualTo(1)
+        }
+
     private suspend fun insertTestMeme(name: String = "test"): Long {
         val entity =
             MemeEntity(

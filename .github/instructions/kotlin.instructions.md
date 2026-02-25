@@ -8,10 +8,23 @@ applyTo: '**/*.kt'
 ## Language Features
 
 ### Null Safety
-- Embrace Kotlin's null safety; avoid `!!` operator
+- Embrace Kotlin's null safety; **never use `!!` in production code**
 - Use safe calls `?.` and Elvis operator `?:` appropriately
-- Use `requireNotNull()` or `checkNotNull()` when nullability is a programming error
+- Use `requireNotNull(value) { "descriptive message" }` when nullability is a programming error
+- Use `checkNotNull()` for state validation in public APIs
 - Prefer non-nullable types in public APIs
+- `!!` is only acceptable in **test files** where a crash on null is the desired assertion behavior
+
+```kotlin
+// ✅ Correct: requireNotNull with message
+val meme = requireNotNull(repository.getMemeById(id)) { "Meme $id not found" }
+
+// ✅ Correct: Safe call with fallback
+val name = meme?.displayName ?: "Unknown"
+
+// ❌ FORBIDDEN in production: !! operator
+val meme = repository.getMemeById(id)!!  // Crashes with unhelpful NPE
+```
 
 ### Data Classes
 ```kotlin
@@ -55,6 +68,80 @@ sealed interface Result<out T> {
 - Prefer `suspend` functions for one-shot operations
 - Use `Flow` for streams of data
 - Always specify dispatchers explicitly for background work
+
+### Coroutine Error Handling
+**Every `viewModelScope.launch` block MUST have error handling.** Unhandled exceptions in coroutines silently cancel the scope or crash the app.
+
+```kotlin
+// ✅ Correct: try-catch inside launch
+viewModelScope.launch {
+    try {
+        val result = repository.deleteMeme(id)
+        _uiState.update { it.copy(deleteSuccess = true) }
+    } catch (e: Exception) {
+        _uiState.update { it.copy(error = e.message) }
+    }
+}
+
+// ✅ Also correct: Result wrapper from use case
+viewModelScope.launch {
+    when (val result = deleteMemeUseCase(id)) {
+        is Result.Success -> _uiState.update { it.copy(deleteSuccess = true) }
+        is Result.Error -> _uiState.update { it.copy(error = result.exception.message) }
+    }
+}
+
+// ✅ Good: safeLaunch helper centralizes error handling
+private fun safeLaunch(block: suspend () -> Unit) {
+    viewModelScope.launch {
+        try { block() }
+        catch (e: Exception) {
+            Timber.e(e, "Operation failed")
+            _effects.send(ShowError(e.message))
+        }
+    }
+}
+
+// ✅ Good: .catch on Flow collectors
+useCase().catch { e -> Timber.e(e) }.collect { ... }
+
+// ❌ FORBIDDEN: Bare launch with no error handling
+viewModelScope.launch {
+    repository.deleteMeme(id)  // If this throws, scope is silently cancelled
+}
+```
+
+### Thread-Safe Caching
+Use `Mutex` to protect shared mutable state accessed from coroutines. Never use bare `HashMap`/`MutableList` shared across coroutines without synchronization.
+
+```kotlin
+// ✅ Correct: Mutex-guarded cache
+private val cacheMutex = Mutex()
+private val cache = mutableMapOf<Long, Embedding>()
+
+suspend fun getOrCompute(id: Long): Embedding = cacheMutex.withLock {
+    cache.getOrPut(id) { computeEmbedding(id) }
+}
+
+// ❌ FORBIDDEN: Unguarded shared mutable state
+private val cache = mutableMapOf<Long, Embedding>()
+suspend fun getOrCompute(id: Long): Embedding {
+    return cache.getOrPut(id) { computeEmbedding(id) }  // Race condition
+}
+```
+
+**When to use `Mutex`:** Any `MutableMap`, `MutableList`, or `var` that is read/written from multiple coroutines (e.g., embedding caches, search result caches, in-memory indexes).
+
+**When to use `synchronized`:** Non-suspend functions that need thread safety (e.g., `operator fun invoke()` without `suspend`):
+
+```kotlin
+// ✅ Correct: synchronized for non-suspend functions
+private val lock = Any()
+operator fun invoke(): Result = synchronized(lock) {
+    if (cached != null) return cached
+    compute().also { cached = it }
+}
+```
 
 ## Naming Conventions
 

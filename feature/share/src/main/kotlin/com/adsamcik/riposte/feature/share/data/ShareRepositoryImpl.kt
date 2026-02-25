@@ -10,6 +10,7 @@ import androidx.core.content.FileProvider
 import com.adsamcik.riposte.core.common.AppConstants
 import com.adsamcik.riposte.core.common.share.ShareRepository
 import com.adsamcik.riposte.core.database.dao.MemeDao
+import com.adsamcik.riposte.core.database.mapper.MemeMapper
 import com.adsamcik.riposte.core.datastore.PreferencesDataStore
 import com.adsamcik.riposte.core.ml.XmpMetadataHandler
 import com.adsamcik.riposte.core.model.EmojiTag
@@ -218,13 +219,19 @@ class ShareRepositoryImpl
                         ) ?: return@withContext Result.failure(Exception("Failed to create media entry"))
 
                     // Write processed image to MediaStore
-                    resolver.openOutputStream(imageUri)?.use { output ->
+                    val outputStream = resolver.openOutputStream(imageUri)
+                        ?: run {
+                            resolver.delete(imageUri, null, null)
+                            return@withContext Result.failure(Exception("Failed to open output stream"))
+                        }
+                    outputStream.use { output ->
                         // Process and write
                         val tempFile = File(shareCacheDir, "temp_gallery_${System.currentTimeMillis()}")
                         val result = imageProcessor.processImage(meme.filePath, config, tempFile)
 
                         when (result) {
                             is ImageProcessor.ProcessResult.Error -> {
+                                tempFile.delete()
                                 resolver.delete(imageUri, null, null)
                                 return@withContext Result.failure(Exception(result.message))
                             }
@@ -312,25 +319,10 @@ class ShareRepositoryImpl
 
         /**
          * Parse emoji tags from the stored JSON string.
-         * Handles both comma-separated format and potential JSON array format for backwards compatibility.
+         * Delegates to [MemeMapper.parseEmojiTagsJson] for consistent parsing across the app.
          */
         private fun parseEmojiTags(emojiTagsJson: String): List<EmojiTag> {
-            if (emojiTagsJson.isBlank()) return emptyList()
-
-            return try {
-                // Standard format: comma-separated emoji characters
-                emojiTagsJson.split(",")
-                    .map { it.trim() }
-                    .filter { it.isNotEmpty() }
-                    .map { EmojiTag.fromEmoji(it) }
-            } catch (
-                @Suppress("TooGenericExceptionCaught") // Parsing may throw various exceptions
-                e: Exception,
-            ) {
-                // If parsing fails, return empty list rather than crash
-                Timber.e(e, "Failed to parse emoji tags from JSON")
-                emptyList()
-            }
+            return MemeMapper.parseEmojiTagsJson(emojiTagsJson)
         }
 
         private fun com.adsamcik.riposte.core.database.entity.MemeEntity.toDomain(): Meme {

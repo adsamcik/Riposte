@@ -37,6 +37,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.BrokenImage
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
@@ -49,7 +50,7 @@ import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
-import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -372,7 +373,7 @@ private fun MemeDetailContent(
                 modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars),
             )
         },
-        containerColor = MaterialTheme.colorScheme.scrim,
+        containerColor = Color.Black,
         sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
         sheetShape = MaterialTheme.shapes.extraLarge,
     ) { paddingValues ->
@@ -566,8 +567,13 @@ private fun MemeActionButtonsRow(
             notFavoritedText = notFavoritedText,
         )
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            FilledTonalIconButton(
+            IconButton(
                 onClick = { onIntent(MemeDetailIntent.ShowDeleteDialog) },
+                modifier = Modifier
+                    .background(
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        shape = CircleShape,
+                    ),
             ) {
                 Icon(
                     Icons.Default.Delete,
@@ -592,8 +598,13 @@ private fun EditActionButton(
     onToggleEdit: () -> Unit,
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        FilledTonalIconButton(
+        IconButton(
             onClick = { if (isEditMode) onCancelEdit() else onToggleEdit() },
+            modifier = Modifier
+                .background(
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    shape = CircleShape,
+                ),
         ) {
             Icon(
                 if (isEditMode) Icons.Default.Close else Icons.Default.Edit,
@@ -638,7 +649,7 @@ private fun FavoriteActionButton(
             finishedListener = { animateTrigger = 0 },
             label = "favorite_bounce",
         )
-        FilledTonalIconButton(
+        IconButton(
             onClick = {
                 animateTrigger++
                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -646,6 +657,10 @@ private fun FavoriteActionButton(
             },
             modifier =
                 Modifier
+                    .background(
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        shape = CircleShape,
+                    )
                     .graphicsLayer {
                         scaleX = animatedScale
                         scaleY = animatedScale
@@ -745,7 +760,7 @@ private fun MemeEditSaveButtons(
             Text(stringResource(R.string.gallery_button_discard))
         }
         Spacer(Modifier.width(8.dp))
-        TextButton(
+        FilledTonalButton(
             onClick = { onIntent(MemeDetailIntent.SaveChanges) },
             enabled = uiState.hasUnsavedChanges && !uiState.isSaving,
         ) {
@@ -823,7 +838,7 @@ private fun MemeViewModeContent(
             maxLines = if (descriptionExpanded) Int.MAX_VALUE else 2,
             overflow = TextOverflow.Ellipsis,
             onTextLayout = { result -> hasTextOverflow = result.hasVisualOverflow },
-            modifier = Modifier.clickable { descriptionExpanded = !descriptionExpanded },
+            modifier = Modifier.clickable(role = Role.Button) { descriptionExpanded = !descriptionExpanded },
         )
         if (hasTextOverflow || descriptionExpanded) {
             Text(
@@ -835,8 +850,8 @@ private fun MemeViewModeContent(
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier
-                    .clickable { descriptionExpanded = !descriptionExpanded }
-                    .padding(top = 4.dp),
+                    .clickable(role = Role.Button) { descriptionExpanded = !descriptionExpanded }
+                    .padding(vertical = 12.dp),
             )
         }
     }
@@ -1006,6 +1021,25 @@ private fun ZoomableImage(
             onState = { imageState = it },
             modifier = Modifier.fillMaxSize(),
         )
+        if (imageState is AsyncImagePainter.State.Error) {
+            Column(
+                modifier = Modifier.align(Alignment.Center),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Icon(
+                    imageVector = Icons.Default.BrokenImage,
+                    contentDescription = null,
+                    modifier = Modifier.size(48.dp),
+                    tint = MaterialTheme.colorScheme.onErrorContainer,
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = stringResource(R.string.gallery_error_image_load_failed),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                )
+            }
+        }
     }
 }
 
@@ -1057,7 +1091,7 @@ private fun SimilarMemesSection(
                     ) {
                         items(
                             items = uniqueMemes,
-                            key = { it.id },
+                            key = { "similar_${it.id}" },
                         ) { meme ->
                             SimilarMemeCard(
                                 meme = meme,

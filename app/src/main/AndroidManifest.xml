@@ -5,21 +5,13 @@
     <!-- Permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
     
-    <!-- For reading images from external storage (Android 12 and below) -->
-    <uses-permission 
-        android:name="android.permission.READ_EXTERNAL_STORAGE"
-        android:maxSdkVersion="32" />
-    
-    <!-- For reading images on Android 13+ -->
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-    
-    <!-- For sharing files -->
+    <!-- WRITE_EXTERNAL_STORAGE only needed for save-to-gallery on Android 9 and below.
+         Android 10+ uses MediaStore which doesn't require this permission.
+         Photo Picker (PickVisualMedia) and OpenDocument don't need READ permissions. -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28" />
 
-    <!-- For import service foreground notification -->
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <!-- For import/embedding completion notifications -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
@@ -85,11 +77,6 @@
                 tools:node="remove" />
         </provider>
 
-        <!-- Import processing foreground service (used by WorkManager when app is backgrounded) -->
-        <service
-            android:name="androidx.work.impl.foreground.SystemForegroundService"
-            android:foregroundServiceType="dataSync"
-            tools:node="merge" />
     </application>
 
 </manifest>

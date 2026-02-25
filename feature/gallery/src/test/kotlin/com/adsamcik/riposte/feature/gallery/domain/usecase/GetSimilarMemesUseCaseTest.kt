@@ -317,5 +317,29 @@ class GetSimilarMemesUseCaseTest {
             assertThat(found.memes[0].id).isEqualTo(3L)
         }
 
+    @Test
+    fun `final memes list has unique IDs even when getMemeById returns duplicates`() =
+        runTest {
+            val currentEmbedding = FloatArray(128) { 1.0f }
+
+            coEvery { embeddingManager.getEmbedding(1L) } returns currentEmbedding
+            // Same memeId from different embedding rows (after distinctBy at embedding level)
+            coEvery { galleryRepository.getEmbeddingsExcluding(1L) } returns
+                listOf(
+                    createEmbeddingData(2L),
+                    createEmbeddingData(3L),
+                )
+            coEvery { semanticSearchEngine.cosineSimilarity(any(), any()) } returns 0.9f
+            coEvery { galleryRepository.getMemeById(2L) } returns createMeme(2L)
+            coEvery { galleryRepository.getMemeById(3L) } returns createMeme(3L)
+
+            val result = useCase(1L)
+
+            assertThat(result).isInstanceOf(SimilarMemesStatus.Found::class.java)
+            val found = result as SimilarMemesStatus.Found
+            assertThat(found.memes.map { it.id }).containsNoDuplicates()
+            assertThat(found.memes).hasSize(2)
+        }
+
     // endregion
 }

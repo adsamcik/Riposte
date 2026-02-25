@@ -35,7 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+
 import com.adsamcik.riposte.feature.gallery.R
 
 /**
@@ -44,9 +44,36 @@ import com.adsamcik.riposte.feature.gallery.R
  */
 private val commonEmojis =
     listOf(
-        "😀", "😂", "🤣", "😊", "😍", "🥺", "😭", "😤", "😡", "🤔",
-        "😏", "😴", "🤯", "🥳", "😎", "🤡", "👀", "💀", "🔥", "💯",
-        "❤️", "💔", "👍", "👎", "👏", "🙏", "💪", "🎉", "✨", "🌟",
+        "😀" to "happy,smile,grin,face",
+        "😂" to "laugh,cry,tears,joy,funny",
+        "🤣" to "rofl,laugh,rolling",
+        "😊" to "blush,smile,happy,warm",
+        "😍" to "love,heart,eyes,adore",
+        "🥺" to "pleading,puppy,cute,sad",
+        "😭" to "cry,sob,wail,sad",
+        "😤" to "angry,frustrated,huff,mad",
+        "😡" to "angry,mad,rage,furious",
+        "🤔" to "think,hmm,wonder,curious",
+        "😏" to "smirk,sly,suggestive",
+        "😴" to "sleep,tired,zzz,boring",
+        "🤯" to "mind,blown,explode,shock",
+        "🥳" to "party,celebrate,birthday",
+        "😎" to "cool,sunglasses,chill",
+        "🤡" to "clown,silly,joke",
+        "👀" to "eyes,look,see,watching",
+        "💀" to "skull,dead,dying,oof",
+        "🔥" to "fire,hot,lit,awesome",
+        "💯" to "hundred,perfect,score",
+        "❤️" to "heart,love,red",
+        "💔" to "broken,heart,sad",
+        "👍" to "thumbs,up,good,yes,ok,like",
+        "👎" to "thumbs,down,bad,no,dislike",
+        "👏" to "clap,applause,bravo",
+        "🙏" to "pray,please,thanks,hope",
+        "💪" to "strong,muscle,flex,power",
+        "🎉" to "party,tada,celebrate,confetti",
+        "✨" to "sparkle,magic,shine,star",
+        "🌟" to "star,glow,shine",
     )
 
 /**
@@ -68,8 +95,10 @@ fun EditEmojiDialog(
             if (searchQuery.isBlank()) {
                 commonEmojis
             } else {
-                commonEmojis.filter { emoji ->
-                    emoji.contains(searchQuery)
+                val query = searchQuery.lowercase()
+                commonEmojis.filter { (emoji, keywords) ->
+                    emoji == searchQuery ||
+                        keywords.split(",").any { it.contains(query) }
                 }
             }
         }
@@ -139,7 +168,7 @@ fun EditEmojiDialog(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    filteredEmojis.forEach { emoji ->
+                    filteredEmojis.forEach { (emoji, _) ->
                         val isSelected = selectedEmojis.contains(emoji)
                         EmojiChip(
                             emoji = emoji,
@@ -203,7 +232,7 @@ private fun EmojiChip(
     ) {
         Text(
             text = emoji,
-            fontSize = 20.sp,
+            style = MaterialTheme.typography.titleMedium,
         )
 
         if (isSelected && showRemove) {

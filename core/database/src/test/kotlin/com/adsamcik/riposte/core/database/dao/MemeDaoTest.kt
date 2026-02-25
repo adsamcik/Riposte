@@ -5,6 +5,8 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import app.cash.turbine.test
 import com.adsamcik.riposte.core.database.MemeDatabase
+import com.adsamcik.riposte.core.database.dao.EmojiTagDao
+import com.adsamcik.riposte.core.database.entity.EmojiTagEntity
 import com.adsamcik.riposte.core.database.entity.MemeEntity
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.test.runTest
@@ -20,6 +22,7 @@ import org.robolectric.annotation.Config
 class MemeDaoTest {
     private lateinit var database: MemeDatabase
     private lateinit var memeDao: MemeDao
+    private lateinit var emojiTagDao: EmojiTagDao
 
     @Before
     fun setup() {
@@ -32,12 +35,88 @@ class MemeDaoTest {
                 .allowMainThreadQueries()
                 .build()
         memeDao = database.memeDao()
+        emojiTagDao = database.emojiTagDao()
     }
 
     @After
     fun teardown() {
         database.close()
     }
+
+    // region Duplicate & Adversarial Data Tests
+
+    @Test
+    fun `getMemesByEmoji returns meme once even when tagged with same emoji via replace`() =
+        runTest {
+            // EmojiTagEntity has composite PK [memeId, emoji], so inserting the same
+            // (memeId, emoji) pair twice results in a REPLACE — only one row exists.
+            // This test documents that the schema prevents duplicate emoji tags,
+            // so getMemesByEmoji (which lacks DISTINCT) still returns 1 row per meme.
+            val id = memeDao.insertMeme(createMeme(filePath = "/storage/dup_emoji.png"))
+            emojiTagDao.insertEmojiTags(
+                listOf(
+                    EmojiTagEntity(memeId = id, emoji = "😂", emojiName = "face_with_tears_of_joy"),
+                    EmojiTagEntity(memeId = id, emoji = "😂", emojiName = "face_with_tears_of_joy"),
+                ),
+            )
+
+            memeDao.getMemesByEmoji("😂").test {
+                val result = awaitItem()
+                // Schema's composite PK deduplicates at storage level — only 1 row in emoji_tags,
+                // so the JOIN produces exactly 1 result even without DISTINCT.
+                assertThat(result).hasSize(1)
+                assertThat(result[0].id).isEqualTo(id)
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `getMemesByEmoji returns distinct memes when meme has multiple emoji tags`() =
+        runTest {
+            val id = memeDao.insertMeme(createMeme(filePath = "/storage/multi_emoji.png"))
+            emojiTagDao.insertEmojiTags(
+                listOf(
+                    EmojiTagEntity(memeId = id, emoji = "😂", emojiName = "face_with_tears_of_joy"),
+                    EmojiTagEntity(memeId = id, emoji = "🔥", emojiName = "fire"),
+                ),
+            )
+
+            // Query for first emoji — should return exactly 1 meme
+            memeDao.getMemesByEmoji("😂").test {
+                val result = awaitItem()
+                assertThat(result).hasSize(1)
+                assertThat(result[0].id).isEqualTo(id)
+                cancelAndIgnoreRemainingEvents()
+            }
+
+            // Query for second emoji — should also return exactly 1 meme
+            memeDao.getMemesByEmoji("🔥").test {
+                val result = awaitItem()
+                assertThat(result).hasSize(1)
+                assertThat(result[0].id).isEqualTo(id)
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `deleteMemesByIds with duplicate IDs in list does not error`() =
+        runTest {
+            val id = memeDao.insertMeme(createMeme(filePath = "/storage/dup_delete.png"))
+
+            // SQL IN clause handles duplicate values gracefully
+            memeDao.deleteMemesByIds(listOf(id, id))
+
+            assertThat(memeDao.getMemeById(id)).isNull()
+            assertThat(memeDao.getMemeCount()).isEqualTo(0)
+        }
+
+    @Test
+    fun `getMemeCount returns zero for empty database`() =
+        runTest {
+            assertThat(memeDao.getMemeCount()).isEqualTo(0)
+        }
+
+    // endregion
 
     // region Test Data Helpers
 

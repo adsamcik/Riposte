@@ -48,7 +48,10 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import java.io.ByteArrayOutputStream
 import java.io.File
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -60,25 +63,25 @@ class SettingsViewModelTest {
     private lateinit var context: Context
     private lateinit var viewModel: SettingsViewModel
 
-    // Use case mocks
+    // Use case mocks — setter use cases are relaxed since most tests only verify specific ones
     private lateinit var getAppPreferencesUseCase: GetAppPreferencesUseCase
     private lateinit var getSharingPreferencesUseCase: GetSharingPreferencesUseCase
-    private lateinit var setDarkModeUseCase: SetDarkModeUseCase
-    private lateinit var setDynamicColorsUseCase: SetDynamicColorsUseCase
-    private lateinit var setEnableSemanticSearchUseCase: SetEnableSemanticSearchUseCase
-    private lateinit var setSaveSearchHistoryUseCase: SetSaveSearchHistoryUseCase
-    private lateinit var setSortEmojisByUsageUseCase: SetSortEmojisByUsageUseCase
-    private lateinit var setSearchModeUseCase: SetSearchModeUseCase
-    private lateinit var setDefaultFormatUseCase: SetDefaultFormatUseCase
-    private lateinit var setDefaultQualityUseCase: SetDefaultQualityUseCase
-    private lateinit var setDefaultMaxDimensionUseCase: SetDefaultMaxDimensionUseCase
-    private lateinit var setStripMetadataUseCase: SetStripMetadataUseCase
-    private lateinit var setGridDensityUseCase: SetGridDensityUseCase
-    private lateinit var exportPreferencesUseCase: ExportPreferencesUseCase
-    private lateinit var importPreferencesUseCase: ImportPreferencesUseCase
+    private val setDarkModeUseCase: SetDarkModeUseCase = mockk(relaxed = true)
+    private val setDynamicColorsUseCase: SetDynamicColorsUseCase = mockk(relaxed = true)
+    private val setEnableSemanticSearchUseCase: SetEnableSemanticSearchUseCase = mockk(relaxed = true)
+    private val setSaveSearchHistoryUseCase: SetSaveSearchHistoryUseCase = mockk(relaxed = true)
+    private val setSortEmojisByUsageUseCase: SetSortEmojisByUsageUseCase = mockk(relaxed = true)
+    private val setSearchModeUseCase: SetSearchModeUseCase = mockk(relaxed = true)
+    private val setDefaultFormatUseCase: SetDefaultFormatUseCase = mockk(relaxed = true)
+    private val setDefaultQualityUseCase: SetDefaultQualityUseCase = mockk(relaxed = true)
+    private val setDefaultMaxDimensionUseCase: SetDefaultMaxDimensionUseCase = mockk(relaxed = true)
+    private val setStripMetadataUseCase: SetStripMetadataUseCase = mockk(relaxed = true)
+    private val setGridDensityUseCase: SetGridDensityUseCase = mockk(relaxed = true)
+    private val exportPreferencesUseCase: ExportPreferencesUseCase = mockk(relaxed = true)
+    private val importPreferencesUseCase: ImportPreferencesUseCase = mockk(relaxed = true)
     private lateinit var observeEmbeddingStatisticsUseCase: ObserveEmbeddingStatisticsUseCase
     private lateinit var observeLibraryStatsUseCase: ObserveLibraryStatsUseCase
-    private lateinit var crashLogManager: CrashLogManager
+    private val crashLogManager: CrashLogManager = mockk(relaxed = true)
 
     private val appPreferencesFlow = MutableStateFlow(createDefaultAppPreferences())
     private val sharingPreferencesFlow = MutableStateFlow(createDefaultSharingPreferences())
@@ -106,22 +109,8 @@ class SettingsViewModelTest {
         // Setup use case mocks
         getAppPreferencesUseCase = mockk()
         getSharingPreferencesUseCase = mockk()
-        setDarkModeUseCase = mockk(relaxed = true)
-        setDynamicColorsUseCase = mockk(relaxed = true)
-        setEnableSemanticSearchUseCase = mockk(relaxed = true)
-        setSaveSearchHistoryUseCase = mockk(relaxed = true)
-        setSortEmojisByUsageUseCase = mockk(relaxed = true)
-        setSearchModeUseCase = mockk(relaxed = true)
-        setDefaultFormatUseCase = mockk(relaxed = true)
-        setDefaultQualityUseCase = mockk(relaxed = true)
-        setDefaultMaxDimensionUseCase = mockk(relaxed = true)
-        setStripMetadataUseCase = mockk(relaxed = true)
-        setGridDensityUseCase = mockk(relaxed = true)
-        exportPreferencesUseCase = mockk(relaxed = true)
-        importPreferencesUseCase = mockk(relaxed = true)
         observeEmbeddingStatisticsUseCase = mockk(relaxed = true)
         observeLibraryStatsUseCase = mockk(relaxed = true)
-        crashLogManager = mockk(relaxed = true)
 
         every { getAppPreferencesUseCase() } returns appPreferencesFlow
         every { getSharingPreferencesUseCase() } returns sharingPreferencesFlow
@@ -431,6 +420,7 @@ class SettingsViewModelTest {
         assertThat(isKeepMetadata).isFalse()
     }
 
+
     // endregion
 
     // region Regression: Default format is JPEG
@@ -499,7 +489,7 @@ class SettingsViewModelTest {
             advanceUntilIdle()
 
             val state = viewModel.uiState.value
-            assertThat(state.cacheSize).isEqualTo("2.00 MB")
+            assertThat(state.cacheSize).isEqualTo("2.0 MB")
         }
 
     @Test
@@ -516,7 +506,7 @@ class SettingsViewModelTest {
             advanceUntilIdle()
 
             val state = viewModel.uiState.value
-            assertThat(state.cacheSize).isEqualTo("1.00 KB")
+            assertThat(state.cacheSize).isEqualTo("1.0 KB")
         }
 
     @Test
@@ -550,7 +540,7 @@ class SettingsViewModelTest {
             advanceUntilIdle()
 
             val state = viewModel.uiState.value
-            assertThat(state.cacheSize).isEqualTo("2.00 GB")
+            assertThat(state.cacheSize).isEqualTo("2.0 GB")
         }
 
     @Test
@@ -574,7 +564,7 @@ class SettingsViewModelTest {
             advanceUntilIdle()
 
             val state = viewModel.uiState.value
-            assertThat(state.cacheSize).isEqualTo("2.00 MB")
+            assertThat(state.cacheSize).isEqualTo("2.0 MB")
         }
 
     @Test
@@ -737,6 +727,64 @@ class SettingsViewModelTest {
             }
         }
 
+    @Test
+    fun `exportToUri writes settings and shows success snackbar`() =
+        runTest {
+            coEvery { exportPreferencesUseCase() } returns """{"version":1}"""
+            every { context.getString(eq(R.string.settings_snackbar_export_success), any()) } returns "Export success"
+
+            val testFile = File.createTempFile("test_export", ".zip")
+            try {
+                val uri: android.net.Uri = mockk()
+                every { context.contentResolver.openOutputStream(uri) } returns testFile.outputStream()
+
+                viewModel = createViewModel()
+                advanceUntilIdle()
+
+                viewModel.effects.test {
+                    viewModel.onIntent(SettingsIntent.ExportToUri(uri))
+                    advanceUntilIdle()
+
+                    val effect = awaitItem()
+                    assertThat(effect).isInstanceOf(SettingsEffect.ShowSnackbar::class.java)
+                    assertThat((effect as SettingsEffect.ShowSnackbar).message).isEqualTo("Export success")
+
+                    cancelAndIgnoreRemainingEvents()
+                }
+
+                assertThat(viewModel.uiState.value.isExporting).isFalse()
+            } finally {
+                testFile.delete()
+            }
+        }
+
+    @Test
+    fun `exportToUri on failure shows error snackbar`() =
+        runTest {
+            every {
+                context.getString(eq(R.string.settings_snackbar_export_failed), any())
+            } returns "Export failed"
+
+            val uri: android.net.Uri = mockk()
+            every { context.contentResolver.openOutputStream(uri) } returns null
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.effects.test {
+                viewModel.onIntent(SettingsIntent.ExportToUri(uri))
+                advanceUntilIdle()
+
+                val effect = awaitItem()
+                assertThat(effect).isInstanceOf(SettingsEffect.ShowSnackbar::class.java)
+                assertThat((effect as SettingsEffect.ShowSnackbar).message).isEqualTo("Export failed")
+
+                cancelAndIgnoreRemainingEvents()
+            }
+
+            assertThat(viewModel.uiState.value.isExporting).isFalse()
+        }
+
     // endregion
 
     // region Import Tests
@@ -821,6 +869,148 @@ class SettingsViewModelTest {
             assertThat(state.showImportConfirmDialog).isFalse()
             assertThat(state.pendingImportJson).isNull()
             assertThat(state.importBackupTimestamp).isNull()
+        }
+
+    @Test
+    fun `importFromUri with valid ZIP extracts settings and shows confirm dialog`() =
+        runTest {
+            val jsonData = """{"version":1,"timestamp":1706198400000}"""
+            val zipBytes = ByteArrayOutputStream().use { baos ->
+                ZipOutputStream(baos).use { zip ->
+                    zip.putNextEntry(ZipEntry("settings.json"))
+                    zip.write(jsonData.toByteArray())
+                    zip.closeEntry()
+                }
+                baos.toByteArray()
+            }
+
+            val uri: android.net.Uri = mockk()
+            every { context.contentResolver.openInputStream(uri) } returns zipBytes.inputStream()
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onIntent(SettingsIntent.ImportFromUri(uri))
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertThat(state.showImportConfirmDialog).isTrue()
+            assertThat(state.pendingImportJson).isEqualTo(jsonData)
+            assertThat(state.importBackupTimestamp).isEqualTo(1706198400000)
+            assertThat(state.isImporting).isFalse()
+        }
+
+    @Test
+    fun `importFromUri with plain JSON text shows confirm dialog`() =
+        runTest {
+            val jsonData = """{"version":2}"""
+            val uri: android.net.Uri = mockk()
+            every { context.contentResolver.openInputStream(uri) } returns jsonData.byteInputStream()
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onIntent(SettingsIntent.ImportFromUri(uri))
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertThat(state.showImportConfirmDialog).isTrue()
+            assertThat(state.pendingImportJson).isEqualTo(jsonData)
+            assertThat(state.importBackupTimestamp).isNull()
+            assertThat(state.isImporting).isFalse()
+        }
+
+    @Test
+    fun `importFromUri with invalid data shows error snackbar`() =
+        runTest {
+            every {
+                context.getString(eq(R.string.settings_snackbar_import_failed), any())
+            } returns "Import failed"
+
+            val uri: android.net.Uri = mockk()
+            every { context.contentResolver.openInputStream(uri) } returns "not json at all {{{".byteInputStream()
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.effects.test {
+                viewModel.onIntent(SettingsIntent.ImportFromUri(uri))
+                advanceUntilIdle()
+
+                val effect = awaitItem()
+                assertThat(effect).isInstanceOf(SettingsEffect.ShowSnackbar::class.java)
+                assertThat((effect as SettingsEffect.ShowSnackbar).message).isEqualTo("Import failed")
+
+                cancelAndIgnoreRemainingEvents()
+            }
+
+            assertThat(viewModel.uiState.value.isImporting).isFalse()
+            assertThat(viewModel.uiState.value.showImportConfirmDialog).isFalse()
+        }
+
+    @Test
+    fun `confirmImport applies settings and shows success snackbar`() =
+        runTest {
+            val jsonData = """{"version":1,"timestamp":1706198400000}"""
+            coEvery { importPreferencesUseCase(jsonData) } returns Result.success(Unit)
+            every { context.getString(R.string.settings_snackbar_import_success) } returns "Import success"
+
+            val uri: android.net.Uri = mockk()
+            every { context.contentResolver.openInputStream(uri) } returns jsonData.byteInputStream()
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onIntent(SettingsIntent.ImportFromUri(uri))
+            advanceUntilIdle()
+
+            viewModel.effects.test {
+                viewModel.onIntent(SettingsIntent.ConfirmImport)
+                advanceUntilIdle()
+
+                val effect = awaitItem()
+                assertThat(effect).isInstanceOf(SettingsEffect.ShowSnackbar::class.java)
+                assertThat((effect as SettingsEffect.ShowSnackbar).message).isEqualTo("Import success")
+
+                cancelAndIgnoreRemainingEvents()
+            }
+
+            coVerify { importPreferencesUseCase(jsonData) }
+            assertThat(viewModel.uiState.value.showImportConfirmDialog).isFalse()
+            assertThat(viewModel.uiState.value.pendingImportJson).isNull()
+        }
+
+    @Test
+    fun `confirmImport on failure shows error snackbar`() =
+        runTest {
+            val jsonData = """{"version":1,"timestamp":1706198400000}"""
+            val error = RuntimeException("Corrupt data")
+            coEvery { importPreferencesUseCase(jsonData) } returns Result.failure(error)
+            every {
+                context.getString(eq(R.string.settings_snackbar_import_failed), any())
+            } returns "Import failed"
+
+            val uri: android.net.Uri = mockk()
+            every { context.contentResolver.openInputStream(uri) } returns jsonData.byteInputStream()
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onIntent(SettingsIntent.ImportFromUri(uri))
+            advanceUntilIdle()
+
+            viewModel.effects.test {
+                viewModel.onIntent(SettingsIntent.ConfirmImport)
+                advanceUntilIdle()
+
+                val effect = awaitItem()
+                assertThat(effect).isInstanceOf(SettingsEffect.ShowSnackbar::class.java)
+                assertThat((effect as SettingsEffect.ShowSnackbar).message).isEqualTo("Import failed")
+
+                cancelAndIgnoreRemainingEvents()
+            }
+
+            assertThat(viewModel.uiState.value.showImportConfirmDialog).isFalse()
         }
 
     // endregion

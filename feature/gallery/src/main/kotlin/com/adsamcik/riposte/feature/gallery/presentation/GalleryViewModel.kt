@@ -11,6 +11,8 @@ import com.adsamcik.riposte.core.common.share.ShareMemeUseCase
 import com.adsamcik.riposte.core.common.suggestion.GetSuggestionsUseCase
 import com.adsamcik.riposte.core.common.suggestion.SuggestionContext
 import com.adsamcik.riposte.core.common.suggestion.Surface
+import com.adsamcik.riposte.core.database.dao.ImportRequestDao
+import com.adsamcik.riposte.core.database.entity.ImportRequestEntity
 import com.adsamcik.riposte.core.datastore.PreferencesDataStore
 import com.adsamcik.riposte.core.events.EmbeddingsReady
 import com.adsamcik.riposte.core.events.EventBus
@@ -55,6 +57,7 @@ class GalleryViewModel
         @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
         private val preferencesDataStore: PreferencesDataStore,
         private val eventBus: EventBus,
+        private val importRequestDao: ImportRequestDao, // TODO: Extract to use case — Clean Architecture violation (H9)
         val searchDelegate: SearchDelegate,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(GalleryUiState())
@@ -70,13 +73,14 @@ class GalleryViewModel
         private val _effects = Channel<GalleryEffect>(Channel.BUFFERED)
         val effects = merge(_effects.receiveAsFlow(), searchDelegate.effects)
 
-        private var pendingDeleteIds: Set<Long> = emptySet()
-
         /** IDs of suggestions shown in the previous session (for staleness rotation). */
         private var lastSessionSuggestionIds: Set<Long> = emptySet()
 
         /** Job for the current memes loading flow, canceled when filter changes. */
         private var memesJob: Job? = null
+
+        /** Job for the delayed deletion, canceled when user triggers undo. */
+        private var deleteJob: Job? = null
 
         init {
             loadPreferences()
@@ -90,6 +94,7 @@ class GalleryViewModel
             observeUniqueEmojis()
             observeFavoritesCount()
             observeEvents()
+            recoverStaleImports()
         }
 
         fun onIntent(intent: GalleryIntent) {
@@ -105,6 +110,7 @@ class GalleryViewModel
                 is GalleryIntent.DeleteSelected -> deleteSelected()
                 is GalleryIntent.ConfirmDelete -> confirmDelete()
                 is GalleryIntent.CancelDelete -> cancelDelete()
+                is GalleryIntent.UndoDelete -> undoDelete()
                 is GalleryIntent.SetFilter -> setFilter(intent.filter)
                 is GalleryIntent.SetGridColumns -> setGridColumns(intent.columns)
                 is GalleryIntent.ShareSelected -> shareSelected()
@@ -166,16 +172,17 @@ class GalleryViewModel
                     .map { it.favoriteMemes }
                     .distinctUntilChanged()
                     .collectLatest { count ->
+                        var shouldReloadMemes = false
                         _uiState.update { state ->
                             // Auto-clear Favorites filter when no favorites remain
                             if (count == 0 && state.filter is GalleryFilter.Favorites) {
+                                shouldReloadMemes = true
                                 state.copy(favoritesCount = count, filter = GalleryFilter.All)
                             } else {
                                 state.copy(favoritesCount = count)
                             }
                         }
-                        // Reload memes if filter was auto-cleared
-                        if (_uiState.value.favoritesCount == 0 && _uiState.value.filter is GalleryFilter.All) {
+                        if (shouldReloadMemes) {
                             loadMemes()
                         }
                     }
@@ -240,7 +247,7 @@ class GalleryViewModel
             }
         }
 
-        /** Observe WorkManager for embedding generation work completion. */
+        /** Observe WorkManager for embedding generation work progress and completion. */
         private fun observeEmbeddingWork() {
             viewModelScope.launch {
                 try {
@@ -250,16 +257,43 @@ class GalleryViewModel
                         )
                         .collectLatest { workInfos ->
                             val workInfo = workInfos.firstOrNull()
-                            if (workInfo?.state == androidx.work.WorkInfo.State.SUCCEEDED) {
-                                val processedCount = workInfo.outputData.getInt("processed_count", 0)
-                                if (processedCount > 0) {
-                                    _uiState.update {
-                                        it.copy(notification = GalleryNotification.IndexingComplete(processedCount))
+                            when (workInfo?.state) {
+                                androidx.work.WorkInfo.State.RUNNING -> {
+                                    val processed = workInfo.progress.getInt("processed_count", 0)
+                                    val remaining = workInfo.progress.getInt("remaining_count", 0)
+                                    if (processed + remaining > 0) {
+                                        _uiState.update {
+                                            it.copy(
+                                                embeddingStatus = EmbeddingWorkStatus.InProgress(
+                                                    processed,
+                                                    remaining,
+                                                ),
+                                            )
+                                        }
                                     }
-                                    // Prune finished work so notification doesn't reappear on next startup
-                                    wm.pruneWork()
-                                    delay(NOTIFICATION_AUTO_DISMISS_MS)
-                                    dismissNotification()
+                                }
+                                androidx.work.WorkInfo.State.ENQUEUED -> {
+                                    // Work is queued but not running yet — show indeterminate
+                                    _uiState.update {
+                                        it.copy(embeddingStatus = EmbeddingWorkStatus.InProgress(0, 0))
+                                    }
+                                }
+                                androidx.work.WorkInfo.State.SUCCEEDED -> {
+                                    val processedCount = workInfo.outputData.getInt("processed_count", 0)
+                                    _uiState.update {
+                                        it.copy(embeddingStatus = EmbeddingWorkStatus.Idle)
+                                    }
+                                    if (processedCount > 0) {
+                                        _uiState.update {
+                                            it.copy(notification = GalleryNotification.IndexingComplete(processedCount))
+                                        }
+                                        wm.pruneWork()
+                                        delay(NOTIFICATION_AUTO_DISMISS_MS)
+                                        dismissNotification()
+                                    }
+                                }
+                                else -> {
+                                    _uiState.update { it.copy(embeddingStatus = EmbeddingWorkStatus.Idle) }
                                 }
                             }
                         }
@@ -281,6 +315,69 @@ class GalleryViewModel
                     eventBus.on<EmbeddingsReady>(),
                 ).collect {
                     refreshSuggestions()
+                }
+            }
+        }
+
+        /**
+         * On startup, detect import requests stuck in IN_PROGRESS for >30 minutes
+         * with no active WorkManager work. Mark them as failed so they don't block
+         * future imports. The user can re-import if needed.
+         */
+        private fun recoverStaleImports() {
+            viewModelScope.launch {
+                try {
+                    val staleThreshold = System.currentTimeMillis() - STALE_IMPORT_THRESHOLD_MS
+                    val staleRequests = importRequestDao.getStaleRequests(staleThreshold)
+                    if (staleRequests.isEmpty()) return@launch
+
+                    val wm = androidx.work.WorkManager.getInstance(context)
+                    val workInfos = wm.getWorkInfosForUniqueWork(
+                        com.adsamcik.riposte.core.common.AppConstants.IMPORT_WORK_NAME,
+                    ).get()
+                    val hasActiveWork = workInfos.any { !it.state.isFinished }
+
+                    if (hasActiveWork) {
+                        Timber.d("Import work still active, skipping stale recovery")
+                        return@launch
+                    }
+
+                    for (request in staleRequests) {
+                        Timber.w(
+                            "Marking stale import %s as failed (%d completed, %d failed of %d)",
+                            request.id,
+                            request.completedCount,
+                            request.failedCount,
+                            request.imageCount,
+                        )
+                        importRequestDao.updateRequestProgress(
+                            id = request.id,
+                            status = if (request.completedCount > 0) {
+                                ImportRequestEntity.STATUS_COMPLETED
+                            } else {
+                                ImportRequestEntity.STATUS_FAILED
+                            },
+                            completed = request.completedCount,
+                            failed = request.failedCount,
+                            updatedAt = System.currentTimeMillis(),
+                        )
+                        _uiState.update {
+                            it.copy(
+                                notification = GalleryNotification.ImportFailed(
+                                    context.getString(
+                                        R.string.gallery_import_stalled,
+                                        request.completedCount,
+                                        request.imageCount,
+                                    ),
+                                ),
+                            )
+                        }
+                    }
+                } catch (
+                    @Suppress("TooGenericExceptionCaught")
+                    e: Exception,
+                ) {
+                    Timber.w(e, "Failed to recover stale imports")
                 }
             }
         }
@@ -462,7 +559,9 @@ class GalleryViewModel
 
         private fun toggleFavorite(memeId: Long) {
             viewModelScope.launch {
-                useCases.toggleFavorite(memeId).onFailure { error ->
+                useCases.toggleFavorite(memeId).onSuccess {
+                    _effects.send(GalleryEffect.TriggerHapticFeedback)
+                }.onFailure { error ->
                     _effects.send(
                         GalleryEffect.ShowError(
                             error.message ?: context.getString(R.string.gallery_snackbar_favorite_failed),
@@ -473,37 +572,53 @@ class GalleryViewModel
         }
 
         private fun deleteSelected() {
-            pendingDeleteIds = _uiState.value.selectedMemeIds
+            _uiState.update { it.copy(pendingDeleteIds = it.selectedMemeIds) }
             viewModelScope.launch {
-                _effects.send(GalleryEffect.ShowDeleteConfirmation(pendingDeleteIds.size))
+                _effects.send(GalleryEffect.ShowDeleteConfirmation(_uiState.value.pendingDeleteIds.size))
             }
         }
 
         private fun confirmDelete() {
-            viewModelScope.launch {
-                useCases.deleteMemes(pendingDeleteIds)
-                    .onSuccess {
-                        _effects.send(
-                            GalleryEffect.ShowSnackbar(
-                                context.getString(R.string.gallery_snackbar_deleted, pendingDeleteIds.size),
-                            ),
-                        )
-                        clearSelection()
-                    }
-                    .onFailure { error ->
-                        Timber.e(error, "Failed to delete %d memes", pendingDeleteIds.size)
-                        _effects.send(
-                            GalleryEffect.ShowError(
-                                error.message ?: context.getString(R.string.gallery_snackbar_delete_failed),
-                            ),
-                        )
-                    }
-                pendingDeleteIds = emptySet()
+            val deleteIds = _uiState.value.pendingDeleteIds
+            val count = deleteIds.size
+            clearSelection()
+
+            // Start delayed deletion — gives user time to undo
+            deleteJob?.cancel()
+            deleteJob = viewModelScope.launch {
+                _effects.send(
+                    GalleryEffect.ShowUndoDeleteSnackbar(
+                        message = context.getString(R.string.gallery_snackbar_deleted, count),
+                        count = count,
+                    ),
+                )
+                delay(UNDO_TIMEOUT_MS)
+                // If we reach here, user didn't undo — perform actual deletion
+                performDelete(deleteIds)
             }
         }
 
+        private fun undoDelete() {
+            deleteJob?.cancel()
+            deleteJob = null
+            _uiState.update { it.copy(pendingDeleteIds = emptySet()) }
+        }
+
+        private suspend fun performDelete(deleteIds: Set<Long>) {
+            useCases.deleteMemes(deleteIds)
+                .onFailure { error ->
+                    Timber.e(error, "Failed to delete %d memes", deleteIds.size)
+                    _effects.send(
+                        GalleryEffect.ShowError(
+                            error.message ?: context.getString(R.string.gallery_snackbar_delete_failed),
+                        ),
+                    )
+                }
+            _uiState.update { it.copy(pendingDeleteIds = emptySet()) }
+        }
+
         private fun cancelDelete() {
-            pendingDeleteIds = emptySet()
+            _uiState.update { it.copy(pendingDeleteIds = emptySet()) }
         }
 
         private fun setFilter(filter: GalleryFilter) {
@@ -593,5 +708,11 @@ class GalleryViewModel
 
         companion object {
             private const val NOTIFICATION_AUTO_DISMISS_MS = 5000L
+
+            /** How long to wait before performing actual deletion, giving the user time to undo. */
+            private const val UNDO_TIMEOUT_MS = 5_000L
+
+            /** Imports stuck in IN_PROGRESS for longer than this are considered stale. */
+            private const val STALE_IMPORT_THRESHOLD_MS = 30L * 60 * 1000
         }
     }

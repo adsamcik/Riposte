@@ -19,8 +19,8 @@ android {
         applicationId = "com.adsamcik.riposte"
         minSdk = 31
         targetSdk = 36
-        versionCode = 5
-        versionName = "0.3.2"
+        versionCode = 7
+        versionName = "0.3.4"
 
         testInstrumentationRunner = "com.adsamcik.riposte.core.testing.HiltTestRunner"
 
@@ -45,13 +45,10 @@ android {
         create("lite") {
             dimension = "embedding"
             isDefault = true
-            buildConfigField("boolean", "INCLUDE_EMBEDDINGGEMMA", "false")
         }
 
         create("standard") {
             dimension = "embedding"
-            buildConfigField("boolean", "INCLUDE_EMBEDDINGGEMMA", "true")
-            buildConfigField("String", "INCLUDED_SOC_MODELS", "\"none\"")
         }
 
         create("sm8650") {
@@ -62,8 +59,6 @@ android {
 
         create("googleplay") {
             dimension = "embedding"
-            buildConfigField("boolean", "INCLUDE_EMBEDDINGGEMMA", "true")
-            buildConfigField("String", "INCLUDED_SOC_MODELS", "\"all\"")
         }
     }
 
@@ -99,7 +94,8 @@ android {
         }
     }
 
-    // AI Packs for Google Play distribution (install-time delivery)
+    // AI Packs for Google Play distribution (install-time delivery).
+    // Global setting — only affects AAB builds (googleplay flavor); ignored for APK builds.
     assetPacks += listOf(":aipacks:generic_embedding", ":aipacks:soc_optimized")
 
     // Device targeting for SoC-optimized AI Pack delivery

@@ -25,6 +25,7 @@
     <string name="gallery_delete_single_title">Smazat meme?</string>
     <string name="gallery_delete_single_message">Tuto akci nelze vrátit zpět.</string>
     <string name="gallery_button_delete">Smazat</string>
+    <string name="gallery_button_undo">Zpět</string>
     <string name="gallery_button_cancel">Zrušit</string>
     <string name="gallery_button_save">Uložit</string>
     <string name="gallery_button_discard">Zahodit</string>
@@ -81,6 +82,7 @@
     <string name="gallery_error_share_no_app">Nelze sdílet — aplikace nenalezena</string>
     <string name="gallery_error_search_not_supported">Sémantické vyhledávání není na tomto zařízení podporováno</string>
     <string name="gallery_error_search_index_failed">Index vyhledávání se nepodařilo načíst — zkuste přeinstalovat</string>
+    <string name="gallery_error_search_generic">Při vyhledávání se něco pokazilo — zkuste to znovu</string>
     <string name="gallery_import_in_progress">Importuji memy… %1$d z %2$d</string>
     <string name="gallery_import_completed">%1$d memů importováno ✓</string>
     <string name="gallery_import_completed_with_errors">%1$d memů importováno, %2$d selhalo</string>
@@ -88,4 +90,8 @@
     <string name="gallery_indexing_complete">Index vyhledávání aktualizován — %1$d memů připraveno 🔍</string>
     <string name="gallery_cd_dismiss_notification">Zavřít oznámení</string>
     <string name="gallery_cd_loading_more">Načítám další memy</string>
+    <string name="gallery_import_stalled">Import nedokončen — %1$d z %2$d memů uloženo</string>
+    <string name="gallery_dialog_clear_searches_title">Vymazat nedávná hledání?</string>
+    <string name="gallery_dialog_clear_searches_message">Tímto odstraníte celou historii hledání.</string>
+    <string name="gallery_dialog_clear_searches_confirm">Vymazat</string>
 </resources>

@@ -42,7 +42,7 @@ class SearchRepositoryImpl
                             matchType = matchType,
                         )
                     }.sortedByDescending { it.relevanceScore }
-                prioritizeFavorites(results)
+                prioritizeFavorites(results).distinctBy { it.meme.id }
             }
         }
 
@@ -82,7 +82,7 @@ class SearchRepositoryImpl
                             matchType = MatchType.EMOJI,
                         )
                     }
-                prioritizeFavorites(results)
+                prioritizeFavorites(results).distinctBy { it.meme.id }
             }
         }
 
@@ -157,8 +157,9 @@ class SearchRepositoryImpl
             }
         }
 
+
         /**
-         * Prioritizes favorited memes in search results by moving them to the front,
+         * Prioritizes favorited memes in search resultsby moving them to the front,
          * provided their relevance score meets the minimum threshold.
          * Preserves relative ordering within both favorite and non-favorite groups.
          */
@@ -198,7 +199,7 @@ class SearchRepositoryImpl
 
         override fun getAllMemes(): Flow<List<Meme>> {
             return memeDao.getAllMemes().map { entities ->
-                entities.map { it.toDomain() }
+                entities.map { it.toDomain() }.distinctBy { it.id }
             }
         }
 
@@ -211,7 +212,7 @@ class SearchRepositoryImpl
                             1.0f - (index * POSITION_RELEVANCE_DECAY).coerceAtMost(MAX_POSITION_DECAY),
                         matchType = MatchType.TEXT,
                     )
-                }
+                }.distinctBy { it.meme.id }
             }
         }
 
@@ -224,7 +225,7 @@ class SearchRepositoryImpl
                             1.0f - (index * POSITION_RELEVANCE_DECAY).coerceAtMost(MAX_POSITION_DECAY),
                         matchType = MatchType.TEXT,
                     )
-                }
+                }.distinctBy { it.meme.id }
             }
         }
 
@@ -252,7 +253,7 @@ class SearchRepositoryImpl
 
         companion object {
             private const val FAVORITE_BOOST_THRESHOLD = 0.5f
-            private const val BASE_MATCH_SCORE = 0.5f
+            private const val BASE_MATCH_SCORE = 0.45f
             private const val TITLE_MATCH_BONUS = 0.3f
             private const val DESCRIPTION_MATCH_BONUS = 0.15f
             private const val EMOJI_MATCH_BONUS = 0.1f
@@ -261,5 +262,6 @@ class SearchRepositoryImpl
             private const val MAX_SEARCH_SUGGESTIONS = 10
             private const val DESCRIPTION_SNIPPET_LENGTH = 50
             private const val PHRASE_CONTEXT_CHARS = 40
+            private const val DEFAULT_SEMANTIC_THRESHOLD = 0.3f
         }
     }

@@ -7,6 +7,7 @@ import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.core.model.SearchResult
 import com.adsamcik.riposte.core.search.domain.usecase.SearchUseCases
 import com.adsamcik.riposte.core.testing.MainDispatcherRule
+import com.adsamcik.riposte.core.testing.TestDataFactory
 import com.google.common.truth.Truth.assertThat
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -36,11 +37,12 @@ class SearchDelegateTest {
 
     private val testMemes =
         listOf(
-            createTestMeme(1, "meme1.jpg", title = "Funny cat"),
-            createTestMeme(2, "meme2.jpg", title = "Surprised Pikachu"),
-            createTestMeme(
-                3,
-                "meme3.jpg",
+            TestDataFactory.createMeme(id = 1, fileName = "meme1.jpg", filePath = "/test/path/meme1.jpg", title = "Funny cat", emojiTags = emptyList()),
+            TestDataFactory.createMeme(id = 2, fileName = "meme2.jpg", filePath = "/test/path/meme2.jpg", title = "Surprised Pikachu", emojiTags = emptyList()),
+            TestDataFactory.createMeme(
+                id = 3,
+                fileName = "meme3.jpg",
+                filePath = "/test/path/meme3.jpg",
                 title = "Fire meme",
                 emojiTags = listOf(EmojiTag.fromEmoji("🔥")),
             ),
@@ -497,24 +499,105 @@ class SearchDelegateTest {
             scope.cancel()
         }
 
-    private fun createTestMeme(
-        id: Long,
-        fileName: String,
-        emojiTags: List<EmojiTag> = emptyList(),
-        isFavorite: Boolean = false,
-        title: String? = null,
-    ): Meme =
-        Meme(
-            id = id,
-            filePath = "/test/path/$fileName",
-            fileName = fileName,
-            mimeType = "image/jpeg",
-            width = 1920,
-            height = 1080,
-            fileSizeBytes = 1024L,
-            importedAt = System.currentTimeMillis(),
-            emojiTags = emojiTags,
-            title = title,
-            isFavorite = isFavorite,
-        )
+    // region Emoji Filter Tests
+
+    @Test
+    fun `emoji filter produces correct filtered results`() =
+        runTest(mainDispatcherRule.testDispatcher) {
+            // Given — hybridSearch returns only the fire meme when queried with 🔥
+            val fireResult =
+                listOf(
+                    SearchResult(
+                        meme = testMemes[2],
+                        relevanceScore = 1.0f,
+                        matchType = MatchType.HYBRID,
+                    ),
+                )
+            coEvery { searchUseCases.hybridSearch("🔥", any()) } returns fireResult
+
+            val scope = createDelegateScope()
+            delegate.init(scope)
+            advanceUntilIdle()
+
+            // When — apply emoji filter via search query
+            delegate.onIntent(GalleryIntent.UpdateSearchQuery("🔥"), scope)
+            advanceTimeBy(400)
+            advanceUntilIdle()
+
+            // Then — only the fire meme appears
+            val state = delegate.state.value
+            assertThat(state.hasSearched).isTrue()
+            assertThat(state.results).hasSize(1)
+            assertThat(state.results.first().meme.id).isEqualTo(3L)
+            scope.cancel()
+        }
+
+    @Test
+    fun `clearing emoji filter restores all memes`() =
+        runTest(mainDispatcherRule.testDispatcher) {
+            val fireResult =
+                listOf(
+                    SearchResult(
+                        meme = testMemes[2],
+                        relevanceScore = 1.0f,
+                        matchType = MatchType.HYBRID,
+                    ),
+                )
+            coEvery { searchUseCases.hybridSearch("🔥", any()) } returns fireResult
+
+            val scope = createDelegateScope()
+            delegate.init(scope)
+            advanceUntilIdle()
+
+            // Search with emoji
+            delegate.onIntent(GalleryIntent.UpdateSearchQuery("🔥"), scope)
+            advanceTimeBy(400)
+            advanceUntilIdle()
+            assertThat(delegate.state.value.results).hasSize(1)
+
+            // When — clear search
+            delegate.onIntent(GalleryIntent.ClearSearch, scope)
+            advanceUntilIdle()
+
+            // Then — results are empty and search state is reset
+            val state = delegate.state.value
+            assertThat(state.query).isEmpty()
+            assertThat(state.results).isEmpty()
+            assertThat(state.hasSearched).isFalse()
+            scope.cancel()
+        }
+
+    @Test
+    fun `emoji filter combined with text search narrows correctly`() =
+        runTest(mainDispatcherRule.testDispatcher) {
+            // Given — combined query returns a narrowed result set
+            val combinedResult =
+                listOf(
+                    SearchResult(
+                        meme = testMemes[2],
+                        relevanceScore = 0.9f,
+                        matchType = MatchType.HYBRID,
+                    ),
+                )
+            coEvery { searchUseCases.hybridSearch("🔥 meme", any()) } returns combinedResult
+
+            val scope = createDelegateScope()
+            delegate.init(scope)
+            advanceUntilIdle()
+
+            // When — search with emoji + text
+            delegate.onIntent(GalleryIntent.UpdateSearchQuery("🔥 meme"), scope)
+            advanceTimeBy(400)
+            advanceUntilIdle()
+
+            // Then — only the matching meme appears
+            val state = delegate.state.value
+            assertThat(state.hasSearched).isTrue()
+            assertThat(state.results).hasSize(1)
+            assertThat(state.results.first().meme.id).isEqualTo(3L)
+            assertThat(state.totalResultCount).isEqualTo(1)
+            scope.cancel()
+        }
+
+    // endregion
 }

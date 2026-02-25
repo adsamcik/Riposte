@@ -37,8 +37,45 @@ class ImageProcessor
             config: ShareConfig,
             outputFile: File,
         ): ProcessResult {
+            // GIF: copy original to preserve animation when no resize/strip is needed
+            if (config.format == ImageFormat.GIF) {
+                val needsResize = config.maxWidth != null || config.maxHeight != null
+                if (!needsResize && !config.stripMetadata) {
+                    return try {
+                        File(sourcePath).copyTo(outputFile, overwrite = true)
+                        val boundsOpts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                        BitmapFactory.decodeFile(sourcePath, boundsOpts)
+                        ProcessResult.Success(
+                            file = outputFile,
+                            width = boundsOpts.outWidth,
+                            height = boundsOpts.outHeight,
+                            fileSize = outputFile.length(),
+                        )
+                    } catch (e: IOException) {
+                        ProcessResult.Error("Failed to copy GIF: ${e.message}")
+                    }
+                } else {
+                    Timber.w("GIF requested but modification needed — will re-encode as PNG")
+                }
+            }
+
+            // First pass: get dimensions only
+            val boundsOptions = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeFile(sourcePath, boundsOptions)
+
+            val targetMaxWidth = config.maxWidth ?: boundsOptions.outWidth
+            val targetMaxHeight = config.maxHeight ?: boundsOptions.outHeight
+
+            // Calculate inSampleSize to avoid loading full-resolution image into memory
+            val decodeOptions = BitmapFactory.Options().apply {
+                inSampleSize = calculateInSampleSize(
+                    boundsOptions.outWidth, boundsOptions.outHeight,
+                    targetMaxWidth, targetMaxHeight,
+                )
+            }
+
             val originalBitmap =
-                BitmapFactory.decodeFile(sourcePath)
+                BitmapFactory.decodeFile(sourcePath, decodeOptions)
                     ?: return ProcessResult.Error("Failed to load image")
 
             // Resize if needed
@@ -105,8 +142,8 @@ class ImageProcessor
                     maxHeight.toFloat() / height,
                 )
 
-            val newWidth = (width * ratio).toInt()
-            val newHeight = (height * ratio).toInt()
+            val newWidth = (width * ratio).toInt().coerceAtLeast(1)
+            val newHeight = (height * ratio).toInt().coerceAtLeast(1)
 
             return Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true)
         }
@@ -150,6 +187,11 @@ class ImageProcessor
                         ExifInterface.TAG_ARTIST,
                         ExifInterface.TAG_COPYRIGHT,
                         ExifInterface.TAG_USER_COMMENT,
+                        ExifInterface.TAG_IMAGE_UNIQUE_ID,
+                        ExifInterface.TAG_IMAGE_DESCRIPTION,
+                        ExifInterface.TAG_CAMERA_OWNER_NAME,
+                        ExifInterface.TAG_BODY_SERIAL_NUMBER,
+                        ExifInterface.TAG_LENS_SERIAL_NUMBER,
                     )
 
                 tagsToRemove.forEach { tag ->
@@ -211,7 +253,10 @@ class ImageProcessor
                             ImageFormat.JPEG -> Bitmap.CompressFormat.JPEG
                             ImageFormat.PNG -> Bitmap.CompressFormat.PNG
                             ImageFormat.WEBP -> Bitmap.CompressFormat.WEBP_LOSSY
-                            ImageFormat.GIF -> Bitmap.CompressFormat.PNG // GIF not directly supported
+                            ImageFormat.GIF -> {
+                                Timber.w("GIF re-encoding not supported — falling back to PNG")
+                                Bitmap.CompressFormat.PNG
+                            }
                         }
                     bitmap.compress(compressFormat, quality, out)
                 }
@@ -252,5 +297,22 @@ class ImageProcessor
             ) : ProcessResult()
 
             data class Error(val message: String) : ProcessResult()
+        }
+
+        private fun calculateInSampleSize(
+            width: Int,
+            height: Int,
+            reqWidth: Int,
+            reqHeight: Int,
+        ): Int {
+            var inSampleSize = 1
+            if (width > reqWidth || height > reqHeight) {
+                val halfWidth = width / 2
+                val halfHeight = height / 2
+                while ((halfWidth / inSampleSize) >= reqWidth && (halfHeight / inSampleSize) >= reqHeight) {
+                    inSampleSize *= 2
+                }
+            }
+            return inSampleSize
         }
     }

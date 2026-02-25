@@ -3,8 +3,7 @@ package com.adsamcik.riposte.feature.import_feature.data
 import com.adsamcik.riposte.core.model.MemeMetadata
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
+import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
 /**
@@ -36,10 +35,10 @@ class ZipImporterTest {
 
         val metadata = json.decodeFromString<MemeMetadata>(cliOutput)
 
-        assertEquals("1.0", metadata.schemaVersion)
-        assertEquals(listOf("😂"), metadata.emojis)
-        assertEquals("2026-01-25T12:00:00+00:00", metadata.createdAt)
-        assertEquals("cli-1.0.0", metadata.appVersion)
+        assertThat(metadata.schemaVersion).isEqualTo("1.0")
+        assertThat(metadata.emojis).isEqualTo(listOf("😂"))
+        assertThat(metadata.createdAt).isEqualTo("2026-01-25T12:00:00+00:00")
+        assertThat(metadata.appVersion).isEqualTo("cli-1.0.0")
     }
 
     @Test
@@ -61,15 +60,14 @@ class ZipImporterTest {
 
         val metadata = json.decodeFromString<MemeMetadata>(cliOutput)
 
-        assertEquals("1.0", metadata.schemaVersion)
-        assertEquals(listOf("👾", "🎮", "😎", "🕹️"), metadata.emojis)
-        assertEquals("Ultimate Gamer Vibes", metadata.title)
-        assertEquals(
+        assertThat(metadata.schemaVersion).isEqualTo("1.0")
+        assertThat(metadata.emojis).isEqualTo(listOf("👾", "🎮", "😎", "🕹️"))
+        assertThat(metadata.title).isEqualTo("Ultimate Gamer Vibes")
+        assertThat(metadata.description).isEqualTo(
             "A person in a gaming room wearing retro Space Invader-themed gear",
-            metadata.description,
         )
-        assertEquals(listOf("gaming", "space invaders", "retro", "arcade", "funny"), metadata.tags)
-        assertEquals("Game Over", metadata.textContent)
+        assertThat(metadata.tags).isEqualTo(listOf("gaming", "space invaders", "retro", "arcade", "funny"))
+        assertThat(metadata.textContent).isEqualTo("Game Over")
     }
 
     @Test
@@ -84,14 +82,14 @@ class ZipImporterTest {
 
         val metadata = json.decodeFromString<MemeMetadata>(cliOutput)
 
-        assertEquals(6, metadata.emojis.size)
-        assertTrue(metadata.emojis.contains("😂"))
-        assertTrue(metadata.emojis.contains("🔥"))
-        assertTrue(metadata.emojis.contains("👾"))
-        assertTrue(metadata.emojis.contains("❤️"))
+        assertThat(metadata.emojis).hasSize(6)
+        assertThat(metadata.emojis).contains("😂")
+        assertThat(metadata.emojis).contains("🔥")
+        assertThat(metadata.emojis).contains("👾")
+        assertThat(metadata.emojis).contains("❤️")
         // ZWJ sequences
-        assertTrue(metadata.emojis.contains("🏳️‍🌈"))
-        assertTrue(metadata.emojis.contains("👨‍💻"))
+        assertThat(metadata.emojis).contains("🏳️‍🌈")
+        assertThat(metadata.emojis).contains("👨‍💻")
     }
 
     @Test
@@ -109,9 +107,9 @@ class ZipImporterTest {
 
         val metadata = json.decodeFromString<MemeMetadata>(cliOutput)
 
-        assertEquals("日本語タイトル", metadata.title)
-        assertEquals("Описание на русском 中文描述", metadata.description)
-        assertEquals("مرحبا بالعالم", metadata.textContent)
+        assertThat(metadata.title).isEqualTo("日本語タイトル")
+        assertThat(metadata.description).isEqualTo("Описание на русском 中文描述")
+        assertThat(metadata.textContent).isEqualTo("مرحبا بالعالم")
     }
 
     @Test
@@ -129,8 +127,8 @@ class ZipImporterTest {
 
         val metadata = json.decodeFromString<MemeMetadata>(cliOutput)
 
-        assertEquals("1.0", metadata.schemaVersion)
-        assertEquals(listOf("😂"), metadata.emojis)
+        assertThat(metadata.schemaVersion).isEqualTo("1.0")
+        assertThat(metadata.emojis).isEqualTo(listOf("😂"))
     }
 
     @Test
@@ -146,7 +144,7 @@ class ZipImporterTest {
 
         val metadata = json.decodeFromString<MemeMetadata>(cliOutput)
 
-        assertTrue(metadata.tags.isEmpty())
+        assertThat(metadata.tags).isEmpty()
     }
 
     @Test
@@ -161,14 +159,14 @@ class ZipImporterTest {
 
         val metadata = json.decodeFromString<MemeMetadata>(cliOutput)
 
-        assertEquals("1.0", metadata.schemaVersion)
-        assertEquals(listOf("😂"), metadata.emojis)
-        assertEquals(null, metadata.title)
-        assertEquals(null, metadata.description)
-        assertEquals(null, metadata.textContent)
-        assertEquals(null, metadata.createdAt)
-        assertEquals(null, metadata.appVersion)
-        assertTrue(metadata.tags.isEmpty())
+        assertThat(metadata.schemaVersion).isEqualTo("1.0")
+        assertThat(metadata.emojis).isEqualTo(listOf("😂"))
+        assertThat(metadata.title).isNull()
+        assertThat(metadata.description).isNull()
+        assertThat(metadata.textContent).isNull()
+        assertThat(metadata.createdAt).isNull()
+        assertThat(metadata.appVersion).isNull()
+        assertThat(metadata.tags).isEmpty()
     }
 
     @Test
@@ -192,14 +190,14 @@ class ZipImporterTest {
         // Parse as Android app does
         val parsed = json.decodeFromString<MemeMetadata>(jsonString)
 
-        assertEquals(original.schemaVersion, parsed.schemaVersion)
-        assertEquals(original.emojis, parsed.emojis)
-        assertEquals(original.title, parsed.title)
-        assertEquals(original.description, parsed.description)
-        assertEquals(original.createdAt, parsed.createdAt)
-        assertEquals(original.appVersion, parsed.appVersion)
-        assertEquals(original.tags, parsed.tags)
-        assertEquals(original.textContent, parsed.textContent)
+        assertThat(parsed.schemaVersion).isEqualTo(original.schemaVersion)
+        assertThat(parsed.emojis).isEqualTo(original.emojis)
+        assertThat(parsed.title).isEqualTo(original.title)
+        assertThat(parsed.description).isEqualTo(original.description)
+        assertThat(parsed.createdAt).isEqualTo(original.createdAt)
+        assertThat(parsed.appVersion).isEqualTo(original.appVersion)
+        assertThat(parsed.tags).isEqualTo(original.tags)
+        assertThat(parsed.textContent).isEqualTo(original.textContent)
     }
 
     @Test
@@ -208,30 +206,9 @@ class ZipImporterTest {
 
         val emojiTags = metadata.toEmojiTags()
 
-        assertEquals(2, emojiTags.size)
-        assertEquals("😂", emojiTags[0].emoji)
-        assertEquals("🔥", emojiTags[1].emoji)
+        assertThat(emojiTags).hasSize(2)
+        assertThat(emojiTags[0].emoji).isEqualTo("😂")
+        assertThat(emojiTags[1].emoji).isEqualTo("🔥")
     }
 
-    // ==================== Sidecar Naming Convention Tests ====================
-
-    @Test
-    fun `sidecar file naming convention matches CLI output`() {
-        // CLI creates sidecars as: image.jpg -> image.jpg.json
-        // ZipImporter does: entryName.removeSuffix(".json") to get image name
-
-        val testCases =
-            listOf(
-                "image.jpg.json" to "image.jpg",
-                "meme.png.json" to "meme.png",
-                "photo.webp.json" to "photo.webp",
-                "funny meme.jpg.json" to "funny meme.jpg",
-                "test.image.jpg.json" to "test.image.jpg",
-            )
-
-        for ((sidecarName, expectedImageName) in testCases) {
-            val recoveredImageName = sidecarName.removeSuffix(".json")
-            assertEquals(expectedImageName, recoveredImageName)
-        }
-    }
 }

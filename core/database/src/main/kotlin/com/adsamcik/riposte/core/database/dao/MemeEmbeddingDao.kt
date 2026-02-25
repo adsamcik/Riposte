@@ -7,6 +7,7 @@ import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
 import com.adsamcik.riposte.core.database.entity.MemeEmbeddingEntity
+import com.adsamcik.riposte.core.database.entity.MemeIdWithEmbedding
 import com.adsamcik.riposte.core.database.entity.MemeWithEmbeddingData
 import kotlinx.coroutines.flow.Flow
 
@@ -60,8 +61,9 @@ interface MemeEmbeddingDao {
     fun observeAllValidEmbeddings(): Flow<List<MemeEmbeddingEntity>>
 
     /**
-     * Get memes with their embeddings for search operations.
-     * Joins meme data with embeddings for efficient search.
+     * Returns meme data joined with embeddings. **Returns multiple rows per meme**
+     * when a meme has multiple embedding types (e.g., "content" + "intent").
+     * Callers MUST group by [MemeWithEmbeddingData.memeId] before use.
      */
     @Transaction
     @Query(
@@ -70,6 +72,14 @@ interface MemeEmbeddingDao {
             m.id as memeId,
             m.filePath,
             m.fileName,
+            m.mimeType,
+            m.width,
+            m.height,
+            m.fileSizeBytes,
+            m.importedAt,
+            m.isFavorite,
+            m.createdAt,
+            m.useCount,
             m.title,
             m.description,
             m.textContent,
@@ -89,34 +99,27 @@ interface MemeEmbeddingDao {
     suspend fun getMemesWithEmbeddings(): List<MemeWithEmbeddingData>
 
     /**
-     * Get memes with their embeddings as a Flow.
+     * Get content embeddings for similarity search, excluding a specific meme.
+     * Filters to a single embeddingType to guarantee one row per meme — safe for
+     * use as LazyList keys without deduplication.
      */
-    @Transaction
     @Query(
         """
         SELECT 
             m.id as memeId,
-            m.filePath,
-            m.fileName,
-            m.title,
-            m.description,
-            m.textContent,
-            m.emojiTagsJson,
-            e.embedding,
-            e.embeddingType,
-            e.dimension,
-            e.modelVersion,
-            m.useCount,
-            m.viewCount,
-            m.isFavorite
+            e.embedding
         FROM memes m
-        LEFT JOIN meme_embeddings e ON m.id = e.memeId
-        WHERE e.embedding IS NOT NULL AND e.needsRegeneration = 0
+        INNER JOIN meme_embeddings e ON m.id = e.memeId
+        WHERE m.id != :excludeMemeId
+            AND e.embedding IS NOT NULL
+            AND e.needsRegeneration = 0
+            AND e.embeddingType = 'content'
     """,
     )
-    fun observeMemesWithEmbeddings(): Flow<List<MemeWithEmbeddingData>>
+    suspend fun getContentEmbeddingsExcluding(excludeMemeId: Long): List<MemeIdWithEmbedding>
 
     // ============ Update Operations ============
+
 
     /**
      * Update an existing embedding.

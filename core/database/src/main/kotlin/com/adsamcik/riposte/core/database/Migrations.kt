@@ -266,7 +266,12 @@ val MIGRATION_5_6 =
             )""",
             )
             db.execSQL(
-                "INSERT INTO import_request_items_new SELECT * FROM import_request_items",
+                """INSERT INTO import_request_items_new
+                (id, requestId, stagedFilePath, originalFileName, emojis,
+                 title, description, extractedText, status, errorMessage, metadataJson)
+                SELECT id, requestId, stagedFilePath, originalFileName, emojis,
+                       title, description, extractedText, status, errorMessage, metadataJson
+                FROM import_request_items""",
             )
             db.execSQL("DROP TABLE import_request_items")
             db.execSQL("ALTER TABLE import_request_items_new RENAME TO import_request_items")

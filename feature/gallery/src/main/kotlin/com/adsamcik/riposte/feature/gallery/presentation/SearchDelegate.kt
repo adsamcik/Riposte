@@ -44,6 +44,7 @@ class SearchDelegate
          */
         @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
         fun init(scope: CoroutineScope) {
+            if (initScope != null) return
             initScope = scope
 
             // Observe debounced query changes

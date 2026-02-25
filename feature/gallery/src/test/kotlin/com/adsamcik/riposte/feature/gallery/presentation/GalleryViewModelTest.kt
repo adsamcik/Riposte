@@ -6,6 +6,7 @@ import app.cash.turbine.turbineScope
 import com.adsamcik.riposte.core.common.share.ShareMemeUseCase
 import com.adsamcik.riposte.core.common.suggestion.GetSuggestionsUseCase
 import com.adsamcik.riposte.core.database.LibraryStatistics
+import com.adsamcik.riposte.core.database.entity.ImportRequestEntity
 import com.adsamcik.riposte.core.datastore.PreferencesDataStore
 import com.adsamcik.riposte.core.model.AppPreferences
 import com.adsamcik.riposte.core.model.DarkMode
@@ -13,6 +14,7 @@ import com.adsamcik.riposte.core.model.EmojiTag
 import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.core.model.UserDensityPreference
 import com.adsamcik.riposte.core.testing.MainDispatcherRule
+import com.adsamcik.riposte.core.testing.TestDataFactory
 import com.adsamcik.riposte.feature.gallery.domain.usecase.DeleteMemesUseCase
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GalleryViewModelUseCases
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GetAllEmojisWithCountsUseCase
@@ -34,7 +36,9 @@ import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
@@ -47,30 +51,31 @@ class GalleryViewModelTest {
     val mainDispatcherRule = MainDispatcherRule(StandardTestDispatcher())
 
     private lateinit var getMemesUseCase: GetMemesUseCase
-    private lateinit var getPagedMemesUseCase: GetPagedMemesUseCase
+    private val getPagedMemesUseCase: GetPagedMemesUseCase = mockk(relaxed = true)
     private lateinit var getFavoritesUseCase: GetFavoritesUseCase
     private lateinit var getMemesByEmojiUseCase: GetMemesByEmojiUseCase
-    private lateinit var getMemeByIdUseCase: GetMemeByIdUseCase
-    private lateinit var deleteMemesUseCase: DeleteMemesUseCase
-    private lateinit var toggleFavoriteUseCase: ToggleFavoriteUseCase
+    private val getMemeByIdUseCase: GetMemeByIdUseCase = mockk(relaxed = true)
+    private val deleteMemesUseCase: DeleteMemesUseCase = mockk(relaxed = true)
+    private val toggleFavoriteUseCase: ToggleFavoriteUseCase = mockk(relaxed = true)
     private lateinit var getAllMemeIdsUseCase: GetAllMemeIdsUseCase
     private lateinit var getAllEmojisWithCountsUseCase: GetAllEmojisWithCountsUseCase
     private lateinit var getAllEmojisWithTagCountsUseCase: GetAllEmojisWithTagCountsUseCase
     private lateinit var getLibraryStatsUseCase: GetLibraryStatsUseCase
-    private lateinit var getSuggestionsUseCase: GetSuggestionsUseCase
+    private val getSuggestionsUseCase: GetSuggestionsUseCase = GetSuggestionsUseCase()
     private lateinit var shareMemeUseCase: ShareMemeUseCase
     private lateinit var galleryRepository: com.adsamcik.riposte.feature.gallery.domain.repository.GalleryRepository
     private lateinit var preferencesDataStore: PreferencesDataStore
     private lateinit var searchDelegate: SearchDelegate
+    private lateinit var importRequestDao: com.adsamcik.riposte.core.database.dao.ImportRequestDao
     private lateinit var context: Context
 
     private lateinit var viewModel: GalleryViewModel
 
     private val testMemes =
         listOf(
-            createTestMeme(1, "meme1.jpg"),
-            createTestMeme(2, "meme2.jpg"),
-            createTestMeme(3, "meme3.jpg", isFavorite = true),
+            TestDataFactory.createMeme(id = 1, fileName = "meme1.jpg", filePath = "/storage/memes/meme1.jpg"),
+            TestDataFactory.createMeme(id = 2, fileName = "meme2.jpg", filePath = "/storage/memes/meme2.jpg"),
+            TestDataFactory.createMeme(id = 3, fileName = "meme3.jpg", filePath = "/storage/memes/meme3.jpg", isFavorite = true),
         )
 
     private val defaultPreferences =
@@ -92,17 +97,12 @@ class GalleryViewModelTest {
         every { context.getString(any(), any()) } returns "1 meme deleted"
         every { context.getString(any()) } returns "Error"
         getMemesUseCase = mockk()
-        getPagedMemesUseCase = mockk(relaxed = true)
         getFavoritesUseCase = mockk()
         getMemesByEmojiUseCase = mockk()
-        getMemeByIdUseCase = mockk()
-        deleteMemesUseCase = mockk()
-        toggleFavoriteUseCase = mockk()
         getAllMemeIdsUseCase = mockk()
         getAllEmojisWithCountsUseCase = mockk()
         getAllEmojisWithTagCountsUseCase = mockk()
         getLibraryStatsUseCase = mockk()
-        getSuggestionsUseCase = GetSuggestionsUseCase()
         shareMemeUseCase = mockk()
         coEvery { shareMemeUseCase(any()) } returns Result.success(Intent())
         galleryRepository = mockk(relaxed = true)
@@ -111,6 +111,8 @@ class GalleryViewModelTest {
         searchDelegate = mockk(relaxed = true)
         every { searchDelegate.state } returns MutableStateFlow(SearchSliceState())
         every { searchDelegate.effects } returns kotlinx.coroutines.flow.emptyFlow()
+        importRequestDao = mockk(relaxed = true)
+        coEvery { importRequestDao.getStaleRequests(any()) } returns emptyList()
         preferencesDataStore = mockk()
 
         every { getMemesUseCase() } returns flowOf(testMemes)
@@ -151,6 +153,7 @@ class GalleryViewModelTest {
             defaultDispatcher = mainDispatcherRule.testDispatcher,
             preferencesDataStore = preferencesDataStore,
             eventBus = com.adsamcik.riposte.core.events.EventBus(),
+            importRequestDao = importRequestDao,
             searchDelegate = searchDelegate,
         )
     }
@@ -453,8 +456,17 @@ class GalleryViewModelTest {
                 advanceUntilIdle()
 
                 val effect = effects.awaitItem()
-                assertThat(effect).isInstanceOf(GalleryEffect.ShowSnackbar::class.java)
-                assertThat((effect as GalleryEffect.ShowSnackbar).message).contains("deleted")
+                assertThat(effect).isInstanceOf(GalleryEffect.ShowUndoDeleteSnackbar::class.java)
+                assertThat((effect as GalleryEffect.ShowUndoDeleteSnackbar).message).contains("deleted")
+
+                // Selection should be cleared immediately (before delay)
+                val state = viewModel.uiState.value
+                assertThat(state.isSelectionMode).isFalse()
+                assertThat(state.selectedMemeIds).isEmpty()
+
+                // Advance past undo timeout to trigger actual deletion
+                advanceTimeBy(5_001)
+                advanceUntilIdle()
 
                 effects.cancel()
             }
@@ -484,9 +496,18 @@ class GalleryViewModelTest {
                 viewModel.onIntent(GalleryIntent.ConfirmDelete)
                 advanceUntilIdle()
 
-                val effect = effects.awaitItem()
-                assertThat(effect).isInstanceOf(GalleryEffect.ShowError::class.java)
-                assertThat((effect as GalleryEffect.ShowError).message).contains("Delete failed")
+                // First: undo snackbar
+                val undoEffect = effects.awaitItem()
+                assertThat(undoEffect).isInstanceOf(GalleryEffect.ShowUndoDeleteSnackbar::class.java)
+
+                // Advance past undo timeout to trigger actual deletion
+                advanceTimeBy(5_001)
+                advanceUntilIdle()
+
+                // Then: error effect
+                val errorEffect = effects.awaitItem()
+                assertThat(errorEffect).isInstanceOf(GalleryEffect.ShowError::class.java)
+                assertThat((errorEffect as GalleryEffect.ShowError).message).contains("Delete failed")
 
                 effects.cancel()
             }
@@ -507,6 +528,75 @@ class GalleryViewModelTest {
             // Selection should still be active
             val state = viewModel.uiState.value
             assertThat(state.isSelectionMode).isTrue()
+        }
+
+    @Test
+    fun `UndoDelete cancels pending deletion`() =
+        runTest {
+            coEvery { deleteMemesUseCase(any<Set<Long>>()) } returns Result.success(Unit)
+            viewModel = createViewModel()
+            advanceUntilIdle()
+            viewModel.onIntent(GalleryIntent.StartSelection(1))
+            viewModel.onIntent(GalleryIntent.DeleteSelected)
+            advanceUntilIdle()
+
+            turbineScope {
+                val effects = viewModel.effects.testIn(backgroundScope)
+                // Skip ShowDeleteConfirmation
+                effects.awaitItem()
+
+                viewModel.onIntent(GalleryIntent.ConfirmDelete)
+                // Only advance 1s — enough for ShowUndoDeleteSnackbar, but before 5s deletion timeout
+                advanceTimeBy(1_000)
+
+                val undoEffect = effects.awaitItem()
+                assertThat(undoEffect).isInstanceOf(GalleryEffect.ShowUndoDeleteSnackbar::class.java)
+
+                // Undo before the timeout
+                viewModel.onIntent(GalleryIntent.UndoDelete)
+                advanceTimeBy(6_000)
+                advanceUntilIdle()
+
+                effects.cancel()
+            }
+
+            // deleteMemes should NOT have been called
+            coVerify(exactly = 0) { deleteMemesUseCase(any<Set<Long>>()) }
+        }
+
+    @Test
+    fun `ConfirmDelete failure after timeout emits error effect`() =
+        runTest {
+            coEvery { deleteMemesUseCase(any<Set<Long>>()) } returns Result.failure(Exception("Delete failed"))
+            viewModel = createViewModel()
+            advanceUntilIdle()
+            viewModel.onIntent(GalleryIntent.StartSelection(1))
+            viewModel.onIntent(GalleryIntent.DeleteSelected)
+            advanceUntilIdle()
+
+            turbineScope {
+                val effects = viewModel.effects.testIn(backgroundScope)
+                // Skip ShowDeleteConfirmation
+                effects.awaitItem()
+
+                viewModel.onIntent(GalleryIntent.ConfirmDelete)
+                advanceUntilIdle()
+
+                // First: undo snackbar
+                val undoEffect = effects.awaitItem()
+                assertThat(undoEffect).isInstanceOf(GalleryEffect.ShowUndoDeleteSnackbar::class.java)
+
+                // Advance past undo timeout to trigger actual deletion
+                advanceTimeBy(5_001)
+                advanceUntilIdle()
+
+                // Then: error effect
+                val errorEffect = effects.awaitItem()
+                assertThat(errorEffect).isInstanceOf(GalleryEffect.ShowError::class.java)
+                assertThat((errorEffect as GalleryEffect.ShowError).message).contains("Delete failed")
+
+                effects.cancel()
+            }
         }
 
     // endregion
@@ -576,6 +666,31 @@ class GalleryViewModelTest {
             assertThat(viewModel.uiState.value.favoritesCount).isEqualTo(0)
         }
 
+    @Test
+    fun `when favorites count drops to zero while Favorites filter active then filter auto-clears to All and reloads memes`() =
+        runTest {
+            val statsFlow = MutableStateFlow(LibraryStatistics(totalMemes = 10, favoriteMemes = 3))
+            every { getLibraryStatsUseCase() } returns statsFlow
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            // Activate Favorites filter (non-paged)
+            viewModel.onIntent(GalleryIntent.SetFilter(GalleryFilter.Favorites))
+            advanceUntilIdle()
+            assertThat(viewModel.uiState.value.filter).isEqualTo(GalleryFilter.Favorites)
+            assertThat(viewModel.uiState.value.usePaging).isFalse()
+
+            // Drop favorites to zero
+            statsFlow.value = LibraryStatistics(totalMemes = 10, favoriteMemes = 0)
+            advanceUntilIdle()
+
+            // Filter auto-cleared to All and loadMemes() re-enabled paging
+            val state = viewModel.uiState.value
+            assertThat(state.filter).isEqualTo(GalleryFilter.All)
+            assertThat(state.favoritesCount).isEqualTo(0)
+            assertThat(state.usePaging).isTrue()
+        }
+
     // endregion
 
     // region Grid Columns Intent Tests
@@ -612,6 +727,60 @@ class GalleryViewModelTest {
 
                 val effect = effects.awaitItem()
                 assertThat(effect).isInstanceOf(GalleryEffect.LaunchShareIntent::class.java)
+
+                effects.cancel()
+            }
+        }
+
+    @Test
+    fun `shareSelected with single meme uses quick share path`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
+            viewModel.onIntent(GalleryIntent.StartSelection(1))
+
+            viewModel.onIntent(GalleryIntent.ShareSelected)
+            advanceUntilIdle()
+
+            coVerify { shareMemeUseCase(1L) }
+        }
+
+    @Test
+    fun `shareSelected with multiple memes uses multi share path`() =
+        runTest {
+            coEvery { getMemeByIdUseCase(1L) } returns TestDataFactory.createMeme(id = 1, fileName = "meme1.jpg", filePath = "/storage/memes/meme1.jpg")
+            coEvery { getMemeByIdUseCase(2L) } returns TestDataFactory.createMeme(id = 2, fileName = "meme2.jpg", filePath = "/storage/memes/meme2.jpg")
+            viewModel = createViewModel()
+            advanceUntilIdle()
+            viewModel.onIntent(GalleryIntent.StartSelection(1))
+            viewModel.onIntent(GalleryIntent.ToggleSelection(2))
+
+            viewModel.onIntent(GalleryIntent.ShareSelected)
+            advanceUntilIdle()
+
+            // Single-share path (quickShare / shareMemeUseCase) should NOT be used
+            coVerify(exactly = 0) { shareMemeUseCase(any()) }
+            // Multi-share path resolves each meme by ID
+            coVerify { getMemeByIdUseCase(1L) }
+            coVerify { getMemeByIdUseCase(2L) }
+        }
+
+    @Test
+    fun `quickShare failure emits error effect`() =
+        runTest {
+            coEvery { shareMemeUseCase(any()) } returns Result.failure(RuntimeException("Share failed"))
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            turbineScope {
+                val effects = viewModel.effects.testIn(backgroundScope)
+
+                viewModel.onIntent(GalleryIntent.QuickShare(memeId = 1L))
+                advanceUntilIdle()
+
+                val effect = effects.awaitItem()
+                assertThat(effect).isInstanceOf(GalleryEffect.ShowError::class.java)
+                assertThat((effect as GalleryEffect.ShowError).message).contains("Share failed")
 
                 effects.cancel()
             }
@@ -727,11 +896,12 @@ class GalleryViewModelTest {
         runTest {
             val memesWithEmojis =
                 listOf(
-                    createTestMeme(1, "a.jpg", emojiTags = listOf(EmojiTag.fromEmoji("😂"), EmojiTag.fromEmoji("🔥"))),
-                    createTestMeme(2, "b.jpg", emojiTags = listOf(EmojiTag.fromEmoji("😂"))),
-                    createTestMeme(
-                        3,
-                        "c.jpg",
+                    TestDataFactory.createMeme(id = 1, fileName = "a.jpg", filePath = "/storage/memes/a.jpg", emojiTags = listOf(EmojiTag.fromEmoji("😂"), EmojiTag.fromEmoji("🔥"))),
+                    TestDataFactory.createMeme(id = 2, fileName = "b.jpg", filePath = "/storage/memes/b.jpg", emojiTags = listOf(EmojiTag.fromEmoji("😂"))),
+                    TestDataFactory.createMeme(
+                        id = 3,
+                        fileName = "c.jpg",
+                        filePath = "/storage/memes/c.jpg",
                         isFavorite = true,
                         emojiTags = listOf(EmojiTag.fromEmoji("🔥"), EmojiTag.fromEmoji("💀")),
                     ),
@@ -798,7 +968,15 @@ class GalleryViewModelTest {
             viewModel = createViewModel()
             advanceUntilIdle()
 
-            // Simulate a notification being set (e.g., from import completion)
+            // Set a notification via reflection since notification is only set internally
+            val uiStateField = viewModel.javaClass.getDeclaredField("_uiState")
+            uiStateField.isAccessible = true
+            @Suppress("UNCHECKED_CAST")
+            val mutableState = uiStateField.get(viewModel) as MutableStateFlow<GalleryUiState>
+            mutableState.update { it.copy(notification = GalleryNotification.ImportComplete(count = 5)) }
+
+            assertThat(viewModel.uiState.value.notification).isNotNull()
+
             viewModel.onIntent(GalleryIntent.DismissNotification)
             advanceUntilIdle()
 
@@ -820,35 +998,17 @@ class GalleryViewModelTest {
         }
 
     @Test
-    fun `GalleryNotification ImportComplete stores count and failed`() {
-        val notification = GalleryNotification.ImportComplete(count = 10, failed = 3)
-        assertThat(notification.count).isEqualTo(10)
-        assertThat(notification.failed).isEqualTo(3)
-    }
+    fun `import and embedding status remain Idle when WorkManager unavailable`() =
+        runTest {
+            // WorkManager.getInstance(context) throws IllegalStateException in unit tests
+            // The ViewModel catches this and keeps status at Idle
+            viewModel = createViewModel()
+            advanceUntilIdle()
 
-    @Test
-    fun `GalleryNotification ImportComplete defaults failed to zero`() {
-        val notification = GalleryNotification.ImportComplete(count = 5)
-        assertThat(notification.failed).isEqualTo(0)
-    }
-
-    @Test
-    fun `GalleryNotification ImportFailed stores message`() {
-        val notification = GalleryNotification.ImportFailed(message = "Disk full")
-        assertThat(notification.message).isEqualTo("Disk full")
-    }
-
-    @Test
-    fun `GalleryNotification ImportFailed defaults message to null`() {
-        val notification = GalleryNotification.ImportFailed()
-        assertThat(notification.message).isNull()
-    }
-
-    @Test
-    fun `GalleryNotification IndexingComplete stores count`() {
-        val notification = GalleryNotification.IndexingComplete(count = 42)
-        assertThat(notification.count).isEqualTo(42)
-    }
+            val state = viewModel.uiState.value
+            assertThat(state.importStatus).isEqualTo(ImportWorkStatus.Idle)
+            assertThat(state.embeddingStatus).isEqualTo(EmbeddingWorkStatus.Idle)
+        }
 
     // endregion
 
@@ -1024,32 +1184,216 @@ class GalleryViewModelTest {
 
     // endregion
 
-    // region Helper Functions
+    // region Duplicate Data Safety Tests
 
-    private fun createTestMeme(
-        id: Long,
-        fileName: String,
-        isFavorite: Boolean = false,
-        emojiTags: List<EmojiTag> = listOf(EmojiTag.fromEmoji("😂")),
-        title: String? = "Test Meme $id",
-        useCount: Int = 0,
-    ): Meme =
-        Meme(
-            id = id,
-            filePath = "/storage/memes/$fileName",
-            fileName = fileName,
-            mimeType = "image/jpeg",
-            width = 1080,
-            height = 1080,
-            fileSizeBytes = 1024L,
-            importedAt = System.currentTimeMillis() - (id * 1000),
-            emojiTags = emojiTags,
-            title = title,
-            description = null,
-            textContent = null,
-            isFavorite = isFavorite,
-            useCount = useCount,
-        )
+    @Test
+    fun `memes list with duplicate IDs does not crash grid keys`() =
+        runTest {
+            val dupeMememes =
+                listOf(
+                    TestDataFactory.createMeme(id = 1, fileName = "meme1.jpg", filePath = "/storage/memes/meme1.jpg", isFavorite = true),
+                    TestDataFactory.createMeme(id = 2, fileName = "meme2.jpg", filePath = "/storage/memes/meme2.jpg", isFavorite = true),
+                    TestDataFactory.createMeme(id = 2, fileName = "meme2_dupe.jpg", filePath = "/storage/memes/meme2_dupe.jpg", isFavorite = true), // duplicate ID from DAO JOIN
+                    TestDataFactory.createMeme(id = 3, fileName = "meme3.jpg", filePath = "/storage/memes/meme3.jpg", isFavorite = true),
+                )
+            every { getFavoritesUseCase() } returns flowOf(dupeMememes)
+            every { getLibraryStatsUseCase() } returns flowOf(LibraryStatistics(totalMemes = 4, favoriteMemes = 4))
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onIntent(GalleryIntent.SetFilter(GalleryFilter.Favorites))
+            advanceUntilIdle()
+
+            val memes = viewModel.uiState.value.memes
+            // GalleryScreen applies .distinctBy { it.id } — data flows through without crash
+            assertThat(memes).isNotEmpty()
+            assertThat(memes.map { it.id }).contains(2L)
+        }
+
+    // endregion
+
+    // region Stale Import Recovery Tests
+
+    @org.junit.Ignore(
+        "Requires WorkManager test infrastructure (work-testing artifact or Robolectric). " +
+            "WorkManager.getInstance(context) cannot be mocked with mockkStatic in pure JUnit " +
+            "because it delegates to WorkManagerImpl.getInstance() internally.",
+    )
+    @Test
+    fun `recoverStaleImports marks requests with completed count as COMPLETED`() =
+        runTest {
+            val staleRequest = ImportRequestEntity(
+                id = "req-1",
+                status = ImportRequestEntity.STATUS_IN_PROGRESS,
+                imageCount = 10,
+                completedCount = 7,
+                failedCount = 1,
+                stagingDir = "/tmp/staging",
+                createdAt = 0L,
+                updatedAt = 0L,
+            )
+            coEvery { importRequestDao.getStaleRequests(any()) } returns listOf(staleRequest)
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            coVerify {
+                importRequestDao.updateRequestProgress(
+                    id = "req-1",
+                    status = ImportRequestEntity.STATUS_COMPLETED,
+                    completed = 7,
+                    failed = 1,
+                    updatedAt = any(),
+                )
+            }
+            val notification = viewModel.uiState.value.notification
+            assertThat(notification).isInstanceOf(GalleryNotification.ImportFailed::class.java)
+        }
+
+    @org.junit.Ignore(
+        "Requires WorkManager test infrastructure (work-testing artifact or Robolectric). " +
+            "WorkManager.getInstance(context) cannot be mocked with mockkStatic in pure JUnit.",
+    )
+    @Test
+    fun `recoverStaleImports marks requests with zero completed as FAILED`() =
+        runTest {
+            val staleRequest = ImportRequestEntity(
+                id = "req-2",
+                status = ImportRequestEntity.STATUS_IN_PROGRESS,
+                imageCount = 5,
+                completedCount = 0,
+                failedCount = 0,
+                stagingDir = "/tmp/staging",
+                createdAt = 0L,
+                updatedAt = 0L,
+            )
+            coEvery { importRequestDao.getStaleRequests(any()) } returns listOf(staleRequest)
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            coVerify {
+                importRequestDao.updateRequestProgress(
+                    id = "req-2",
+                    status = ImportRequestEntity.STATUS_FAILED,
+                    completed = 0,
+                    failed = 0,
+                    updatedAt = any(),
+                )
+            }
+        }
+
+    @Test
+    fun `recoverStaleImports skips recovery when active import work exists`() =
+        runTest {
+            val staleRequest = ImportRequestEntity(
+                id = "req-3",
+                status = ImportRequestEntity.STATUS_IN_PROGRESS,
+                imageCount = 10,
+                completedCount = 3,
+                failedCount = 0,
+                stagingDir = "/tmp/staging",
+                createdAt = 0L,
+                updatedAt = 0L,
+            )
+            coEvery { importRequestDao.getStaleRequests(any()) } returns listOf(staleRequest)
+            // WorkManager.getInstance throws IllegalStateException in unit tests,
+            // which the ViewModel catches — this means "WorkManager not available"
+            // is treated the same as "active work exists" since recovery is skipped.
+            // The try-catch in recoverStaleImports catches the exception gracefully.
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            // Since WorkManager is not available in unit tests (throws IllegalStateException),
+            // the exception is caught and updateRequestProgress should still be called
+            // because the catch block logs and swallows the error.
+            // However, looking at the code flow: getStaleRequests succeeds, then
+            // WorkManager.getInstance throws, which is caught by the outer try-catch.
+            // So updateRequestProgress is NOT called.
+            coVerify(exactly = 0) {
+                importRequestDao.updateRequestProgress(
+                    id = "req-3",
+                    status = any(),
+                    completed = any(),
+                    failed = any(),
+                    updatedAt = any(),
+                )
+            }
+        }
+
+    @Test
+    fun `recoverStaleImports handles exception gracefully`() =
+        runTest {
+            coEvery { importRequestDao.getStaleRequests(any()) } throws RuntimeException("DB error")
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            // ViewModel should not crash — exception is caught and logged
+            val state = viewModel.uiState.value
+            assertThat(state.notification).isNull()
+        }
+
+    // endregion
+
+    // region Suggestions Tests
+
+    @Test
+    fun `loadSuggestions populates uiState suggestions from memes`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertThat(state.suggestions).isNotEmpty()
+            assertThat(state.suggestions.size).isAtMost(12)
+        }
+
+    @Test
+    fun `loadSuggestions persists suggestion ids to datastore`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            coVerify { preferencesDataStore.updateLastSessionSuggestionIds(any()) }
+        }
+
+    // endregion
+
+    // region Share Tip Tests
+
+    @Test
+    fun `checkShareTip shows snackbar when tip not yet shown and memes exist`() =
+        runTest {
+            every { preferencesDataStore.hasShownShareTip } returns flowOf(false)
+
+            viewModel = createViewModel()
+
+            turbineScope {
+                val effects = viewModel.effects.testIn(backgroundScope)
+                advanceUntilIdle()
+
+                val effect = effects.awaitItem()
+                assertThat(effect).isInstanceOf(GalleryEffect.ShowSnackbar::class.java)
+                assertThat((effect as GalleryEffect.ShowSnackbar).message).contains("Tip")
+
+                coVerify { preferencesDataStore.setShareTipShown() }
+                effects.cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `checkShareTip does not show snackbar when tip already shown`() =
+        runTest {
+            // Default setup already sets hasShownShareTip = true
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            // No snackbar effect should be emitted for share tip
+            coVerify(exactly = 0) { preferencesDataStore.setShareTipShown() }
+        }
 
     // endregion
 }

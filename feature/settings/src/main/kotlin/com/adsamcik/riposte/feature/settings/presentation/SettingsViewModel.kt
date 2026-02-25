@@ -31,6 +31,7 @@ import com.adsamcik.riposte.feature.settings.domain.usecase.SetSaveSearchHistory
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetSearchModeUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetSortEmojisByUsageUseCase
 import com.adsamcik.riposte.feature.settings.domain.usecase.SetStripMetadataUseCase
+import com.adsamcik.riposte.core.common.util.formatFileSize
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
@@ -38,6 +39,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
@@ -119,6 +121,7 @@ class SettingsViewModel
         private fun observeEmbeddingStatistics() {
             viewModelScope.launch {
                 observeEmbeddingStatisticsUseCase()
+                    .catch { e -> Timber.e(e, "Failed to observe embedding statistics") }
                     .collect { statusInfo ->
                         val stats = statusInfo.statistics
                         val modelInfo = statusInfo.modelInfo
@@ -147,6 +150,7 @@ class SettingsViewModel
         private fun observeLibraryStats() {
             viewModelScope.launch {
                 observeLibraryStatsUseCase()
+                    .catch { e -> Timber.e(e, "Failed to observe library stats") }
                     .collect { stats ->
                         _uiState.update {
                             it.copy(
@@ -164,23 +168,26 @@ class SettingsViewModel
                     getAppPreferencesUseCase(),
                     getSharingPreferencesUseCase(),
                 ) { appPrefs, sharingPrefs ->
-                    _uiState.value.copy(
-                        darkMode = appPrefs.darkMode,
-                        dynamicColorsEnabled = appPrefs.dynamicColors,
-                        gridDensityPreference = appPrefs.userDensityPreference,
-                        defaultFormat = sharingPrefs.defaultFormat,
-                        defaultQuality = sharingPrefs.defaultQuality,
-                        defaultMaxDimension = sharingPrefs.maxWidth,
-                        stripMetadata = sharingPrefs.stripMetadata,
-                        enableSemanticSearch = appPrefs.enableSemanticSearch,
-                        saveSearchHistory = appPrefs.saveSearchHistory,
-                        sortEmojisByUsage = appPrefs.sortEmojisByUsage,
-                        searchMode = appPrefs.searchMode,
-                        appVersion = getAppVersion(),
-                        isLoading = false,
-                    )
-                }.collect { state ->
-                    _uiState.value = state
+                    Pair(appPrefs, sharingPrefs)
+                }.catch { e -> Timber.e(e, "Failed to load settings") }
+                    .collect { (appPrefs, sharingPrefs) ->
+                    _uiState.update { currentState ->
+                        currentState.copy(
+                            darkMode = appPrefs.darkMode,
+                            dynamicColorsEnabled = appPrefs.dynamicColors,
+                            gridDensityPreference = appPrefs.userDensityPreference,
+                            defaultFormat = sharingPrefs.defaultFormat,
+                            defaultQuality = sharingPrefs.defaultQuality,
+                            defaultMaxDimension = sharingPrefs.maxWidth,
+                            stripMetadata = sharingPrefs.stripMetadata,
+                            enableSemanticSearch = appPrefs.enableSemanticSearch,
+                            saveSearchHistory = appPrefs.saveSearchHistory,
+                            sortEmojisByUsage = appPrefs.sortEmojisByUsage,
+                            searchMode = appPrefs.searchMode,
+                            appVersion = getAppVersion(),
+                            isLoading = false,
+                        )
+                    }
                 }
             }
         }
@@ -259,21 +266,15 @@ class SettingsViewModel
         }
 
         private fun setDarkMode(mode: DarkMode) {
-            viewModelScope.launch {
-                setDarkModeUseCase(mode)
-            }
+            safeLaunch { setDarkModeUseCase(mode) }
         }
 
         private fun setDynamicColors(enabled: Boolean) {
-            viewModelScope.launch {
-                setDynamicColorsUseCase(enabled)
-            }
+            safeLaunch { setDynamicColorsUseCase(enabled) }
         }
 
         private fun setGridDensity(preference: UserDensityPreference) {
-            viewModelScope.launch {
-                setGridDensityUseCase(preference)
-            }
+            safeLaunch { setGridDensityUseCase(preference) }
         }
 
         private fun setLanguage(languageCode: String?) {
@@ -288,21 +289,15 @@ class SettingsViewModel
         }
 
         private fun setEnableSemanticSearch(enabled: Boolean) {
-            viewModelScope.launch {
-                setEnableSemanticSearchUseCase(enabled)
-            }
+            safeLaunch { setEnableSemanticSearchUseCase(enabled) }
         }
 
         private fun setSaveSearchHistory(save: Boolean) {
-            viewModelScope.launch {
-                setSaveSearchHistoryUseCase(save)
-            }
+            safeLaunch { setSaveSearchHistoryUseCase(save) }
         }
 
         private fun setSortEmojisByUsage(enabled: Boolean) {
-            viewModelScope.launch {
-                setSortEmojisByUsageUseCase(enabled)
-            }
+            safeLaunch { setSortEmojisByUsageUseCase(enabled) }
         }
 
         private fun setSearchMode(mode: SearchMode) {
@@ -312,27 +307,19 @@ class SettingsViewModel
         }
 
         private fun setDefaultFormat(format: ImageFormat) {
-            viewModelScope.launch {
-                setDefaultFormatUseCase(format)
-            }
+            safeLaunch { setDefaultFormatUseCase(format) }
         }
 
         private fun setDefaultQuality(quality: Int) {
-            viewModelScope.launch {
-                setDefaultQualityUseCase(quality)
-            }
+            safeLaunch { setDefaultQualityUseCase(quality) }
         }
 
         private fun setDefaultMaxDimension(dimension: Int) {
-            viewModelScope.launch {
-                setDefaultMaxDimensionUseCase(dimension)
-            }
+            safeLaunch { setDefaultMaxDimensionUseCase(dimension) }
         }
 
         private fun setStripMetadata(strip: Boolean) {
-            viewModelScope.launch {
-                setStripMetadataUseCase(strip)
-            }
+            safeLaunch { setStripMetadataUseCase(strip) }
         }
 
         private fun calculateCacheSize() {
@@ -357,15 +344,6 @@ class SettingsViewModel
                     }
             }
             return size
-        }
-
-        internal fun formatFileSize(bytes: Long): String {
-            return when {
-                bytes >= BYTES_PER_GB -> "%.2f GB".format(bytes / BYTES_PER_GB.toDouble())
-                bytes >= BYTES_PER_MB -> "%.2f MB".format(bytes / BYTES_PER_MB.toDouble())
-                bytes >= BYTES_PER_KB -> "%.2f KB".format(bytes / BYTES_PER_KB.toDouble())
-                else -> "$bytes B"
-            }
         }
 
         private fun showClearCacheDialog() {
@@ -435,6 +413,7 @@ class SettingsViewModel
 
         private fun exportToUri(uri: Uri) {
             viewModelScope.launch {
+                _uiState.update { it.copy(isExporting = true) }
                 try {
                     val outputStream =
                         context.contentResolver.openOutputStream(uri)
@@ -451,6 +430,7 @@ class SettingsViewModel
                         // TODO: Export tags/metadata when MemeRepository is available in settings module
                     }
 
+                    _uiState.update { it.copy(isExporting = false) }
                     _effects.send(
                         SettingsEffect.ShowSnackbar(context.getString(R.string.settings_snackbar_export_success, "")),
                     )
@@ -458,6 +438,7 @@ class SettingsViewModel
                     @Suppress("TooGenericExceptionCaught") // Catches all to show error state
                     e: Exception,
                 ) {
+                    _uiState.update { it.copy(isExporting = false) }
                     Timber.e(e, "Failed to export settings")
                     _effects.send(
                         SettingsEffect.ShowSnackbar(
@@ -480,6 +461,7 @@ class SettingsViewModel
 
         private fun importFromUri(uri: Uri) {
             viewModelScope.launch {
+                _uiState.update { it.copy(isImporting = true) }
                 try {
                     val inputStream =
                         context.contentResolver.openInputStream(uri)
@@ -501,6 +483,7 @@ class SettingsViewModel
 
                     _uiState.update {
                         it.copy(
+                            isImporting = false,
                             showImportConfirmDialog = true,
                             pendingImportJson = jsonString,
                             importBackupTimestamp = timestamp,
@@ -510,6 +493,7 @@ class SettingsViewModel
                     @Suppress("TooGenericExceptionCaught") // Catches all to show error state
                     e: Exception,
                 ) {
+                    _uiState.update { it.copy(isImporting = false) }
                     Timber.e(e, "Failed to import settings from URI")
                     _effects.send(
                         SettingsEffect.ShowSnackbar(
@@ -640,9 +624,19 @@ class SettingsViewModel
             }
         }
 
-        companion object {
-            private const val BYTES_PER_KB = 1024L
-            private const val BYTES_PER_MB = 1_048_576L
-            private const val BYTES_PER_GB = 1_073_741_824L
+        private fun safeLaunch(block: suspend () -> Unit) {
+            viewModelScope.launch {
+                try {
+                    block()
+                } catch (
+                    @Suppress("TooGenericExceptionCaught")
+                    e: Exception,
+                ) {
+                    Timber.e(e, "Settings operation failed")
+                    _effects.send(SettingsEffect.ShowSnackbar("Operation failed: ${e.message}"))
+                }
+            }
         }
+
+        companion object
     }

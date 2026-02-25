@@ -24,6 +24,9 @@ android {
 
     testOptions {
         unitTests.isIncludeAndroidResources = true
+        unitTests.all {
+            it.maxHeapSize = "4g"
+        }
     }
 }
 
@@ -51,6 +54,9 @@ dependencies {
     // Image Loading
     implementation(libs.coil.compose)
 
+    // Room (for withTransaction in repository)
+    implementation(libs.room.ktx)
+
     // Coroutines
     implementation(libs.coroutines.core)
     implementation(libs.coroutines.android)
@@ -71,6 +77,8 @@ dependencies {
     testImplementation(libs.compose.ui.test.junit4)
     testImplementation(libs.activity.compose)
     testImplementation(project(":core:testing"))
+    testImplementation(libs.paging.testing)
     androidTestImplementation(libs.bundles.android.testing)
+    androidTestImplementation(libs.paging.testing)
     androidTestImplementation(project(":core:testing"))
 }

@@ -12,7 +12,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertEquals
+import com.google.common.truth.Truth.assertThat
 import org.junit.Before
 import org.junit.Test
 
@@ -39,9 +39,9 @@ class ImportZipBundleUseCaseTest {
 
             val result = useCase(zipUri)
 
-            assertEquals(0, result.successCount)
-            assertEquals(1, result.failureCount)
-            assertEquals("Not a valid .meme.zip bundle", result.errors["bundle"])
+            assertThat(result.successCount).isEqualTo(0)
+            assertThat(result.failureCount).isEqualTo(1)
+            assertThat(result.errors["bundle"]).isEqualTo("Not a valid .meme.zip bundle")
         }
 
     @Test
@@ -63,9 +63,9 @@ class ImportZipBundleUseCaseTest {
 
             val result = useCase(zipUri)
 
-            assertEquals(1, result.successCount)
-            assertEquals(0, result.failureCount)
-            assertEquals(listOf(meme), result.importedMemes)
+            assertThat(result.successCount).isEqualTo(1)
+            assertThat(result.failureCount).isEqualTo(0)
+            assertThat(result.importedMemes).isEqualTo(listOf(meme))
         }
 
     @Test
@@ -91,9 +91,9 @@ class ImportZipBundleUseCaseTest {
 
             val result = useCase(zipUri)
 
-            assertEquals(0, result.successCount)
-            assertEquals(1, result.failureCount)
-            assertEquals("Import failed", result.errors["test.jpg"])
+            assertThat(result.successCount).isEqualTo(0)
+            assertThat(result.failureCount).isEqualTo(1)
+            assertThat(result.errors["test.jpg"]).isEqualTo("Import failed")
         }
 
     @Test
@@ -111,9 +111,9 @@ class ImportZipBundleUseCaseTest {
 
             val result = useCase(zipUri)
 
-            assertEquals(0, result.successCount)
-            assertEquals(1, result.failureCount)
-            assertEquals("Failed to extract", result.errors["corrupt.jpg"])
+            assertThat(result.successCount).isEqualTo(0)
+            assertThat(result.failureCount).isEqualTo(1)
+            assertThat(result.errors["corrupt.jpg"]).isEqualTo("Failed to extract")
         }
 
     @Test

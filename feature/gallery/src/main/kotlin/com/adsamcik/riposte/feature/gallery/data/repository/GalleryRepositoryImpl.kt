@@ -5,6 +5,8 @@ import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.map
 import com.adsamcik.riposte.core.common.di.IoDispatcher
+import androidx.room.withTransaction
+import com.adsamcik.riposte.core.database.MemeDatabase
 import com.adsamcik.riposte.core.database.dao.EmojiTagDao
 import com.adsamcik.riposte.core.database.dao.MemeDao
 import com.adsamcik.riposte.core.database.dao.MemeEmbeddingDao
@@ -29,6 +31,7 @@ import javax.inject.Inject
 class GalleryRepositoryImpl
     @Inject
     constructor(
+        private val database: MemeDatabase,
         private val memeDao: MemeDao,
         private val emojiTagDao: EmojiTagDao,
         private val memeEmbeddingDao: MemeEmbeddingDao,
@@ -41,7 +44,7 @@ class GalleryRepositoryImpl
 
         override fun getMemes(): Flow<List<Meme>> {
             return memeDao.getAllMemes()
-                .map { entities -> entities.map { it.toDomain() } }
+                .map { entities -> entities.map { it.toDomain() }.distinctBy { it.id } }
                 .flowOn(ioDispatcher)
         }
 
@@ -83,7 +86,7 @@ class GalleryRepositoryImpl
 
         override fun getFavorites(): Flow<List<Meme>> {
             return memeDao.getFavoriteMemes()
-                .map { entities -> entities.map { it.toDomain() } }
+                .map { entities -> entities.map { it.toDomain() }.distinctBy { it.id } }
                 .flowOn(ioDispatcher)
         }
 
@@ -115,21 +118,23 @@ class GalleryRepositoryImpl
         override suspend fun updateMemeWithEmojis(meme: Meme): Result<Unit> =
             withContext(ioDispatcher) {
                 try {
-                    // Update the meme entity
-                    memeDao.updateMeme(meme.toEntity())
+                    database.withTransaction {
+                        // Update the meme entity
+                        memeDao.updateMeme(meme.toEntity())
 
-                    // Delete existing emoji tags and insert new ones
-                    emojiTagDao.deleteEmojiTagsForMeme(meme.id)
-                    if (meme.emojiTags.isNotEmpty()) {
-                        val tagEntities =
-                            meme.emojiTags.map { tag ->
-                                EmojiTagEntity(
-                                    memeId = meme.id,
-                                    emoji = tag.emoji,
-                                    emojiName = tag.name,
-                                )
-                            }
-                        emojiTagDao.insertEmojiTags(tagEntities)
+                        // Delete existing emoji tags and insert new ones
+                        emojiTagDao.deleteEmojiTagsForMeme(meme.id)
+                        if (meme.emojiTags.isNotEmpty()) {
+                            val tagEntities =
+                                meme.emojiTags.map { tag ->
+                                    EmojiTagEntity(
+                                        memeId = meme.id,
+                                        emoji = tag.emoji,
+                                        emojiName = tag.name,
+                                    )
+                                }
+                            emojiTagDao.insertEmojiTags(tagEntities)
+                        }
                     }
 
                     Result.success(Unit)
@@ -145,15 +150,16 @@ class GalleryRepositoryImpl
         override suspend fun deleteMeme(id: Long): Result<Unit> =
             withContext(ioDispatcher) {
                 try {
+                    // 1. Read meme (and file path) before deletion
                     val meme = memeDao.getMemeById(id)
                     if (meme != null) {
-                        // Delete the file
+                        // 2. Delete from DB first (reversible via transaction)
+                        memeDao.deleteMemeById(id)
+                        // 3. Delete file last (irreversible)
                         val file = File(meme.filePath)
                         if (file.exists()) {
                             file.delete()
                         }
-                        // Delete from database
-                        memeDao.deleteMemeById(id)
                     }
                     Result.success(Unit)
                 } catch (
@@ -168,18 +174,19 @@ class GalleryRepositoryImpl
         override suspend fun deleteMemes(ids: Set<Long>): Result<Unit> =
             withContext(ioDispatcher) {
                 try {
-                    // Delete files
-                    ids.forEach { id ->
-                        val meme = memeDao.getMemeById(id)
-                        meme?.let {
-                            val file = File(it.filePath)
-                            if (file.exists()) {
-                                file.delete()
-                            }
+                    // 1. Collect file paths before deletion
+                    val filePaths = ids.mapNotNull { id ->
+                        memeDao.getMemeById(id)?.filePath
+                    }
+                    // 2. Delete from DB first (reversible via transaction)
+                    memeDao.deleteMemesByIds(ids.toList())
+                    // 3. Delete files last (irreversible)
+                    filePaths.forEach { path ->
+                        val file = File(path)
+                        if (file.exists()) {
+                            file.delete()
                         }
                     }
-                    // Delete from database
-                    memeDao.deleteMemesByIds(ids.toList())
                     Result.success(Unit)
                 } catch (
                     @Suppress("TooGenericExceptionCaught") // Catches all to show error state
@@ -206,7 +213,7 @@ class GalleryRepositoryImpl
 
         override fun getMemesByEmoji(emoji: String): Flow<List<Meme>> {
             return memeDao.getMemesByEmoji(emoji)
-                .map { entities -> entities.map { it.toDomain() } }
+                .map { entities -> entities.map { it.toDomain() }.distinctBy { it.id } }
                 .flowOn(ioDispatcher)
         }
 
@@ -222,26 +229,26 @@ class GalleryRepositoryImpl
 
         override fun getRecentlyViewed(limit: Int): Flow<List<Meme>> {
             return memeDao.getRecentlyViewedMemes(limit)
-                .map { entities -> entities.map { it.toDomain() } }
+                .map { entities -> entities.map { it.toDomain() }.distinctBy { it.id } }
                 .flowOn(ioDispatcher)
         }
 
         override fun getAllEmojisWithCounts(): Flow<List<Pair<String, Int>>> {
             return emojiTagDao.getEmojisOrderedByUsage()
-                .map { stats -> stats.map { it.emoji to it.totalUsage } }
+                .map { stats -> stats.map { it.emoji to it.totalUsage }.distinctBy { it.first } }
                 .flowOn(ioDispatcher)
         }
 
         override fun getAllEmojisWithTagCounts(): Flow<List<Pair<String, Int>>> {
             return emojiTagDao.getAllEmojisWithCounts()
-                .map { stats -> stats.map { it.emoji to it.count } }
+                .map { stats -> stats.map { it.emoji to it.count }.distinctBy { it.first } }
                 .flowOn(ioDispatcher)
         }
 
         override suspend fun getEmbeddingsExcluding(memeId: Long): List<MemeEmbeddingData> =
             withContext(ioDispatcher) {
-                memeEmbeddingDao.getMemesWithEmbeddings()
-                    .filter { it.memeId != memeId }
+                memeEmbeddingDao.getContentEmbeddingsExcluding(memeId)
                     .map { MemeEmbeddingData(memeId = it.memeId, embedding = it.embedding) }
+                    .distinctBy { it.memeId }
             }
     }

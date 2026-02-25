@@ -9,6 +9,7 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -66,8 +67,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -124,6 +127,7 @@ import com.adsamcik.riposte.core.ui.component.MemeCardCompact
 import com.adsamcik.riposte.core.ui.modifier.animatedPressScale
 import com.adsamcik.riposte.core.ui.theme.RiposteMotionScheme
 import com.adsamcik.riposte.core.ui.theme.RiposteShapes
+import com.adsamcik.riposte.core.ui.theme.Spacing
 import com.adsamcik.riposte.core.ui.theme.rememberGridColumns
 import com.adsamcik.riposte.core.search.R as SearchR
 import com.adsamcik.riposte.feature.gallery.R
@@ -144,6 +148,7 @@ fun GalleryScreen(
     val pagedMemes = viewModel.pagedMemes.collectAsLazyPagingItems()
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
+    val hapticFeedback = LocalHapticFeedback.current
     var showDeleteDialog by remember { mutableStateOf(false) }
     var deleteCount by remember { mutableStateOf(0) }
     var showMenu by remember { mutableStateOf(false) }
@@ -160,16 +165,28 @@ fun GalleryScreen(
                     deleteCount = effect.count
                     showDeleteDialog = true
                 }
+                is GalleryEffect.ShowUndoDeleteSnackbar -> {
+                    val result = snackbarHostState.showSnackbar(
+                        message = effect.message,
+                        actionLabel = context.getString(R.string.gallery_button_undo),
+                        duration = SnackbarDuration.Short,
+                    )
+                    if (result == SnackbarResult.ActionPerformed) {
+                        viewModel.onIntent(GalleryIntent.UndoDelete)
+                    }
+                }
                 is GalleryEffect.ShowError -> snackbarHostState.showSnackbar(effect.message)
                 is GalleryEffect.LaunchShareIntent -> {
                     try {
                         context.startActivity(effect.intent)
                     } catch (e: android.content.ActivityNotFoundException) {
                         Timber.w(e, "No app found to handle share intent")
-                        snackbarHostState.showSnackbar("Unable to share — app not found")
+                        snackbarHostState.showSnackbar(context.getString(R.string.gallery_error_share_no_app))
                     }
                 }
-                is GalleryEffect.TriggerHapticFeedback -> { /* Handled by Compose haptic feedback */ }
+                is GalleryEffect.TriggerHapticFeedback -> {
+                    hapticFeedback.performHapticFeedback(HapticFeedbackType.Confirm)
+                }
             }
         }
     }
@@ -258,6 +275,33 @@ private fun GalleryScreenContent(
         derivedStateOf {
             gridState.firstVisibleItemIndex > 0 || gridState.firstVisibleItemScrollOffset > 0
         }
+    }
+
+    // Clear recent searches confirmation dialog
+    var showClearSearchesDialog by remember { mutableStateOf(false) }
+    if (showClearSearchesDialog) {
+        AlertDialog(
+            onDismissRequest = { showClearSearchesDialog = false },
+            title = { Text(stringResource(R.string.gallery_dialog_clear_searches_title)) },
+            text = { Text(stringResource(R.string.gallery_dialog_clear_searches_message)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showClearSearchesDialog = false
+                        onIntent(GalleryIntent.ClearRecentSearches)
+                    },
+                ) {
+                    Text(stringResource(R.string.gallery_dialog_clear_searches_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showClearSearchesDialog = false },
+                ) {
+                    Text(stringResource(R.string.gallery_button_cancel))
+                }
+            },
+        )
     }
 
     // Delete confirmation dialog
@@ -436,26 +480,42 @@ private fun GalleryScreenContent(
                     }
                 val nonSuggestionMemes =
                     remember(uiState.memes, suggestionIds) {
-                        uiState.memes
-                            .filter { it.id !in suggestionIds }
-                            .distinctBy { it.id }
+                        uiState.memes.filter { it.id !in suggestionIds }.distinctBy { it.id }
+                    }
+                val uniqueSearchResults =
+                    remember(uiState.searchState.results) {
+                        uiState.searchState.results.distinctBy { it.meme.id }
                     }
 
-                when {
-                    uiState.screenMode != ScreenMode.Searching && uiState.isLoading -> {
+                val contentKey = when {
+                    uiState.screenMode != ScreenMode.Searching && uiState.isLoading -> "loading"
+                    uiState.screenMode != ScreenMode.Searching && uiState.error != null -> "error"
+                    uiState.screenMode != ScreenMode.Searching && uiState.isEmpty && !uiState.usePaging -> "empty"
+                    uiState.screenMode != ScreenMode.Searching && uiState.usePaging && pagedMemes != null &&
+                        pagedMemes.loadState.refresh is LoadState.Loading -> "paged-loading"
+                    uiState.screenMode != ScreenMode.Searching && uiState.usePaging && pagedMemes != null &&
+                        pagedMemes.loadState.refresh is LoadState.Error -> "paged-error"
+                    uiState.screenMode != ScreenMode.Searching && uiState.usePaging && pagedMemes != null &&
+                        pagedMemes.itemCount == 0 -> "paged-empty"
+                    else -> "content"
+                }
+
+                Crossfade(targetState = contentKey, label = "gallery_content") { targetKey ->
+                    when (targetKey) {
+                    "loading" -> {
                         LoadingScreen(
                             message = stringResource(R.string.gallery_loading_message),
                             modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
                         )
                     }
-                    uiState.screenMode != ScreenMode.Searching && uiState.error != null -> {
+                    "error" -> {
                         ErrorState(
                             message = uiState.error.orEmpty(),
                             onRetry = { onIntent(GalleryIntent.LoadMemes) },
                             modifier = Modifier.semantics { liveRegion = LiveRegionMode.Assertive },
                         )
                     }
-                    uiState.screenMode != ScreenMode.Searching && uiState.isEmpty && !uiState.usePaging -> {
+                    "empty" -> {
                         Box(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center,
@@ -478,24 +538,21 @@ private fun GalleryScreenContent(
                             }
                         }
                     }
-                    uiState.screenMode != ScreenMode.Searching && uiState.usePaging && pagedMemes != null &&
-                        pagedMemes.loadState.refresh is LoadState.Loading -> {
+                    "paged-loading" -> {
                         LoadingScreen(
                             message = stringResource(R.string.gallery_loading_message),
                             modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
                         )
                     }
-                    uiState.screenMode != ScreenMode.Searching && uiState.usePaging && pagedMemes != null &&
-                        pagedMemes.loadState.refresh is LoadState.Error -> {
-                        val error = (pagedMemes.loadState.refresh as LoadState.Error).error
+                    "paged-error" -> {
+                        val error = (pagedMemes!!.loadState.refresh as LoadState.Error).error
                         ErrorState(
                             message = error.message ?: stringResource(R.string.gallery_error_load_failed),
                             onRetry = { pagedMemes.retry() },
                             modifier = Modifier.semantics { liveRegion = LiveRegionMode.Assertive },
                         )
                     }
-                    uiState.screenMode != ScreenMode.Searching && uiState.usePaging && pagedMemes != null &&
-                        pagedMemes.itemCount == 0 -> {
+                    "paged-empty" -> {
                         Box(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center,
@@ -534,7 +591,7 @@ private fun GalleryScreenContent(
                                 ) {
                                     item(span = { GridItemSpan(maxLineSpan) }, key = "recent_header") {
                                         RecentSearchesHeader(
-                                            onClearAll = { onIntent(GalleryIntent.ClearRecentSearches) },
+                                            onClearAll = { showClearSearchesDialog = true },
                                         )
                                     }
                                     items(
@@ -559,7 +616,7 @@ private fun GalleryScreenContent(
                                             modifier =
                                                 Modifier
                                                     .fillMaxWidth()
-                                                    .padding(32.dp)
+                                                    .padding(Spacing.xxl)
                                                     .semantics {
                                                         contentDescription = searchingDescription
                                                         liveRegion = LiveRegionMode.Polite
@@ -579,7 +636,8 @@ private fun GalleryScreenContent(
                                                     stringResource(R.string.gallery_error_search_not_supported)
                                                 is SearchError.IndexFailed ->
                                                     stringResource(R.string.gallery_error_search_index_failed)
-                                                is SearchError.Generic -> error.message
+                                                is SearchError.Generic ->
+                                                    stringResource(R.string.gallery_error_search_generic)
                                             },
                                             onRetry = if (error.isRetryable) {
                                                 { onIntent(GalleryIntent.UpdateSearchQuery(uiState.searchState.query)) }
@@ -603,9 +661,9 @@ private fun GalleryScreenContent(
                                                     uiState.searchState.query,
                                                 ),
                                             actionLabel = stringResource(
-                                                com.adsamcik.riposte.core.ui.R.string.ui_loading_no_results_clear,
+                                                R.string.gallery_button_import_memes,
                                             ),
-                                            onAction = { onIntent(GalleryIntent.ClearSearch) },
+                                            onAction = { onIntent(GalleryIntent.NavigateToImport) },
                                         )
                                     }
                                 } else if (uiState.searchState.results.isNotEmpty()) {
@@ -621,7 +679,7 @@ private fun GalleryScreenContent(
                                     }
                                     // Result items - reuse MemeGridItem
                                     items(
-                                        items = uiState.searchState.results,
+                                        items = uniqueSearchResults,
                                         key = { "search_${it.meme.id}" },
                                     ) { result ->
                                         val isSelected = result.meme.id in uiState.selectedMemeIds
@@ -663,7 +721,7 @@ private fun GalleryScreenContent(
                                     if (peeked != null && !seenPagedIds.add(peeked.id)) continue
 
                                     item(
-                                        key = peeked?.id ?: "paged_$index",
+                                        key = peeked?.let { "paged_${it.id}" } ?: "paged_loading_$index",
                                     ) {
                                         val meme = pagedMemes[index]
                                         if (meme != null) {
@@ -688,7 +746,7 @@ private fun GalleryScreenContent(
                                             modifier =
                                                 Modifier
                                                     .fillMaxWidth()
-                                                    .padding(16.dp),
+                                                    .padding(Spacing.lg),
                                             contentAlignment = Alignment.Center,
                                         ) {
                                             val loadingDescription = stringResource(R.string.gallery_cd_loading_more)
@@ -736,7 +794,7 @@ private fun GalleryScreenContent(
                                 // Remaining items
                                 items(
                                     items = nonSuggestionMemes,
-                                    key = { it.id },
+                                    key = { "meme_${it.id}" },
                                 ) { meme ->
                                     val isSelected = meme.id in uiState.selectedMemeIds
                                     MemeGridItem(
@@ -749,6 +807,7 @@ private fun GalleryScreenContent(
                             }
                         }
                     }
+            }
             }
             }
 
@@ -774,6 +833,10 @@ private fun GalleryScreenContent(
             ) {
                 ImportProgressBanner(
                     status = uiState.importStatus,
+                )
+
+                EmbeddingProgressBanner(
+                    status = uiState.embeddingStatus,
                 )
 
                 NotificationBanner(
@@ -822,16 +885,16 @@ private fun GalleryContent(
             state = gridState,
             columns = GridCells.Fixed(columns),
             contentPadding = PaddingValues(
-                start = 8.dp,
-                end = 8.dp,
-                top = safeTopPadding + emojiRailSpace + 4.dp,
+                start = Spacing.sm,
+                end = Spacing.sm,
+                top = safeTopPadding + emojiRailSpace + Spacing.xs,
                 bottom = when {
-                    uiState.screenMode == ScreenMode.Searching -> 24.dp
+                    uiState.screenMode == ScreenMode.Searching -> Spacing.xl
                     else -> 120.dp
                 },
             ),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+            verticalArrangement = Arrangement.spacedBy(Spacing.sm),
             content = gridContent,
         )
 
@@ -921,7 +984,7 @@ private fun GalleryEmojiFilterRail(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 4.dp, bottom = 4.dp)
+                    .padding(top = Spacing.xs, bottom = Spacing.xs)
                     .testTag("EmojiFilterRail"),
             )
         }
@@ -963,9 +1026,9 @@ private fun FloatingSearchBar(
                 Modifier
                     .fillMaxWidth()
                     .height(64.dp)
-                    .padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
+                    .padding(start = Spacing.sm, end = Spacing.sm, top = Spacing.sm, bottom = Spacing.sm),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
         ) {
             // Navigation icon (close for active filters when not searching)
             if (uiState.screenMode != ScreenMode.Searching &&
@@ -1046,8 +1109,8 @@ private fun FloatingSearchBar(
             ),
         ) {
             LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                contentPadding = PaddingValues(horizontal = Spacing.lg),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 6.dp),
@@ -1291,7 +1354,7 @@ private fun RecentSearchesHeader(
         modifier =
             modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+                .padding(horizontal = Spacing.lg, vertical = Spacing.sm),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -1325,13 +1388,13 @@ private fun RecentSearchItem(
             modifier
                 .fillMaxWidth()
                 .combinedClickable(onClick = onClick)
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(horizontal = Spacing.lg, vertical = Spacing.md),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.md),
             modifier = Modifier.weight(1f),
         ) {
             Icon(
@@ -1376,9 +1439,9 @@ private fun ImportProgressBanner(
                 modifier
                     .fillMaxWidth()
                     .background(MaterialTheme.colorScheme.primaryContainer)
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(horizontal = Spacing.lg, vertical = Spacing.sm),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.md),
         ) {
             LinearProgressIndicator(
                 progress = {
@@ -1413,7 +1476,68 @@ private fun ImportProgressBanner(
 }
 
 /**
- * Banner for one-shot notifications (import complete, indexing complete, etc.).
+ * Slim progress banner for background embedding/indexing work.
+ * Uses tertiary container to distinguish from import progress.
+ */
+@Composable
+private fun EmbeddingProgressBanner(
+    status: EmbeddingWorkStatus,
+    modifier: Modifier = Modifier,
+) {
+    AnimatedVisibility(
+        visible = status is EmbeddingWorkStatus.InProgress,
+        enter = slideInVertically() + fadeIn(),
+        exit = slideOutVertically() + fadeOut(),
+    ) {
+        val inProgress = status as? EmbeddingWorkStatus.InProgress
+        val total = inProgress?.let { it.processed + it.remaining } ?: 0
+        Row(
+            modifier =
+                modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.tertiaryContainer)
+                    .padding(horizontal = Spacing.lg, vertical = Spacing.sm),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+        ) {
+            if (inProgress != null && total > 0) {
+                LinearProgressIndicator(
+                    progress = { inProgress.processed.toFloat() / total },
+                    modifier = Modifier
+                        .width(40.dp)
+                        .height(4.dp)
+                        .clip(MaterialTheme.shapes.extraSmall),
+                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                    trackColor = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.3f),
+                )
+            } else {
+                LinearProgressIndicator(
+                    modifier = Modifier
+                        .width(40.dp)
+                        .height(4.dp)
+                        .clip(MaterialTheme.shapes.extraSmall),
+                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                    trackColor = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.3f),
+                )
+            }
+            Text(
+                text =
+                    if (inProgress != null && total > 0) {
+                        stringResource(R.string.gallery_indexing_in_progress_count, inProgress.processed, total)
+                    } else {
+                        stringResource(R.string.gallery_indexing_in_progress)
+                    },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onTertiaryContainer,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+/**
  * Slides down from below the search bar with a spring animation.
  * Uses M3 Expressive styling with Surface, rounded shape, and notification-type icons.
  */
@@ -1459,6 +1583,14 @@ private fun NotificationBanner(
                 null -> Icons.Default.Check
             }
 
+        val iconDescription =
+            when (notification) {
+                is GalleryNotification.ImportComplete -> stringResource(R.string.gallery_cd_notification_success)
+                is GalleryNotification.ImportFailed -> stringResource(R.string.gallery_cd_notification_error)
+                is GalleryNotification.IndexingComplete -> stringResource(R.string.gallery_cd_notification_complete)
+                null -> stringResource(R.string.gallery_cd_notification_info)
+            }
+
         val text =
             when (notification) {
                 is GalleryNotification.ImportComplete ->
@@ -1482,20 +1614,20 @@ private fun NotificationBanner(
             modifier =
                 modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp),
+                    .padding(horizontal = Spacing.md),
             shape = MaterialTheme.shapes.medium,
             color = containerColor,
             tonalElevation = 2.dp,
             shadowElevation = 4.dp,
         ) {
             Row(
-                modifier = Modifier.padding(start = 16.dp, end = 4.dp, top = 10.dp, bottom = 10.dp),
+                modifier = Modifier.padding(start = Spacing.lg, end = Spacing.xs, top = 10.dp, bottom = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.md),
             ) {
                 Icon(
                     imageVector = icon,
-                    contentDescription = null,
+                    contentDescription = iconDescription,
                     tint = contentColor,
                     modifier = Modifier.size(20.dp),
                 )

@@ -33,12 +33,8 @@ class DHashCalculatorTest {
     }
 
     @Test
-    fun `calculate returns null for zero-width bitmap`() {
-        // Robolectric allows 0-dimension bitmaps via createBitmap with specific config
+    fun `calculate returns non-null for 1x1 bitmap`() {
         val bitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
-        // Use a mock-like approach: create a real bitmap then test the boundary
-        // The DHashCalculator checks width == 0 || height == 0
-        // Since we can't create a 0-size Bitmap directly, verify with 1x1 (valid)
         val hash = calculator.calculate(bitmap)
         assertThat(hash).isNotNull()
         bitmap.recycle()
@@ -192,25 +188,48 @@ class DHashCalculatorTest {
     }
 
     @Test
+    fun `uniform color bitmap produces zero hash`() {
+        val bitmap = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888)
+        Canvas(bitmap).drawColor(Color.GRAY)
+
+        val hash = calculator.calculate(bitmap)
+
+        // All pixels identical → no pixel is brighter than its neighbor → every bit stays 0
+        // Kills the > → >= mutation on `if (leftGray > rightGray)`
+        assertThat(hash).isEqualTo(0L)
+        bitmap.recycle()
+    }
+
+    @Test
     fun `wide aspect ratio bitmap produces valid hash`() {
         val wide = Bitmap.createBitmap(1000, 10, Bitmap.Config.ARGB_8888)
         Canvas(wide).drawColor(Color.CYAN)
+        val wide2 = Bitmap.createBitmap(1000, 10, Bitmap.Config.ARGB_8888)
+        Canvas(wide2).drawColor(Color.CYAN)
 
-        val hash = calculator.calculate(wide)
+        val hash1 = calculator.calculate(wide)
+        val hash2 = calculator.calculate(wide2)
 
-        assertThat(hash).isNotNull()
+        assertThat(hash1).isNotNull()
+        assertThat(hash1).isEqualTo(hash2)
         wide.recycle()
+        wide2.recycle()
     }
 
     @Test
     fun `tall aspect ratio bitmap produces valid hash`() {
         val tall = Bitmap.createBitmap(10, 1000, Bitmap.Config.ARGB_8888)
         Canvas(tall).drawColor(Color.MAGENTA)
+        val tall2 = Bitmap.createBitmap(10, 1000, Bitmap.Config.ARGB_8888)
+        Canvas(tall2).drawColor(Color.MAGENTA)
 
-        val hash = calculator.calculate(tall)
+        val hash1 = calculator.calculate(tall)
+        val hash2 = calculator.calculate(tall2)
 
-        assertThat(hash).isNotNull()
+        assertThat(hash1).isNotNull()
+        assertThat(hash1).isEqualTo(hash2)
         tall.recycle()
+        tall2.recycle()
     }
 
     @Test
@@ -242,10 +261,19 @@ class DHashCalculatorTest {
         tiny.setPixel(0, 1, Color.BLUE)
         tiny.setPixel(1, 1, Color.WHITE)
 
-        val hash = calculator.calculate(tiny)
+        val tiny2 = Bitmap.createBitmap(2, 2, Bitmap.Config.ARGB_8888)
+        tiny2.setPixel(0, 0, Color.RED)
+        tiny2.setPixel(1, 0, Color.GREEN)
+        tiny2.setPixel(0, 1, Color.BLUE)
+        tiny2.setPixel(1, 1, Color.WHITE)
 
-        assertThat(hash).isNotNull()
+        val hash1 = calculator.calculate(tiny)
+        val hash2 = calculator.calculate(tiny2)
+
+        assertThat(hash1).isNotNull()
+        assertThat(hash1).isEqualTo(hash2)
         tiny.recycle()
+        tiny2.recycle()
     }
 
     @Test

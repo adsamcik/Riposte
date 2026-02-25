@@ -105,6 +105,27 @@ Always use for collecting flows:
 val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 ```
 
+### Effect Collection Safety
+One-shot effects (navigation, snackbars) use a `Channel` in the ViewModel. **Always** collect them in a `LaunchedEffect`, never with `collectAsStateWithLifecycle`:
+```kotlin
+// ✅ Correct: LaunchedEffect for Channel-based effects
+LaunchedEffect(Unit) {
+    viewModel.effects.collect { effect ->
+        when (effect) {
+            is FeatureEffect.NavigateToDetail -> navController.navigate(...)
+            is FeatureEffect.ShowSnackbar -> snackbarHostState.showSnackbar(effect.message)
+        }
+    }
+}
+
+// ❌ WRONG: collectAsStateWithLifecycle loses events — Channel is not a StateFlow
+val effect by viewModel.effects.collectAsStateWithLifecycle(initialValue = null)
+```
+
+**Rules:**
+- `StateFlow<UiState>` → `collectAsStateWithLifecycle` (survives config changes, lifecycle-aware)
+- `Channel<Effect>` / `SharedFlow<Effect>` → `LaunchedEffect(Unit) { flow.collect { ... } }` (consumes once, no replay)
+
 ## Performance
 
 ### Remember Expensive Calculations
@@ -120,17 +141,40 @@ val filteredMemes = remember(memes, query) {
 - Prefer primitives and immutable collections in state
 
 ### Keys in Lists
-Always provide stable keys:
+Always provide stable, **unique** keys. Defensively deduplicate data before using IDs as keys:
 ```kotlin
+// ✅ Good: Deduplicate and use prefixed keys
+val uniqueMemes = remember(memes) { memes.distinctBy { it.id } }
 LazyColumn {
     items(
-        items = memes,
-        key = { it.id }
+        items = uniqueMemes,
+        key = { "meme_${it.id}" }
     ) { meme ->
         MemeCard(meme = meme)
     }
 }
+
+// ✅ Good: Paging items with dedup tracking and prefixed keys
+val seenIds = mutableSetOf<Long>()
+for (index in 0 until pagedMemes.itemCount) {
+    val peeked = pagedMemes.peek(index)
+    if (peeked != null && !seenIds.add(peeked.id)) continue
+    item(key = peeked?.let { "paged_${it.id}" } ?: "paged_loading_$index") { ... }
+}
+
+// ❌ FORBIDDEN: Raw IDs as keys
+items(items = memes, key = { it.id })  // Crashes if duplicates exist
+
+// ❌ FORBIDDEN: Paged items with raw nullable IDs
+item(key = peeked?.id ?: "fallback_$index")  // No dedup, raw ID
 ```
+
+**Key safety rules (mandatory — not optional):**
+1. **Always dedup defensively** — use `.distinctBy { it.id }` before passing to `items(key = ...)`
+2. **Always prefix keys** — `"section_${it.id}"` not raw `it.id` — prevents cross-list collisions
+3. **Never trust data uniqueness** — DAO JOINs, race conditions, and multi-embedding rows can produce duplicates
+4. **Paging items need explicit dedup** — use a `seenIds` set to track emitted IDs in paging loops
+5. **Never use raw Long/Int as a key** — always convert to a prefixed String
 
 ## Material 3
 

@@ -1,14 +1,11 @@
 package com.adsamcik.riposte.core.ml.worker
 
-import android.annotation.SuppressLint
 import android.content.Context
-import android.content.pm.ServiceInfo
 import androidx.hilt.work.HiltWorker
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingWorkPolicy
-import androidx.work.ForegroundInfo
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
@@ -39,7 +36,6 @@ import java.util.concurrent.TimeUnit
  * - Exponential backoff on failure
  * - Progress reporting
  * - Model version tracking
- * - Foreground service promotion when app is backgrounded
  */
 @HiltWorker
 class EmbeddingGenerationWorker
@@ -57,14 +53,14 @@ class EmbeddingGenerationWorker
             withContext(Dispatchers.Default) {
                 val startTime = System.currentTimeMillis()
                 Timber.i(
-                    "Embedding generation starting (batchSize=%d, attempt=%d)",
-                    BATCH_SIZE, runAttemptCount + 1,
+                    "Embedding generation starting (maxFetchSize=%d, attempt=%d)",
+                    MAX_FETCH_SIZE, runAttemptCount + 1,
                 )
                 try {
                     notificationManager.createChannel()
 
-                    // Get memes that need embedding generation
-                    val pendingMemes = embeddingRepository.getMemesNeedingEmbeddings(BATCH_SIZE)
+                    // Get a large pool of pending memes — we'll process as many as time allows
+                    val pendingMemes = embeddingRepository.getMemesNeedingEmbeddings(MAX_FETCH_SIZE)
 
                     if (pendingMemes.isEmpty()) {
                         Timber.d("No memes need embeddings, finishing early")
@@ -76,12 +72,7 @@ class EmbeddingGenerationWorker
                         )
                     }
 
-                    Timber.d("Found %d memes needing embeddings", pendingMemes.size)
-
-                    // Promote to foreground if app is already backgrounded
-                    maybePromoteToForeground(0, pendingMemes.size)
-
-                    val (successCount, failureCount) = processEmbeddings(pendingMemes)
+                    val (successCount, failureCount) = processAdaptiveBatch(pendingMemes)
 
                     // Check if there are more memes to process
                     val remainingCount = embeddingRepository.countMemesNeedingEmbeddings()
@@ -151,126 +142,111 @@ class EmbeddingGenerationWorker
                 }
             }
 
-        @Suppress("CyclomaticComplexMethod")
-        private suspend fun processEmbeddings(pendingMemes: List<MemeDataForEmbedding>): Pair<Int, Int> {
+        /**
+         * Adaptive batch: process the first item to measure device speed, then
+         * fill the remaining time budget (7 min total, 3 min headroom = 4 min work).
+         */
+        private suspend fun processAdaptiveBatch(
+            pendingMemes: List<MemeDataForEmbedding>,
+        ): Pair<Int, Int> {
             var successCount = 0
             var failureCount = 0
+            val batchStartTime = System.currentTimeMillis()
 
-            pendingMemes.forEach { memeData ->
-                var memeSuccess = false
+            // Process first item and measure duration
+            val firstStart = System.currentTimeMillis()
+            processOneEmbedding(pendingMemes.first()).let { ok -> if (ok) successCount++ else failureCount++ }
+            val firstDuration = (System.currentTimeMillis() - firstStart).coerceAtLeast(MIN_ITEM_DURATION_MS)
 
-                // CONTENT: title + description (document format)
-                try {
-                    val (title, contentBody) = buildContentParts(memeData)
-                    if (contentBody.isNotBlank()) {
-                        val embedding = embeddingGenerator.generateFromText(contentBody, title)
-                        val sourceHash = generateHash(contentBody)
-                        embeddingRepository.saveEmbedding(
-                            memeId = memeData.id,
-                            embedding = encodeEmbedding(embedding),
-                            dimension = embedding.size,
-                            modelVersion = CURRENT_MODEL_VERSION,
-                            sourceTextHash = sourceHash,
-                            embeddingType = EmbeddingType.CONTENT.key,
-                        )
-                        memeSuccess = true
-                    }
-                } catch (
-                    @Suppress("TooGenericExceptionCaught")
-                    e: Exception,
-                ) {
-                    Timber.w(e, "Failed to generate CONTENT embedding for meme %d", memeData.id)
-                }
+            reportProgress(successCount, failureCount, pendingMemes.size)
 
-                // INTENT: search phrases (document format — aligned with content space)
-                try {
-                    val (title, _) = buildContentParts(memeData)
-                    val intentText = buildIntentText(memeData)
-                    if (intentText.isNotBlank()) {
-                        val embedding = embeddingGenerator.generateFromText(intentText, title)
-                        val sourceHash = generateHash(intentText)
-                        embeddingRepository.saveEmbedding(
-                            memeId = memeData.id,
-                            embedding = encodeEmbedding(embedding),
-                            dimension = embedding.size,
-                            modelVersion = CURRENT_MODEL_VERSION,
-                            sourceTextHash = sourceHash,
-                            embeddingType = EmbeddingType.INTENT.key,
-                        )
-                        memeSuccess = true
-                    }
-                } catch (
-                    @Suppress("TooGenericExceptionCaught")
-                    e: Exception,
-                ) {
-                    Timber.w(e, "Failed to generate INTENT embedding for meme %d", memeData.id)
-                }
+            // Calculate how many more fit in budget
+            val elapsedMs = System.currentTimeMillis() - batchStartTime
+            val remainingBudgetMs = WORK_BUDGET_MS - elapsedMs
+            val additionalItems = (remainingBudgetMs / firstDuration).toInt()
+                .coerceIn(0, pendingMemes.size - 1)
 
-                // EMOJI: emoji names expanded to natural language (document format)
-                try {
-                    val emojiText = buildEmojiText(memeData)
-                    if (emojiText.isNotBlank()) {
-                        val embedding = embeddingGenerator.generateFromText(emojiText, null)
-                        val sourceHash = generateHash(emojiText)
-                        embeddingRepository.saveEmbedding(
-                            memeId = memeData.id,
-                            embedding = encodeEmbedding(embedding),
-                            dimension = embedding.size,
-                            modelVersion = CURRENT_MODEL_VERSION,
-                            sourceTextHash = sourceHash,
-                            embeddingType = EmbeddingType.EMOJI.key,
-                        )
-                        memeSuccess = true
-                    }
-                } catch (
-                    @Suppress("TooGenericExceptionCaught")
-                    e: Exception,
-                ) {
-                    Timber.w(e, "Failed to generate EMOJI embedding for meme %d", memeData.id)
-                }
+            Timber.d(
+                "Adaptive embedding batch: first item took %dms, budget allows %d more (of %d pending)",
+                firstDuration,
+                additionalItems,
+                pendingMemes.size - 1,
+            )
 
-                // DIFFERENTIATOR: unique aspects — OCR text, template source, emoji combo
-                try {
-                    val diffText = buildDifferentiatorText(memeData)
-                    if (diffText.isNotBlank()) {
-                        val embedding = embeddingGenerator.generateFromText(diffText, null)
-                        val sourceHash = generateHash(diffText)
-                        embeddingRepository.saveEmbedding(
-                            memeId = memeData.id,
-                            embedding = encodeEmbedding(embedding),
-                            dimension = embedding.size,
-                            modelVersion = CURRENT_MODEL_VERSION,
-                            sourceTextHash = sourceHash,
-                            embeddingType = EmbeddingType.DIFFERENTIATOR.key,
-                        )
-                        memeSuccess = true
-                    }
-                } catch (
-                    @Suppress("TooGenericExceptionCaught")
-                    e: Exception,
-                ) {
-                    Timber.w(e, "Failed to generate DIFFERENTIATOR embedding for meme %d", memeData.id)
-                }
-
-                if (memeSuccess) successCount++ else failureCount++
-
-                setProgressAsync(
-                    workDataOf(
-                        KEY_PROGRESS to
-                            ((successCount + failureCount) * PERCENTAGE_MULTIPLIER / pendingMemes.size),
-                    ),
-                )
-
-                maybePromoteToForeground(successCount + failureCount, pendingMemes.size)
+            for (i in 1..additionalItems) {
+                processOneEmbedding(pendingMemes[i]).let { ok -> if (ok) successCount++ else failureCount++ }
+                reportProgress(successCount, failureCount, pendingMemes.size)
             }
 
             return Pair(successCount, failureCount)
+        }
+
+        /** Generates embeddings for a single meme. Returns true on success. */
+        private suspend fun processOneEmbedding(memeData: MemeDataForEmbedding): Boolean {
+            return try {
+                var generatedAny = false
+
+                val contentText = buildContentText(memeData)
+                if (contentText.isNotBlank()) {
+                    val embedding = embeddingGenerator.generateFromText(contentText)
+                    val sourceHash = generateHash(contentText)
+                    embeddingRepository.saveEmbedding(
+                        memeId = memeData.id,
+                        embedding = encodeEmbedding(embedding),
+                        dimension = embedding.size,
+                        modelVersion = CURRENT_MODEL_VERSION,
+                        sourceTextHash = sourceHash,
+                        embeddingType = EmbeddingType.CONTENT.key,
+                    )
+                    generatedAny = true
+                }
+
+                val intentText = buildIntentText(memeData)
+                if (intentText.isNotBlank()) {
+                    val embedding = embeddingGenerator.generateFromText(intentText)
+                    val sourceHash = generateHash(intentText)
+                    embeddingRepository.saveEmbedding(
+                        memeId = memeData.id,
+                        embedding = encodeEmbedding(embedding),
+                        dimension = embedding.size,
+                        modelVersion = CURRENT_MODEL_VERSION,
+                        sourceTextHash = sourceHash,
+                        embeddingType = EmbeddingType.INTENT.key,
+                    )
+                    generatedAny = true
+                }
+                generatedAny
+            } catch (
+                @Suppress("TooGenericExceptionCaught")
+                e: Exception,
+            ) {
+                Timber.w(e, "Failed to generate embedding for meme ${memeData.id}")
+                false
+            }
+        }
+
+        private fun reportProgress(success: Int, failed: Int, total: Int) {
+            setProgressAsync(
+                workDataOf(
+                    KEY_PROGRESS to ((success + failed) * PERCENTAGE_MULTIPLIER / total),
+                    KEY_PROCESSED_COUNT to (success + failed),
+                    KEY_REMAINING_COUNT to (total - success - failed),
+                ),
+            )
         }
 
         /**
          * Build title and content body for the content embedding slot.
          * Returns a Pair of (title, body) where title may be null.
          */
+        private fun buildContentText(memeData: MemeDataForEmbedding): String {
+            val body = buildString {
+                memeData.description?.let { append(it).append(". ") }
+                memeData.textContent?.let { append(it).append(". ") }
+            }.trim().trimEnd('.')
+            return body.ifBlank { memeData.title ?: "" }
+        }
+
         private fun buildContentParts(memeData: MemeDataForEmbedding): Pair<String?, String> {
             val body = buildString {
                 memeData.description?.let { append(it).append(". ") }
@@ -389,31 +365,8 @@ class EmbeddingGenerationWorker
             return hash.take(HASH_BYTE_LENGTH).joinToString("") { "%02x".format(it) }
         }
 
-        private suspend fun maybePromoteToForeground(
-            current: Int,
-            total: Int,
-        ) {
-            if (appLifecycleTracker.isInBackground.value) {
-                setForeground(createForegroundInfo(current, total))
-            }
-        }
-
-        @SuppressLint("SpecifyForegroundServiceType") // Declared in app manifest
-        private fun createForegroundInfo(
-            current: Int,
-            total: Int,
-        ): ForegroundInfo {
-            val notification = notificationManager.buildProgressNotification(current, total)
-            return ForegroundInfo(
-                EmbeddingNotificationManager.NOTIFICATION_ID,
-                notification,
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC,
-            )
-        }
-
         companion object {
             const val WORK_NAME = "embedding_generation_work"
-            const val BATCH_SIZE = 20
             const val MAX_RETRY_COUNT = 3
             const val CURRENT_MODEL_VERSION = "embeddinggemma:1.3.0"
             private const val CONTINUATION_DELAY_SECONDS = 5L
@@ -427,6 +380,15 @@ class EmbeddingGenerationWorker
             private const val VARIATION_SELECTOR_16 = 0xFE0F
             private const val VARIATION_SELECTOR_15 = 0xFE0E
             private val SKIN_TONE_MODIFIER_RANGE = 0x1F3FB..0x1F3FF
+
+            /** Fetch up to this many pending memes; adaptive logic decides how many to process. */
+            private const val MAX_FETCH_SIZE = 200
+
+            /** 7 min total minus 3 min headroom = 4 min work budget per batch. */
+            private const val WORK_BUDGET_MS = 4L * 60 * 1000
+
+            /** Floor for per-item duration to avoid division issues on very fast inference. */
+            private const val MIN_ITEM_DURATION_MS = 50L
 
             // Output data keys
             const val KEY_PROCESSED_COUNT = "processed_count"

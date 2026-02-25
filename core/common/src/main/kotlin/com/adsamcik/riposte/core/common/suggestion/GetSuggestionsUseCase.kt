@@ -18,6 +18,7 @@ class GetSuggestionsUseCase
     constructor() {
         private val engine = SuggestionEngine()
 
+        private val lock = Any()
         private var cachedResult: List<Meme> = emptyList()
         private var cacheKey: CacheKey? = null
         private var cacheTimestamp: Long = 0L
@@ -26,7 +27,7 @@ class GetSuggestionsUseCase
             allMemes: List<Meme>,
             context: SuggestionContext,
             now: Long = System.currentTimeMillis(),
-        ): List<Meme> {
+        ): List<Meme> = synchronized(lock) {
             val key =
                 CacheKey(
                     surface = context.surface,
@@ -36,14 +37,14 @@ class GetSuggestionsUseCase
                 )
 
             if (key == cacheKey && (now - cacheTimestamp) < CACHE_TTL_MS) {
-                return cachedResult
+                return@synchronized cachedResult
             }
 
             val result = engine.suggest(allMemes, context, now)
             cachedResult = result
             cacheKey = key
             cacheTimestamp = now
-            return result
+            result
         }
 
         private data class CacheKey(

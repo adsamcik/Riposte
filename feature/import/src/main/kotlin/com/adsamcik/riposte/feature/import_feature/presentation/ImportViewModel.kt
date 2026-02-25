@@ -94,6 +94,7 @@ class ImportViewModel
                 }
 
                 WorkInfo.State.FAILED -> if (_uiState.value.isImporting) {
+                    val totalCount = _uiState.value.totalImportCount
                     _uiState.update {
                         it.copy(
                             isImporting = false,
@@ -101,7 +102,7 @@ class ImportViewModel
                             importResult =
                                 ImportResult(
                                     successCount = 0,
-                                    failureCount = 0,
+                                    failureCount = totalCount,
                                 ),
                         )
                     }
@@ -151,9 +152,6 @@ class ImportViewModel
                             context.getString(R.string.import_tip_emoji_tagging),
                         ),
                     )
-                }
-                if (failedCount == 0) {
-                    _effects.send(ImportEffect.NavigateToGallery)
                 }
             } else {
                 _effects.send(
@@ -397,15 +395,21 @@ class ImportViewModel
         }
 
         private fun startImport() {
-            // Guard against duplicate imports - check and set synchronously
-            if (_uiState.value.isImporting) return
-            _uiState.update {
-                it.copy(
-                    isImporting = true,
-                    importProgress = -1f,
-                    statusMessage = context.getString(R.string.import_status_checking_duplicates),
-                )
+            // Guard against duplicate imports atomically inside the update block
+            var wasAlreadyImporting = false
+            _uiState.update { state ->
+                if (state.isImporting) {
+                    wasAlreadyImporting = true
+                    state
+                } else {
+                    state.copy(
+                        isImporting = true,
+                        importProgress = -1f,
+                        statusMessage = context.getString(R.string.import_status_checking_duplicates),
+                    )
+                }
             }
+            if (wasAlreadyImporting) return
 
             importJob =
                 viewModelScope.launch {
@@ -588,17 +592,21 @@ class ImportViewModel
                 importRepository.createImportRequest(requestId, images.size, stagingDir.absolutePath)
                 importRepository.createImportRequestItems(requestId, items)
 
-                // Enqueue the worker — progress is observed via observeImportWork()
+                // Enqueue the worker — gallery observes progress via WorkManager
                 ImportWorker.enqueue(context, requestId)
 
                 _uiState.update {
                     it.copy(
+                        isImporting = false,
                         importProgress = 0f,
                         totalImportCount = it.selectedImages.size,
                         statusMessage = null,
                         selectedImages = emptyList(),
                     )
                 }
+
+                // Navigate to gallery immediately — progress banner shows there
+                _effects.send(ImportEffect.NavigateToGallery)
             } catch (
                 @Suppress("TooGenericExceptionCaught") // Worker must not crash - reports failure instead
                 e: Exception,

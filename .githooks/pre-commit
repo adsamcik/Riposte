@@ -91,6 +91,17 @@ if [ ! -z "$TODO_COMMENTS" ]; then
     echo "$TODO_COMMENTS"
 fi
 
+# Run safety guards on staged files
+print_info "Running safety guards..."
+if bash scripts/safety-guards.sh --staged; then
+    print_success "Safety guards passed"
+else
+    print_error "Safety guards found issues"
+    print_info "Fix the issues above before committing"
+    print_warning "You can skip this check with 'git commit --no-verify' (not recommended)"
+    exit 1
+fi
+
 # Check for large files (>500KB)
 LARGE_FILES=$(git diff --cached --name-only --diff-filter=ACMR | xargs -I {} sh -c 'if [ -f "{}" ] && [ $(stat -c%s "{}") -gt 512000 ]; then echo "{}"; fi' || true)
 if [ ! -z "$LARGE_FILES" ]; then

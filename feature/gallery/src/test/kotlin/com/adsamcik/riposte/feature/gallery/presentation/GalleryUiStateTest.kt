@@ -1,7 +1,6 @@
 package com.adsamcik.riposte.feature.gallery.presentation
 
-import com.adsamcik.riposte.core.model.EmojiTag
-import com.adsamcik.riposte.core.model.Meme
+import com.adsamcik.riposte.core.testing.TestDataFactory
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
@@ -12,9 +11,9 @@ import org.junit.Test
 class GalleryUiStateTest {
 
     private val testMemes = listOf(
-        createTestMeme(1L, isFavorite = true),
-        createTestMeme(2L),
-        createTestMeme(3L),
+        TestDataFactory.createMeme(id = 1L, isFavorite = true),
+        TestDataFactory.createMeme(id = 2L),
+        TestDataFactory.createMeme(id = 3L),
     )
 
     // ── isEmpty ──
@@ -174,65 +173,53 @@ class GalleryUiStateTest {
         assertThat(state.searchState.query).isEqualTo("😂")
     }
 
-    // ── State combinations for emoji rail visibility ──
+    // ── Computed property edge cases ──
 
     @Test
-    fun `browsing mode with emojis and no selection allows emoji rail`() {
+    fun `isEmpty is false when memes exist even if not loading`() {
         val state = GalleryUiState(
-            screenMode = ScreenMode.Browsing,
-            uniqueEmojis = listOf("😂" to 5),
-            isSelectionMode = false,
+            memes = testMemes,
+            isLoading = false,
+            usePaging = false,
         )
-        // The rail should be visible: not selection mode, has emojis
-        assertThat(state.isSelectionMode).isFalse()
-        assertThat(state.uniqueEmojis).isNotEmpty()
+        assertThat(state.isEmpty).isFalse()
+        assertThat(state.memes).isNotEmpty()
     }
 
     @Test
-    fun `searching mode with emojis and no selection allows emoji rail`() {
+    fun `hasSelection reflects multiple selected memes`() {
         val state = GalleryUiState(
-            screenMode = ScreenMode.Searching,
-            uniqueEmojis = listOf("😂" to 5, "🔥" to 3),
-            isSelectionMode = false,
+            selectedMemeIds = setOf(1L, 2L, 3L),
         )
-        assertThat(state.screenMode).isEqualTo(ScreenMode.Searching)
-        assertThat(state.isSelectionMode).isFalse()
-        assertThat(state.uniqueEmojis).isNotEmpty()
+        assertThat(state.hasSelection).isTrue()
+        assertThat(state.selectionCount).isEqualTo(3)
     }
 
     @Test
-    fun `selection mode hides emoji rail regardless of other state`() {
-        val state = GalleryUiState(
-            screenMode = ScreenMode.Browsing,
-            uniqueEmojis = listOf("😂" to 5),
-            isSelectionMode = true,
-            selectedMemeIds = setOf(1L),
-        )
-        // Selection mode should always hide the rail
-        assertThat(state.isSelectionMode).isTrue()
+    fun `selectionCount is zero implies hasSelection is false`() {
+        val state = GalleryUiState(selectedMemeIds = emptySet())
+        assertThat(state.selectionCount).isEqualTo(0)
+        assertThat(state.hasSelection).isFalse()
     }
 
     @Test
-    fun `favorites count alone can show emoji rail even without emojis`() {
+    fun `isEmpty is false when usePaging is true regardless of memes`() {
         val state = GalleryUiState(
-            uniqueEmojis = emptyList(),
-            favoritesCount = 3,
-            isSelectionMode = false,
+            memes = emptyList(),
+            isLoading = false,
+            usePaging = true,
         )
-        // No emojis but has favorites — the rail shows just the favorites chip
-        assertThat(state.uniqueEmojis).isEmpty()
-        assertThat(state.favoritesCount).isGreaterThan(0)
+        assertThat(state.isEmpty).isFalse()
     }
 
     @Test
-    fun `no emojis and no favorites hides emoji rail`() {
+    fun `isEmpty is false when loading even with empty memes and no paging`() {
         val state = GalleryUiState(
-            uniqueEmojis = emptyList(),
-            favoritesCount = 0,
-            isSelectionMode = false,
+            memes = emptyList(),
+            isLoading = true,
+            usePaging = false,
         )
-        assertThat(state.uniqueEmojis).isEmpty()
-        assertThat(state.favoritesCount).isEqualTo(0)
+        assertThat(state.isEmpty).isFalse()
     }
 
     // ── ImportWorkStatus ──
@@ -257,22 +244,4 @@ class GalleryUiStateTest {
         assertThat(state.isSearchFocused).isTrue()
     }
 
-    // ── Helpers ──
-
-    private fun createTestMeme(
-        id: Long,
-        isFavorite: Boolean = false,
-    ) = Meme(
-        id = id,
-        filePath = "/test/meme$id.jpg",
-        fileName = "meme$id.jpg",
-        mimeType = "image/jpeg",
-        width = 500,
-        height = 500,
-        fileSizeBytes = 50_000L,
-        importedAt = System.currentTimeMillis(),
-        emojiTags = listOf(EmojiTag("😂", "laughing")),
-        title = "Test Meme $id",
-        isFavorite = isFavorite,
-    )
 }

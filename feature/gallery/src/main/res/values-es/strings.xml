@@ -22,6 +22,7 @@
     <string name="gallery_delete_single_title">¿Eliminar Meme?</string>
     <string name="gallery_delete_single_message">Esta acción no se puede deshacer.</string>
     <string name="gallery_button_delete">Eliminar</string>
+    <string name="gallery_button_undo">Deshacer</string>
     <string name="gallery_button_cancel">Cancelar</string>
     <string name="gallery_button_save">Guardar</string>
     <string name="gallery_button_discard">Descartar</string>
@@ -79,6 +80,7 @@
     <string name="gallery_error_share_no_app">No se puede compartir — app no encontrada</string>
     <string name="gallery_error_search_not_supported">La búsqueda semántica no es compatible con este dispositivo</string>
     <string name="gallery_error_search_index_failed">El índice de búsqueda no se pudo cargar — intente reinstalar</string>
+    <string name="gallery_error_search_generic">Algo salió mal con la búsqueda — inténtelo de nuevo</string>
     <string name="gallery_detail_action_cancel">Cancelar</string>
     <string name="gallery_detail_empty_emoji_tags">Sin etiquetas emoji — toca Editar para añadir ✨</string>
     <string name="gallery_import_in_progress">Importando memes… %1$d de %2$d</string>
@@ -88,4 +90,8 @@
     <string name="gallery_indexing_complete">Índice de búsqueda actualizado — %1$d memes listos 🔍</string>
     <string name="gallery_cd_dismiss_notification">Cerrar notificación</string>
     <string name="gallery_cd_loading_more">Cargando más memes</string>
+    <string name="gallery_import_stalled">La importación no finalizó — %1$d de %2$d memes guardados</string>
+    <string name="gallery_dialog_clear_searches_title">¿Borrar búsquedas recientes?</string>
+    <string name="gallery_dialog_clear_searches_message">Esto eliminará todo tu historial de búsqueda reciente.</string>
+    <string name="gallery_dialog_clear_searches_confirm">Borrar</string>
 </resources>

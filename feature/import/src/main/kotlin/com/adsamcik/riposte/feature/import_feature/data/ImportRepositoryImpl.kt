@@ -85,7 +85,16 @@ class ImportRepositoryImpl
                         ?: return@withContext Result.failure(Exception("Failed to load image"))
 
                     // Use pre-extracted text from metadata if available, otherwise run OCR
-                    val extractedText = metadata?.textContent ?: extractTextFromBitmap(processed.bitmap)
+                    val extractedText = if (metadata?.textContent != null) {
+                        metadata.textContent
+                    } else {
+                        val ocrBitmap = loadAndResizeBitmap(uri)
+                        try {
+                            ocrBitmap?.let { extractTextFromBitmap(it) }
+                        } finally {
+                            ocrBitmap?.recycle()
+                        }
+                    }
                     val searchPhrases = metadata?.searchPhrases ?: emptyList()
 
                     // Create XMP metadata and embed in image
@@ -135,8 +144,8 @@ class ImportRepositoryImpl
                             filePath = memeEntity.filePath,
                             fileName = memeEntity.fileName,
                             mimeType = memeEntity.mimeType,
-                            width = processed.bitmap.width,
-                            height = processed.bitmap.height,
+                            width = processed.width,
+                            height = processed.height,
                             fileSizeBytes = memeEntity.fileSizeBytes,
                             importedAt = memeEntity.importedAt,
                             emojiTags = emojis.map { EmojiTag.fromEmoji(it) },
@@ -234,7 +243,11 @@ class ImportRepositoryImpl
             withContext(Dispatchers.IO) {
                 try {
                     val bitmap = loadAndResizeBitmap(uri) ?: return@withContext null
-                    extractTextFromBitmap(bitmap)
+                    try {
+                        extractTextFromBitmap(bitmap)
+                    } finally {
+                        bitmap.recycle()
+                    }
                 } catch (
                     @Suppress("TooGenericExceptionCaught") // Worker must not crash - reports failure instead
                     e: Exception,
@@ -248,12 +261,14 @@ class ImportRepositoryImpl
             withContext(Dispatchers.IO) {
                 try {
                     val bitmap = loadAndResizeBitmap(uri) ?: return@withContext emptyList()
+                    val extractedText = try {
+                        extractTextFromBitmap(bitmap)?.lowercase() ?: ""
+                    } finally {
+                        bitmap.recycle()
+                    }
 
                     // Map labels to emojis based on common associations
                     val suggestions = mutableListOf<EmojiTag>()
-
-                    // Check extracted text for emoji hints
-                    val extractedText = extractTextFromBitmap(bitmap)?.lowercase() ?: ""
 
                     // Common emojis for suggestion
                     val commonEmojiList =
@@ -279,10 +294,13 @@ class ImportRepositoryImpl
                             EmojiTag("✨", "sparkles"),
                         )
 
-                    // Add emojis based on text content
+                    // Add emojis based on text content — filter out common emoji taxonomy words
+                    val emojiStopWords = setOf("face", "with", "from", "the")
                     commonEmojiList.forEach { emojiTag ->
                         val keywords = emojiTag.name.split("_")
-                        if (keywords.any { extractedText.contains(it) }) {
+                            .filter { it.length > 2 && it !in emojiStopWords }
+                        if (keywords.isEmpty()) return@forEach
+                        if (keywords.any { keyword -> extractedText.contains(keyword) }) {
                             suggestions.add(emojiTag)
                         }
                     }
@@ -400,7 +418,8 @@ class ImportRepositoryImpl
 
         private data class ProcessedImage(
             val imageFile: File,
-            val bitmap: Bitmap,
+            val width: Int,
+            val height: Int,
             val fileHash: String?,
         )
 
@@ -415,16 +434,20 @@ class ImportRepositoryImpl
 
             val fileHash = calculateUriHash(uri)
             val bitmap = loadAndResizeBitmap(uri) ?: return null
+            val width = bitmap.width
+            val height = bitmap.height
 
             FileOutputStream(imageFile).use { out ->
                 bitmap.compress(Bitmap.CompressFormat.JPEG, FULL_IMAGE_JPEG_QUALITY, out)
             }
             val thumbnail = createThumbnail(bitmap)
+            bitmap.recycle()
             FileOutputStream(thumbnailFile).use { out ->
                 thumbnail.compress(Bitmap.CompressFormat.JPEG, THUMBNAIL_JPEG_QUALITY, out)
             }
+            thumbnail.recycle()
 
-            return ProcessedImage(imageFile, bitmap, fileHash)
+            return ProcessedImage(imageFile, width, height, fileHash)
         }
 
         /**
@@ -446,8 +469,8 @@ class ImportRepositoryImpl
                 filePath = processed.imageFile.absolutePath,
                 fileName = originalFileName,
                 mimeType = mimeType,
-                width = processed.bitmap.width,
-                height = processed.bitmap.height,
+                width = processed.width,
+                height = processed.height,
                 fileSizeBytes = processed.imageFile.length(),
                 importedAt = now,
                 emojiTagsJson = kotlinx.serialization.json.Json.encodeToString(emojis),

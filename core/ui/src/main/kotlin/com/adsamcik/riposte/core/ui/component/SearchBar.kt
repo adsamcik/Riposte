@@ -3,9 +3,7 @@ package com.adsamcik.riposte.core.ui.component
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -144,27 +142,4 @@ private fun SearchBarClearButton(
     }
 }
 
-/**
- * Search bar with emoji filter buttons.
- */
-@Composable
-fun SearchBarWithEmoji(
-    query: String,
-    onQueryChange: (String) -> Unit,
-    onSearch: () -> Unit,
-    recentEmojis: List<String>,
-    onEmojiClick: (String) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Box(modifier = modifier) {
-        SearchBar(
-            query = query,
-            onQueryChange = onQueryChange,
-            onSearch = onSearch,
-            modifier = Modifier.padding(bottom = if (recentEmojis.isNotEmpty()) 48.dp else 0.dp),
-        )
 
-        // Recent emoji quick filters would go here
-        // Implementation depends on UI requirements
-    }
-}

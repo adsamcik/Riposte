@@ -2,7 +2,7 @@ package com.adsamcik.riposte.feature.gallery.domain.usecase
 
 import app.cash.turbine.test
 import com.adsamcik.riposte.core.model.EmojiTag
-import com.adsamcik.riposte.core.model.Meme
+import com.adsamcik.riposte.core.testing.TestDataFactory
 import com.adsamcik.riposte.feature.gallery.domain.repository.GalleryRepository
 import com.google.common.truth.Truth.assertThat
 import io.mockk.coEvery
@@ -20,9 +20,9 @@ class GalleryUseCasesTest {
 
     private val testMemes =
         listOf(
-            createTestMeme(1, "meme1.jpg"),
-            createTestMeme(2, "meme2.jpg"),
-            createTestMeme(3, "meme3.jpg", isFavorite = true),
+            TestDataFactory.createMeme(id = 1, fileName = "meme1.jpg", filePath = "/storage/memes/meme1.jpg"),
+            TestDataFactory.createMeme(id = 2, fileName = "meme2.jpg", filePath = "/storage/memes/meme2.jpg"),
+            TestDataFactory.createMeme(id = 3, fileName = "meme3.jpg", filePath = "/storage/memes/meme3.jpg", isFavorite = true),
         )
 
     @Before
@@ -73,7 +73,7 @@ class GalleryUseCasesTest {
             useCase().test {
                 assertThat(awaitItem()).hasSize(3)
 
-                mutableFlow.value = testMemes + createTestMeme(4, "new.jpg")
+                mutableFlow.value = testMemes + TestDataFactory.createMeme(id = 4, fileName = "new.jpg", filePath = "/storage/memes/new.jpg")
                 assertThat(awaitItem()).hasSize(4)
             }
         }
@@ -148,7 +148,7 @@ class GalleryUseCasesTest {
     @Test
     fun `GetMemesByEmojiUseCase returns memes with matching emoji`() =
         runTest {
-            val emojiMemes = listOf(createTestMeme(1, "laugh.jpg"))
+            val emojiMemes = listOf(TestDataFactory.createMeme(id = 1, fileName = "laugh.jpg", filePath = "/storage/memes/laugh.jpg"))
             every { repository.getMemesByEmoji("😂") } returns flowOf(emojiMemes)
             val useCase = GetMemesByEmojiUseCase(repository)
 
@@ -179,9 +179,9 @@ class GalleryUseCasesTest {
         runTest {
             val emojiMemes =
                 listOf(
-                    createTestMeme(1, "laugh1.jpg"),
-                    createTestMeme(2, "laugh2.jpg"),
-                    createTestMeme(3, "laugh3.jpg"),
+                    TestDataFactory.createMeme(id = 1, fileName = "laugh1.jpg", filePath = "/storage/memes/laugh1.jpg"),
+                    TestDataFactory.createMeme(id = 2, fileName = "laugh2.jpg", filePath = "/storage/memes/laugh2.jpg"),
+                    TestDataFactory.createMeme(id = 3, fileName = "laugh3.jpg", filePath = "/storage/memes/laugh3.jpg"),
                 )
             every { repository.getMemesByEmoji("😂") } returns flowOf(emojiMemes)
             val useCase = GetMemesByEmojiUseCase(repository)
@@ -308,7 +308,7 @@ class GalleryUseCasesTest {
     @Test
     fun `UpdateMemeUseCase updates meme successfully`() =
         runTest {
-            val meme = createTestMeme(1, "meme1.jpg")
+            val meme = TestDataFactory.createMeme(id = 1, fileName = "meme1.jpg", filePath = "/storage/memes/meme1.jpg")
             coEvery { repository.updateMemeWithEmojis(meme) } returns Result.success(Unit)
             val useCase = UpdateMemeUseCase(repository)
 
@@ -321,7 +321,7 @@ class GalleryUseCasesTest {
     @Test
     fun `UpdateMemeUseCase returns failure on error`() =
         runTest {
-            val meme = createTestMeme(1, "meme1.jpg")
+            val meme = TestDataFactory.createMeme(id = 1, fileName = "meme1.jpg", filePath = "/storage/memes/meme1.jpg")
             coEvery { repository.updateMemeWithEmojis(meme) } returns Result.failure(Exception("Update failed"))
             val useCase = UpdateMemeUseCase(repository)
 
@@ -335,7 +335,7 @@ class GalleryUseCasesTest {
     fun `UpdateMemeUseCase updates meme with new emojis`() =
         runTest {
             val meme =
-                createTestMeme(1, "meme1.jpg").copy(
+                TestDataFactory.createMeme(id = 1, fileName = "meme1.jpg", filePath = "/storage/memes/meme1.jpg").copy(
                     emojiTags = listOf(EmojiTag.fromEmoji("🎉"), EmojiTag.fromEmoji("🔥")),
                 )
             coEvery { repository.updateMemeWithEmojis(meme) } returns Result.success(Unit)
@@ -402,28 +402,85 @@ class GalleryUseCasesTest {
 
     // endregion
 
-    // region Helper Functions
+    // region Adversarial Input Tests
 
-    private fun createTestMeme(
-        id: Long,
-        fileName: String,
-        isFavorite: Boolean = false,
-    ): Meme =
-        Meme(
-            id = id,
-            filePath = "/storage/memes/$fileName",
-            fileName = fileName,
-            mimeType = "image/jpeg",
-            width = 1080,
-            height = 1080,
-            fileSizeBytes = 1024L,
-            importedAt = System.currentTimeMillis(),
-            emojiTags = listOf(EmojiTag.fromEmoji("😂")),
-            title = "Test Meme $id",
-            description = null,
-            textContent = null,
-            isFavorite = isFavorite,
-        )
+    @Test
+    fun `GetMemesUseCase passes through duplicate memes from repository`() =
+        runTest {
+            val duplicateMemes =
+                listOf(
+                    TestDataFactory.createMeme(id = 1, fileName = "meme1.jpg", filePath = "/storage/memes/meme1.jpg"),
+                    TestDataFactory.createMeme(id = 1, fileName = "meme1.jpg", filePath = "/storage/memes/meme1.jpg"),
+                    TestDataFactory.createMeme(id = 2, fileName = "meme2.jpg", filePath = "/storage/memes/meme2.jpg"),
+                )
+            every { repository.getMemes() } returns flowOf(duplicateMemes)
+            val useCase = GetMemesUseCase(repository)
+
+            useCase().test {
+                val memes = awaitItem()
+                assertThat(memes).hasSize(3)
+                assertThat(memes[0].id).isEqualTo(1)
+                assertThat(memes[1].id).isEqualTo(1)
+                awaitComplete()
+            }
+
+            verify { repository.getMemes() }
+        }
+
+    @Test
+    fun `GetMemesByEmojiUseCase handles empty emoji string`() =
+        runTest {
+            val emptyEmojiMemes = listOf(TestDataFactory.createMeme(id = 1, fileName = "meme1.jpg", filePath = "/storage/memes/meme1.jpg"))
+            every { repository.getMemesByEmoji("") } returns flowOf(emptyEmojiMemes)
+            val useCase = GetMemesByEmojiUseCase(repository)
+
+            useCase("").test {
+                val memes = awaitItem()
+                assertThat(memes).hasSize(1)
+                awaitComplete()
+            }
+
+            verify { repository.getMemesByEmoji("") }
+        }
+
+    @Test
+    fun `DeleteMemesUseCase handles duplicate IDs in deletion request`() =
+        runTest {
+            // Set inherently deduplicates, so setOf(1L, 1L, 2L) becomes setOf(1L, 2L)
+            val idsWithDuplicateIntent = setOf(1L, 2L)
+            coEvery { repository.deleteMemes(idsWithDuplicateIntent) } returns Result.success(Unit)
+            coEvery { repository.deleteMeme(1) } returns Result.success(Unit)
+            val useCase = DeleteMemesUseCase(repository)
+
+            // Batch delete with set (duplicates impossible by type)
+            val batchResult = useCase(idsWithDuplicateIntent)
+            assertThat(batchResult.isSuccess).isTrue()
+
+            // Single delete called twice for same ID (simulates duplicate intent)
+            val firstResult = useCase(1L)
+            val secondResult = useCase(1L)
+            assertThat(firstResult.isSuccess).isTrue()
+            assertThat(secondResult.isSuccess).isTrue()
+
+            coVerify(exactly = 1) { repository.deleteMemes(idsWithDuplicateIntent) }
+            coVerify(exactly = 2) { repository.deleteMeme(1) }
+        }
+
+    @Test
+    fun `ToggleFavoriteUseCase handles rapid sequential toggles`() =
+        runTest {
+            coEvery { repository.toggleFavorite(1) } returns Result.success(Unit)
+            val useCase = ToggleFavoriteUseCase(repository)
+
+            val firstResult = useCase(1)
+            val secondResult = useCase(1)
+
+            assertThat(firstResult.isSuccess).isTrue()
+            assertThat(secondResult.isSuccess).isTrue()
+            coVerify(exactly = 2) { repository.toggleFavorite(1) }
+        }
+
+    // endregion
 
     // endregion
 }

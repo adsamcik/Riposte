@@ -224,10 +224,23 @@ class ImportWorkerTest {
             assertThat(outputData.getInt(ImportWorker.KEY_FAILED, -1)).isEqualTo(1)
 
             coVerify {
-                importRequestDao.updateItemStatus("item-1", ImportRequestEntity.STATUS_COMPLETED)
+                importRequestDao.completeItem(
+                    itemId = "item-1",
+                    itemStatus = ImportRequestEntity.STATUS_COMPLETED,
+                    requestId = "req-1",
+                    completed = any(),
+                    failed = any(),
+                )
             }
             coVerify {
-                importRequestDao.updateItemStatus("item-2", ImportRequestEntity.STATUS_FAILED, "Corrupt file")
+                importRequestDao.completeItem(
+                    itemId = "item-2",
+                    itemStatus = ImportRequestEntity.STATUS_FAILED,
+                    errorMessage = "Corrupt file",
+                    requestId = "req-1",
+                    completed = any(),
+                    failed = any(),
+                )
             }
         }
 
@@ -597,8 +610,19 @@ class ImportWorkerTest {
 
             worker.doWork()
 
-            // Should update progress after each item + initial + final = at least 4 calls
-            coVerify(atLeast = 3) {
+            // Should call completeItem for each item (atomic status update)
+            coVerify(exactly = 2) {
+                importRequestDao.completeItem(
+                    itemId = any(),
+                    itemStatus = any(),
+                    errorMessage = any(),
+                    requestId = "req-1",
+                    completed = any(),
+                    failed = any(),
+                )
+            }
+            // Plus initial and final updateRequestProgress calls
+            coVerify(atLeast = 2) {
                 importRequestDao.updateRequestProgress(
                     id = "req-1",
                     status = any(),

@@ -154,6 +154,14 @@ data class MemeWithEmbeddingData(
     val memeId: Long,
     val filePath: String,
     val fileName: String,
+    val mimeType: String = "image/jpeg",
+    val width: Int = 0,
+    val height: Int = 0,
+    val fileSizeBytes: Long = 0,
+    val importedAt: Long = 0,
+    val isFavorite: Boolean = false,
+    val createdAt: Long = 0,
+    val useCount: Int = 0,
     val title: String?,
     val description: String?,
     val textContent: String?,
@@ -187,6 +195,30 @@ data class MemeWithEmbeddingData(
     override fun hashCode(): Int {
         var result = memeId.hashCode()
         result = 31 * result + filePath.hashCode()
+        result = 31 * result + (embedding?.contentHashCode() ?: 0)
+        return result
+    }
+}
+
+/**
+ * Lightweight projection for similarity search — just memeId and embedding bytes.
+ * Returned by [MemeEmbeddingDao.getContentEmbeddingsExcluding].
+ */
+data class MemeIdWithEmbedding(
+    val memeId: Long,
+    val embedding: ByteArray?,
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        other as MemeIdWithEmbedding
+        if (memeId != other.memeId) return false
+        if (!embedding.contentEquals(other.embedding)) return false
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = memeId.hashCode()
         result = 31 * result + (embedding?.contentHashCode() ?: 0)
         return result
     }

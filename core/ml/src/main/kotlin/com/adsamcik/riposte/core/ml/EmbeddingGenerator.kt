@@ -58,6 +58,13 @@ interface EmbeddingGenerator {
         get() = null
 
     /**
+     * Returns the version identifier of the current embedding model.
+     * Used by caches to detect model changes and invalidate stale entries.
+     */
+    val modelVersion: String
+        get() = ""
+
+    /**
      * Checks if the embedding model is ready.
      */
     suspend fun isReady(): Boolean

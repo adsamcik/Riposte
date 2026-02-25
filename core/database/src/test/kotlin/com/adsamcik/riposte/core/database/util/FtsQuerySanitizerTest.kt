@@ -204,6 +204,22 @@ class FtsQuerySanitizerTest {
         assertThat(result).contains("description:\"world\"*")
     }
 
+    @Test
+    fun `prepareForColumns removes RTL marks`() {
+        val withRtl = "hello\u200Fworld"
+        val result = FtsQuerySanitizer.prepareForColumns(withRtl, listOf("title"))
+        assertThat(result).doesNotContain("\u200F")
+        assertThat(result).isEqualTo("title:\"helloworld\"*")
+    }
+
+    @Test
+    fun `prepareForColumns removes variation selectors`() {
+        val withVariation = "star\uFE0F"
+        val result = FtsQuerySanitizer.prepareForColumns(withVariation, listOf("title"))
+        assertThat(result).doesNotContain("\uFE0F")
+        assertThat(result).isEqualTo("title:\"star\"*")
+    }
+
     // endregion
 
     // region prepareEmojiQuery() tests

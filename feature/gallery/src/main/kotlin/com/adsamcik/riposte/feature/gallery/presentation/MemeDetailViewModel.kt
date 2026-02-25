@@ -183,11 +183,12 @@ class MemeDetailViewModel
         }
 
         private fun addEmoji(emoji: String) {
-            val currentEmojis = _uiState.value.editedEmojis
-            if (!currentEmojis.contains(emoji)) {
-                _uiState.update {
-                    it.copy(
-                        editedEmojis = currentEmojis + emoji,
+            _uiState.update { state ->
+                if (emoji in state.editedEmojis) {
+                    state
+                } else {
+                    state.copy(
+                        editedEmojis = state.editedEmojis + emoji,
                         showEmojiPicker = false,
                     )
                 }
@@ -377,7 +378,7 @@ class MemeDetailViewModel
         private fun loadAllMemeIds() {
             viewModelScope.launch {
                 try {
-                    val ids = useCases.getAllMemeIds()
+                    val ids = useCases.getAllMemeIds().distinct()
                     _uiState.update { it.copy(allMemeIds = ids) }
                 } catch (
                     @Suppress("TooGenericExceptionCaught") // Catches all to show error state

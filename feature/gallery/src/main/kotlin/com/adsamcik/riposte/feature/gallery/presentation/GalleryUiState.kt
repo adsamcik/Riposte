@@ -110,6 +110,11 @@ data class GalleryUiState(
      */
     val importStatus: ImportWorkStatus = ImportWorkStatus.Idle,
     /**
+     * Status of background embedding/indexing work, if any.
+     * Observed via WorkManager progress data.
+     */
+    val embeddingStatus: EmbeddingWorkStatus = EmbeddingWorkStatus.Idle,
+    /**
      * Number of favorited memes. Used to conditionally show the Favorites chip
      * in the search-mode emoji filter rail.
      */
@@ -123,6 +128,10 @@ data class GalleryUiState(
      * Used to show the emoji filter rail even before a query is typed.
      */
     val isSearchFocused: Boolean = false,
+    /**
+     * IDs of memes pending deletion confirmation.
+     */
+    val pendingDeleteIds: Set<Long> = emptySet(),
 ) {
     /**
      * Whether any memes are selected.
@@ -159,6 +168,16 @@ sealed interface ImportWorkStatus {
     data object Idle : ImportWorkStatus
 
     data class InProgress(val completed: Int, val total: Int) : ImportWorkStatus
+}
+
+/**
+ * Status of background embedding/indexing work.
+ * Mirrors [ImportWorkStatus] for the embedding generation pipeline.
+ */
+sealed interface EmbeddingWorkStatus {
+    data object Idle : EmbeddingWorkStatus
+
+    data class InProgress(val processed: Int, val remaining: Int) : EmbeddingWorkStatus
 }
 
 /**

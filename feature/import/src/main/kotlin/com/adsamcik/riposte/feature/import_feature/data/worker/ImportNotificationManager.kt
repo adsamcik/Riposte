@@ -37,7 +37,7 @@ class ImportNotificationManager
             manager.createNotificationChannel(channel)
         }
 
-        /** Builds a progress notification for the foreground service. */
+        /** Builds a progress notification. */
         fun buildProgressNotification(
             current: Int,
             total: Int,
@@ -49,7 +49,6 @@ class ImportNotificationManager
                 .setProgress(total, current, false)
                 .setOngoing(true)
                 .setSilent(true)
-                .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
                 .build()
         }
 

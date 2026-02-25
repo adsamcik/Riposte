@@ -69,3 +69,9 @@ app/full/release/
 
 # Play Store assets (source images, annotations, bundles)
 playStore/
+
+# Build artifacts
+app/googleplay/
+
+# Crash logs
+crash_logs.txt

@@ -76,5 +76,8 @@ data class SettingsUiState(
     val appVersion: String = "1.0.0",
     // Crash Logs
     val crashLogCount: Int = 0,
+    // Export/Import progress
+    val isExporting: Boolean = false,
+    val isImporting: Boolean = false,
     val isLoading: Boolean = true,
 )

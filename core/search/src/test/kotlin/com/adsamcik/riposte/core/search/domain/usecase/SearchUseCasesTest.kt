@@ -1,11 +1,10 @@
 package com.adsamcik.riposte.core.search.domain.usecase
 
 import app.cash.turbine.test
-import com.adsamcik.riposte.core.model.EmojiTag
 import com.adsamcik.riposte.core.model.MatchType
-import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.core.model.SearchResult
 import com.adsamcik.riposte.core.search.domain.repository.SearchRepository
+import com.adsamcik.riposte.core.testing.TestDataFactory
 import com.google.common.truth.Truth.assertThat
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -23,9 +22,9 @@ class SearchUseCasesTest {
 
     private val testMemes =
         listOf(
-            createTestMeme(1, "meme1.jpg"),
-            createTestMeme(2, "meme2.jpg"),
-            createTestMeme(3, "meme3.jpg"),
+            TestDataFactory.createMeme(id = 1, fileName = "meme1.jpg", filePath = "/test/path/meme1.jpg", emojiTags = emptyList(), title = null),
+            TestDataFactory.createMeme(id = 2, fileName = "meme2.jpg", filePath = "/test/path/meme2.jpg", emojiTags = emptyList(), title = null),
+            TestDataFactory.createMeme(id = 3, fileName = "meme3.jpg", filePath = "/test/path/meme3.jpg", emojiTags = emptyList(), title = null),
         )
 
     private val testSearchResults =
@@ -89,7 +88,7 @@ class SearchUseCasesTest {
                 val newResults =
                     testSearchResults +
                         SearchResult(
-                            meme = createTestMeme(4, "new.jpg"),
+                            meme = TestDataFactory.createMeme(id = 4, fileName = "new.jpg", filePath = "/test/path/new.jpg", emojiTags = emptyList(), title = null),
                             relevanceScore = 0.5f,
                             matchType = MatchType.TEXT,
                         )
@@ -444,33 +443,6 @@ class SearchUseCasesTest {
         }
 
     // endregion
-
-    // region Helper Functions
-
-    private fun createTestMeme(
-        id: Long,
-        fileName: String,
-        emojiTags: List<EmojiTag> = emptyList(),
-        isFavorite: Boolean = false,
-        title: String? = null,
-        description: String? = null,
-    ): Meme {
-        return Meme(
-            id = id,
-            filePath = "/test/path/$fileName",
-            fileName = fileName,
-            mimeType = "image/jpeg",
-            width = 1920,
-            height = 1080,
-            fileSizeBytes = 1024L,
-            importedAt = System.currentTimeMillis(),
-            emojiTags = emojiTags,
-            title = title,
-            description = description,
-            textContent = null,
-            isFavorite = isFavorite,
-        )
-    }
 
     // endregion
 }

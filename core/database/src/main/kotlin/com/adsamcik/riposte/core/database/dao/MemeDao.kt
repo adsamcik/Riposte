@@ -140,7 +140,7 @@ interface MemeDao {
      */
     @Query(
         """
-        SELECT m.* FROM memes m
+        SELECT DISTINCT m.* FROM memes m
         INNER JOIN emoji_tags e ON m.id = e.memeId
         WHERE e.emoji = :emoji
         ORDER BY m.importedAt DESC

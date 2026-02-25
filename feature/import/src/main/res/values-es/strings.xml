@@ -7,6 +7,7 @@
     <string name="import_content_description_back">Volver</string>
     <string name="import_content_description_remove">Quitar</string>
     <string name="import_content_description_image_to_import">Imagen a importar</string>
+    <string name="import_content_description_image_to_import_indexed">Imagen %1$d de %2$d</string>
     <string name="import_content_description_image_preview">Vista previa de imagen</string>
 
     <!-- Empty State -->

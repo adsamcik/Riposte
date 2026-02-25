@@ -80,5 +80,10 @@ subprojects {
             // Stability configuration file for external types
             stabilityConfigurationFiles.add(rootProject.layout.projectDirectory.file("compose_stability_config.conf"))
         }
+
+        // Slack Compose lint checks for all modules with Compose
+        dependencies {
+            add("lintChecks", rootProject.libs.compose.lint.checks)
+        }
     }
 }

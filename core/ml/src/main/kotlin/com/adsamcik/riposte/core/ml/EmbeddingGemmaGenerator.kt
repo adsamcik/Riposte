@@ -50,18 +50,20 @@ class EmbeddingGemmaGenerator
         private val acceleratorStrategy: AcceleratorStrategy,
     ) : EmbeddingGenerator {
         /** Lazily initialized image labeler for extracting features from images. */
+        @Volatile
         private var _imageLabeler: com.google.mlkit.vision.label.ImageLabeler? = null
+        private val imageLabelerLock = Any()
         private val imageLabeler: com.google.mlkit.vision.label.ImageLabeler
             get() {
-                if (_imageLabeler == null) {
-                    _imageLabeler =
-                        ImageLabeling.getClient(
-                            ImageLabelerOptions.Builder()
-                                .setConfidenceThreshold(IMAGE_LABEL_CONFIDENCE_THRESHOLD)
-                                .build(),
-                        )
+                _imageLabeler?.let { return it }
+                synchronized(imageLabelerLock) {
+                    _imageLabeler?.let { return it }
+                    return ImageLabeling.getClient(
+                        ImageLabelerOptions.Builder()
+                            .setConfidenceThreshold(IMAGE_LABEL_CONFIDENCE_THRESHOLD)
+                            .build(),
+                    ).also { _imageLabeler = it }
                 }
-                return _imageLabeler!!
             }
 
         /** Mutex to ensure thread-safe access to the embedding model. */
@@ -87,6 +89,8 @@ class EmbeddingGemmaGenerator
         override val initializationError: String? get() = _initializationError
 
         override val embeddingDimension: Int = DEFAULT_EMBEDDING_DIMENSION
+
+        override val modelVersion: String = EmbeddingModelVersionManager.CURRENT_VERSION
 
         override suspend fun generateFromText(text: String): FloatArray =
             generateFromText(text, title = null)
