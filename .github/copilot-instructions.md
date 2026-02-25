@@ -210,6 +210,17 @@ When testing on the Android emulator and the app needs meme data:
 | `app/.../RiposteNavHost.kt` | Navigation graph |
 | `core/database/released-schema-version.txt` | Released DB version (for migration rules) |
 | `.github/instructions/` | Domain-specific coding guidelines |
+| `docs/screen-graph.json` | App navigation map (18 screens, 25 edges) from automated crawl |
+
+## Screen Graph (`docs/screen-graph.json`)
+
+An automated crawl of all app screens and navigation edges. Use this file when:
+- **Reviewing UI/UX changes** — verify the affected screen and its neighbors in the graph.
+- **QA testing** — use it as a test plan to ensure all screens are reachable.
+- **Planning features** — understand where a new screen fits in the navigation hierarchy.
+- **Polish / redesign** — know every screen that needs updating.
+
+The graph contains 18 screens (10 full screens + 8 dialogs) and 25 navigation edges. The start screen is `gallery_main`. All screens live inside a single `MainActivity` (Compose navigation). Re-crawl if major navigation changes are made.
 
 ## UX Philosophy
 
