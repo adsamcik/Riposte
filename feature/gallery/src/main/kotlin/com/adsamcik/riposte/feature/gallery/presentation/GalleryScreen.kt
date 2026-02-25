@@ -492,9 +492,9 @@ private fun GalleryScreenContent(
                     uiState.screenMode != ScreenMode.Searching && uiState.error != null -> "error"
                     uiState.screenMode != ScreenMode.Searching && uiState.isEmpty && !uiState.usePaging -> "empty"
                     uiState.screenMode != ScreenMode.Searching && uiState.usePaging && pagedMemes != null &&
-                        pagedMemes.loadState.refresh is LoadState.Loading -> "paged-loading"
+                        pagedMemes.loadState.refresh is LoadState.Loading && pagedMemes.itemCount == 0 -> "paged-loading"
                     uiState.screenMode != ScreenMode.Searching && uiState.usePaging && pagedMemes != null &&
-                        pagedMemes.loadState.refresh is LoadState.Error -> "paged-error"
+                        pagedMemes.loadState.refresh is LoadState.Error && pagedMemes.itemCount == 0 -> "paged-error"
                     uiState.screenMode != ScreenMode.Searching && uiState.usePaging && pagedMemes != null &&
                         pagedMemes.itemCount == 0 -> "paged-empty"
                     else -> "content"
