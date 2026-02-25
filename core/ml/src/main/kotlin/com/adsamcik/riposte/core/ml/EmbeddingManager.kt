@@ -261,9 +261,19 @@ class EmbeddingManager
          * Check for model upgrades and schedule regeneration if needed.
          */
         suspend fun checkAndHandleModelUpgrade() {
-            if (versionManager.hasModelBeenUpgraded()) {
+            val currentVersion = versionManager.currentModelVersion
+            // Check both: DataStore version mismatch OR DB has stale embeddings
+            val datastoreUpgraded = versionManager.hasModelBeenUpgraded()
+            val outdatedCount = memeEmbeddingDao.countOutdatedEmbeddings(currentVersion)
+
+            if (datastoreUpgraded || outdatedCount > 0) {
+                Timber.i(
+                    "Model upgrade detected: datastore=%b, outdated=%d",
+                    datastoreUpgraded,
+                    outdatedCount,
+                )
                 // Mark all embeddings with old version for regeneration
-                memeEmbeddingDao.markOutdatedForRegeneration(versionManager.currentModelVersion)
+                memeEmbeddingDao.markOutdatedForRegeneration(currentVersion)
 
                 // Update stored version
                 versionManager.updateToCurrentVersion()
@@ -271,7 +281,7 @@ class EmbeddingManager
                 // Schedule regeneration
                 EmbeddingGenerationWorker.enqueueRegeneration(
                     context,
-                    versionManager.currentModelVersion,
+                    currentVersion,
                 )
             }
         }

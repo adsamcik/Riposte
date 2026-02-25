@@ -50,18 +50,29 @@ class SemanticSearchStrategy @Inject constructor(
         }
 
         val memesWithEmbeddings = memeEmbeddingDao.getMemesWithEmbeddings()
-        if (memesWithEmbeddings.isEmpty()) return emptyList()
+        if (memesWithEmbeddings.isEmpty()) {
+            Timber.d("No embeddings found in database")
+            return emptyList()
+        }
 
         val candidates = buildCandidates(memesWithEmbeddings)
-        if (candidates.isEmpty()) return emptyList()
+        if (candidates.isEmpty()) {
+            Timber.d("No valid candidates after decoding embeddings")
+            return emptyList()
+        }
+
+        Timber.d("Semantic search: %d candidates from %d DB rows", candidates.size, memesWithEmbeddings.size)
 
         // Try ANN two-stage retrieval, fall back to brute-force
-        return tryAnnSearch(query, candidates, limit)
+        val results = tryAnnSearch(query, candidates, limit)
             ?: semanticSearchEngine.findSimilarMultiVector(
                 query = query,
                 candidates = candidates,
                 limit = limit,
             )
+
+        Timber.d("Semantic search returned %d results for query: %s", results.size, query)
+        return results
     }
 
     /**

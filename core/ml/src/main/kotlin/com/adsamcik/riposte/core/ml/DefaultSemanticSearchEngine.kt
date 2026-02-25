@@ -92,7 +92,12 @@ class DefaultSemanticSearchEngine
                         throw e
                     }
 
-                candidates
+                Timber.d(
+                    "Query embedding: dim=%d",
+                    queryEmbedding.size,
+                )
+
+                val scored = candidates
                     .map { candidate ->
                         // Max-pool: take the highest similarity across all embedding slots
                         val maxSimilarity =
@@ -106,6 +111,15 @@ class DefaultSemanticSearchEngine
                             matchType = MatchType.SEMANTIC,
                         )
                     }
+
+                val topScores = scored.sortedByDescending { it.relevanceScore }.take(5)
+                Timber.d(
+                    "Top 5 similarities (threshold=%.2f): %s",
+                    threshold,
+                    topScores.joinToString { "%.4f".format(it.relevanceScore) },
+                )
+
+                scored
                     .filter { it.relevanceScore >= threshold }
                     .sortedByDescending { it.relevanceScore }
                     .take(limit)

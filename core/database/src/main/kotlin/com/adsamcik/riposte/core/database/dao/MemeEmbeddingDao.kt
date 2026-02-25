@@ -252,4 +252,12 @@ interface MemeEmbeddingDao {
     """,
     )
     suspend fun hasValidEmbedding(memeId: Long): Boolean
+
+    /**
+     * Count embeddings that have a different model version than the current one.
+     * Used to detect stale embeddings that need regeneration even when the
+     * DataStore version preference is already current.
+     */
+    @Query("SELECT COUNT(*) FROM meme_embeddings WHERE modelVersion != :currentVersion AND needsRegeneration = 0")
+    suspend fun countOutdatedEmbeddings(currentVersion: String): Int
 }
