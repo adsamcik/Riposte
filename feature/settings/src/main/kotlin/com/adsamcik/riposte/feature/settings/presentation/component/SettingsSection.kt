@@ -27,7 +27,7 @@ fun SettingsSection(
                         start = 16.dp,
                         end = 16.dp,
                         top = 16.dp,
-                        bottom = 8.dp,
+                        bottom = 4.dp,
                     )
                     .semantics { heading() },
         )

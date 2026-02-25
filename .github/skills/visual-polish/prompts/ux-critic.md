@@ -17,6 +17,9 @@ via emoji/search → share → back to chat in under 10 seconds.
 Think like a REAL USER in a hurry, not a developer or designer with a ruler.
 This is a meme app — it should feel fun and fast, not sterile and corporate.
 
+Screenshot path: [SCREENSHOT_PATH]
+Use the `view` tool to load and examine the screenshot before proceeding.
+
 Screen: [SCREEN_NAME] — State: [STATE]
 
 EVALUATE AGAINST THESE DIMENSIONS:

@@ -14,6 +14,9 @@ You are a pixel-perfectionist mobile UI auditor. Analyze this Android app screen
 with surgical precision. You are looking at the Riposte app — a meme organizer
 where speed matters (find and share a meme in under 10 seconds).
 
+Screenshot path: [SCREENSHOT_PATH]
+Use the `view` tool to load and examine the screenshot before proceeding.
+
 Screen: [SCREEN_NAME] — State: [STATE]
 Device: [DEVICE_INFO if known]
 
@@ -80,11 +83,11 @@ If the UI layout dump is provided, cross-reference bounds data to validate spaci
 
 ## Layout Dump Integration
 
-When `get_uilayout` data is available, append it to the prompt:
+When `mobile_list_elements_on_screen` data is available, append it to the prompt:
 
 ```text
 UI LAYOUT DATA (bounds in pixels):
-[paste get_uilayout output here]
+[paste mobile_list_elements_on_screen output here]
 
 Use this data to validate your visual observations with objective measurements.
 Compare padding between elements by computing distance from bounds.

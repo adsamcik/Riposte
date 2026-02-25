@@ -48,10 +48,17 @@ pattern: 'Text\("' with hardcoded English strings
 
 ```text
 Check that ALL composables use:
-- MaterialTheme.colorScheme.* for colors
+- MaterialTheme.colorScheme.* for colors (app uses MaterialExpressiveTheme, not standard MaterialTheme)
 - MaterialTheme.typography.* for text styles
-- MaterialTheme.shapes.* for shapes
-- MaterialTheme.spacing.* for spacing (if custom extension exists)
+- MaterialTheme.shapes.* for standard shapes (or RiposteShapes.* for expressive/named shapes)
+- Spacing.sm / Spacing.md / Spacing.lg / Spacing.xl etc. for spacing
+  ⚠ Spacing is a plain Kotlin object — NOT a MaterialTheme extension.
+  Correct: Spacing.lg  (= 16.dp)
+  Wrong:   MaterialTheme.spacing.lg  ← this does not exist in Riposte
+
+Spacing scale reference:
+  Spacing.xxs = 2.dp  |  Spacing.xs = 4.dp  |  Spacing.sm = 8.dp
+  Spacing.md  = 12.dp |  Spacing.lg = 16.dp |  Spacing.xl = 24.dp  |  Spacing.xxl = 32.dp
 ```
 
 ---

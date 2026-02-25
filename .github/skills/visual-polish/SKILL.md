@@ -144,17 +144,20 @@ Skip only if the user explicitly says the installed app is current and unchanged
 
 ### Dark Mode Toggle (Live mode)
 
-Test critical-path screens (Gallery, Detail) in both themes:
+Test critical-path screens (Gallery, Detail) in both themes.
+Requires ADB in your terminal PATH (separate from Mobile MCP):
 
 ```text
-# Enable dark mode (via adb shell)
+# Enable dark mode (run in terminal)
 adb shell cmd uimode night yes
-# Re-screenshot Gallery + Detail
 
-# Reset to light mode
+# Re-screenshot Gallery + Detail (via Mobile MCP as normal)
+
+# Reset to light mode (run in terminal)
 adb shell cmd uimode night no
 ```
 
+If ADB is unavailable, navigate to **Settings → Display → Dark theme** manually, then re-screenshot.
 If the app doesn't visibly change, dynamic colors may be inactive — note in findings.
 
 ### Capture Constraint
@@ -251,6 +254,14 @@ Encounter blocker
 ---
 
 ## Phase 3: Dual-Model Evaluation
+
+**Before dispatching**, save the screenshot to a stable file path so subagents can read it:
+
+```text
+mobile_save_screenshot(device, "<session-workspace>/files/before/<screen-state-id>.png")
+```
+
+The file path must be absolute. Pass it in the subagent prompt so they can `view` it.
 
 Dispatch **two parallel `task` tool calls** with different models. Each evaluates the same screenshot independently.
 
@@ -381,12 +392,29 @@ Persist these artifacts for every run:
 <session-workspace>\files\visual-polish-evidence-map.json
 ```
 
+**`visual-polish-evidence-map.json` schema:**
+
+```json
+{
+  "runId": "string",
+  "screens": {
+    "<screen-state-id>": {
+      "screenshotBefore": "absolute/path/before/<screen-state-id>.png",
+      "screenshotAfter":  "absolute/path/after/<screen-state-id>.png  (or null if not yet fixed)",
+      "elementsDump":     "absolute/path/elements/<screen-state-id>.json  (or null)",
+      "dualModelUsed":    true,
+      "findingCount":     { "red": 0, "yellow": 0, "blue": 0 },
+      "captureTimestamp": "ISO-8601"
+    }
+  }
+}
+```
+
 Store screenshots with stable names for diffability:
 
 ```text
 before/<screen-state-id>.png
 after/<screen-state-id>.png
-diff/<screen-state-id>.png
 ```
 
 ### Update Rules
@@ -428,18 +456,16 @@ If gates still fail after round 3, stop and report unresolved gates/blockers exp
 
 ### Verification (single-model, quick)
 
-```text
-"Is the [issue] on [screen] resolved? Any NEW issues introduced? YES/NO only."
-```
+Use the prompt in `prompts/quick-verify.md`. Save the re-screenshot to `after/<screen-state-id>.png` first, then pass the path to the verify prompt.
 
 ### Common Fix Patterns
 
 | Issue | Fix Location | Pattern |
 |-------|-------------|---------|
-| Hardcoded spacing | Composable | → `MaterialTheme.spacing.*` tokens |
+| Hardcoded spacing | Composable | → `Spacing.sm` / `Spacing.md` / `Spacing.lg` etc. (plain object, NOT `MaterialTheme.spacing`) |
 | Hardcoded colors | Composable | → `MaterialTheme.colorScheme.*` |
 | Small touch target | Modifier chain | → `Modifier.minimumInteractiveComponentSize()` |
-| Inconsistent corners | Component | → `MaterialTheme.shapes.*` |
+| Inconsistent corners | Component | → `RiposteShapes.*` (expressive) or `MaterialTheme.shapes.*` (standard) |
 | Wasted space | Screen layout | → Adjust `Arrangement`, padding |
 | Clipped text | Text composable | → `maxLines` + `overflow = TextOverflow.Ellipsis` |
 
