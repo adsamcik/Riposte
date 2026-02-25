@@ -215,6 +215,36 @@ class EmbeddingGenerationWorker
                     )
                     generatedAny = true
                 }
+
+                val emojiText = buildEmojiText(memeData)
+                if (emojiText.isNotBlank()) {
+                    val embedding = embeddingGenerator.generateFromText(emojiText)
+                    val sourceHash = generateHash(emojiText)
+                    embeddingRepository.saveEmbedding(
+                        memeId = memeData.id,
+                        embedding = encodeEmbedding(embedding),
+                        dimension = embedding.size,
+                        modelVersion = CURRENT_MODEL_VERSION,
+                        sourceTextHash = sourceHash,
+                        embeddingType = EmbeddingType.EMOJI.key,
+                    )
+                    generatedAny = true
+                }
+
+                val differentiatorText = buildDifferentiatorText(memeData)
+                if (differentiatorText.isNotBlank()) {
+                    val embedding = embeddingGenerator.generateFromText(differentiatorText)
+                    val sourceHash = generateHash(differentiatorText)
+                    embeddingRepository.saveEmbedding(
+                        memeId = memeData.id,
+                        embedding = encodeEmbedding(embedding),
+                        dimension = embedding.size,
+                        modelVersion = CURRENT_MODEL_VERSION,
+                        sourceTextHash = sourceHash,
+                        embeddingType = EmbeddingType.DIFFERENTIATOR.key,
+                    )
+                    generatedAny = true
+                }
                 generatedAny
             } catch (
                 @Suppress("TooGenericExceptionCaught")
