@@ -38,6 +38,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
@@ -454,8 +455,17 @@ class GalleryViewModelTest {
                 advanceUntilIdle()
 
                 val effect = effects.awaitItem()
-                assertThat(effect).isInstanceOf(GalleryEffect.ShowSnackbar::class.java)
-                assertThat((effect as GalleryEffect.ShowSnackbar).message).contains("deleted")
+                assertThat(effect).isInstanceOf(GalleryEffect.ShowUndoDeleteSnackbar::class.java)
+                assertThat((effect as GalleryEffect.ShowUndoDeleteSnackbar).message).contains("deleted")
+
+                // Selection should be cleared immediately (before delay)
+                val state = viewModel.uiState.value
+                assertThat(state.isSelectionMode).isFalse()
+                assertThat(state.selectedMemeIds).isEmpty()
+
+                // Advance past undo timeout to trigger actual deletion
+                advanceTimeBy(5_001)
+                advanceUntilIdle()
 
                 effects.cancel()
             }
@@ -485,9 +495,18 @@ class GalleryViewModelTest {
                 viewModel.onIntent(GalleryIntent.ConfirmDelete)
                 advanceUntilIdle()
 
-                val effect = effects.awaitItem()
-                assertThat(effect).isInstanceOf(GalleryEffect.ShowError::class.java)
-                assertThat((effect as GalleryEffect.ShowError).message).contains("Delete failed")
+                // First: undo snackbar
+                val undoEffect = effects.awaitItem()
+                assertThat(undoEffect).isInstanceOf(GalleryEffect.ShowUndoDeleteSnackbar::class.java)
+
+                // Advance past undo timeout to trigger actual deletion
+                advanceTimeBy(5_001)
+                advanceUntilIdle()
+
+                // Then: error effect
+                val errorEffect = effects.awaitItem()
+                assertThat(errorEffect).isInstanceOf(GalleryEffect.ShowError::class.java)
+                assertThat((errorEffect as GalleryEffect.ShowError).message).contains("Delete failed")
 
                 effects.cancel()
             }
@@ -511,13 +530,46 @@ class GalleryViewModelTest {
         }
 
     @Test
-    fun `confirmDelete failure clears pendingDeleteIds and preserves selection`() =
+    fun `UndoDelete cancels pending deletion`() =
+        runTest {
+            coEvery { deleteMemesUseCase(any<Set<Long>>()) } returns Result.success(Unit)
+            viewModel = createViewModel()
+            advanceUntilIdle()
+            viewModel.onIntent(GalleryIntent.StartSelection(1))
+            viewModel.onIntent(GalleryIntent.DeleteSelected)
+            advanceUntilIdle()
+
+            turbineScope {
+                val effects = viewModel.effects.testIn(backgroundScope)
+                // Skip ShowDeleteConfirmation
+                effects.awaitItem()
+
+                viewModel.onIntent(GalleryIntent.ConfirmDelete)
+                // Only advance 1s — enough for ShowUndoDeleteSnackbar, but before 5s deletion timeout
+                advanceTimeBy(1_000)
+
+                val undoEffect = effects.awaitItem()
+                assertThat(undoEffect).isInstanceOf(GalleryEffect.ShowUndoDeleteSnackbar::class.java)
+
+                // Undo before the timeout
+                viewModel.onIntent(GalleryIntent.UndoDelete)
+                advanceTimeBy(6_000)
+                advanceUntilIdle()
+
+                effects.cancel()
+            }
+
+            // deleteMemes should NOT have been called
+            coVerify(exactly = 0) { deleteMemesUseCase(any<Set<Long>>()) }
+        }
+
+    @Test
+    fun `ConfirmDelete failure after timeout emits error effect`() =
         runTest {
             coEvery { deleteMemesUseCase(any<Set<Long>>()) } returns Result.failure(Exception("Delete failed"))
             viewModel = createViewModel()
             advanceUntilIdle()
             viewModel.onIntent(GalleryIntent.StartSelection(1))
-            viewModel.onIntent(GalleryIntent.ToggleSelection(2))
             viewModel.onIntent(GalleryIntent.DeleteSelected)
             advanceUntilIdle()
 
@@ -529,22 +581,21 @@ class GalleryViewModelTest {
                 viewModel.onIntent(GalleryIntent.ConfirmDelete)
                 advanceUntilIdle()
 
-                val effect = effects.awaitItem()
-                assertThat(effect).isInstanceOf(GalleryEffect.ShowError::class.java)
+                // First: undo snackbar
+                val undoEffect = effects.awaitItem()
+                assertThat(undoEffect).isInstanceOf(GalleryEffect.ShowUndoDeleteSnackbar::class.java)
+
+                // Advance past undo timeout to trigger actual deletion
+                advanceTimeBy(5_001)
+                advanceUntilIdle()
+
+                // Then: error effect
+                val errorEffect = effects.awaitItem()
+                assertThat(errorEffect).isInstanceOf(GalleryEffect.ShowError::class.java)
+                assertThat((errorEffect as GalleryEffect.ShowError).message).contains("Delete failed")
 
                 effects.cancel()
             }
-
-            // Selection should be preserved on failure (unlike success which clears it)
-            val state = viewModel.uiState.value
-            assertThat(state.isSelectionMode).isTrue()
-            assertThat(state.selectedMemeIds).containsExactly(1L, 2L)
-
-            // pendingDeleteIds was cleared: a second ConfirmDelete calls with empty set
-            viewModel.onIntent(GalleryIntent.ConfirmDelete)
-            advanceUntilIdle()
-            coVerify(exactly = 1) { deleteMemesUseCase(setOf(1L, 2L)) }
-            coVerify(exactly = 1) { deleteMemesUseCase(emptySet()) }
         }
 
     // endregion
