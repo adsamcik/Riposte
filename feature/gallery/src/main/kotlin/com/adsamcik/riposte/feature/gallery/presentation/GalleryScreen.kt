@@ -81,6 +81,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -91,7 +92,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -471,6 +474,15 @@ private fun GalleryScreenContent(
                 animationSpec = spring(dampingRatio = 0.8f, stiffness = 600f),
                 label = "floatingBarSpace",
             )
+
+            // Track banner height to push grid content below banners
+            var bannerHeightPx by remember { mutableIntStateOf(0) }
+            val density = LocalDensity.current
+            val bannerHeightDp by animateDpAsState(
+                targetValue = with(density) { bannerHeightPx.toDp() },
+                animationSpec = spring(dampingRatio = 0.8f, stiffness = 600f),
+                label = "bannerHeight",
+            )
             Box(
                 modifier = Modifier.fillMaxSize(),
             ) {
@@ -582,7 +594,8 @@ private fun GalleryScreenContent(
                             onIntent = onIntent,
                             columns = columns,
                             gridState = gridState,
-                            topPadding = floatingBarSpace,
+                            topPadding = floatingBarSpace + bannerHeightDp +
+                            if (bannerHeightPx > 0) Spacing.sm else 0.dp,
                         ) {
                             if (uiState.screenMode == ScreenMode.Searching) {
                                 if (uiState.searchState.query.isBlank() &&
@@ -829,7 +842,8 @@ private fun GalleryScreenContent(
             Column(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
-                    .padding(top = 68.dp),
+                    .padding(top = floatingBarSpace + Spacing.xs)
+                    .onSizeChanged { bannerHeightPx = it.height },
             ) {
                 ImportProgressBanner(
                     status = uiState.importStatus,
