@@ -136,7 +136,7 @@ class DefaultSemanticSearchEngine
                     topScores.joinToString { "%.4f".format(it.relevanceScore) },
                 )
 
-                applyDynamicThreshold(scored, limit, threshold)
+                applyDynamicThreshold(scored, limit, maxOf(threshold, ABSOLUTE_SIMILARITY_FLOOR))
             }
 
         override fun cosineSimilarity(
@@ -211,8 +211,13 @@ class DefaultSemanticSearchEngine
             val result = if (filtered.size >= minResults) {
                 filtered
             } else {
-                // Take top minResults, but respect absolute floor for the extras
-                sorted.take(minResults)
+                // Respect absolute floor even when padding to minResults
+                val aboveFloor = sorted.filter { it.relevanceScore >= absoluteFloor }
+                if (aboveFloor.size >= minResults) {
+                    aboveFloor.take(minResults)
+                } else {
+                    aboveFloor
+                }
             }
 
             Timber.d(
@@ -283,6 +288,9 @@ class DefaultSemanticSearchEngine
 
             /** Gap must be this many times the mean gap to be significant. */
             const val GAP_MULTIPLIER = 2.0f
+
+            /** Hard minimum cosine similarity — results below this are never returned. */
+            const val ABSOLUTE_SIMILARITY_FLOOR = 0.25f
 
             /** Default weight for unknown embedding types. */
             const val DEFAULT_EMBEDDING_WEIGHT = 0.5f

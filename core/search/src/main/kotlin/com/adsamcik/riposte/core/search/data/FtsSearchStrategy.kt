@@ -44,27 +44,37 @@ class FtsSearchStrategy @Inject constructor(
     private fun determineMatchType(
         entity: com.adsamcik.riposte.core.database.entity.MemeEntity,
         query: String,
-    ): MatchType =
-        when {
-            entity.title?.contains(query, ignoreCase = true) == true -> MatchType.TEXT
-            entity.description?.contains(query, ignoreCase = true) == true -> MatchType.TEXT
-            entity.emojiTagsJson.contains(query, ignoreCase = true) -> MatchType.EMOJI
+    ): MatchType {
+        val queryWords = query.lowercase().split(Regex("\\s+")).filter { it.length >= 2 }
+        val titleLower = entity.title?.lowercase()
+        val descLower = entity.description?.lowercase()
+        return when {
+            titleLower != null && queryWords.any { titleLower.contains(it) } -> MatchType.TEXT
+            descLower != null && queryWords.any { descLower.contains(it) } -> MatchType.TEXT
+            queryWords.any { entity.emojiTagsJson.contains(it, ignoreCase = true) } -> MatchType.EMOJI
             else -> MatchType.TEXT
         }
+    }
 
     private fun computeFieldScore(
         entity: com.adsamcik.riposte.core.database.entity.MemeEntity,
         query: String,
     ): Float {
         var score = BASE_MATCH_SCORE
-        val lowerQuery = query.lowercase()
-        if (entity.title?.lowercase()?.contains(lowerQuery) == true) {
+        val queryWords = query.lowercase().split(Regex("\\s+")).filter { it.length >= 2 }
+        if (queryWords.isEmpty()) return score
+
+        val titleLower = entity.title?.lowercase()
+        val descLower = entity.description?.lowercase()
+        val emojiLower = entity.emojiTagsJson.lowercase()
+
+        if (titleLower != null && queryWords.any { titleLower.contains(it) }) {
             score += TITLE_MATCH_BONUS
         }
-        if (entity.description?.lowercase()?.contains(lowerQuery) == true) {
+        if (descLower != null && queryWords.any { descLower.contains(it) }) {
             score += DESCRIPTION_MATCH_BONUS
         }
-        if (entity.emojiTagsJson.lowercase().contains(lowerQuery)) {
+        if (queryWords.any { emojiLower.contains(it) }) {
             score += EMOJI_MATCH_BONUS
         }
         return score.coerceAtMost(1.0f)
