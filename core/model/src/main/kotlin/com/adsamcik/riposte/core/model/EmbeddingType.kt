@@ -25,6 +25,20 @@ enum class EmbeddingType(
      * Built from: searchPhrases joined with ". ".
      */
     INTENT("intent"),
+
+    /**
+     * Emoji embedding: captures the semantic meaning of emoji tags.
+     * Built from: emoji names (e.g., "flexed biceps, person lifting weights")
+     * expanded to natural language for richer text-to-emoji matching.
+     */
+    EMOJI("emoji"),
+
+    /**
+     * Differentiator embedding: captures what makes this meme UNIQUE.
+     * Built from: OCR text (textContent) + template source (basedOn) + unique emoji combo.
+     * Acts as a tiebreaker when content/intent embeddings are clustered.
+     */
+    DIFFERENTIATOR("differentiator"),
     ;
 
     companion object {

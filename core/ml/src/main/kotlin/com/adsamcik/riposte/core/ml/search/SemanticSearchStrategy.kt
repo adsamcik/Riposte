@@ -191,6 +191,9 @@ class SemanticSearchStrategy @Inject constructor(
                 title = first.title,
                 description = first.description,
                 textContent = first.textContent,
+                useCount = first.useCount,
+                viewCount = first.viewCount,
+                isFavorite = first.isFavorite,
             )
 
             val embeddingsByType = memeRows

@@ -284,9 +284,9 @@ class PromptFormattingTest {
     }
 
     @Test
-    fun `buildIntentText uses query format not document format`() = runTest {
-        // The worker calls generateFromQuery (not generateFromText) for intent text,
-        // ensuring the query prompt format is used.
+    fun `buildIntentText uses document format for space alignment`() = runTest {
+        // The worker calls generateFromText (document format) for intent text,
+        // aligning intent embeddings in the same vector space as content.
         val meme = createMemeData(
             id = 1,
             title = null,
@@ -304,9 +304,8 @@ class PromptFormattingTest {
         val worker = createWorker()
         worker.doWork()
 
-        coVerify { embeddingGenerator.generateFromQuery("find this meme") }
-        // Content body is blank (all fields null), so generateFromText should not be called
-        coVerify(exactly = 0) { embeddingGenerator.generateFromText(any(), any()) }
+        // Intent now uses generateFromText (document format) for alignment with content space
+        coVerify { embeddingGenerator.generateFromText("find this meme", null) }
     }
 
     // endregion

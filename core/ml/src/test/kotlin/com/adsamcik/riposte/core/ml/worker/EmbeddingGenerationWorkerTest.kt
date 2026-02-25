@@ -87,6 +87,8 @@ class EmbeddingGenerationWorkerTest {
         description: String? = "A test meme",
         textContent: String? = null,
         searchPhrases: String? = null,
+        emojiTagsJson: String? = null,
+        basedOn: String? = null,
     ) = MemeDataForEmbedding(
         id = id,
         filePath = filePath,
@@ -94,6 +96,8 @@ class EmbeddingGenerationWorkerTest {
         description = description,
         textContent = textContent,
         searchPhrases = searchPhrases,
+        emojiTagsJson = emojiTagsJson,
+        basedOn = basedOn,
     )
 
     private fun createTestEmbedding(size: Int = 128): FloatArray = FloatArray(size) { it.toFloat() / size }
@@ -583,4 +587,116 @@ class EmbeddingGenerationWorkerTest {
         }
 
     // endregion
+
+    // region Emoji Name Resolution Tests
+
+    @Test
+    fun `doWork generates emoji embedding from emoji characters`() =
+        runTest {
+            val meme = createMemeData(
+                id = 1,
+                title = "Gym Meme",
+                description = "Working out",
+                emojiTagsJson = """["💪","🔥"]""",
+            )
+            val embedding = createTestEmbedding()
+
+            coEvery { embeddingRepository.getMemesNeedingEmbeddings(any()) } returns listOf(meme)
+            mockEmbeddingGeneration(embedding)
+            coEvery { embeddingRepository.countMemesNeedingEmbeddings() } returns 0
+
+            val worker = createWorker()
+            worker.doWork()
+
+            // Verify emoji text is resolved to Unicode names, not raw characters
+            coVerify {
+                embeddingGenerator.generateFromText(
+                    match { it.contains("flexed biceps") && it.contains("fire") },
+                    isNull(),
+                )
+            }
+            coVerify {
+                embeddingRepository.saveEmbedding(
+                    memeId = 1,
+                    embedding = any(),
+                    dimension = any(),
+                    modelVersion = any(),
+                    sourceTextHash = any(),
+                    embeddingType = "emoji",
+                )
+            }
+        }
+
+    @Test
+    fun `doWork skips emoji embedding when emojiTagsJson is null`() =
+        runTest {
+            val meme = createMemeData(id = 1, title = "No Emojis")
+            val embedding = createTestEmbedding()
+
+            coEvery { embeddingRepository.getMemesNeedingEmbeddings(any()) } returns listOf(meme)
+            mockEmbeddingGeneration(embedding)
+            coEvery { embeddingRepository.countMemesNeedingEmbeddings() } returns 0
+
+            val worker = createWorker()
+            worker.doWork()
+
+            coVerify(exactly = 0) {
+                embeddingRepository.saveEmbedding(
+                    memeId = 1,
+                    embedding = any(),
+                    dimension = any(),
+                    modelVersion = any(),
+                    sourceTextHash = any(),
+                    embeddingType = "emoji",
+                )
+            }
+        }
+
+    // endregion
+
+    // region Per-Type Error Isolation Tests
+
+    @Test
+    fun `doWork saves intent when content generation fails`() =
+        runTest {
+            val meme = createMemeData(
+                id = 1,
+                title = "Failing Meme",
+                description = "Has description",
+                searchPhrases = """["search phrase"]""",
+            )
+            val embedding = createTestEmbedding()
+
+            coEvery { embeddingRepository.getMemesNeedingEmbeddings(any()) } returns listOf(meme)
+            // First call (content) throws, second call (intent) succeeds
+            coEvery {
+                embeddingGenerator.generateFromText(match { it.contains("Has description") }, any())
+            } throws RuntimeException("Model glitch")
+            coEvery {
+                embeddingGenerator.generateFromText(match { it.contains("search phrase") }, any())
+            } returns embedding
+            coEvery { embeddingRepository.countMemesNeedingEmbeddings() } returns 0
+
+            val worker = createWorker()
+            val result = worker.doWork()
+
+            // Meme should still count as success since intent embedding was saved
+            assertThat(result).isInstanceOf(ListenableWorker.Result.Success::class.java)
+            val data = (result as ListenableWorker.Result.Success).outputData
+            assertThat(data.getInt(EmbeddingGenerationWorker.KEY_PROCESSED_COUNT, -1)).isEqualTo(1)
+
+            coVerify {
+                embeddingRepository.saveEmbedding(
+                    memeId = 1,
+                    embedding = any(),
+                    dimension = any(),
+                    modelVersion = any(),
+                    sourceTextHash = any(),
+                    embeddingType = "intent",
+                )
+            }
+        }
+
+    // endregion
+
 }

@@ -151,11 +151,15 @@ class EmbeddingGenerationWorker
                 }
             }
 
+        @Suppress("CyclomaticComplexMethod")
         private suspend fun processEmbeddings(pendingMemes: List<MemeDataForEmbedding>): Pair<Int, Int> {
             var successCount = 0
             var failureCount = 0
 
             pendingMemes.forEach { memeData ->
+                var memeSuccess = false
+
+                // CONTENT: title + description (document format)
                 try {
                     val (title, contentBody) = buildContentParts(memeData)
                     if (contentBody.isNotBlank()) {
@@ -169,11 +173,21 @@ class EmbeddingGenerationWorker
                             sourceTextHash = sourceHash,
                             embeddingType = EmbeddingType.CONTENT.key,
                         )
+                        memeSuccess = true
                     }
+                } catch (
+                    @Suppress("TooGenericExceptionCaught")
+                    e: Exception,
+                ) {
+                    Timber.w(e, "Failed to generate CONTENT embedding for meme %d", memeData.id)
+                }
 
+                // INTENT: search phrases (document format — aligned with content space)
+                try {
+                    val (title, _) = buildContentParts(memeData)
                     val intentText = buildIntentText(memeData)
                     if (intentText.isNotBlank()) {
-                        val embedding = embeddingGenerator.generateFromQuery(intentText)
+                        val embedding = embeddingGenerator.generateFromText(intentText, title)
                         val sourceHash = generateHash(intentText)
                         embeddingRepository.saveEmbedding(
                             memeId = memeData.id,
@@ -183,16 +197,62 @@ class EmbeddingGenerationWorker
                             sourceTextHash = sourceHash,
                             embeddingType = EmbeddingType.INTENT.key,
                         )
+                        memeSuccess = true
                     }
-
-                    successCount++
                 } catch (
-                    @Suppress("TooGenericExceptionCaught") // Worker must not crash - reports failure instead
+                    @Suppress("TooGenericExceptionCaught")
                     e: Exception,
                 ) {
-                    failureCount++
-                    Timber.w(e, "Failed to generate embedding for meme ${memeData.id}")
+                    Timber.w(e, "Failed to generate INTENT embedding for meme %d", memeData.id)
                 }
+
+                // EMOJI: emoji names expanded to natural language (document format)
+                try {
+                    val emojiText = buildEmojiText(memeData)
+                    if (emojiText.isNotBlank()) {
+                        val embedding = embeddingGenerator.generateFromText(emojiText, null)
+                        val sourceHash = generateHash(emojiText)
+                        embeddingRepository.saveEmbedding(
+                            memeId = memeData.id,
+                            embedding = encodeEmbedding(embedding),
+                            dimension = embedding.size,
+                            modelVersion = CURRENT_MODEL_VERSION,
+                            sourceTextHash = sourceHash,
+                            embeddingType = EmbeddingType.EMOJI.key,
+                        )
+                        memeSuccess = true
+                    }
+                } catch (
+                    @Suppress("TooGenericExceptionCaught")
+                    e: Exception,
+                ) {
+                    Timber.w(e, "Failed to generate EMOJI embedding for meme %d", memeData.id)
+                }
+
+                // DIFFERENTIATOR: unique aspects — OCR text, template source, emoji combo
+                try {
+                    val diffText = buildDifferentiatorText(memeData)
+                    if (diffText.isNotBlank()) {
+                        val embedding = embeddingGenerator.generateFromText(diffText, null)
+                        val sourceHash = generateHash(diffText)
+                        embeddingRepository.saveEmbedding(
+                            memeId = memeData.id,
+                            embedding = encodeEmbedding(embedding),
+                            dimension = embedding.size,
+                            modelVersion = CURRENT_MODEL_VERSION,
+                            sourceTextHash = sourceHash,
+                            embeddingType = EmbeddingType.DIFFERENTIATOR.key,
+                        )
+                        memeSuccess = true
+                    }
+                } catch (
+                    @Suppress("TooGenericExceptionCaught")
+                    e: Exception,
+                ) {
+                    Timber.w(e, "Failed to generate DIFFERENTIATOR embedding for meme %d", memeData.id)
+                }
+
+                if (memeSuccess) successCount++ else failureCount++
 
                 setProgressAsync(
                     workDataOf(
@@ -238,6 +298,82 @@ class EmbeddingGenerationWorker
             return phrases.joinToString(". ")
         }
 
+        /**
+         * Build text representation of emoji tags for embedding.
+         * Converts raw emoji characters to their Unicode names for semantic meaning.
+         * e.g. ["💪", "🏋"] → "flexed biceps, weight lifter"
+         */
+        private fun buildEmojiText(memeData: MemeDataForEmbedding): String {
+            val jsonString = memeData.emojiTagsJson?.takeIf { it.isNotBlank() } ?: return ""
+            val emojis =
+                try {
+                    kotlinx.serialization.json.Json.decodeFromString<List<String>>(jsonString)
+                } catch (
+                    @Suppress("TooGenericExceptionCaught")
+                    e: Exception,
+                ) {
+                    Timber.d(e, "Failed to parse emoji tags JSON")
+                    return ""
+                }
+            return emojis
+                .map { resolveEmojiName(it) }
+                .filter { it.isNotBlank() }
+                .joinToString(", ")
+        }
+
+        /**
+         * Convert an emoji string to human-readable Unicode names.
+         * Iterates over codepoints, resolves each via [Character.getName],
+         * and filters out non-semantic joiners and modifiers.
+         *
+         * E.g. "💪" → "flexed biceps", "👨‍💻" → "man personal computer"
+         */
+        private fun resolveEmojiName(emoji: String): String {
+            val names = mutableListOf<String>()
+            var i = 0
+            while (i < emoji.length) {
+                val codePoint = Character.codePointAt(emoji, i)
+                i += Character.charCount(codePoint)
+
+                if (isNonSemanticCodepoint(codePoint)) continue
+
+                val name = Character.getName(codePoint)
+                if (name != null) {
+                    names.add(name.lowercase())
+                }
+            }
+            return names.joinToString(" ")
+        }
+
+        /**
+         * Returns true for codepoints that carry no semantic meaning
+         * (joiners, variation selectors, skin tone modifiers).
+         */
+        private fun isNonSemanticCodepoint(codePoint: Int): Boolean =
+            codePoint == ZWJ_CODEPOINT ||
+                codePoint == VARIATION_SELECTOR_16 ||
+                codePoint == VARIATION_SELECTOR_15 ||
+                codePoint in SKIN_TONE_MODIFIER_RANGE
+
+        /**
+         * Build differentiator text from unique aspects of the meme:
+         * OCR text, meme template source, and emoji combination.
+         */
+        private fun buildDifferentiatorText(memeData: MemeDataForEmbedding): String {
+            val parts = mutableListOf<String>()
+            memeData.basedOn?.takeIf { it.isNotBlank() }?.let {
+                parts.add("template: ${it.replace("_", " ")}")
+            }
+            memeData.textContent?.takeIf { it.isNotBlank() }?.let {
+                parts.add("text: $it")
+            }
+            val emojiText = buildEmojiText(memeData)
+            if (emojiText.isNotBlank()) {
+                parts.add("tags: $emojiText")
+            }
+            return parts.joinToString(" | ")
+        }
+
         private fun encodeEmbedding(embedding: FloatArray): ByteArray {
             val buffer =
                 ByteBuffer.allocate(embedding.size * BYTES_PER_FLOAT)
@@ -279,12 +415,18 @@ class EmbeddingGenerationWorker
             const val WORK_NAME = "embedding_generation_work"
             const val BATCH_SIZE = 20
             const val MAX_RETRY_COUNT = 3
-            const val CURRENT_MODEL_VERSION = "embeddinggemma:1.1.0"
+            const val CURRENT_MODEL_VERSION = "embeddinggemma:1.3.0"
             private const val CONTINUATION_DELAY_SECONDS = 5L
             private const val PERCENTAGE_MULTIPLIER = 100
             private const val BYTES_PER_FLOAT = 4
             private const val HASH_BYTE_LENGTH = 16
             private const val BACKOFF_SECONDS = 30L
+
+            // Unicode codepoints filtered during emoji name resolution
+            private const val ZWJ_CODEPOINT = 0x200D
+            private const val VARIATION_SELECTOR_16 = 0xFE0F
+            private const val VARIATION_SELECTOR_15 = 0xFE0E
+            private val SKIN_TONE_MODIFIER_RANGE = 0x1F3FB..0x1F3FF
 
             // Output data keys
             const val KEY_PROCESSED_COUNT = "processed_count"
@@ -399,6 +541,8 @@ data class MemeDataForEmbedding(
     val description: String?,
     val textContent: String?,
     val searchPhrases: String?,
+    val emojiTagsJson: String? = null,
+    val basedOn: String? = null,
 )
 
 /**

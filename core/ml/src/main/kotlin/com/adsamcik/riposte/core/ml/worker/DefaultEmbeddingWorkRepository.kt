@@ -38,6 +38,8 @@ class DefaultEmbeddingWorkRepository
                         description = entity.description,
                         textContent = entity.textContent,
                         searchPhrases = entity.searchPhrasesJson,
+                        emojiTagsJson = entity.emojiTagsJson,
+                        basedOn = entity.basedOn,
                     )
                 }
             }

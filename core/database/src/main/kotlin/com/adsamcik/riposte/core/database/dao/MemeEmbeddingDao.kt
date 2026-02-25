@@ -77,7 +77,10 @@ interface MemeEmbeddingDao {
             e.embedding,
             e.embeddingType,
             e.dimension,
-            e.modelVersion
+            e.modelVersion,
+            m.useCount,
+            m.viewCount,
+            m.isFavorite
         FROM memes m
         LEFT JOIN meme_embeddings e ON m.id = e.memeId
         WHERE e.embedding IS NOT NULL AND e.needsRegeneration = 0
@@ -102,7 +105,10 @@ interface MemeEmbeddingDao {
             e.embedding,
             e.embeddingType,
             e.dimension,
-            e.modelVersion
+            e.modelVersion,
+            m.useCount,
+            m.viewCount,
+            m.isFavorite
         FROM memes m
         LEFT JOIN meme_embeddings e ON m.id = e.memeId
         WHERE e.embedding IS NOT NULL AND e.needsRegeneration = 0

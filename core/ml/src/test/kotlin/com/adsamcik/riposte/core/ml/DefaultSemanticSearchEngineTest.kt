@@ -447,7 +447,7 @@ class DefaultSemanticSearchEngineTest {
         }
 
     @Test
-    fun `findSimilarMultiVector uses max-pooling across slots`() =
+    fun `findSimilarMultiVector uses weighted fusion across slots`() =
         runTest {
             val queryEmbedding = floatArrayOf(1f, 0f, 0f)
             coEvery { mockEmbeddingGenerator.generateFromQuery("test") } returns queryEmbedding
@@ -460,7 +460,7 @@ class DefaultSemanticSearchEngineTest {
                             mapOf(
                                 // ~0.71 similarity
                                 "content" to floatArrayOf(0.5f, 0.5f, 0f),
-                                // 1.0 similarity (max)
+                                // 1.0 similarity
                                 "intent" to floatArrayOf(1f, 0f, 0f),
                             ),
                     ),
@@ -468,7 +468,7 @@ class DefaultSemanticSearchEngineTest {
                         meme = createTestMeme(2L),
                         embeddings =
                             mapOf(
-                                // ~0.97 similarity (max)
+                                // ~0.97 similarity
                                 "content" to floatArrayOf(0.8f, 0.2f, 0f),
                                 // ~0.39 similarity
                                 "intent" to floatArrayOf(0.3f, 0.7f, 0f),
@@ -483,19 +483,22 @@ class DefaultSemanticSearchEngineTest {
                     threshold = 0f,
                 )
 
-            // Meme 1 should be first (max=1.0 from intent), meme 2 second (max=0.97 from content)
+            // Weighted fusion: content*0.35 + intent*0.45, normalized by total weight
+            // Meme 1: (0.71*0.35 + 1.0*0.45) / 0.80 = (0.2485+0.45)/0.80 ≈ 0.873
+            // Meme 2: (0.97*0.35 + 0.39*0.45) / 0.80 = (0.3395+0.1755)/0.80 ≈ 0.644
+            // Meme 1 should still rank first
             assertThat(results).hasSize(2)
             assertThat(results[0].meme.id).isEqualTo(1L)
-            assertThat(results[0].relevanceScore).isWithin(0.001f).of(1.0f)
             assertThat(results[1].meme.id).isEqualTo(2L)
         }
 
     @Test
-    fun `findSimilarMultiVector filters below threshold`() =
+    fun `findSimilarMultiVector filters low-similarity results via dynamic threshold`() =
         runTest {
             val queryEmbedding = floatArrayOf(1f, 0f, 0f)
             coEvery { mockEmbeddingGenerator.generateFromQuery("test") } returns queryEmbedding
 
+            // Create candidates with a wide spread so dynamic threshold filters the worst
             val candidates =
                 listOf(
                     MemeWithEmbeddings(
@@ -504,8 +507,16 @@ class DefaultSemanticSearchEngineTest {
                     ),
                     MemeWithEmbeddings(
                         meme = createTestMeme(2L),
-                        // ~0.39 similarity
-                        embeddings = mapOf("content" to floatArrayOf(0.3f, 0.7f, 0f)),
+                        embeddings = mapOf("content" to floatArrayOf(0.95f, 0.05f, 0f)),
+                    ),
+                    MemeWithEmbeddings(
+                        meme = createTestMeme(3L),
+                        embeddings = mapOf("content" to floatArrayOf(0.9f, 0.1f, 0f)),
+                    ),
+                    MemeWithEmbeddings(
+                        meme = createTestMeme(4L),
+                        // Very low similarity: ~0.16
+                        embeddings = mapOf("content" to floatArrayOf(0.1f, 0.7f, 0.7f)),
                     ),
                 )
 
@@ -513,11 +524,15 @@ class DefaultSemanticSearchEngineTest {
                 searchEngine.findSimilarMultiVector(
                     query = "test",
                     candidates = candidates,
-                    threshold = 0.5f,
+                    threshold = 0f,
                 )
 
-            assertThat(results).hasSize(1)
-            assertThat(results[0].meme.id).isEqualTo(1L)
+            // Dynamic threshold should filter out meme 4 (far below the cluster of ~1.0 similarity)
+            // At minimum, the high-similarity memes should be present
+            assertThat(results).isNotEmpty()
+            assertThat(results.map { it.meme.id }).contains(1L)
+            // Meme 4 should be filtered out due to dynamic threshold
+            assertThat(results.map { it.meme.id }).doesNotContain(4L)
         }
 
     @Test

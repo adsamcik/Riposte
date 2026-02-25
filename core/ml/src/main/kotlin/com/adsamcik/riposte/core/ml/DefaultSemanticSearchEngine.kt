@@ -7,6 +7,7 @@ import kotlinx.coroutines.withContext
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.math.sqrt
 
 /**
  * Default implementation of semantic search using cosine similarity.
@@ -99,36 +100,126 @@ class DefaultSemanticSearchEngine
 
                 val scored = candidates
                     .map { candidate ->
-                        // Max-pool: take the highest similarity across all embedding slots
-                        val maxSimilarity =
-                            candidate.embeddings.values
-                                .filter { it.size == queryEmbedding.size }
-                                .maxOfOrNull { cosineSimilarity(queryEmbedding, it) }
-                                ?: 0f
+                        val relevance = computeWeightedSimilarity(queryEmbedding, candidate)
                         SearchResult(
                             meme = candidate.meme,
-                            relevanceScore = maxSimilarity,
+                            relevanceScore = relevance,
                             matchType = MatchType.SEMANTIC,
                         )
                     }
 
                 val topScores = scored.sortedByDescending { it.relevanceScore }.take(5)
                 Timber.d(
-                    "Top 5 similarities (threshold=%.2f): %s",
-                    threshold,
+                    "Top 5 similarities: %s",
                     topScores.joinToString { "%.4f".format(it.relevanceScore) },
                 )
 
-                scored
-                    .filter { it.relevanceScore >= threshold }
-                    .sortedByDescending { it.relevanceScore }
-                    .take(limit)
+                applyDynamicThreshold(scored, limit)
             }
 
         override fun cosineSimilarity(
             embedding1: FloatArray,
             embedding2: FloatArray,
         ): Float = EmbeddingUtils.cosineSimilarity(embedding1, embedding2)
+
+        /**
+         * Compute weighted similarity across embedding types.
+         * Uses type-specific weights: INTENT > CONTENT > EMOJI > others.
+         * Falls back gracefully when types are missing.
+         */
+        private fun computeWeightedSimilarity(
+            queryEmbedding: FloatArray,
+            candidate: MemeWithEmbeddings,
+        ): Float {
+            val sims = candidate.embeddings
+                .filter { (_, vec) -> vec.size == queryEmbedding.size }
+                .map { (type, vec) ->
+                    val weight = EMBEDDING_WEIGHTS[type] ?: DEFAULT_EMBEDDING_WEIGHT
+                    val sim = cosineSimilarity(queryEmbedding, vec)
+                    weight to sim
+                }
+
+            if (sims.isEmpty()) return 0f
+            if (sims.size == 1) return sims.first().second
+
+            val totalWeight = sims.sumOf { it.first.toDouble() }.toFloat()
+            return sims.sumOf { (w, s) -> (w * s).toDouble() }.toFloat() / totalWeight
+        }
+
+        /**
+         * Dynamic threshold using z-score normalization and gap detection.
+         * Returns only results significantly above the mean similarity,
+         * with a minimum floor to always show some results.
+         */
+        private fun applyDynamicThreshold(
+            scored: List<SearchResult>,
+            limit: Int,
+        ): List<SearchResult> {
+            if (scored.isEmpty()) return emptyList()
+
+            val sorted = scored.sortedByDescending { it.relevanceScore }
+
+            // Hard floor: never return fewer than MIN_RESULTS (if enough candidates)
+            val minResults = MIN_RESULTS.coerceAtMost(sorted.size)
+
+            if (sorted.size <= minResults) return sorted.take(limit)
+
+            val scores = sorted.map { it.relevanceScore }
+            val mean = scores.average().toFloat()
+            val stddev = sqrt(scores.map { (it - mean) * (it - mean) }.average()).toFloat()
+
+            // Z-score cutoff: keep results above (mean + Z_CUTOFF * stddev)
+            val zCutoff = if (stddev > STDDEV_FLOOR) {
+                mean + Z_CUTOFF * stddev
+            } else {
+                // Scores are tightly clustered — use gap detection
+                findGapCutoff(scores) ?: scores.last()
+            }
+
+            val zFiltered = sorted.filter { it.relevanceScore >= zCutoff }
+
+            // Ensure minimum results
+            val result = if (zFiltered.size >= minResults) {
+                zFiltered
+            } else {
+                sorted.take(minResults)
+            }
+
+            Timber.d(
+                "Dynamic threshold: mean=%.4f, stddev=%.4f, cutoff=%.4f, %d/%d kept",
+                mean, stddev, zCutoff, result.size, sorted.size,
+            )
+
+            return result.take(limit)
+        }
+
+        /**
+         * Find the largest gap between consecutive sorted scores (descending).
+         * Returns the score at which to cut, or null if no significant gap found.
+         */
+        private fun findGapCutoff(sortedScores: List<Float>): Float? {
+            if (sortedScores.size < 3) return null
+
+            val gaps = sortedScores.zipWithNext { a, b -> a - b }
+            val meanGap = gaps.average().toFloat()
+
+            var maxGapIdx = -1
+            var maxGapValue = 0f
+            gaps.forEachIndexed { idx, gap ->
+                // Only consider gaps after minimum results
+                if (idx >= MIN_RESULTS - 1 && gap > maxGapValue) {
+                    maxGapValue = gap
+                    maxGapIdx = idx
+                }
+            }
+
+            // Gap must be significantly larger than average to be meaningful
+            return if (maxGapIdx >= 0 && maxGapValue > meanGap * GAP_MULTIPLIER) {
+                sortedScores[maxGapIdx + 1] // Cut at the score below the gap
+            } else {
+                null
+            }
+        }
 
         override suspend fun isReady(): Boolean = embeddingGenerator.isReady()
 
@@ -150,5 +241,28 @@ class DefaultSemanticSearchEngine
 
         private companion object {
             const val MAX_CACHE_ENTRIES = 50
+
+            /** Minimum results to always return (prevents empty results). */
+            const val MIN_RESULTS = 3
+
+            /** Z-score cutoff: results must be this many stddevs above mean. */
+            const val Z_CUTOFF = 0.5f
+
+            /** Minimum stddev before falling back to gap detection. */
+            const val STDDEV_FLOOR = 0.01f
+
+            /** Gap must be this many times the mean gap to be significant. */
+            const val GAP_MULTIPLIER = 2.0f
+
+            /** Default weight for unknown embedding types. */
+            const val DEFAULT_EMBEDDING_WEIGHT = 0.5f
+
+            /** Weights per embedding type for weighted fusion. */
+            val EMBEDDING_WEIGHTS = mapOf(
+                "content" to 0.35f,
+                "intent" to 0.45f,
+                "emoji" to 0.15f,
+                "differentiator" to 0.05f,
+            )
         }
     }

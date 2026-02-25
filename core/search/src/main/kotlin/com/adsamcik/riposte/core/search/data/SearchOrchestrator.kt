@@ -9,6 +9,7 @@ import kotlinx.coroutines.coroutineScope
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.math.ln
 
 /**
  * Orchestrates multiple [SearchStrategy] implementations and fuses their
@@ -66,7 +67,7 @@ class SearchOrchestrator @Inject constructor(
             }.map { it.await() }
         }
 
-        return fuseResults(resultsByStrategy, limit)
+        return applyUsageReranking(fuseResults(resultsByStrategy, limit))
     }
 
     /**
@@ -111,6 +112,34 @@ class SearchOrchestrator @Inject constructor(
             .take(limit)
     }
 
+    /**
+     * Apply a small usage-based boost so frequently-used and favorited
+     * memes float up when relevance scores are close.
+     * The boost is capped to prevent popular memes from overriding relevance.
+     */
+    private fun applyUsageReranking(results: List<SearchResult>): List<SearchResult> {
+        return results
+            .map { result ->
+                val boost = computeUsageBoost(result.meme)
+                if (boost > 0f) {
+                    result.copy(relevanceScore = result.relevanceScore * (1f + boost))
+                } else {
+                    result
+                }
+            }
+            .sortedByDescending { it.relevanceScore }
+    }
+
+    private fun computeUsageBoost(meme: com.adsamcik.riposte.core.model.Meme): Float {
+        var boost = 0f
+        if (meme.isFavorite) boost += FAVORITE_BOOST
+        if (meme.useCount > 0) {
+            boost += (ln(1.0 + meme.useCount).toFloat() / USE_COUNT_DIVISOR)
+                .coerceAtMost(USE_COUNT_MAX_BOOST)
+        }
+        return boost.coerceAtMost(MAX_USAGE_BOOST)
+    }
+
     companion object {
         private const val DEFAULT_LIMIT = 20
 
@@ -125,6 +154,18 @@ class SearchOrchestrator @Inject constructor(
 
         /** Strategy name used by semantic/vector search. */
         private const val SEMANTIC_STRATEGY_NAME = "semantic"
+
+        /** Favorite memes get this multiplicative boost. */
+        private const val FAVORITE_BOOST = 0.15f
+
+        /** Divisor for log-scaled use count boost. */
+        private const val USE_COUNT_DIVISOR = 10f
+
+        /** Maximum boost from use count alone. */
+        private const val USE_COUNT_MAX_BOOST = 0.2f
+
+        /** Maximum total usage boost (prevents popularity from overriding relevance). */
+        private const val MAX_USAGE_BOOST = 0.25f
 
         private fun matchesMode(strategy: SearchStrategy, mode: SearchMode): Boolean =
             when (mode) {

@@ -136,7 +136,7 @@ data class MemeEmbeddingEntity(
          * Current model version string.
          * Update this when the embedding model changes.
          */
-        const val CURRENT_MODEL_VERSION = "embeddinggemma:1.1.0"
+        const val CURRENT_MODEL_VERSION = "embeddinggemma:1.3.0"
 
         /**
          * Default embedding dimension for the current model.
@@ -162,7 +162,10 @@ data class MemeWithEmbeddingData(
     val embeddingType: String?,
     val dimension: Int?,
     val modelVersion: String?,
-) {
+    val useCount: Int = 0,
+    val viewCount: Int = 0,
+    val isFavorite: Boolean = false,
+){
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
