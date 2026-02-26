@@ -521,6 +521,30 @@ class ImportViewModelTest : BaseImportViewModelTest() {
             }
         }
 
+    @Test
+    fun `concurrent import attempts are prevented by atomic guard`() =
+        runTest {
+            val uri = mockk<Uri> { every { lastPathSegment } returns "meme.jpg" }
+
+            coEvery { suggestEmojisUseCase(any()) } returns emptyList()
+            coEvery { extractTextUseCase(any()) } returns null
+            coEvery { findDuplicateMemeIdUseCase(any()) } returns null
+
+            viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uri)))
+            advanceUntilIdle()
+
+            // Fire two StartImport intents without advancing — the atomic guard
+            // in _uiState.update {} synchronously sets isImporting=true on the first call,
+            // so the second call sees isImporting=true and returns immediately.
+            viewModel.onIntent(ImportIntent.StartImport)
+            viewModel.onIntent(ImportIntent.StartImport)
+            advanceUntilIdle()
+
+            // Only one import should have actually been executed
+            coVerify(exactly = 1) { importStagingManager.stageImages(any()) }
+            coVerify(exactly = 1) { importRepository.createImportRequest(any(), any(), any()) }
+        }
+
     // endregion
 
     // region Duplicate Detection
