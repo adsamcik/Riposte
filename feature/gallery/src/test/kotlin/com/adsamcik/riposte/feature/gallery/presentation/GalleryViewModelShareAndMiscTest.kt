@@ -40,6 +40,7 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -126,6 +127,11 @@ class GalleryViewModelShareAndMiscTest {
         every { getAllEmojisWithCountsUseCase() } returns flowOf(emptyList())
         every { getAllEmojisWithTagCountsUseCase() } returns flowOf(emptyList())
         every { getLibraryStatsUseCase() } returns flowOf(LibraryStatistics(totalMemes = 3, favoriteMemes = 1))
+    }
+
+    @After
+    fun tearDown() {
+        io.mockk.clearAllMocks()
     }
 
     private fun createViewModel(): GalleryViewModel {
