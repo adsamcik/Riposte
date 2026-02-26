@@ -204,6 +204,12 @@ private fun SensitivitySection(
                 text = stringResource(R.string.duplicate_detection_sensitivity),
                 style = MaterialTheme.typography.titleSmall,
             )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = stringResource(R.string.duplicate_detection_sensitivity_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
             Spacer(modifier = Modifier.height(8.dp))
             Slider(
                 value = sensitivity.toFloat(),

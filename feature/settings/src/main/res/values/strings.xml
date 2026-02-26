@@ -68,6 +68,7 @@
     <string name="duplicate_detection_no_duplicates">No duplicates found! Your library is clean 🎉</string>
     <string name="duplicate_detection_found">Found %1$d potential duplicate groups</string>
     <string name="duplicate_detection_sensitivity">Sensitivity</string>
+    <string name="duplicate_detection_sensitivity_hint">Exact matches only identical files. Similar finds resized or recompressed copies. Loose catches cropped or edited variants.</string>
     <string name="duplicate_detection_sensitivity_exact">Exact only</string>
     <string name="duplicate_detection_sensitivity_similar">Similar</string>
     <string name="duplicate_detection_sensitivity_loose">Loose</string>

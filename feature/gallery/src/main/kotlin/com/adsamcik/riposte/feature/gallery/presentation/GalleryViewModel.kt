@@ -105,6 +105,7 @@ class GalleryViewModel
                 is GalleryIntent.EnterSelectionMode -> enterSelectionMode()
                 is GalleryIntent.ClearSelection -> clearSelection()
                 is GalleryIntent.SelectAll -> selectAll()
+                is GalleryIntent.DeselectAll -> deselectAll()
                 is GalleryIntent.ToggleFavorite -> toggleFavorite(intent.memeId)
                 is GalleryIntent.DeleteSelected -> deleteSelected()
                 is GalleryIntent.ConfirmDelete -> confirmDelete()
@@ -521,6 +522,12 @@ class GalleryViewModel
                         isSelectionMode = true,
                     )
                 }
+            }
+        }
+
+        private fun deselectAll() {
+            _uiState.update { state ->
+                state.copy(selectedMemeIds = emptySet())
             }
         }
 

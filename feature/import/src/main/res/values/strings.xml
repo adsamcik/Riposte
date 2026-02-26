@@ -73,4 +73,5 @@
     <!-- Onboarding Tips -->
     <string name="import_tip_emoji_tagging">AI adds emoji tags and descriptions so you can find memes faster ✨</string>
     <string name="import_hint_max_images">Up to 20 images at a time</string>
+    <string name="import_supported_formats">Supports JPEG, PNG, WebP, and GIF images</string>
 </resources>

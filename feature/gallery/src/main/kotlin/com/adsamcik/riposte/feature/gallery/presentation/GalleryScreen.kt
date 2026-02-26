@@ -61,6 +61,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -108,6 +109,7 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -374,10 +376,29 @@ private fun GalleryScreenContent(
                         }
                     },
                     actions = {
-                        IconButton(onClick = { onIntent(GalleryIntent.SelectAll) }) {
+                        val totalCount = if (uiState.usePaging) {
+                            pagedMemes?.itemCount ?: 0
+                        } else {
+                            uiState.memes.size
+                        }
+                        val isAllSelected = uiState.selectionCount > 0 &&
+                            uiState.selectionCount >= totalCount
+                        IconButton(
+                            onClick = {
+                                if (isAllSelected) {
+                                    onIntent(GalleryIntent.DeselectAll)
+                                } else {
+                                    onIntent(GalleryIntent.SelectAll)
+                                }
+                            },
+                        ) {
                             Icon(
-                                Icons.Default.SelectAll,
-                                contentDescription = stringResource(R.string.gallery_cd_select_all),
+                                if (isAllSelected) Icons.Default.Close else Icons.Default.SelectAll,
+                                contentDescription = if (isAllSelected) {
+                                    stringResource(R.string.gallery_cd_deselect_all)
+                                } else {
+                                    stringResource(R.string.gallery_cd_select_all)
+                                },
                             )
                         }
                     },
@@ -449,14 +470,14 @@ private fun GalleryScreenContent(
                 enter = fadeIn(),
                 exit = fadeOut(),
             ) {
-                FloatingActionButton(
+                ExtendedFloatingActionButton(
                     onClick = { onIntent(GalleryIntent.NavigateToImport) },
                     shape = RiposteShapes.FABDefault,
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.gallery_cd_import_memes))
-                }
+                    icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                    text = { Text(stringResource(R.string.gallery_fab_import)) },
+                )
             }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -709,6 +730,18 @@ private fun GalleryScreenContent(
                                             isSelectionMode = uiState.isSelectionMode,
                                             onIntent = onIntent,
                                             showEmojis = true,
+                                        )
+                                    }
+                                    // End-of-results hint
+                                    item(span = { GridItemSpan(maxLineSpan) }, key = "search_end_hint") {
+                                        Text(
+                                            text = stringResource(R.string.gallery_search_end_hint),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            textAlign = TextAlign.Center,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(vertical = Spacing.lg),
                                         )
                                     }
                                 }

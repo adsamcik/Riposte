@@ -40,6 +40,11 @@ sealed interface GalleryIntent {
     data object SelectAll : GalleryIntent
 
     /**
+     * Deselect all memes (stay in selection mode).
+     */
+    data object DeselectAll : GalleryIntent
+
+    /**
      * Toggle favorite status for a meme.
      */
     data class ToggleFavorite(val memeId: Long) : GalleryIntent

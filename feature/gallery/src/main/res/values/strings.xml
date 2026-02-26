@@ -12,6 +12,7 @@
     <string name="gallery_cd_share">Share</string>
     <string name="gallery_cd_delete">Delete</string>
     <string name="gallery_cd_import_memes">Import memes</string>
+    <string name="gallery_fab_import">Import</string>
     <string name="gallery_cd_navigate_back">Navigate back</string>
     <string name="gallery_cd_favorite">Favorite</string>
     <string name="gallery_cd_edit">Edit</string>
@@ -102,4 +103,5 @@
     <string name="gallery_dialog_clear_searches_title">Clear recent searches?</string>
     <string name="gallery_dialog_clear_searches_message">This will remove all your recent search history.</string>
     <string name="gallery_dialog_clear_searches_confirm">Clear</string>
+    <string name="gallery_search_end_hint">Try different terms or emoji filters for more results</string>
 </resources>
