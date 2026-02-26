@@ -307,6 +307,21 @@ class MemeDetailViewModelTest {
             assertThat(viewModel.uiState.value.editedEmojis).doesNotContain("😀")
         }
 
+    @Test
+    fun `rapid AddEmoji intents do not lose emojis`() =
+        runTest {
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onIntent(MemeDetailIntent.AddEmoji("😂"))
+            viewModel.onIntent(MemeDetailIntent.AddEmoji("🔥"))
+            viewModel.onIntent(MemeDetailIntent.AddEmoji("💀"))
+            advanceUntilIdle()
+
+            val emojis = viewModel.uiState.value.editedEmojis
+            assertThat(emojis).containsAtLeast("😂", "🔥", "💀")
+        }
+
     // endregion
 
     // region Favorite Tests

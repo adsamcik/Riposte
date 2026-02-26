@@ -599,6 +599,72 @@ class GalleryViewModelTest {
             }
         }
 
+    @Test
+    fun `ConfirmDelete adds meme ids to pendingDeleteIds in state`() =
+        runTest {
+            coEvery { deleteMemesUseCase(any<Set<Long>>()) } returns Result.success(Unit)
+            viewModel = createViewModel()
+            advanceUntilIdle()
+            viewModel.onIntent(GalleryIntent.StartSelection(1))
+            viewModel.onIntent(GalleryIntent.ToggleSelection(2))
+            viewModel.onIntent(GalleryIntent.DeleteSelected)
+            advanceUntilIdle()
+
+            turbineScope {
+                val effects = viewModel.effects.testIn(backgroundScope)
+                // Skip ShowDeleteConfirmation
+                effects.awaitItem()
+
+                viewModel.onIntent(GalleryIntent.ConfirmDelete)
+                advanceTimeBy(1_000)
+
+                val undoEffect = effects.awaitItem()
+                assertThat(undoEffect).isInstanceOf(GalleryEffect.ShowUndoDeleteSnackbar::class.java)
+
+                // pendingDeleteIds should be populated in uiState
+                val state = viewModel.uiState.value
+                assertThat(state.pendingDeleteIds).containsExactly(1L, 2L)
+
+                effects.cancel()
+            }
+        }
+
+    @Test
+    fun `UndoDelete clears pendingDeleteIds from state`() =
+        runTest {
+            coEvery { deleteMemesUseCase(any<Set<Long>>()) } returns Result.success(Unit)
+            viewModel = createViewModel()
+            advanceUntilIdle()
+            viewModel.onIntent(GalleryIntent.StartSelection(1))
+            viewModel.onIntent(GalleryIntent.DeleteSelected)
+            advanceUntilIdle()
+
+            turbineScope {
+                val effects = viewModel.effects.testIn(backgroundScope)
+                // Skip ShowDeleteConfirmation
+                effects.awaitItem()
+
+                viewModel.onIntent(GalleryIntent.ConfirmDelete)
+                advanceTimeBy(1_000)
+
+                val undoEffect = effects.awaitItem()
+                assertThat(undoEffect).isInstanceOf(GalleryEffect.ShowUndoDeleteSnackbar::class.java)
+
+                // pendingDeleteIds should be populated before undo
+                assertThat(viewModel.uiState.value.pendingDeleteIds).isNotEmpty()
+
+                viewModel.onIntent(GalleryIntent.UndoDelete)
+                advanceUntilIdle()
+
+                // pendingDeleteIds should be cleared after undo
+                assertThat(viewModel.uiState.value.pendingDeleteIds).isEmpty()
+
+                effects.cancel()
+            }
+
+            coVerify(exactly = 0) { deleteMemesUseCase(any<Set<Long>>()) }
+        }
+
     // endregion
 
     // region Filter Intent Tests

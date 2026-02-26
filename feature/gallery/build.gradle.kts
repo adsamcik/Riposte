@@ -25,7 +25,9 @@ android {
     testOptions {
         unitTests.isIncludeAndroidResources = true
         unitTests.all {
-            it.maxHeapSize = "4g"
+            it.maxHeapSize = "6g"
+            it.setForkEvery(1)
+            it.jvmArgs("-XX:+UseG1GC", "-XX:MaxMetaspaceSize=1g")
         }
     }
 }
