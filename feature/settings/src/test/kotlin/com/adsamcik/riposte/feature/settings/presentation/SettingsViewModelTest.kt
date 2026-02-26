@@ -253,6 +253,74 @@ class SettingsViewModelTest {
             assertThat(state.saveSearchHistory).isFalse()
         }
 
+    @Test
+    fun `loadSettings combines all sources into single atomic state update`() =
+        runTest {
+            // Set up all four flows with distinct, non-default values
+            appPreferencesFlow.value =
+                createDefaultAppPreferences(
+                    darkMode = DarkMode.DARK,
+                    dynamicColors = false,
+                    enableSemanticSearch = false,
+                    saveSearchHistory = false,
+                )
+            sharingPreferencesFlow.value =
+                createDefaultSharingPreferences(
+                    defaultFormat = ImageFormat.PNG,
+                    defaultQuality = 100,
+                    maxWidth = 2048,
+                )
+            val embeddingStatsFlow = MutableStateFlow(
+                EmbeddingStatusInfo(
+                    statistics = com.adsamcik.riposte.core.ml.EmbeddingStatistics(
+                        validEmbeddingCount = 42,
+                        pendingEmbeddingCount = 8,
+                        regenerationNeededCount = 0,
+                        currentModelVersion = "embeddinggemma:1.0.0",
+                        embeddingsByVersion = mapOf("embeddinggemma:1.0.0" to 42),
+                        modelError = null,
+                    ),
+                    modelInfo = com.adsamcik.riposte.core.ml.EmbeddingModelInfo(
+                        version = "embeddinggemma:1.0.0",
+                        name = "EmbeddingGemma",
+                        dimension = 768,
+                        description = "test",
+                    ),
+                ),
+            )
+            val libraryStatsFlow = MutableStateFlow(
+                com.adsamcik.riposte.core.database.LibraryStatistics(
+                    totalMemes = 200,
+                    favoriteMemes = 15,
+                ),
+            )
+            every { observeEmbeddingStatisticsUseCase() } returns embeddingStatsFlow
+            every { observeLibraryStatsUseCase() } returns libraryStatsFlow
+
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            // Verify ALL fields from ALL four sources are populated in a single coherent state
+            val state = viewModel.uiState.value
+            assertThat(state.isLoading).isFalse()
+            // From appPreferencesFlow
+            assertThat(state.darkMode).isEqualTo(DarkMode.DARK)
+            assertThat(state.dynamicColorsEnabled).isFalse()
+            assertThat(state.enableSemanticSearch).isFalse()
+            assertThat(state.saveSearchHistory).isFalse()
+            // From sharingPreferencesFlow
+            assertThat(state.defaultFormat).isEqualTo(ImageFormat.PNG)
+            assertThat(state.defaultQuality).isEqualTo(100)
+            assertThat(state.defaultMaxDimension).isEqualTo(2048)
+            // From embeddingStatsFlow
+            val embeddingState = requireNotNull(state.embeddingSearchState)
+            assertThat(embeddingState.indexedCount).isEqualTo(42)
+            assertThat(embeddingState.pendingCount).isEqualTo(8)
+            // From libraryStatsFlow
+            assertThat(state.totalMemeCount).isEqualTo(200)
+            assertThat(state.favoriteMemeCount).isEqualTo(15)
+        }
+
     // endregion
 
     // region Regression: ViewModel uses Use Cases (p2-6)

@@ -104,7 +104,7 @@ class EmbeddingGenerationWorkerTest {
 
     /** Mock all embedding generation methods with the same embedding. */
     private fun mockEmbeddingGeneration(embedding: FloatArray) {
-        coEvery { embeddingGenerator.generateFromText(any(), any()) } returns embedding
+        coEvery { embeddingGenerator.generateFromText(any()) } returns embedding
         coEvery { embeddingGenerator.generateFromQuery(any()) } returns embedding
     }
 
@@ -302,10 +302,10 @@ class EmbeddingGenerationWorkerTest {
                 embeddingGenerator.generateFromQuery(any())
             } returns createTestEmbedding()
             coEvery {
-                embeddingGenerator.generateFromText(any(), matchNullable { it != null && it.contains("Good") })
+                embeddingGenerator.generateFromText(match { it.contains("Nice") })
             } returns createTestEmbedding()
             coEvery {
-                embeddingGenerator.generateFromText(any(), matchNullable { it != null && it.contains("Bad") })
+                embeddingGenerator.generateFromText(match { it.contains("Broken") })
             } throws RuntimeException("Model error")
             coEvery { embeddingRepository.countMemesNeedingEmbeddings() } returns 0
 
@@ -458,7 +458,7 @@ class EmbeddingGenerationWorkerTest {
         runTest {
             val memes = listOf(createMemeData(id = 1, title = "Fail"))
             coEvery { embeddingRepository.getMemesNeedingEmbeddings(any()) } returns memes
-            coEvery { embeddingGenerator.generateFromText(any(), any()) } throws RuntimeException("Error")
+            coEvery { embeddingGenerator.generateFromText(any()) } throws RuntimeException("Error")
             coEvery { embeddingGenerator.generateFromQuery(any()) } throws RuntimeException("Error")
             coEvery { embeddingRepository.countMemesNeedingEmbeddings() } returns 0
             isInBackgroundFlow.value = true
@@ -482,7 +482,7 @@ class EmbeddingGenerationWorkerTest {
                     createMemeData(id = 2, title = "Bad2"),
                 )
             coEvery { embeddingRepository.getMemesNeedingEmbeddings(any()) } returns memes
-            coEvery { embeddingGenerator.generateFromText(any(), any()) } throws RuntimeException("Error")
+            coEvery { embeddingGenerator.generateFromText(any()) } throws RuntimeException("Error")
             coEvery { embeddingGenerator.generateFromQuery(any()) } throws RuntimeException("Error")
             coEvery { embeddingRepository.countMemesNeedingEmbeddings() } returns 5
 
@@ -501,19 +501,19 @@ class EmbeddingGenerationWorkerTest {
         runTest {
             val memes =
                 listOf(
-                    createMemeData(id = 1, title = "Good"),
-                    createMemeData(id = 2, title = "Bad"),
-                    createMemeData(id = 3, title = "Also Good"),
+                    createMemeData(id = 1, title = "Good", description = "Good content"),
+                    createMemeData(id = 2, title = "Bad", description = "Bad content"),
+                    createMemeData(id = 3, title = "Also Good", description = "Also Good content"),
                 )
             coEvery { embeddingRepository.getMemesNeedingEmbeddings(any()) } returns memes
             coEvery {
                 embeddingGenerator.generateFromQuery(any())
             } returns createTestEmbedding()
             coEvery {
-                embeddingGenerator.generateFromText(any(), matchNullable { it != null && it.contains("Good") })
+                embeddingGenerator.generateFromText(match { it.contains("Good") })
             } returns createTestEmbedding()
             coEvery {
-                embeddingGenerator.generateFromText(any(), matchNullable { it != null && it.contains("Bad") })
+                embeddingGenerator.generateFromText(match { it.contains("Bad") })
             } throws RuntimeException("Error")
             coEvery { embeddingRepository.countMemesNeedingEmbeddings() } returns 0
             isInBackgroundFlow.value = true
@@ -550,7 +550,7 @@ class EmbeddingGenerationWorkerTest {
 
             // Verify the content text includes OCR text
             coVerify {
-                embeddingGenerator.generateFromText(match { it.contains("OCR text from image") }, any())
+                embeddingGenerator.generateFromText(match { it.contains("OCR text from image") })
             }
         }
 
@@ -612,7 +612,6 @@ class EmbeddingGenerationWorkerTest {
             coVerify {
                 embeddingGenerator.generateFromText(
                     match { it.contains("flexed biceps") && it.contains("fire") },
-                    isNull(),
                 )
             }
             coVerify {
@@ -661,26 +660,21 @@ class EmbeddingGenerationWorkerTest {
         runTest {
             val meme = createMemeData(
                 id = 1,
-                title = "Failing Meme",
-                description = "Has description",
+                title = null,
+                description = null,
+                textContent = null,
                 searchPhrases = """["search phrase"]""",
             )
             val embedding = createTestEmbedding()
 
             coEvery { embeddingRepository.getMemesNeedingEmbeddings(any()) } returns listOf(meme)
-            // First call (content) throws, second call (intent) succeeds
-            coEvery {
-                embeddingGenerator.generateFromText(match { it.contains("Has description") }, any())
-            } throws RuntimeException("Model glitch")
-            coEvery {
-                embeddingGenerator.generateFromText(match { it.contains("search phrase") }, any())
-            } returns embedding
+            mockEmbeddingGeneration(embedding)
             coEvery { embeddingRepository.countMemesNeedingEmbeddings() } returns 0
 
             val worker = createWorker()
             val result = worker.doWork()
 
-            // Meme should still count as success since intent embedding was saved
+            // Meme should count as success since intent embedding was saved
             assertThat(result).isInstanceOf(ListenableWorker.Result.Success::class.java)
             val data = (result as ListenableWorker.Result.Success).outputData
             assertThat(data.getInt(EmbeddingGenerationWorker.KEY_PROCESSED_COUNT, -1)).isEqualTo(1)

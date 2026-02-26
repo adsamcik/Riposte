@@ -285,8 +285,7 @@ class PromptFormattingTest {
 
     @Test
     fun `buildIntentText uses document format for space alignment`() = runTest {
-        // The worker calls generateFromText (document format) for intent text,
-        // aligning intent embeddings in the same vector space as content.
+        // The worker calls generateFromText (1-arg) for intent text
         val meme = createMemeData(
             id = 1,
             title = null,
@@ -297,15 +296,15 @@ class PromptFormattingTest {
         val embedding = createTestEmbedding()
 
         coEvery { embeddingRepository.getMemesNeedingEmbeddings(any()) } returns listOf(meme)
-        coEvery { embeddingGenerator.generateFromText(any(), any()) } returns embedding
+        coEvery { embeddingGenerator.generateFromText(any()) } returns embedding
         coEvery { embeddingGenerator.generateFromQuery(any()) } returns embedding
         coEvery { embeddingRepository.countMemesNeedingEmbeddings() } returns 0
 
         val worker = createWorker()
         worker.doWork()
 
-        // Intent now uses generateFromText (document format) for alignment with content space
-        coVerify { embeddingGenerator.generateFromText("find this meme", null) }
+        // Intent uses generateFromText (1-arg) — verify the text content
+        coVerify { embeddingGenerator.generateFromText("find this meme") }
     }
 
     // endregion
@@ -313,7 +312,7 @@ class PromptFormattingTest {
     // region Integration — Worker Passes Correct Args to Generator
 
     @Test
-    fun `worker passes built content body and title to document embedding`() = runTest {
+    fun `worker passes built content body to document embedding`() = runTest {
         val meme = createMemeData(
             id = 1,
             title = "Cat Meme",
@@ -324,19 +323,17 @@ class PromptFormattingTest {
         val embedding = createTestEmbedding()
 
         coEvery { embeddingRepository.getMemesNeedingEmbeddings(any()) } returns listOf(meme)
-        coEvery { embeddingGenerator.generateFromText(any(), any()) } returns embedding
+        coEvery { embeddingGenerator.generateFromText(any()) } returns embedding
         coEvery { embeddingGenerator.generateFromQuery(any()) } returns embedding
         coEvery { embeddingRepository.countMemesNeedingEmbeddings() } returns 0
 
         val worker = createWorker()
         worker.doWork()
 
-        // Verify the exact args: body = "A surprised cat. when monday hits", title = "Cat Meme"
-        // Inside the generator, this becomes: "title: Cat Meme | text: A surprised cat. when monday hits"
+        // Verify content text is built from description + textContent
         coVerify {
             embeddingGenerator.generateFromText(
                 "A surprised cat. when monday hits",
-                "Cat Meme",
             )
         }
     }
