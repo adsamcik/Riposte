@@ -61,8 +61,8 @@ data class MemeEmbeddingEntity(
     /**
      * Version identifier for the embedding model used.
      *
-     * Format: "model_name:version" (e.g., "use_v1:1.0.0", "litert_use:2.0.0")
-     * Used to detect when embeddings need re-generation due to model updates.
+     * Format: "model_name:version" (e.g., "embeddinggemma:1.3.0")
+     * Used to detect when embeddings need deletion due to model updates.
      */
     val modelVersion: String,
     /**

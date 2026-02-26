@@ -134,11 +134,11 @@ interface MemeEmbeddingDao {
     suspend fun markForRegeneration(memeId: Long)
 
     /**
-     * Mark all embeddings with a specific model version for regeneration.
-     * Used when the model is upgraded.
+     * Delete all embeddings with a different model version than the current one.
+     * Used when the model is upgraded to clean up incompatible embeddings.
      */
-    @Query("UPDATE meme_embeddings SET needsRegeneration = 1 WHERE modelVersion != :currentVersion")
-    suspend fun markOutdatedForRegeneration(currentVersion: String)
+    @Query("DELETE FROM meme_embeddings WHERE modelVersion != :currentVersion")
+    suspend fun deleteOutdatedEmbeddings(currentVersion: String)
 
     /**
      * Mark all embeddings for regeneration.

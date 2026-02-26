@@ -94,14 +94,7 @@ class EmbeddingModelVersionManager
         /**
          * Get embedding dimension for the current model.
          */
-        fun getCurrentEmbeddingDimension(): Int {
-            return when {
-                currentModelVersion.startsWith("embeddinggemma") -> EMBEDDING_GEMMA_DIMENSION
-                currentModelVersion.startsWith("mediapipe_use") -> USE_MODEL_DIMENSION
-                currentModelVersion.startsWith("litert_use") -> USE_MODEL_DIMENSION
-                else -> EMBEDDING_GEMMA_DIMENSION
-            }
-        }
+        fun getCurrentEmbeddingDimension(): Int = EMBEDDING_GEMMA_DIMENSION
 
         /**
          * Get information about the current model.
@@ -132,14 +125,10 @@ class EmbeddingModelVersionManager
         }
 
         private fun getModelDescription(version: String): String {
-            return when {
-                version.startsWith("embeddinggemma") ->
-                    "EmbeddingGemma 300M via AI Edge RAG SDK for high-quality semantic embeddings (768 dims)"
-                version.startsWith("mediapipe_use") ->
-                    "Universal Sentence Encoder via MediaPipe for semantic text embeddings"
-                version.startsWith("litert_use") ->
-                    "Universal Sentence Encoder via LiteRT for semantic text embeddings"
-                else -> "Unknown embedding model"
+            return if (version.startsWith("embeddinggemma")) {
+                "EmbeddingGemma 300M via LiteRT for high-quality semantic embeddings (768 dims)"
+            } else {
+                "Unknown embedding model"
             }
         }
 
@@ -161,7 +150,6 @@ class EmbeddingModelVersionManager
             const val CURRENT_VERSION = "embeddinggemma:1.3.0"
 
             private const val EMBEDDING_GEMMA_DIMENSION = 768
-            private const val USE_MODEL_DIMENSION = 512
 
             private val KEY_LAST_MODEL_VERSION = stringPreferencesKey("last_model_version")
             private val KEY_ERROR_APP_VERSION_CODE = longPreferencesKey("error_app_version_code")

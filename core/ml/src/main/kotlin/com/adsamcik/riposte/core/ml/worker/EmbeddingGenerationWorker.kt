@@ -487,39 +487,6 @@ class EmbeddingGenerationWorker
                     )
             }
 
-            /**
-             * Enqueues embedding regeneration work for outdated model versions.
-             */
-            // Parameter reserved for future version-specific migration logic
-            @Suppress("UnusedParameter")
-            fun enqueueRegeneration(
-                context: Context,
-                currentVersion: String,
-            ) {
-                val constraints =
-                    Constraints.Builder()
-                        .setRequiresBatteryNotLow(true)
-                        .setRequiresCharging(true) // Regeneration can be expensive
-                        .build()
-
-                val request =
-                    OneTimeWorkRequestBuilder<EmbeddingGenerationWorker>()
-                        .setConstraints(constraints)
-                        .setBackoffCriteria(
-                            BackoffPolicy.EXPONENTIAL,
-                            1,
-                            TimeUnit.MINUTES,
-                        )
-                        .addTag("${WORK_NAME}_regeneration")
-                        .build()
-
-                WorkManager.getInstance(context)
-                    .enqueueUniqueWork(
-                        "${WORK_NAME}_regeneration",
-                        ExistingWorkPolicy.REPLACE,
-                        request,
-                    )
-            }
         }
     }
 
@@ -565,7 +532,7 @@ interface EmbeddingWorkRepository {
     suspend fun countMemesNeedingEmbeddings(): Int
 
     /**
-     * Mark embeddings with outdated model version for regeneration.
+     * Delete embeddings with outdated model version.
      */
-    suspend fun markOutdatedEmbeddings(currentVersion: String)
+    suspend fun deleteOutdatedEmbeddings(currentVersion: String)
 }

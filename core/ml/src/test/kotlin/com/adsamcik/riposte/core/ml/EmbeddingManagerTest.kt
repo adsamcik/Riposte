@@ -226,7 +226,7 @@ class EmbeddingManagerTest {
             embeddingManager.checkAndHandleModelUpgrade()
 
             // Then
-            coVerify { memeEmbeddingDao.markOutdatedForRegeneration("embeddinggemma:1.3.0") }
+            coVerify { memeEmbeddingDao.deleteOutdatedEmbeddings("embeddinggemma:1.3.0") }
             coVerify { versionManager.updateToCurrentVersion() }
         }
 
@@ -240,7 +240,7 @@ class EmbeddingManagerTest {
             embeddingManager.checkAndHandleModelUpgrade()
 
             // Then
-            coVerify(exactly = 0) { memeEmbeddingDao.markOutdatedForRegeneration(any()) }
+            coVerify(exactly = 0) { memeEmbeddingDao.deleteOutdatedEmbeddings(any()) }
             coVerify(exactly = 0) { versionManager.updateToCurrentVersion() }
         }
 

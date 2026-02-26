@@ -123,7 +123,7 @@ class MemeEmbeddingDaoTest {
         }
 
     @Test
-    fun `markOutdatedForRegeneration marks embeddings with different version`() =
+    fun `deleteOutdatedEmbeddings removes embeddings with different version`() =
         runTest {
             // Given
             val meme1Id = insertTestMeme("meme1")
@@ -133,13 +133,14 @@ class MemeEmbeddingDaoTest {
             embeddingDao.insertEmbedding(createTestEmbedding(meme2Id, modelVersion = "new:2.0.0"))
 
             // When
-            embeddingDao.markOutdatedForRegeneration("new:2.0.0")
+            embeddingDao.deleteOutdatedEmbeddings("new:2.0.0")
 
             // Then
             val embedding1 = embeddingDao.getEmbeddingByMemeId(meme1Id)
             val embedding2 = embeddingDao.getEmbeddingByMemeId(meme2Id)
 
-            assertThat(embedding1!!.needsRegeneration).isTrue()
+            assertThat(embedding1).isNull()
+            assertThat(embedding2).isNotNull()
             assertThat(embedding2!!.needsRegeneration).isFalse()
         }
 

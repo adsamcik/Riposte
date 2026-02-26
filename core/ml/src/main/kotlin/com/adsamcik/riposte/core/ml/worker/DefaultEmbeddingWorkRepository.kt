@@ -89,8 +89,8 @@ class DefaultEmbeddingWorkRepository
                 )
         }
 
-        override suspend fun markOutdatedEmbeddings(currentVersion: String) {
-            memeEmbeddingDao.markOutdatedForRegeneration(currentVersion)
+        override suspend fun deleteOutdatedEmbeddings(currentVersion: String) {
+            memeEmbeddingDao.deleteOutdatedEmbeddings(currentVersion)
         }
 
         companion object {

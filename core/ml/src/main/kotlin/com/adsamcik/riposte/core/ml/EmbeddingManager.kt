@@ -272,21 +272,18 @@ class EmbeddingManager
 
             if (datastoreUpgraded || outdatedCount > 0) {
                 Timber.i(
-                    "Model upgrade detected: datastore=%b, outdated=%d",
+                    "Model upgrade detected: datastore=%b, outdated=%d — deleting incompatible embeddings",
                     datastoreUpgraded,
                     outdatedCount,
                 )
-                // Mark all embeddings with old version for regeneration
-                memeEmbeddingDao.markOutdatedForRegeneration(currentVersion)
+                // Delete all embeddings from old model versions
+                memeEmbeddingDao.deleteOutdatedEmbeddings(currentVersion)
 
                 // Update stored version
                 versionManager.updateToCurrentVersion()
 
-                // Schedule regeneration
-                EmbeddingGenerationWorker.enqueueRegeneration(
-                    context,
-                    currentVersion,
-                )
+                // Schedule fresh generation for memes that lost their embeddings
+                EmbeddingGenerationWorker.enqueue(context)
             }
         }
 
