@@ -145,6 +145,86 @@ class MemeEmbeddingDaoTest {
         }
 
     @Test
+    fun `deleteOutdatedEmbeddings removes all embedding types for outdated memes`() =
+        runTest {
+            // Given — one meme with multiple embedding types, all from old version
+            val memeId = insertTestMeme()
+            embeddingDao.insertEmbedding(
+                createTestEmbedding(memeId, modelVersion = "old:1.0.0").copy(embeddingType = "content"),
+            )
+            embeddingDao.insertEmbedding(
+                createTestEmbedding(memeId, modelVersion = "old:1.0.0").copy(embeddingType = "intent"),
+            )
+            embeddingDao.insertEmbedding(
+                createTestEmbedding(memeId, modelVersion = "old:1.0.0").copy(embeddingType = "emoji"),
+            )
+
+            // When
+            embeddingDao.deleteOutdatedEmbeddings("new:2.0.0")
+
+            // Then — all embedding types deleted
+            val allValid = embeddingDao.getAllValidEmbeddings()
+            assertThat(allValid).isEmpty()
+        }
+
+    @Test
+    fun `deleteOutdatedEmbeddings is no-op when all embeddings are current`() =
+        runTest {
+            // Given
+            val meme1Id = insertTestMeme("meme1")
+            val meme2Id = insertTestMeme("meme2")
+            embeddingDao.insertEmbedding(createTestEmbedding(meme1Id, modelVersion = "current:1.0.0"))
+            embeddingDao.insertEmbedding(createTestEmbedding(meme2Id, modelVersion = "current:1.0.0"))
+
+            // When
+            embeddingDao.deleteOutdatedEmbeddings("current:1.0.0")
+
+            // Then — nothing deleted
+            assertThat(embeddingDao.countValidEmbeddings()).isEqualTo(2)
+        }
+
+    @Test
+    fun `deleteOutdatedEmbeddings removes multiple different old versions`() =
+        runTest {
+            // Given — three memes with three different old versions, one current
+            val meme1Id = insertTestMeme("meme1")
+            val meme2Id = insertTestMeme("meme2")
+            val meme3Id = insertTestMeme("meme3")
+            val meme4Id = insertTestMeme("meme4")
+
+            embeddingDao.insertEmbedding(createTestEmbedding(meme1Id, modelVersion = "ancient:0.1.0"))
+            embeddingDao.insertEmbedding(createTestEmbedding(meme2Id, modelVersion = "old:1.0.0"))
+            embeddingDao.insertEmbedding(createTestEmbedding(meme3Id, modelVersion = "stale:2.0.0"))
+            embeddingDao.insertEmbedding(createTestEmbedding(meme4Id, modelVersion = "current:3.0.0"))
+
+            // When
+            embeddingDao.deleteOutdatedEmbeddings("current:3.0.0")
+
+            // Then — only current version survives
+            assertThat(embeddingDao.countValidEmbeddings()).isEqualTo(1)
+            assertThat(embeddingDao.getEmbeddingByMemeId(meme4Id)).isNotNull()
+        }
+
+    @Test
+    fun `deleteOutdatedEmbeddings makes memes appear in getMemeIdsWithoutEmbeddings`() =
+        runTest {
+            // Given — two memes, both have embeddings
+            val meme1Id = insertTestMeme("meme1")
+            val meme2Id = insertTestMeme("meme2")
+            embeddingDao.insertEmbedding(createTestEmbedding(meme1Id, modelVersion = "old:1.0.0"))
+            embeddingDao.insertEmbedding(createTestEmbedding(meme2Id, modelVersion = "current:2.0.0"))
+
+            assertThat(embeddingDao.getMemeIdsWithoutEmbeddings()).isEmpty()
+
+            // When — delete old embeddings
+            embeddingDao.deleteOutdatedEmbeddings("current:2.0.0")
+
+            // Then — meme1 now shows up as needing embeddings
+            val idsWithout = embeddingDao.getMemeIdsWithoutEmbeddings()
+            assertThat(idsWithout).containsExactly(meme1Id)
+        }
+
+    @Test
     fun `deleteEmbeddingByMemeId removes the embedding`() =
         runTest {
             // Given

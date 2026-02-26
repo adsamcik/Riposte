@@ -216,7 +216,7 @@ class EmbeddingManagerTest {
         }
 
     @Test
-    fun `checkAndHandleModelUpgrade marks old embeddings for regeneration`() =
+    fun `checkAndHandleModelUpgrade deletes outdated embeddings on datastore upgrade`() =
         runTest {
             // Given
             coEvery { versionManager.hasModelBeenUpgraded() } returns true
@@ -231,7 +231,23 @@ class EmbeddingManagerTest {
         }
 
     @Test
-    fun `checkAndHandleModelUpgrade does nothing when no upgrade`() =
+    fun `checkAndHandleModelUpgrade deletes when DB has stale embeddings even if datastore is current`() =
+        runTest {
+            // Given — datastore says no upgrade, but DB has outdated rows
+            coEvery { versionManager.hasModelBeenUpgraded() } returns false
+            coEvery { memeEmbeddingDao.countOutdatedEmbeddings("embeddinggemma:1.3.0") } returns 15
+            coEvery { versionManager.updateToCurrentVersion() } returns Unit
+
+            // When
+            embeddingManager.checkAndHandleModelUpgrade()
+
+            // Then — still deletes because DB has stale embeddings
+            coVerify { memeEmbeddingDao.deleteOutdatedEmbeddings("embeddinggemma:1.3.0") }
+            coVerify { versionManager.updateToCurrentVersion() }
+        }
+
+    @Test
+    fun `checkAndHandleModelUpgrade does nothing when no upgrade and no stale embeddings`() =
         runTest {
             // Given
             coEvery { versionManager.hasModelBeenUpgraded() } returns false
@@ -242,6 +258,23 @@ class EmbeddingManagerTest {
             // Then
             coVerify(exactly = 0) { memeEmbeddingDao.deleteOutdatedEmbeddings(any()) }
             coVerify(exactly = 0) { versionManager.updateToCurrentVersion() }
+        }
+
+    @Test
+    fun `checkAndHandleModelUpgrade updates version after deleting outdated embeddings`() =
+        runTest {
+            // Given
+            coEvery { versionManager.hasModelBeenUpgraded() } returns true
+            coEvery { versionManager.updateToCurrentVersion() } returns Unit
+
+            // When
+            embeddingManager.checkAndHandleModelUpgrade()
+
+            // Then — version is persisted so upgrade is not re-triggered
+            coVerify(ordering = io.mockk.Ordering.ORDERED) {
+                memeEmbeddingDao.deleteOutdatedEmbeddings(any())
+                versionManager.updateToCurrentVersion()
+            }
         }
 
     // region No-Fallback Regression Tests
