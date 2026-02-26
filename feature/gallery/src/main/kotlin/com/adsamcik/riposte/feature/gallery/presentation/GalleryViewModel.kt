@@ -11,8 +11,6 @@ import com.adsamcik.riposte.core.common.share.ShareMemeUseCase
 import com.adsamcik.riposte.core.common.suggestion.GetSuggestionsUseCase
 import com.adsamcik.riposte.core.common.suggestion.SuggestionContext
 import com.adsamcik.riposte.core.common.suggestion.Surface
-import com.adsamcik.riposte.core.database.dao.ImportRequestDao
-import com.adsamcik.riposte.core.database.entity.ImportRequestEntity
 import com.adsamcik.riposte.core.datastore.PreferencesDataStore
 import com.adsamcik.riposte.core.events.EmbeddingsReady
 import com.adsamcik.riposte.core.events.EventBus
@@ -22,6 +20,7 @@ import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.feature.gallery.R
 import com.adsamcik.riposte.feature.gallery.domain.repository.GalleryRepository
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GalleryViewModelUseCases
+import com.adsamcik.riposte.feature.gallery.domain.usecase.RecoverStaleImportsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
@@ -57,7 +56,7 @@ class GalleryViewModel
         @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
         private val preferencesDataStore: PreferencesDataStore,
         private val eventBus: EventBus,
-        private val importRequestDao: ImportRequestDao, // TODO: Extract to use case — Clean Architecture violation (H9)
+        private val recoverStaleImportsUseCase: RecoverStaleImportsUseCase,
         val searchDelegate: SearchDelegate,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(GalleryUiState())
@@ -327,47 +326,15 @@ class GalleryViewModel
         private fun recoverStaleImports() {
             viewModelScope.launch {
                 try {
-                    val staleThreshold = System.currentTimeMillis() - STALE_IMPORT_THRESHOLD_MS
-                    val staleRequests = importRequestDao.getStaleRequests(staleThreshold)
-                    if (staleRequests.isEmpty()) return@launch
-
-                    val wm = androidx.work.WorkManager.getInstance(context)
-                    val workInfos = wm.getWorkInfosForUniqueWork(
-                        com.adsamcik.riposte.core.common.AppConstants.IMPORT_WORK_NAME,
-                    ).get()
-                    val hasActiveWork = workInfos.any { !it.state.isFinished }
-
-                    if (hasActiveWork) {
-                        Timber.d("Import work still active, skipping stale recovery")
-                        return@launch
-                    }
-
-                    for (request in staleRequests) {
-                        Timber.w(
-                            "Marking stale import %s as failed (%d completed, %d failed of %d)",
-                            request.id,
-                            request.completedCount,
-                            request.failedCount,
-                            request.imageCount,
-                        )
-                        importRequestDao.updateRequestProgress(
-                            id = request.id,
-                            status = if (request.completedCount > 0) {
-                                ImportRequestEntity.STATUS_COMPLETED
-                            } else {
-                                ImportRequestEntity.STATUS_FAILED
-                            },
-                            completed = request.completedCount,
-                            failed = request.failedCount,
-                            updatedAt = System.currentTimeMillis(),
-                        )
+                    val recovered = recoverStaleImportsUseCase(STALE_IMPORT_THRESHOLD_MS)
+                    for (entry in recovered) {
                         _uiState.update {
                             it.copy(
                                 notification = GalleryNotification.ImportFailed(
                                     context.getString(
                                         R.string.gallery_import_stalled,
-                                        request.completedCount,
-                                        request.imageCount,
+                                        entry.completedCount,
+                                        entry.imageCount,
                                     ),
                                 ),
                             )

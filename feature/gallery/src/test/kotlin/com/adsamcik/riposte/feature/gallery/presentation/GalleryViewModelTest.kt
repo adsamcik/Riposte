@@ -6,7 +6,6 @@ import app.cash.turbine.turbineScope
 import com.adsamcik.riposte.core.common.share.ShareMemeUseCase
 import com.adsamcik.riposte.core.common.suggestion.GetSuggestionsUseCase
 import com.adsamcik.riposte.core.database.LibraryStatistics
-import com.adsamcik.riposte.core.database.entity.ImportRequestEntity
 import com.adsamcik.riposte.core.datastore.PreferencesDataStore
 import com.adsamcik.riposte.core.model.AppPreferences
 import com.adsamcik.riposte.core.model.DarkMode
@@ -66,7 +65,7 @@ class GalleryViewModelTest {
     private lateinit var galleryRepository: com.adsamcik.riposte.feature.gallery.domain.repository.GalleryRepository
     private lateinit var preferencesDataStore: PreferencesDataStore
     private lateinit var searchDelegate: SearchDelegate
-    private lateinit var importRequestDao: com.adsamcik.riposte.core.database.dao.ImportRequestDao
+    private lateinit var recoverStaleImportsUseCase: com.adsamcik.riposte.feature.gallery.domain.usecase.RecoverStaleImportsUseCase
     private lateinit var context: Context
 
     private lateinit var viewModel: GalleryViewModel
@@ -111,8 +110,8 @@ class GalleryViewModelTest {
         searchDelegate = mockk(relaxed = true)
         every { searchDelegate.state } returns MutableStateFlow(SearchSliceState())
         every { searchDelegate.effects } returns kotlinx.coroutines.flow.emptyFlow()
-        importRequestDao = mockk(relaxed = true)
-        coEvery { importRequestDao.getStaleRequests(any()) } returns emptyList()
+        recoverStaleImportsUseCase = mockk(relaxed = true)
+        coEvery { recoverStaleImportsUseCase(any()) } returns emptyList()
         preferencesDataStore = mockk()
 
         every { getMemesUseCase() } returns flowOf(testMemes)
@@ -153,7 +152,7 @@ class GalleryViewModelTest {
             defaultDispatcher = mainDispatcherRule.testDispatcher,
             preferencesDataStore = preferencesDataStore,
             eventBus = com.adsamcik.riposte.core.events.EventBus(),
-            importRequestDao = importRequestDao,
+            recoverStaleImportsUseCase = recoverStaleImportsUseCase,
             searchDelegate = searchDelegate,
         )
     }
@@ -1281,123 +1280,44 @@ class GalleryViewModelTest {
 
     // region Stale Import Recovery Tests
 
-    @org.junit.Ignore(
-        "Requires WorkManager test infrastructure (work-testing artifact or Robolectric). " +
-            "WorkManager.getInstance(context) cannot be mocked with mockkStatic in pure JUnit " +
-            "because it delegates to WorkManagerImpl.getInstance() internally.",
-    )
     @Test
-    fun `recoverStaleImports marks requests with completed count as COMPLETED`() =
+    fun `recoverStaleImports shows notification for each recovered import`() =
         runTest {
-            val staleRequest = ImportRequestEntity(
-                id = "req-1",
-                status = ImportRequestEntity.STATUS_IN_PROGRESS,
-                imageCount = 10,
-                completedCount = 7,
-                failedCount = 1,
-                stagingDir = "/tmp/staging",
-                createdAt = 0L,
-                updatedAt = 0L,
+            coEvery { recoverStaleImportsUseCase(any()) } returns listOf(
+                com.adsamcik.riposte.feature.gallery.domain.usecase.RecoveredImport(
+                    completedCount = 7,
+                    imageCount = 10,
+                ),
             )
-            coEvery { importRequestDao.getStaleRequests(any()) } returns listOf(staleRequest)
 
             viewModel = createViewModel()
             advanceUntilIdle()
 
-            coVerify {
-                importRequestDao.updateRequestProgress(
-                    id = "req-1",
-                    status = ImportRequestEntity.STATUS_COMPLETED,
-                    completed = 7,
-                    failed = 1,
-                    updatedAt = any(),
-                )
-            }
             val notification = viewModel.uiState.value.notification
             assertThat(notification).isInstanceOf(GalleryNotification.ImportFailed::class.java)
         }
 
-    @org.junit.Ignore(
-        "Requires WorkManager test infrastructure (work-testing artifact or Robolectric). " +
-            "WorkManager.getInstance(context) cannot be mocked with mockkStatic in pure JUnit.",
-    )
     @Test
-    fun `recoverStaleImports marks requests with zero completed as FAILED`() =
+    fun `recoverStaleImports with empty list shows no notification`() =
         runTest {
-            val staleRequest = ImportRequestEntity(
-                id = "req-2",
-                status = ImportRequestEntity.STATUS_IN_PROGRESS,
-                imageCount = 5,
-                completedCount = 0,
-                failedCount = 0,
-                stagingDir = "/tmp/staging",
-                createdAt = 0L,
-                updatedAt = 0L,
-            )
-            coEvery { importRequestDao.getStaleRequests(any()) } returns listOf(staleRequest)
+            coEvery { recoverStaleImportsUseCase(any()) } returns emptyList()
 
             viewModel = createViewModel()
             advanceUntilIdle()
 
-            coVerify {
-                importRequestDao.updateRequestProgress(
-                    id = "req-2",
-                    status = ImportRequestEntity.STATUS_FAILED,
-                    completed = 0,
-                    failed = 0,
-                    updatedAt = any(),
-                )
-            }
-        }
-
-    @Test
-    fun `recoverStaleImports skips recovery when active import work exists`() =
-        runTest {
-            val staleRequest = ImportRequestEntity(
-                id = "req-3",
-                status = ImportRequestEntity.STATUS_IN_PROGRESS,
-                imageCount = 10,
-                completedCount = 3,
-                failedCount = 0,
-                stagingDir = "/tmp/staging",
-                createdAt = 0L,
-                updatedAt = 0L,
-            )
-            coEvery { importRequestDao.getStaleRequests(any()) } returns listOf(staleRequest)
-            // WorkManager.getInstance throws IllegalStateException in unit tests,
-            // which the ViewModel catches — this means "WorkManager not available"
-            // is treated the same as "active work exists" since recovery is skipped.
-            // The try-catch in recoverStaleImports catches the exception gracefully.
-
-            viewModel = createViewModel()
-            advanceUntilIdle()
-
-            // Since WorkManager is not available in unit tests (throws IllegalStateException),
-            // the exception is caught and updateRequestProgress should still be called
-            // because the catch block logs and swallows the error.
-            // However, looking at the code flow: getStaleRequests succeeds, then
-            // WorkManager.getInstance throws, which is caught by the outer try-catch.
-            // So updateRequestProgress is NOT called.
-            coVerify(exactly = 0) {
-                importRequestDao.updateRequestProgress(
-                    id = "req-3",
-                    status = any(),
-                    completed = any(),
-                    failed = any(),
-                    updatedAt = any(),
-                )
-            }
+            val state = viewModel.uiState.value
+            assertThat(state.notification).isNull()
         }
 
     @Test
     fun `recoverStaleImports handles exception gracefully`() =
         runTest {
-            coEvery { importRequestDao.getStaleRequests(any()) } throws RuntimeException("DB error")
+            coEvery { recoverStaleImportsUseCase(any()) } throws RuntimeException("DB error")
 
             viewModel = createViewModel()
             advanceUntilIdle()
 
-            // ViewModel should not crash — exception is caught and logged
+            // ViewModel should not crash - exception is caught and logged
             val state = viewModel.uiState.value
             assertThat(state.notification).isNull()
         }
