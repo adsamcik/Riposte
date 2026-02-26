@@ -708,6 +708,37 @@ class DefaultSemanticSearchEngineTest {
         verify { mockEmbeddingGenerator.close() }
     }
 
+    // ==================== Cache Invalidation Tests ====================
+
+    @Test
+    fun `query cache is invalidated when model version changes`() =
+        runTest {
+            val queryEmbedding = floatArrayOf(1f, 0f, 0f)
+            val candidates =
+                listOf(createMemeWithEmbedding(1L, floatArrayOf(1f, 0f, 0f)))
+
+            // Phase 1: First query — generates and caches embedding
+            every { mockEmbeddingGenerator.modelVersion } returns "v1.0"
+            coEvery { mockEmbeddingGenerator.generateFromQuery("cats") } returns queryEmbedding
+
+            val results1 = searchEngine.findSimilar("cats", candidates)
+            assertThat(results1).hasSize(1)
+            coVerify(exactly = 1) { mockEmbeddingGenerator.generateFromQuery("cats") }
+
+            // Phase 2: Same query, same model version — uses cache, no re-generation
+            val results2 = searchEngine.findSimilar("cats", candidates)
+            assertThat(results2).hasSize(1)
+            coVerify(exactly = 1) { mockEmbeddingGenerator.generateFromQuery("cats") }
+
+            // Phase 3: Model version changes — cache should be invalidated
+            every { mockEmbeddingGenerator.modelVersion } returns "v2.0"
+            coEvery { mockEmbeddingGenerator.generateFromQuery("cats") } returns queryEmbedding
+
+            val results3 = searchEngine.findSimilar("cats", candidates)
+            assertThat(results3).hasSize(1)
+            coVerify(exactly = 2) { mockEmbeddingGenerator.generateFromQuery("cats") }
+        }
+
     // ==================== Helper Functions ====================
 
     private fun createTestMeme(id: Long): Meme {

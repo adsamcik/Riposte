@@ -518,6 +518,41 @@ class EmbeddingManagerTest {
         }
 
     @Test
+    fun `warmUpAndResumeIndexing called twice does not duplicate observers`() =
+        runTest {
+            // Given
+            coEvery { embeddingGenerator.initialize() } returns Unit
+            coEvery { versionManager.clearInitializationFailure() } returns Unit
+            coEvery { versionManager.hasModelBeenUpgraded() } returns false
+            coEvery { memeEmbeddingDao.countValidEmbeddings() } returns 10
+            coEvery { memeEmbeddingDao.countMemesWithoutEmbeddings() } returns 5
+            coEvery { memeEmbeddingDao.countEmbeddingsNeedingRegeneration() } returns 0
+            coEvery { memeEmbeddingDao.getEmbeddingCountByModelVersion() } returns emptyList()
+
+            val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler) + SupervisorJob())
+            try {
+                // When — call warmUpAndResumeIndexing twice
+                embeddingManager.warmUpAndResumeIndexing(scope)
+                advanceUntilIdle()
+                embeddingManager.warmUpAndResumeIndexing(scope)
+                advanceUntilIdle()
+
+                // Both startup invocations check stats = 2 calls so far
+                // Simulate a single foreground return
+                isInBackgroundFlow.value = true
+                advanceUntilIdle()
+                isInBackgroundFlow.value = false
+                advanceUntilIdle()
+
+                // Then — 2 startup checks + 1 foreground check = 3 total
+                // If observers were duplicated, we'd see 4 (2 startup + 2 foreground)
+                coVerify(exactly = 3) { memeEmbeddingDao.countMemesWithoutEmbeddings() }
+            } finally {
+                scope.cancel()
+            }
+        }
+
+    @Test
     fun `warmUpAndResumeIndexing handles statistics exception on foreground return gracefully`() =
         runTest {
             // Given
