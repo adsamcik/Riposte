@@ -72,6 +72,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -319,7 +320,10 @@ private fun MemeDetailDialogs(
             },
             dismissButton = {
                 TextButton(onClick = { onIntent(MemeDetailIntent.DismissDeleteDialog) }) {
-                    Text(stringResource(R.string.gallery_button_cancel))
+                    Text(
+                        stringResource(R.string.gallery_button_cancel),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             },
         )
@@ -406,6 +410,7 @@ private fun BoxScope.MemeDetailBackButton(
                 .align(Alignment.TopStart)
                 .windowInsetsPadding(WindowInsets.statusBars)
                 .padding(8.dp)
+                .shadow(4.dp, CircleShape)
                 .background(
                     color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
                     shape = CircleShape,
@@ -764,7 +769,10 @@ private fun MemeEditSaveButtons(
         horizontalArrangement = Arrangement.End,
     ) {
         TextButton(onClick = { onIntent(MemeDetailIntent.DiscardChanges) }) {
-            Text(stringResource(R.string.gallery_button_discard))
+            Text(
+                stringResource(R.string.gallery_button_discard),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
         Spacer(Modifier.width(8.dp))
         FilledTonalButton(
@@ -822,6 +830,7 @@ private fun MemeViewModeContent(
                 EmojiChip(
                     emojiTag = tag,
                     onClick = { onIntent(MemeDetailIntent.SearchByEmoji(tag.emoji)) },
+                    isTagMode = true,
                 )
             }
         }

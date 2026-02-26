@@ -20,6 +20,7 @@
     <string name="ui_emoji_grid_close">Close</string>
     <string name="ui_emoji_chip_filter_active">%1$s filter, active</string>
     <string name="ui_emoji_chip_filter_inactive">%1$s filter, inactive</string>
+    <string name="ui_emoji_chip_tag">%1$s tag</string>
     <string name="ui_more_chip_description">%1$d more emoji filters available</string>
     <string name="ui_toggle_state_on">On</string>
     <string name="ui_toggle_state_off">Off</string>

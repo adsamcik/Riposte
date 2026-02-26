@@ -1,5 +1,6 @@
 package com.adsamcik.riposte.feature.share.data
 
+import android.content.ClipData
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -133,6 +134,7 @@ class ShareRepositoryImpl
                     putExtra(Intent.EXTRA_STREAM, uri)
                     putExtra(Intent.EXTRA_TITLE, chooserTitle)
                     putExtra(Intent.EXTRA_SUBJECT, chooserTitle)
+                    clipData = ClipData.newUri(context.contentResolver, chooserTitle, uri)
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
 

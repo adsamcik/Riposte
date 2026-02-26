@@ -407,7 +407,11 @@ private fun GalleryScreenContent(
                                 )
                             }
                             Text(
-                                text = stringResource(R.string.gallery_cd_share),
+                                text = if (uiState.selectionCount > 0) {
+                                    "${stringResource(R.string.gallery_cd_share)} (${uiState.selectionCount})"
+                                } else {
+                                    stringResource(R.string.gallery_cd_share)
+                                },
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurface,
                             )
@@ -423,7 +427,11 @@ private fun GalleryScreenContent(
                                 )
                             }
                             Text(
-                                text = stringResource(R.string.gallery_cd_delete),
+                                text = if (uiState.selectionCount > 0) {
+                                    "${stringResource(R.string.gallery_cd_delete)} (${uiState.selectionCount})"
+                                } else {
+                                    stringResource(R.string.gallery_cd_delete)
+                                },
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.error,
                             )

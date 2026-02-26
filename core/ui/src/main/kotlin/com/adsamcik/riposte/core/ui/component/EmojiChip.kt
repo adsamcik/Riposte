@@ -50,6 +50,7 @@ import com.adsamcik.riposte.core.ui.theme.RiposteTheme
  * @param isSelected Whether the chip is in selected state.
  * @param showName Whether to show the emoji name alongside the emoji.
  * @param backgroundColor Optional custom background color. When null, uses default surface color.
+ * @param isTagMode When true, uses "tag" accessibility label instead of "filter, active/inactive".
  */
 @Composable
 fun EmojiChip(
@@ -59,6 +60,7 @@ fun EmojiChip(
     isSelected: Boolean = false,
     showName: Boolean = false,
     backgroundColor: Color? = null,
+    isTagMode: Boolean = false,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -100,7 +102,9 @@ fun EmojiChip(
     val bgColor = backgroundColor ?: lerp(defaultBg, selectedTint, selectionProgress * 0.3f)
 
     val chipDescription =
-        if (isSelected) {
+        if (isTagMode) {
+            stringResource(R.string.ui_emoji_chip_tag, emojiTag.emoji)
+        } else if (isSelected) {
             stringResource(R.string.ui_emoji_chip_filter_active, emojiTag.emoji)
         } else {
             stringResource(R.string.ui_emoji_chip_filter_inactive, emojiTag.emoji)
