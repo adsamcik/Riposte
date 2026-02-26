@@ -49,7 +49,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -373,7 +372,7 @@ private fun MemeDetailContent(
                 modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars),
             )
         },
-        containerColor = Color.Black,
+        containerColor = MaterialTheme.colorScheme.scrim,
         sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
         sheetShape = MaterialTheme.shapes.extraLarge,
     ) { paddingValues ->
@@ -539,19 +538,27 @@ private fun MemeActionButtonsRow(
             onToggleEdit = { onIntent(MemeDetailIntent.ToggleEditMode) },
         )
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            FilledIconButton(
+            IconButton(
                 onClick = { onIntent(MemeDetailIntent.Share) },
-                modifier = Modifier.size(56.dp),
                 enabled = !uiState.isSharing,
+                modifier = Modifier
+                    .background(
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        shape = CircleShape,
+                    ),
             ) {
                 if (uiState.isSharing) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
-                        color = MaterialTheme.colorScheme.onPrimary,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
                         strokeWidth = 2.dp,
                     )
                 } else {
-                    Icon(Icons.Default.Share, contentDescription = stringResource(R.string.gallery_cd_share))
+                    Icon(
+                        Icons.Default.Share,
+                        contentDescription = stringResource(R.string.gallery_cd_share),
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    )
                 }
             }
             Text(
@@ -1017,7 +1024,7 @@ private fun ZoomableImage(
             model = filePath,
             contentDescription = contentDescription,
             contentScale = ContentScale.Fit,
-            alignment = Alignment.TopCenter,
+            alignment = Alignment.Center,
             onState = { imageState = it },
             modifier = Modifier.fillMaxSize(),
         )

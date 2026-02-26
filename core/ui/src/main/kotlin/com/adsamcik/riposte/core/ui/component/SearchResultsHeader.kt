@@ -36,7 +36,6 @@ fun SearchResultsHeader(
     query: String,
     resultCount: Int,
     durationMs: Long = 0L,
-    isTextOnly: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -46,16 +45,16 @@ fun SearchResultsHeader(
                 .padding(horizontal = Spacing.lg, vertical = Spacing.sm),
     ) {
         val countText = pluralStringResource(R.plurals.ui_search_results_count, resultCount, resultCount)
-        val headerText = if (durationMs > 0) {
+        val withDuration = if (durationMs > 0) {
             val seconds = durationMs / MILLIS_PER_SECOND
             stringResource(R.string.ui_search_results_duration, countText, String.format(Locale.US, "%.1f", seconds))
         } else {
             countText
         }
-        val displayText = if (isTextOnly) {
-            stringResource(R.string.ui_search_text_only_suffix, headerText)
+        val displayText = if (query.isNotBlank()) {
+            stringResource(R.string.ui_search_results_for_query, withDuration, query)
         } else {
-            headerText
+            withDuration
         }
         Text(
             text = displayText,
@@ -99,15 +98,14 @@ private fun SearchResultsHeaderZeroResultsPreview() {
     }
 }
 
-@Preview(showBackground = true, name = "Text Only")
+@Preview(showBackground = true, name = "With Query")
 @Composable
-private fun SearchResultsHeaderTextOnlyPreview() {
+private fun SearchResultsHeaderWithQueryPreview() {
     RiposteTheme {
         SearchResultsHeader(
             query = "funny cat",
             resultCount = 12,
             durationMs = 150L,
-            isTextOnly = true,
         )
     }
 }

@@ -32,5 +32,5 @@
         <item quantity="other">%1$d Ergebnisse</item>
     </plurals>
     <string name="ui_search_results_duration">%1$s in %2$ss</string>
-    <string name="ui_search_text_only_suffix">%1$s (nur Text)</string>
+    <string name="ui_search_results_for_query">%1$s für \"%2$s\"</string>
 </resources>

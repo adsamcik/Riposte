@@ -687,7 +687,6 @@ private fun GalleryScreenContent(
                                             query = uiState.searchState.query,
                                             resultCount = uiState.searchState.totalResultCount,
                                             durationMs = uiState.searchState.searchDurationMs,
-                                            isTextOnly = uiState.searchState.isTextOnly,
                                         )
                                     }
                                     // Result items - reuse MemeGridItem
@@ -964,7 +963,13 @@ private fun GalleryEmojiFilterRail(
             EmojiFilterRail(
                 emojis = uniqueEmojis,
                 activeFilter = activeEmojiFilter,
-                onEmojiSelected = { emoji -> onIntent(GalleryIntent.UpdateSearchQuery(emoji)) },
+                onEmojiSelected = { emoji ->
+                    if (emoji == activeEmojiFilter) {
+                        onIntent(GalleryIntent.UpdateSearchQuery(""))
+                    } else {
+                        onIntent(GalleryIntent.UpdateSearchQuery(emoji))
+                    }
+                },
                 leadingContent = if (showFavoritesChip) {
                     {
                         item(key = "favorites_chip") {
