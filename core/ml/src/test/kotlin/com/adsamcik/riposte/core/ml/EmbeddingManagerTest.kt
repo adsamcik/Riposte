@@ -55,7 +55,7 @@ class EmbeddingManagerTest {
         appLifecycleTracker = mockk()
         isInBackgroundFlow = MutableStateFlow(false)
 
-        every { versionManager.currentModelVersion } returns "mediapipe_use:1.0.0"
+        every { versionManager.currentModelVersion } returns "embeddinggemma:1.3.0"
         every { embeddingGenerator.initializationError } returns null
         every { appLifecycleTracker.isInBackground } returns isInBackgroundFlow
 
@@ -75,7 +75,7 @@ class EmbeddingManagerTest {
             // Given
             val memeId = 1L
             val searchText = "funny cat meme"
-            val embedding = FloatArray(512) { it.toFloat() / 512f }
+            val embedding = FloatArray(768) { it.toFloat() / 768f }
 
             coEvery { embeddingGenerator.generateFromText(searchText) } returns embedding
             coEvery { memeEmbeddingDao.insertEmbedding(any()) } returns 1L
@@ -91,8 +91,8 @@ class EmbeddingManagerTest {
 
             val savedEntity = entitySlot.captured
             assertThat(savedEntity.memeId).isEqualTo(memeId)
-            assertThat(savedEntity.dimension).isEqualTo(512)
-            assertThat(savedEntity.modelVersion).isEqualTo("mediapipe_use:1.0.0")
+            assertThat(savedEntity.dimension).isEqualTo(768)
+            assertThat(savedEntity.modelVersion).isEqualTo("embeddinggemma:1.3.0")
             assertThat(savedEntity.needsRegeneration).isFalse()
         }
 
@@ -102,7 +102,7 @@ class EmbeddingManagerTest {
             // Given
             val memeId = 1L
             val searchText = "blank meme"
-            val zeroEmbedding = FloatArray(512) { 0f }
+            val zeroEmbedding = FloatArray(768) { 0f }
 
             coEvery { embeddingGenerator.generateFromText(searchText) } returns zeroEmbedding
 
@@ -198,7 +198,7 @@ class EmbeddingManagerTest {
             coEvery { memeEmbeddingDao.getEmbeddingCountByModelVersion() } returns
                 listOf(
                     com.adsamcik.riposte.core.database.dao.EmbeddingVersionCount(
-                        "mediapipe_use:1.0.0",
+                        "embeddinggemma:1.3.0",
                         100,
                     ),
                 )
@@ -212,7 +212,7 @@ class EmbeddingManagerTest {
             assertThat(stats.regenerationNeededCount).isEqualTo(5)
             assertThat(stats.totalPendingWork).isEqualTo(25)
             assertThat(stats.isFullyIndexed).isFalse()
-            assertThat(stats.embeddingsByVersion).containsEntry("mediapipe_use:1.0.0", 100)
+            assertThat(stats.embeddingsByVersion).containsEntry("embeddinggemma:1.3.0", 100)
         }
 
     @Test
@@ -226,7 +226,7 @@ class EmbeddingManagerTest {
             embeddingManager.checkAndHandleModelUpgrade()
 
             // Then
-            coVerify { memeEmbeddingDao.markOutdatedForRegeneration("mediapipe_use:1.0.0") }
+            coVerify { memeEmbeddingDao.markOutdatedForRegeneration("embeddinggemma:1.3.0") }
             coVerify { versionManager.updateToCurrentVersion() }
         }
 

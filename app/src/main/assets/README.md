@@ -2,27 +2,15 @@
 
 This directory is for storing application assets like ML models.
 
-## Required Files
+## ML Models
 
-### universal_sentence_encoder.tflite
-
-**Purpose**: Text embedding model for semantic search
-**Size**: ~25-40 MB
-**Required**: Yes (for semantic search functionality)
-
-### How to Obtain
-
-1. Download from TensorFlow Hub:
-   - <https://tfhub.dev/google/lite-model/universal-sentence-encoder-qa-ondevice/1>
-
-2. Or use the MediaPipe sample app's model
-
-3. Place the file in this directory as `universal_sentence_encoder.tflite`
+Embedding models are delivered via AI Packs (`aipacks/generic_embedding` and `aipacks/soc_optimized`)
+and extracted to the app's internal storage at runtime. See `EmbeddingGemmaGenerator` for details.
 
 ### Fallback Behavior
 
-If the model is not present:
+If the embedding model is not available:
 
-- Semantic search will return zero embeddings
+- Semantic search will be unavailable
 - FTS4 (keyword) search will still work
-- A warning will be logged: "Model file not found"
+- An error will be surfaced in embedding statistics

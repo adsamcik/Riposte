@@ -39,9 +39,6 @@ dependencies {
     // ML Kit
     implementation(libs.bundles.mlkit)
 
-    // MediaPipe (for semantic text embeddings - legacy USE model)
-    implementation(libs.mediapipe.tasks.text)
-
     // LiteRT (for semantic embeddings - on-device AI runtime)
     implementation(libs.litert.runtime)
 

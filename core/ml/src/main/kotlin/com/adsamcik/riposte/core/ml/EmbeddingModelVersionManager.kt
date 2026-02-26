@@ -24,8 +24,7 @@ import javax.inject.Singleton
  * due to model updates.
  *
  * Version format: "model_name:major.minor.patch"
- * Examples:
- * - "litert_use:2.0.0" - Updated USE model
+ * Example: "embeddinggemma:1.3.0"
  */
 @Singleton
 @Suppress("TooManyFunctions")

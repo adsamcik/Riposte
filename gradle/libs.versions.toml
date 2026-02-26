@@ -31,9 +31,6 @@ coil = "3.3.0"
 mlkit-text-recognition = "16.0.1"
 mlkit-image-labeling = "17.0.9"
 
-# MediaPipe (On-device AI Tasks)
-mediapipe-tasks-text = "0.10.32"
-
 # LiteRT (Replaces TensorFlow Lite)
 litert = "2.1.1"
 
@@ -149,9 +146,6 @@ coil-network = { group = "io.coil-kt.coil3", name = "coil-network-okhttp", versi
 # ML Kit (On-device AI)
 mlkit-text-recognition = { group = "com.google.mlkit", name = "text-recognition", version.ref = "mlkit-text-recognition" }
 mlkit-image-labeling = { group = "com.google.mlkit", name = "image-labeling", version.ref = "mlkit-image-labeling" }
-
-# MediaPipe (On-device AI Tasks)
-mediapipe-tasks-text = { group = "com.google.mediapipe", name = "tasks-text", version.ref = "mediapipe-tasks-text" }
 
 # LiteRT (On-device AI Runtime - Replaces TensorFlow Lite)
 litert-runtime = { group = "com.google.ai.edge.litert", name = "litert", version.ref = "litert" }
