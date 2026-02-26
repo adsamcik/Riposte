@@ -169,7 +169,7 @@ class MemeDetailViewModelTest {
             val state = viewModel.uiState.value
             assertThat(state.editedTitle).isEqualTo(testMeme.title)
             assertThat(state.editedDescription).isEqualTo(testMeme.description)
-            assertThat(state.editedEmojis).containsExactly("😀")
+            assertThat(state.editedEmojis).containsExactly("😂")
         }
 
     @Test
@@ -289,7 +289,7 @@ class MemeDetailViewModelTest {
             advanceUntilIdle()
 
             val initialSize = viewModel.uiState.value.editedEmojis.size
-            viewModel.onIntent(MemeDetailIntent.AddEmoji("😀")) // Already exists
+            viewModel.onIntent(MemeDetailIntent.AddEmoji("😂")) // Already exists
             advanceUntilIdle()
 
             assertThat(viewModel.uiState.value.editedEmojis.size).isEqualTo(initialSize)
@@ -301,10 +301,10 @@ class MemeDetailViewModelTest {
             viewModel = createViewModel()
             advanceUntilIdle()
 
-            viewModel.onIntent(MemeDetailIntent.RemoveEmoji("😀"))
+            viewModel.onIntent(MemeDetailIntent.RemoveEmoji("😂"))
             advanceUntilIdle()
 
-            assertThat(viewModel.uiState.value.editedEmojis).doesNotContain("😀")
+            assertThat(viewModel.uiState.value.editedEmojis).doesNotContain("😂")
         }
 
     @Test
@@ -939,7 +939,7 @@ class MemeDetailViewModelTest {
             val state = viewModel.uiState.value
             assertThat(state.editedTitle).isEqualTo(testMeme.title)
             assertThat(state.editedDescription).isEqualTo(testMeme.description)
-            assertThat(state.editedEmojis).containsExactly("😀")
+            assertThat(state.editedEmojis).containsExactly("😂")
             assertThat(state.isEditMode).isFalse()
         }
 

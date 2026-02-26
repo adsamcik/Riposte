@@ -31,6 +31,8 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,8 +46,13 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 @OptIn(ExperimentalCoroutinesApi::class)
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [33], manifest = Config.NONE)
 class GalleryViewModelShareAndMiscTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule(StandardTestDispatcher())
@@ -76,6 +83,8 @@ class GalleryViewModelShareAndMiscTest {
             TestDataFactory.createMeme(id = 1, fileName = "meme1.jpg", filePath = "/storage/memes/meme1.jpg"),
             TestDataFactory.createMeme(id = 2, fileName = "meme2.jpg", filePath = "/storage/memes/meme2.jpg"),
             TestDataFactory.createMeme(id = 3, fileName = "meme3.jpg", filePath = "/storage/memes/meme3.jpg", isFavorite = true),
+            TestDataFactory.createMeme(id = 4, fileName = "meme4.jpg", filePath = "/storage/memes/meme4.jpg"),
+            TestDataFactory.createMeme(id = 5, fileName = "meme5.jpg", filePath = "/storage/memes/meme5.jpg"),
         )
 
     private val defaultPreferences =
@@ -93,6 +102,11 @@ class GalleryViewModelShareAndMiscTest {
 
     @Before
     fun setup() {
+        mockkStatic(androidx.core.content.FileProvider::class)
+        every {
+            androidx.core.content.FileProvider.getUriForFile(any(), any(), any())
+        } returns mockk()
+
         context = mockk(relaxed = true)
         every { context.getString(any(), any()) } returns "1 meme deleted"
         every { context.getString(any()) } returns "Error"
@@ -126,12 +140,13 @@ class GalleryViewModelShareAndMiscTest {
         coEvery { getAllMemeIdsUseCase() } returns testMemes.map { it.id }
         every { getAllEmojisWithCountsUseCase() } returns flowOf(emptyList())
         every { getAllEmojisWithTagCountsUseCase() } returns flowOf(emptyList())
-        every { getLibraryStatsUseCase() } returns flowOf(LibraryStatistics(totalMemes = 3, favoriteMemes = 1))
+        every { getLibraryStatsUseCase() } returns flowOf(LibraryStatistics(totalMemes = 5, favoriteMemes = 1))
     }
 
     @After
     fun tearDown() {
         io.mockk.clearAllMocks()
+        unmockkStatic(androidx.core.content.FileProvider::class)
     }
 
     private fun createViewModel(): GalleryViewModel {
