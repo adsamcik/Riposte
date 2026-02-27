@@ -96,6 +96,6 @@ class DefaultEmbeddingWorkRepository
 
         companion object {
             /** Number of embedding types the generator produces per meme. */
-            private const val EXPECTED_EMBEDDING_TYPES = 4
+            private const val EXPECTED_EMBEDDING_TYPES = 5
         }
     }
