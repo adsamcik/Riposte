@@ -739,6 +739,98 @@ class DefaultSemanticSearchEngineTest {
             coVerify(exactly = 2) { mockEmbeddingGenerator.generateFromQuery("cats") }
         }
 
+    // ==================== Persistent Cache Integration Tests ====================
+
+    @Test
+    fun `findSimilar uses persistent cache on in-memory miss`() =
+        runTest {
+            val queryEmbedding = floatArrayOf(1f, 0f, 0f)
+            val candidates = listOf(createMemeWithEmbedding(1L, floatArrayOf(1f, 0f, 0f)))
+
+            every { mockEmbeddingGenerator.modelVersion } returns "v1.0"
+            coEvery { mockPersistentCache.get("cached query") } returns queryEmbedding
+
+            val results = searchEngine.findSimilar(
+                query = "cached query",
+                candidates = candidates,
+                threshold = 0f,
+            )
+
+            assertThat(results).hasSize(1)
+            // Should NOT call the generator — persistent cache provided the embedding
+            coVerify(exactly = 0) { mockEmbeddingGenerator.generateFromQuery(any()) }
+            // Should NOT write back to persistent cache (already there)
+            coVerify(exactly = 0) { mockPersistentCache.put(any(), any()) }
+        }
+
+    @Test
+    fun `findSimilar persists embedding on generator hit`() =
+        runTest {
+            val queryEmbedding = floatArrayOf(1f, 0f, 0f)
+            val candidates = listOf(createMemeWithEmbedding(1L, floatArrayOf(1f, 0f, 0f)))
+
+            every { mockEmbeddingGenerator.modelVersion } returns "v1.0"
+            coEvery { mockPersistentCache.get("new query") } returns null
+            coEvery { mockEmbeddingGenerator.generateFromQuery("new query") } returns queryEmbedding
+
+            searchEngine.findSimilar(
+                query = "new query",
+                candidates = candidates,
+                threshold = 0f,
+            )
+
+            // Should persist the newly generated embedding
+            coVerify(exactly = 1) { mockPersistentCache.put("new query", queryEmbedding) }
+        }
+
+    @Test
+    fun `findSimilarMultiVector uses persistent cache on in-memory miss`() =
+        runTest {
+            val queryEmbedding = floatArrayOf(1f, 0f, 0f)
+            val candidates = listOf(
+                MemeWithEmbeddings(
+                    meme = createTestMeme(1L),
+                    embeddings = mapOf("content" to floatArrayOf(1f, 0f, 0f)),
+                ),
+            )
+
+            every { mockEmbeddingGenerator.modelVersion } returns "v1.0"
+            coEvery { mockPersistentCache.get("cached query") } returns queryEmbedding
+
+            val results = searchEngine.findSimilarMultiVector(
+                query = "cached query",
+                candidates = candidates,
+                threshold = 0f,
+            )
+
+            assertThat(results).hasSize(1)
+            coVerify(exactly = 0) { mockEmbeddingGenerator.generateFromQuery(any()) }
+        }
+
+    @Test
+    fun `findSimilarMultiVector persists embedding on generator hit`() =
+        runTest {
+            val queryEmbedding = floatArrayOf(1f, 0f, 0f)
+            val candidates = listOf(
+                MemeWithEmbeddings(
+                    meme = createTestMeme(1L),
+                    embeddings = mapOf("content" to floatArrayOf(1f, 0f, 0f)),
+                ),
+            )
+
+            every { mockEmbeddingGenerator.modelVersion } returns "v1.0"
+            coEvery { mockPersistentCache.get("new query") } returns null
+            coEvery { mockEmbeddingGenerator.generateFromQuery("new query") } returns queryEmbedding
+
+            searchEngine.findSimilarMultiVector(
+                query = "new query",
+                candidates = candidates,
+                threshold = 0f,
+            )
+
+            coVerify(exactly = 1) { mockPersistentCache.put("new query", queryEmbedding) }
+        }
+
     // ==================== Helper Functions ====================
 
     private fun createTestMeme(id: Long): Meme {
