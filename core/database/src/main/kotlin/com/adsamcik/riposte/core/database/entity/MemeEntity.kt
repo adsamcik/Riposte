@@ -123,6 +123,12 @@ data class MemeEntity(
      * 64-bit hash based on visual structure — similar images produce similar hashes.
      */
     val perceptualHash: Long? = null,
+    /**
+     * JSON object containing structured emotion metadata for mood-based search.
+     * Schema: {"primary": "humor", "secondary": [...], "sentiment": "positive",
+     *          "intensity": "high", "memeUsage": [...]}
+     */
+    val emotionsJson: String? = null,
 ) {
     @Suppress("CyclomaticComplexMethod")
     override fun equals(other: Any?): Boolean {
@@ -160,6 +166,7 @@ data class MemeEntity(
         if (fileHash != other.fileHash) return false
         if (basedOn != other.basedOn) return false
         if (perceptualHash != other.perceptualHash) return false
+        if (emotionsJson != other.emotionsJson) return false
 
         return true
     }
@@ -189,6 +196,7 @@ data class MemeEntity(
         result = 31 * result + (fileHash?.hashCode() ?: 0)
         result = 31 * result + (basedOn?.hashCode() ?: 0)
         result = 31 * result + (perceptualHash?.hashCode() ?: 0)
+        result = 31 * result + (emotionsJson?.hashCode() ?: 0)
         return result
     }
 }

@@ -134,6 +134,7 @@ public static class SidecarService
             Localizations = result.Localizations,
             ContentHash = contentHash,
             BasedOn = result.BasedOn,
+            Emotions = result.Emotions,
         };
     }
 

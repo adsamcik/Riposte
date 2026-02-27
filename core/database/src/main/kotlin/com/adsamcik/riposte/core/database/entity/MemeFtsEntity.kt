@@ -39,4 +39,8 @@ data class MemeFtsEntity(
      * Cultural source for search (e.g., "Drake Hotline Bling", "The Witcher 3").
      */
     val basedOn: String?,
+    /**
+     * Emotion metadata for mood-based text search (e.g., "humor", "funny", "wholesome").
+     */
+    val emotionsJson: String?,
 )

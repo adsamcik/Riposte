@@ -355,6 +355,8 @@ val MIGRATION_7_8 =
                 "CREATE INDEX IF NOT EXISTS `index_query_embedding_cache_accessedAt` " +
                     "ON `query_embedding_cache` (`accessedAt`)",
             )
+            // Add emotions column for mood-based semantic search (schema v1.4)
+            db.execSQL("ALTER TABLE memes ADD COLUMN `emotionsJson` TEXT DEFAULT NULL")
         }
     }
 

@@ -247,6 +247,21 @@ class EmbeddingGenerationWorker
                     )
                     generatedAny = true
                 }
+
+                val emotionText = buildEmotionText(memeData)
+                if (emotionText.isNotBlank()) {
+                    val embedding = embeddingGenerator.generateFromText(emotionText)
+                    val sourceHash = generateHash(emotionText)
+                    embeddingRepository.saveEmbedding(
+                        memeId = memeData.id,
+                        embedding = encodeEmbedding(embedding),
+                        dimension = embedding.size,
+                        modelVersion = CURRENT_MODEL_VERSION,
+                        sourceTextHash = sourceHash,
+                        embeddingType = EmbeddingType.EMOTION.key,
+                    )
+                    generatedAny = true
+                }
                 generatedAny
             } catch (
                 @Suppress("TooGenericExceptionCaught")
@@ -382,6 +397,36 @@ class EmbeddingGenerationWorker
             return parts.joinToString(" | ")
         }
 
+        /**
+         * Build text for emotion embedding slot from structured emotion metadata.
+         * Combines primary emotion, secondary emotions, and meme usage context
+         * into a natural language text optimized for semantic matching.
+         */
+        private fun buildEmotionText(memeData: MemeDataForEmbedding): String {
+            val jsonString = memeData.emotionsJson?.takeIf { it.isNotBlank() } ?: return ""
+            return try {
+                val emotions = kotlinx.serialization.json.Json.decodeFromString<
+                    com.adsamcik.riposte.core.model.EmotionData,
+                >(jsonString)
+                val parts = mutableListOf<String>()
+                parts.add(emotions.primary)
+                if (emotions.secondary.isNotEmpty()) {
+                    parts.add(emotions.secondary.joinToString(", "))
+                }
+                parts.add("${emotions.sentiment} ${emotions.intensity}")
+                if (emotions.memeUsage.isNotEmpty()) {
+                    parts.addAll(emotions.memeUsage)
+                }
+                parts.joinToString(". ")
+            } catch (
+                @Suppress("TooGenericExceptionCaught")
+                e: Exception,
+            ) {
+                Timber.d(e, "Failed to parse emotions JSON")
+                ""
+            }
+        }
+
         private fun encodeEmbedding(embedding: FloatArray): ByteArray {
             val buffer =
                 ByteBuffer.allocate(embedding.size * BYTES_PER_FLOAT)
@@ -504,6 +549,7 @@ data class MemeDataForEmbedding(
     val searchPhrases: String?,
     val emojiTagsJson: String? = null,
     val basedOn: String? = null,
+    val emotionsJson: String? = null,
 )
 
 /**

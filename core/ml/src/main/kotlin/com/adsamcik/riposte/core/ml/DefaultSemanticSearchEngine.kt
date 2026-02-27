@@ -318,13 +318,14 @@ class DefaultSemanticSearchEngine
 
             /** Weights per embedding type for weighted fusion. */
             val EMBEDDING_WEIGHTS = mapOf(
-                "content" to 0.40f,
-                "intent" to 0.50f,
+                "content" to 0.25f,
+                "intent" to 0.35f,
+                "emotion" to 0.30f,
                 "emoji" to 0.08f,
                 "differentiator" to 0.02f,
             )
 
             /** Only these embedding slots are used for query→meme scoring. */
-            val SCORING_SLOTS = setOf("intent", "content")
+            val SCORING_SLOTS = setOf("intent", "content", "emotion")
         }
     }

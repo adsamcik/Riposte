@@ -27,4 +27,7 @@ public sealed class AnalysisResult
 
     [JsonPropertyName("localizations")]
     public Dictionary<string, LocalizedContent>? Localizations { get; init; }
+
+    [JsonPropertyName("emotions")]
+    public EmotionMetadata? Emotions { get; init; }
 }

@@ -52,6 +52,7 @@ class DefaultEmbeddingWorkRepository
                         searchPhrases = entity.searchPhrasesJson,
                         emojiTagsJson = entity.emojiTagsJson,
                         basedOn = entity.basedOn,
+                        emotionsJson = entity.emotionsJson,
                     )
                 }
             }

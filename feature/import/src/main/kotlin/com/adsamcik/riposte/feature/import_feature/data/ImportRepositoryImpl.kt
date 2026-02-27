@@ -374,6 +374,10 @@ class ImportRepositoryImpl
                                 metadata.localizations.takeIf { it.isNotEmpty() }?.let {
                                     kotlinx.serialization.json.Json.encodeToString(it)
                                 } ?: existing.localizationsJson,
+                            emotionsJson =
+                                metadata.emotions?.let {
+                                    kotlinx.serialization.json.Json.encodeToString(it)
+                                } ?: existing.emotionsJson,
                         )
                     memeDao.updateMeme(updated)
 
@@ -489,6 +493,10 @@ class ImportRepositoryImpl
                 primaryLanguage = metadata?.primaryLanguage,
                 localizationsJson =
                     metadata?.localizations?.takeIf { it.isNotEmpty() }?.let {
+                        kotlinx.serialization.json.Json.encodeToString(it)
+                    },
+                emotionsJson =
+                    metadata?.emotions?.let {
                         kotlinx.serialization.json.Json.encodeToString(it)
                     },
             )
