@@ -105,6 +105,7 @@ public static class AnnotateCommand
         var currentPromptHashes = PromptHasher.ComputeAll(languageList);
         var buildManifest = ManifestService.Load(outputDir);
         var currentSchemaVersion = "1.4";
+        var optimizationConfig = new OptimizationConfig();
 
         List<ImageRebuildPlan> plans;
         if (force)
@@ -114,6 +115,7 @@ public static class AnnotateCommand
             {
                 ImagePath = img,
                 Scope = RebuildScope.Full,
+                NeedsReoptimization = true,
                 Reason = "force mode",
             }).ToList();
         }
@@ -121,24 +123,25 @@ public static class AnnotateCommand
         {
             // Continue mode: only images without sidecars
             plans = imagesToProcess.Select(img => !SidecarService.HasSidecar(img, outputDir)
-                ? new ImageRebuildPlan { ImagePath = img, Scope = RebuildScope.Full, Reason = "no existing sidecar" }
+                ? new ImageRebuildPlan { ImagePath = img, Scope = RebuildScope.Full, NeedsReoptimization = true, Reason = "no existing sidecar" }
                 : new ImageRebuildPlan { ImagePath = img, Scope = RebuildScope.Skip, Reason = "has sidecar" }
             ).ToList();
         }
         else
         {
-            // Smart mode (default): field-level diffing
-            plans = RebuildPlanner.Plan(imagesToProcess, buildManifest, currentPromptHashes, model, currentSchemaVersion, outputDir);
+            // Smart mode (default): field-level diffing + optimization tracking
+            plans = RebuildPlanner.Plan(imagesToProcess, buildManifest, currentPromptHashes, model, currentSchemaVersion, outputDir, optimizationConfig);
         }
 
-        var (skipCount, fullCount, partialCount) = RebuildPlanner.Summarize(plans);
+        var (skipCount, fullCount, partialCount, reoptCount) = RebuildPlanner.Summarize(plans);
         var workPlans = plans.Where(p => p.Scope != RebuildScope.Skip).ToList();
+        var needsOptimization = plans.Where(p => p.NeedsReoptimization).Select(p => p.ImagePath).ToList();
 
-        // Downscale images for API calls
+        // Downscale images for API calls (work items + reoptimization-only items)
         Dictionary<string, string>? apiOptimizedMap = null;
-        if (workPlans.Count > 0 && !dryRun)
+        var imagesToOptimize = needsOptimization.Count > 0 ? needsOptimization : workPlans.Select(p => p.ImagePath).ToList();
+        if (imagesToOptimize.Count > 0 && !dryRun)
         {
-            var imagesToOptimize = workPlans.Select(p => p.ImagePath).ToList();
             AnsiConsole.MarkupLine("[dim]Downscaling images for API (max 1200px, Lanczos3)...[/]");
             var optimizeCount = 0;
             apiOptimizedMap = ImageOptimizer.OptimizeBatchForApi(imagesToOptimize, outputDir, concurrency: concurrency,
@@ -191,6 +194,8 @@ public static class AnnotateCommand
             AnsiConsole.MarkupLine($"[bold]Full rebuild: {fullCount} image(s)[/]");
         if (partialCount > 0)
             AnsiConsole.MarkupLine($"[bold]Partial rebuild: {partialCount} image(s)[/]");
+        if (reoptCount > 0)
+            AnsiConsole.MarkupLine($"[bold]Re-optimize only: {reoptCount} image(s)[/]");
 
         if (workPlans.Count > 0)
             AnsiConsole.MarkupLine($"[dim]Concurrency: {concurrency} parallel workers[/]");
@@ -293,7 +298,7 @@ public static class AnnotateCommand
 
                                             lock (manifestLock)
                                                 ManifestService.RecordImageBuild(buildManifest, Path.GetFileName(imagePath),
-                                                    contentHash, model, currentSchemaVersion, currentPromptHashes);
+                                                    contentHash, model, currentSchemaVersion, currentPromptHashes, optimizationConfig.Fingerprint());
                                         }
                                         else
                                         {
@@ -312,7 +317,7 @@ public static class AnnotateCommand
 
                                             lock (manifestLock)
                                                 ManifestService.RecordPartialBuild(buildManifest, Path.GetFileName(imagePath),
-                                                    contentHash, model, currentSchemaVersion, plan.AffectedGroups, currentPromptHashes);
+                                                    contentHash, model, currentSchemaVersion, plan.AffectedGroups, currentPromptHashes, optimizationConfig.Fingerprint());
                                         }
 
                                         await limiter.RecordSuccessAsync();
@@ -394,6 +399,7 @@ public static class AnnotateCommand
                 Model = model,
                 SchemaVersion = currentSchemaVersion,
                 PromptHashes = currentPromptHashes,
+                Optimization = optimizationConfig,
             };
             ManifestService.Save(outputDir, buildManifest);
 

@@ -29,6 +29,12 @@ public sealed class ImageRebuildPlan
     public IReadOnlyList<string> AffectedGroups { get; init; } = [];
 
     /// <summary>
+    /// Whether optimized images need to be regenerated (resize/format change).
+    /// True even when Scope == Skip (sidecar is fine but optimization changed).
+    /// </summary>
+    public bool NeedsReoptimization { get; init; }
+
+    /// <summary>
     /// Human-readable reason for the rebuild decision.
     /// </summary>
     public string Reason { get; init; } = "";
@@ -49,13 +55,15 @@ public static class RebuildPlanner
         Dictionary<string, string> currentPromptHashes,
         string currentModel,
         string currentSchemaVersion,
-        string outputDir)
+        string outputDir,
+        OptimizationConfig? optimizationConfig = null)
     {
         var plans = new List<ImageRebuildPlan>(imagePaths.Count);
+        var currentOptFingerprint = optimizationConfig?.Fingerprint();
 
         foreach (var imagePath in imagePaths)
         {
-            plans.Add(PlanForImage(imagePath, manifest, currentPromptHashes, currentModel, currentSchemaVersion, outputDir));
+            plans.Add(PlanForImage(imagePath, manifest, currentPromptHashes, currentModel, currentSchemaVersion, outputDir, currentOptFingerprint));
         }
 
         return plans;
@@ -70,7 +78,8 @@ public static class RebuildPlanner
         Dictionary<string, string> currentPromptHashes,
         string currentModel,
         string currentSchemaVersion,
-        string outputDir)
+        string outputDir,
+        string? currentOptFingerprint = null)
     {
         var fileName = Path.GetFileName(imagePath);
 
@@ -81,6 +90,7 @@ public static class RebuildPlanner
             {
                 ImagePath = imagePath,
                 Scope = RebuildScope.Full,
+                NeedsReoptimization = true,
                 Reason = "no existing sidecar",
             };
         }
@@ -92,9 +102,17 @@ public static class RebuildPlanner
             {
                 ImagePath = imagePath,
                 Scope = RebuildScope.Full,
+                NeedsReoptimization = true,
                 Reason = "not in build manifest (legacy sidecar)",
             };
         }
+
+        // Check if optimization config changed for this image
+        var needsReopt = currentOptFingerprint is not null && (
+            entry.OptimizationFingerprint is null ||
+            entry.OptimizationFingerprint != currentOptFingerprint ||
+            !entry.HasApiOptimized ||
+            !entry.HasBundleOptimized);
 
         // Content hash changed → full build (image was modified)
         var currentContentHash = ImageHashService.GetContentHash(imagePath);
@@ -104,6 +122,7 @@ public static class RebuildPlanner
             {
                 ImagePath = imagePath,
                 Scope = RebuildScope.Full,
+                NeedsReoptimization = true,
                 Reason = "image content changed",
             };
         }
@@ -115,6 +134,7 @@ public static class RebuildPlanner
             {
                 ImagePath = imagePath,
                 Scope = RebuildScope.Full,
+                NeedsReoptimization = needsReopt,
                 Reason = $"model changed ({entry.Model} → {currentModel})",
             };
         }
@@ -146,8 +166,11 @@ public static class RebuildPlanner
             return new ImageRebuildPlan
             {
                 ImagePath = imagePath,
-                Scope = RebuildScope.Skip,
-                Reason = "all field groups up to date",
+                Scope = needsReopt ? RebuildScope.Skip : RebuildScope.Skip,
+                NeedsReoptimization = needsReopt,
+                Reason = needsReopt
+                    ? "sidecar up to date, optimization config changed"
+                    : "all field groups up to date",
             };
         }
 
@@ -162,6 +185,7 @@ public static class RebuildPlanner
             {
                 ImagePath = imagePath,
                 Scope = RebuildScope.Full,
+                NeedsReoptimization = true,
                 Reason = $"all base groups stale ({string.Join(", ", reasons)})",
             };
         }
@@ -171,6 +195,7 @@ public static class RebuildPlanner
             ImagePath = imagePath,
             Scope = RebuildScope.Partial,
             AffectedGroups = staleGroups,
+            NeedsReoptimization = needsReopt,
             Reason = string.Join("; ", reasons),
         };
     }
@@ -178,11 +203,12 @@ public static class RebuildPlanner
     /// <summary>
     /// Summarize a rebuild plan for display.
     /// </summary>
-    public static (int skip, int full, int partial) Summarize(IReadOnlyList<ImageRebuildPlan> plans)
+    public static (int skip, int full, int partial, int reoptimize) Summarize(IReadOnlyList<ImageRebuildPlan> plans)
     {
-        var skip = plans.Count(p => p.Scope == RebuildScope.Skip);
+        var skip = plans.Count(p => p.Scope == RebuildScope.Skip && !p.NeedsReoptimization);
         var full = plans.Count(p => p.Scope == RebuildScope.Full);
         var partial = plans.Count(p => p.Scope == RebuildScope.Partial);
-        return (skip, full, partial);
+        var reoptimize = plans.Count(p => p.NeedsReoptimization && p.Scope == RebuildScope.Skip);
+        return (skip, full, partial, reoptimize);
     }
 }

@@ -53,7 +53,8 @@ public static class ManifestService
         string contentHash,
         string model,
         string schemaVersion,
-        Dictionary<string, string> fieldHashes)
+        Dictionary<string, string> fieldHashes,
+        string? optimizationFingerprint = null)
     {
         manifest.Images[imageFileName] = new ImageManifestEntry
         {
@@ -62,6 +63,9 @@ public static class ManifestService
             SchemaVersion = schemaVersion,
             GeneratedAt = DateTimeOffset.UtcNow.ToString("o"),
             FieldHashes = new Dictionary<string, string>(fieldHashes),
+            OptimizationFingerprint = optimizationFingerprint,
+            HasApiOptimized = optimizationFingerprint is not null,
+            HasBundleOptimized = false, // Bundle optimization is a separate step
         };
     }
 
@@ -76,11 +80,11 @@ public static class ManifestService
         string model,
         string schemaVersion,
         IReadOnlyList<string> affectedGroups,
-        Dictionary<string, string> currentPromptHashes)
+        Dictionary<string, string> currentPromptHashes,
+        string? optimizationFingerprint = null)
     {
         if (!manifest.Images.TryGetValue(imageFileName, out var entry))
         {
-            // Shouldn't happen for partial builds, but handle gracefully
             entry = new ImageManifestEntry
             {
                 ContentHash = contentHash,
@@ -95,8 +99,12 @@ public static class ManifestService
         entry.Model = model;
         entry.SchemaVersion = schemaVersion;
         entry.GeneratedAt = DateTimeOffset.UtcNow.ToString("o");
+        if (optimizationFingerprint is not null)
+        {
+            entry.OptimizationFingerprint = optimizationFingerprint;
+            entry.HasApiOptimized = true;
+        }
 
-        // Only update hashes for the groups that were regenerated
         foreach (var group in affectedGroups)
         {
             if (currentPromptHashes.TryGetValue(group, out var hash))
@@ -104,5 +112,14 @@ public static class ManifestService
                 entry.FieldHashes[group] = hash;
             }
         }
+    }
+
+    /// <summary>
+    /// Record that bundle optimization was completed for an image.
+    /// </summary>
+    public static void RecordBundleOptimized(BuildManifest manifest, string imageFileName)
+    {
+        if (manifest.Images.TryGetValue(imageFileName, out var entry))
+            entry.HasBundleOptimized = true;
     }
 }
