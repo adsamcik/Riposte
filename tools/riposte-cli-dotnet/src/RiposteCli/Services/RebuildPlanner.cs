@@ -29,10 +29,22 @@ public sealed class ImageRebuildPlan
     public IReadOnlyList<string> AffectedGroups { get; init; } = [];
 
     /// <summary>
+    /// Field groups that exist in the image's manifest but are no longer in the current
+    /// prompt config (e.g., a language was removed, or a field group was deleted).
+    /// These should be stripped from the sidecar without an API call.
+    /// </summary>
+    public IReadOnlyList<string> RemovedGroups { get; init; } = [];
+
+    /// <summary>
     /// Whether optimized images need to be regenerated (resize/format change).
     /// True even when Scope == Skip (sidecar is fine but optimization changed).
     /// </summary>
     public bool NeedsReoptimization { get; init; }
+
+    /// <summary>
+    /// Whether the sidecar has stale fields that should be stripped.
+    /// </summary>
+    public bool NeedsStripping => RemovedGroups.Count > 0;
 
     /// <summary>
     /// Human-readable reason for the rebuild decision.
@@ -158,19 +170,27 @@ public static class RebuildPlanner
             }
         }
 
-        // Check for removed field groups (in manifest but not in current prompts)
-        // These don't need a rebuild — they'll be stripped during merge
+        // Detect removed field groups (in manifest but not in current prompts)
+        var removedGroups = entry.FieldHashes.Keys
+            .Where(g => !currentPromptHashes.ContainsKey(g))
+            .ToList();
+
+        if (removedGroups.Count > 0)
+            reasons.Add($"removed: {string.Join(", ", removedGroups)}");
 
         if (staleGroups.Count == 0)
         {
             return new ImageRebuildPlan
             {
                 ImagePath = imagePath,
-                Scope = needsReopt ? RebuildScope.Skip : RebuildScope.Skip,
+                Scope = RebuildScope.Skip,
+                RemovedGroups = removedGroups,
                 NeedsReoptimization = needsReopt,
                 Reason = needsReopt
                     ? "sidecar up to date, optimization config changed"
-                    : "all field groups up to date",
+                    : removedGroups.Count > 0
+                        ? $"sidecar up to date, stripping: {string.Join(", ", removedGroups)}"
+                        : "all field groups up to date",
             };
         }
 
@@ -185,6 +205,7 @@ public static class RebuildPlanner
             {
                 ImagePath = imagePath,
                 Scope = RebuildScope.Full,
+                RemovedGroups = removedGroups,
                 NeedsReoptimization = true,
                 Reason = $"all base groups stale ({string.Join(", ", reasons)})",
             };
@@ -195,6 +216,7 @@ public static class RebuildPlanner
             ImagePath = imagePath,
             Scope = RebuildScope.Partial,
             AffectedGroups = staleGroups,
+            RemovedGroups = removedGroups,
             NeedsReoptimization = needsReopt,
             Reason = string.Join("; ", reasons),
         };

@@ -197,6 +197,10 @@ public static class AnnotateCommand
         if (reoptCount > 0)
             AnsiConsole.MarkupLine($"[bold]Re-optimize only: {reoptCount} image(s)[/]");
 
+        var stripCount = plans.Count(p => p.NeedsStripping);
+        if (stripCount > 0)
+            AnsiConsole.MarkupLine($"[bold]Strip removed fields: {stripCount} image(s)[/]");
+
         if (workPlans.Count > 0)
             AnsiConsole.MarkupLine($"[dim]Concurrency: {concurrency} parallel workers[/]");
         AnsiConsole.WriteLine();
@@ -212,14 +216,21 @@ public static class AnnotateCommand
             AnsiConsole.MarkupLine("[dim]Dry run — no files will be created[/]\n");
             foreach (var plan in plans)
             {
-                var icon = plan.Scope switch
+                var parts = new List<string>();
+
+                parts.Add(plan.Scope switch
                 {
+                    RebuildScope.Skip when !plan.NeedsReoptimization && !plan.NeedsStripping => "[dim]skip[/]",
                     RebuildScope.Skip => "[dim]skip[/]",
                     RebuildScope.Full => "[green]full[/]",
                     RebuildScope.Partial => $"[yellow]partial ({string.Join(", ", plan.AffectedGroups)})[/]",
                     _ => "[dim]?[/]",
-                };
-                AnsiConsole.MarkupLine($"  • {Path.GetFileName(plan.ImagePath)} — {icon} [dim]({plan.Reason})[/]");
+                });
+
+                if (plan.NeedsReoptimization) parts.Add("[cyan]reoptimize[/]");
+                if (plan.NeedsStripping) parts.Add($"[red]strip ({string.Join(", ", plan.RemovedGroups)})[/]");
+
+                AnsiConsole.MarkupLine($"  • {Path.GetFileName(plan.ImagePath)} — {string.Join(" + ", parts)} [dim]({plan.Reason})[/]");
             }
             return;
         }
@@ -393,7 +404,17 @@ public static class AnnotateCommand
                 await client.DisposeAsync();
             }
 
-            // Update manifest global state and save
+            // Summary
+            AnsiConsole.WriteLine();
+            if (processed.Count > 0)
+                AnsiConsole.MarkupLine($"[green]✓ Successfully annotated {processed.Count} image(s)[/]");
+            if (errors.Count > 0)
+                AnsiConsole.MarkupLine($"[red]✗ Failed to annotate {errors.Count} image(s)[/]");
+        }
+
+        // Always update manifest global state (even if no work plans ran)
+        if (!dryRun)
+        {
             buildManifest = buildManifest with
             {
                 Model = model,
@@ -402,13 +423,42 @@ public static class AnnotateCommand
                 Optimization = optimizationConfig,
             };
             ManifestService.Save(outputDir, buildManifest);
+        }
 
-            // Summary
-            AnsiConsole.WriteLine();
-            if (processed.Count > 0)
-                AnsiConsole.MarkupLine($"[green]✓ Successfully annotated {processed.Count} image(s)[/]");
-            if (errors.Count > 0)
-                AnsiConsole.MarkupLine($"[red]✗ Failed to annotate {errors.Count} image(s)[/]");
+        // Strip removed field groups from sidecars (applies to all plans, including skipped)
+        if (!dryRun)
+        {
+            var toStrip = plans.Where(p => p.NeedsStripping).ToList();
+            if (toStrip.Count > 0)
+            {
+                var stripped = 0;
+                foreach (var plan in toStrip)
+                {
+                    var existing = SidecarMerger.LoadSidecar(plan.ImagePath, outputDir);
+                    if (existing is null) continue;
+
+                    var cleaned = SidecarMerger.StripRemovedGroups(existing, currentPromptHashes);
+                    if (!ReferenceEquals(cleaned, existing))
+                    {
+                        SidecarService.WriteSidecar(plan.ImagePath, cleaned, outputDir);
+                        stripped++;
+
+                        // Also remove the stale field hashes from the manifest
+                        var fileName = Path.GetFileName(plan.ImagePath);
+                        if (buildManifest.Images.TryGetValue(fileName, out var entry))
+                        {
+                            foreach (var removed in plan.RemovedGroups)
+                                entry.FieldHashes.Remove(removed);
+                        }
+                    }
+                }
+
+                if (stripped > 0)
+                {
+                    ManifestService.Save(outputDir, buildManifest);
+                    AnsiConsole.MarkupLine($"[dim]Stripped removed fields from {stripped} sidecar(s)[/]");
+                }
+            }
         }
 
         // Create ZIP bundle

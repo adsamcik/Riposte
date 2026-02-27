@@ -104,41 +104,68 @@ public static class SidecarMerger
 
     /// <summary>
     /// Strip field groups that are no longer in the current prompt configuration
-    /// (e.g., a language was removed).
+    /// (e.g., a language was removed, or a field group was deleted from the schema).
     /// </summary>
     public static SidecarMetadata StripRemovedGroups(
         SidecarMetadata existing,
         Dictionary<string, string> currentPromptHashes)
     {
-        if (existing.Localizations is null || existing.Localizations.Count == 0)
-            return existing;
+        var changed = false;
 
-        var currentLangs = currentPromptHashes.Keys
-            .Where(k => k.StartsWith(PromptHasher.LocalizationPrefix))
-            .Select(k => k[PromptHasher.LocalizationPrefix.Length..])
-            .ToHashSet();
+        // Strip removed localizations
+        Dictionary<string, LocalizedContent>? filteredLocalizations = existing.Localizations;
+        if (existing.Localizations is { Count: > 0 })
+        {
+            var currentLangs = currentPromptHashes.Keys
+                .Where(k => k.StartsWith(PromptHasher.LocalizationPrefix))
+                .Select(k => k[PromptHasher.LocalizationPrefix.Length..])
+                .ToHashSet();
 
-        var filtered = existing.Localizations
-            .Where(kv => currentLangs.Contains(kv.Key))
-            .ToDictionary(kv => kv.Key, kv => kv.Value);
+            filteredLocalizations = existing.Localizations
+                .Where(kv => currentLangs.Contains(kv.Key))
+                .ToDictionary(kv => kv.Key, kv => kv.Value);
 
-        if (filtered.Count == existing.Localizations.Count)
+            if (filteredLocalizations.Count != existing.Localizations.Count)
+                changed = true;
+        }
+
+        // Strip removed base field groups
+        var hasCore = currentPromptHashes.ContainsKey(PromptHasher.GroupCore);
+        var hasSearch = currentPromptHashes.ContainsKey(PromptHasher.GroupSearch);
+        var hasCultural = currentPromptHashes.ContainsKey(PromptHasher.GroupCultural);
+        var hasEmotions = currentPromptHashes.ContainsKey(PromptHasher.GroupEmotions);
+
+        // If a base group was removed, null out its fields
+        var emojis = existing.Emojis;
+        var title = hasCore ? existing.Title : null;
+        var description = hasCore ? existing.Description : null;
+        var tags = hasSearch ? existing.Tags : null;
+        var searchPhrases = hasSearch ? existing.SearchPhrases : null;
+        var basedOn = hasCultural ? existing.BasedOn : null;
+        var emotions = hasEmotions ? existing.Emotions : null;
+
+        if (!hasCore && (existing.Title is not null || existing.Description is not null)) changed = true;
+        if (!hasSearch && (existing.Tags is not null || existing.SearchPhrases is not null)) changed = true;
+        if (!hasCultural && existing.BasedOn is not null) changed = true;
+        if (!hasEmotions && existing.Emotions is not null) changed = true;
+
+        if (!changed)
             return existing;
 
         return new SidecarMetadata
         {
             SchemaVersion = existing.SchemaVersion,
-            Emojis = existing.Emojis,
+            Emojis = emojis,
             CreatedAt = existing.CreatedAt,
-            Title = existing.Title,
-            Description = existing.Description,
-            Tags = existing.Tags,
-            SearchPhrases = existing.SearchPhrases,
+            Title = title,
+            Description = description,
+            Tags = tags,
+            SearchPhrases = searchPhrases,
             PrimaryLanguage = existing.PrimaryLanguage,
-            Localizations = filtered.Count > 0 ? filtered : null,
+            Localizations = filteredLocalizations is { Count: > 0 } ? filteredLocalizations : null,
             ContentHash = existing.ContentHash,
-            BasedOn = existing.BasedOn,
-            Emotions = existing.Emotions,
+            BasedOn = basedOn,
+            Emotions = emotions,
         };
     }
 }
