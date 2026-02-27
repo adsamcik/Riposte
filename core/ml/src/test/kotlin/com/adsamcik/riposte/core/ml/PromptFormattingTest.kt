@@ -324,6 +324,7 @@ class PromptFormattingTest {
 
         coEvery { embeddingRepository.getMemesNeedingEmbeddings(any()) } returns listOf(meme)
         coEvery { embeddingGenerator.generateFromText(any()) } returns embedding
+        coEvery { embeddingGenerator.generateFromText(any(), any()) } returns embedding
         coEvery { embeddingGenerator.generateFromQuery(any()) } returns embedding
         coEvery { embeddingRepository.countMemesNeedingEmbeddings() } returns 0
 
@@ -334,6 +335,7 @@ class PromptFormattingTest {
         coVerify {
             embeddingGenerator.generateFromText(
                 "A surprised cat. when monday hits",
+                "Cat Meme",
             )
         }
     }

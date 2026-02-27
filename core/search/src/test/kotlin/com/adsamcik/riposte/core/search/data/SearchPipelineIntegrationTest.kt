@@ -279,11 +279,11 @@ class SearchPipelineIntegrationTest {
 
         assertThat(results).hasSize(2)
 
-        // RRF: weight / (k + rank + 1), k=60
-        // FTS meme1: (100/100) / (60 + 0 + 1) = 1.0/61 ≈ 0.01639
-        // Semantic meme2: (200/100) / (60 + 0 + 1) = 2.0/61 ≈ 0.03279
-        val expectedFts = 1.0f / 61f
-        val expectedSemantic = 2.0f / 61f
+        // RRF: weight / (k + rank + 1), k=20
+        // FTS meme1: (100/100) / (20 + 0 + 1) = 1.0/21 ≈ 0.04762
+        // Semantic meme2: (200/100) / (20 + 0 + 1) = 2.0/21 ≈ 0.09524
+        val expectedFts = 1.0f / 21f
+        val expectedSemantic = 2.0f / 21f
 
         assertThat(results[0].meme.id).isEqualTo(2L)
         assertThat(results[0].relevanceScore).isWithin(0.0001f).of(expectedSemantic)

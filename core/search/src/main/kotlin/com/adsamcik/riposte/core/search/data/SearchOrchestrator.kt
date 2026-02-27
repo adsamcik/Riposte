@@ -151,8 +151,12 @@ class SearchOrchestrator @Inject constructor(
         /** Wider candidate window for usage reranking (fetch 2× limit, rerank, then trim). */
         private const val RERANK_WINDOW_MULTIPLIER = 2
 
-        /** RRF constant k — controls how much rank position matters. */
-        private const val RRF_K = 60f
+        /**
+         * RRF constant k — controls how much rank position matters.
+         * Lower k values (20) give better discrimination between top results for small
+         * collections (<10K items). The original RRF paper used k=60 for web-scale retrieval.
+         */
+        private const val RRF_K = 20f
 
         /** Normalize priority to a weight multiplier. */
         private const val PRIORITY_DIVISOR = 100f

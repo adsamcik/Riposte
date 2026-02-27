@@ -340,20 +340,20 @@ class DefaultSemanticSearchEngineTest {
                 listOf(
                     // 1.0 similarity
                     createMemeWithEmbedding(1L, floatArrayOf(1f, 0f, 0f)),
-                    // ~0.55 similarity (above 0.3)
+                    // ~0.55 similarity (above 0.15)
                     createMemeWithEmbedding(2L, floatArrayOf(0.4f, 0.6f, 0f)),
-                    // ~0.24 similarity (below 0.3)
-                    createMemeWithEmbedding(3L, floatArrayOf(0.2f, 0.8f, 0f)),
+                    // ~0.10 similarity (below 0.15)
+                    createMemeWithEmbedding(3L, floatArrayOf(0.1f, 0.9f, 0f)),
                 )
 
             val results =
                 searchEngine.findSimilar(
                     query = "test",
                     candidates = candidates,
-                    // Using default threshold of 0.3
+                    // Using default threshold of 0.15
                 )
 
-            // ID 3 should be filtered out (similarity < 0.3)
+            // ID 3 should be filtered out (similarity < 0.15)
             assertThat(results.map { it.meme.id }).doesNotContain(3L)
         }
 
@@ -458,8 +458,8 @@ class DefaultSemanticSearchEngineTest {
                         meme = createTestMeme(1L),
                         embeddings =
                             mapOf(
-                                // ~0.71 similarity
-                                "content" to floatArrayOf(0.5f, 0.5f, 0f),
+                                // ~0.95 similarity
+                                "content" to floatArrayOf(0.9f, 0.1f, 0f),
                                 // 1.0 similarity
                                 "intent" to floatArrayOf(1f, 0f, 0f),
                             ),
@@ -468,10 +468,10 @@ class DefaultSemanticSearchEngineTest {
                         meme = createTestMeme(2L),
                         embeddings =
                             mapOf(
-                                // ~0.97 similarity
-                                "content" to floatArrayOf(0.8f, 0.2f, 0f),
-                                // ~0.39 similarity
-                                "intent" to floatArrayOf(0.3f, 0.7f, 0f),
+                                // 1.0 similarity
+                                "content" to floatArrayOf(1f, 0f, 0f),
+                                // ~0.99 similarity
+                                "intent" to floatArrayOf(0.95f, 0.05f, 0f),
                             ),
                     ),
                 )
@@ -483,13 +483,13 @@ class DefaultSemanticSearchEngineTest {
                     threshold = 0f,
                 )
 
-            // Weighted fusion: content*0.35 + intent*0.45, normalized by total weight
-            // Meme 1: (0.71*0.35 + 1.0*0.45) / 0.80 = (0.2485+0.45)/0.80 ≈ 0.873
-            // Meme 2: (0.97*0.35 + 0.39*0.45) / 0.80 = (0.3395+0.1755)/0.80 ≈ 0.644
-            // Meme 1 should still rank first
+            // Weighted fusion: content*0.40 + intent*0.50, normalized by total weight
+            // Meme 1: (0.95*0.40 + 1.0*0.50) / 0.90 = (0.38+0.50)/0.90 ≈ 0.978
+            // Meme 2: (1.0*0.40 + 0.99*0.50) / 0.90 = (0.40+0.495)/0.90 ≈ 0.994
+            // Meme 2 ranks first, both pass dynamic threshold (within 0.92 ratio)
             assertThat(results).hasSize(2)
-            assertThat(results[0].meme.id).isEqualTo(1L)
-            assertThat(results[1].meme.id).isEqualTo(2L)
+            assertThat(results[0].meme.id).isEqualTo(2L)
+            assertThat(results[1].meme.id).isEqualTo(1L)
         }
 
     @Test

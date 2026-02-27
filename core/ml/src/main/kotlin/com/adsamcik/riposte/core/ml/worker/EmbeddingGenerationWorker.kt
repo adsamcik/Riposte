@@ -186,9 +186,11 @@ class EmbeddingGenerationWorker
             return try {
                 var generatedAny = false
 
-                val contentText = buildContentText(memeData)
+                // Use two-arg generateFromText so EmbeddingGemma gets the structured "title: X | text: Y" prompt
+                val (title, body) = buildContentParts(memeData)
+                val contentText = if (title != null) "$title. $body" else body
                 if (contentText.isNotBlank()) {
-                    val embedding = embeddingGenerator.generateFromText(contentText)
+                    val embedding = embeddingGenerator.generateFromText(body, title)
                     val sourceHash = generateHash(contentText)
                     embeddingRepository.saveEmbedding(
                         memeId = memeData.id,

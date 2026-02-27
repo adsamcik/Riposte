@@ -204,7 +204,7 @@ class SearchDelegate
         }
 
         companion object {
-            private const val SEARCH_DEBOUNCE_MS = 300L
+            private const val SEARCH_DEBOUNCE_MS = 200L
                 private val INTERNAL_QUERY_REGEX= Regex("^(is|type):", RegexOption.IGNORE_CASE)
 
             fun String.isInternalQuerySyntax(): Boolean = INTERNAL_QUERY_REGEX.containsMatchIn(this.trim())

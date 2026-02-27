@@ -105,6 +105,7 @@ class EmbeddingGenerationWorkerTest {
     /** Mock all embedding generation methods with the same embedding. */
     private fun mockEmbeddingGeneration(embedding: FloatArray) {
         coEvery { embeddingGenerator.generateFromText(any()) } returns embedding
+        coEvery { embeddingGenerator.generateFromText(any(), any()) } returns embedding
         coEvery { embeddingGenerator.generateFromQuery(any()) } returns embedding
     }
 
@@ -302,10 +303,10 @@ class EmbeddingGenerationWorkerTest {
                 embeddingGenerator.generateFromQuery(any())
             } returns createTestEmbedding()
             coEvery {
-                embeddingGenerator.generateFromText(match { it.contains("Nice") })
+                embeddingGenerator.generateFromText(match { it.contains("Nice") }, any())
             } returns createTestEmbedding()
             coEvery {
-                embeddingGenerator.generateFromText(match { it.contains("Broken") })
+                embeddingGenerator.generateFromText(match { it.contains("Broken") }, any())
             } throws RuntimeException("Model error")
             coEvery { embeddingRepository.countMemesNeedingEmbeddings() } returns 0
 
@@ -459,6 +460,7 @@ class EmbeddingGenerationWorkerTest {
             val memes = listOf(createMemeData(id = 1, title = "Fail"))
             coEvery { embeddingRepository.getMemesNeedingEmbeddings(any()) } returns memes
             coEvery { embeddingGenerator.generateFromText(any()) } throws RuntimeException("Error")
+            coEvery { embeddingGenerator.generateFromText(any(), any()) } throws RuntimeException("Error")
             coEvery { embeddingGenerator.generateFromQuery(any()) } throws RuntimeException("Error")
             coEvery { embeddingRepository.countMemesNeedingEmbeddings() } returns 0
             isInBackgroundFlow.value = true
@@ -483,6 +485,7 @@ class EmbeddingGenerationWorkerTest {
                 )
             coEvery { embeddingRepository.getMemesNeedingEmbeddings(any()) } returns memes
             coEvery { embeddingGenerator.generateFromText(any()) } throws RuntimeException("Error")
+            coEvery { embeddingGenerator.generateFromText(any(), any()) } throws RuntimeException("Error")
             coEvery { embeddingGenerator.generateFromQuery(any()) } throws RuntimeException("Error")
             coEvery { embeddingRepository.countMemesNeedingEmbeddings() } returns 5
 
@@ -510,10 +513,10 @@ class EmbeddingGenerationWorkerTest {
                 embeddingGenerator.generateFromQuery(any())
             } returns createTestEmbedding()
             coEvery {
-                embeddingGenerator.generateFromText(match { it.contains("Good") })
+                embeddingGenerator.generateFromText(match { it.contains("Good") }, any())
             } returns createTestEmbedding()
             coEvery {
-                embeddingGenerator.generateFromText(match { it.contains("Bad") })
+                embeddingGenerator.generateFromText(match { it.contains("Bad") }, any())
             } throws RuntimeException("Error")
             coEvery { embeddingRepository.countMemesNeedingEmbeddings() } returns 0
             isInBackgroundFlow.value = true
@@ -550,7 +553,7 @@ class EmbeddingGenerationWorkerTest {
 
             // Verify the content text includes OCR text
             coVerify {
-                embeddingGenerator.generateFromText(match { it.contains("OCR text from image") })
+                embeddingGenerator.generateFromText(match { it.contains("OCR text from image") }, any())
             }
         }
 

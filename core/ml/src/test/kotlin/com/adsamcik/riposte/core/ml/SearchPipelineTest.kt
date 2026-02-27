@@ -106,25 +106,28 @@ class SearchPipelineTest {
             MemeWithEmbeddings(
                 meme = testMeme(1L),
                 embeddings = mapOf(
-                    "content" to floatArrayOf(0f, 1f, 0f),     // 0.0 similarity
-                    "intent" to floatArrayOf(0.9f, 0.1f, 0f),  // ~0.99 similarity
+                    "content" to floatArrayOf(0.9f, 0.1f, 0f),     // ~0.95 similarity
+                    "intent" to floatArrayOf(1f, 0f, 0f),          // 1.0 similarity
                 ),
             ),
             MemeWithEmbeddings(
                 meme = testMeme(2L),
                 embeddings = mapOf(
-                    "content" to floatArrayOf(0.5f, 0.5f, 0f), // ~0.71 similarity
-                    "intent" to floatArrayOf(0f, 0f, 1f),       // 0.0 similarity
+                    "content" to floatArrayOf(1f, 0f, 0f),         // 1.0 similarity
+                    "intent" to floatArrayOf(0.95f, 0.05f, 0f),    // ~0.99 similarity
                 ),
             ),
         )
 
         val results = engine.findSimilarMultiVector("funny", candidates, threshold = 0f)
 
-        // Meme 1 wins (max=~0.99 from intent), meme 2 second (max=~0.71 from content)
+        // Weighted fusion (content*0.40 + intent*0.50) / 0.90
+        // Meme 1: (0.95*0.40 + 1.0*0.50) / 0.90 ≈ 0.978
+        // Meme 2: (1.0*0.40 + 0.99*0.50) / 0.90 ≈ 0.994
+        // Meme 2 ranks first, both pass dynamic threshold (within 0.92 ratio)
         assertThat(results).hasSize(2)
-        assertThat(results[0].meme.id).isEqualTo(1L)
-        assertThat(results[1].meme.id).isEqualTo(2L)
+        assertThat(results[0].meme.id).isEqualTo(2L)
+        assertThat(results[1].meme.id).isEqualTo(1L)
         assertThat(results[0].relevanceScore).isGreaterThan(results[1].relevanceScore)
     }
 

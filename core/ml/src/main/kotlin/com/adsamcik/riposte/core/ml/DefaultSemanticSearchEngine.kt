@@ -139,10 +139,14 @@ class DefaultSemanticSearchEngine
                     }
 
                 val topScores = scored.sortedByDescending { it.relevanceScore }
-                Timber.d(
-                    "All scores: %s",
-                    topScores.joinToString { "${it.meme.title?.take(20)}=%.4f".format(it.relevanceScore) },
-                )
+                if (Timber.treeCount > 0) {
+                    Timber.d(
+                        "Top 5 scores: %s",
+                        topScores.take(5).joinToString {
+                            "${it.meme.title?.take(15)}=%.4f".format(it.relevanceScore)
+                        },
+                    )
+                }
 
                 applyDynamicThreshold(scored, limit, maxOf(threshold, ABSOLUTE_SIMILARITY_FLOOR))
             }
@@ -292,7 +296,7 @@ class DefaultSemanticSearchEngine
             const val MAX_CACHE_ENTRIES = 50
 
             /** Minimum results to always return (prevents empty results). */
-            const val MIN_RESULTS = 1
+            const val MIN_RESULTS = 2
 
             /** Z-score cutoff: results must be this many stddevs above mean. */
             const val Z_CUTOFF = 0.5f
@@ -307,7 +311,7 @@ class DefaultSemanticSearchEngine
             const val ABSOLUTE_SIMILARITY_FLOOR = 0.10f
 
             /** Results must score at least this fraction of the top score. */
-            const val TOP_SCORE_RATIO = 0.92f
+            const val TOP_SCORE_RATIO = 0.88f
 
             /** Default weight for unknown embedding types. */
             const val DEFAULT_EMBEDDING_WEIGHT = 0.5f

@@ -1,13 +1,13 @@
 package com.adsamcik.riposte.core.search.data
 
 import com.adsamcik.riposte.core.database.dao.MemeSearchDao
+import com.adsamcik.riposte.core.database.dao.MemeWithRank
 import com.adsamcik.riposte.core.database.mapper.MemeMapper
 import com.adsamcik.riposte.core.database.util.FtsQuerySanitizer
 import com.adsamcik.riposte.core.model.MatchType
 import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.core.model.SearchResult
 import com.adsamcik.riposte.core.model.SearchStrategy
-import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 
 /**
@@ -29,11 +29,14 @@ class FtsSearchStrategy @Inject constructor(
         val ftsQuery = FtsQuerySanitizer.prepareForMatch(query)
         if (ftsQuery.isBlank()) return emptyList()
 
-        val entities = memeSearchDao.searchMemes(ftsQuery).first()
-        return entities.map { entity ->
+        val rankedEntities = memeSearchDao.searchMemesRanked(ftsQuery)
+        return rankedEntities.map { entity ->
+            val bm25Score = 1.0f / (1.0f + (-entity.rank).toFloat())
+            val fieldScore = computeFieldScore(entity, query)
+            val finalScore = bm25Score * BM25_WEIGHT + fieldScore * FIELD_WEIGHT
             SearchResult(
                 meme = entity.toDomain(),
-                relevanceScore = computeFieldScore(entity, query),
+                relevanceScore = finalScore,
                 matchType = determineMatchType(entity, query),
             )
         }
@@ -42,7 +45,7 @@ class FtsSearchStrategy @Inject constructor(
     }
 
     private fun determineMatchType(
-        entity: com.adsamcik.riposte.core.database.entity.MemeEntity,
+        entity: MemeWithRank,
         query: String,
     ): MatchType {
         val queryWords = query.lowercase().split(Regex("\\s+")).filter { it.length >= 2 }
@@ -57,7 +60,7 @@ class FtsSearchStrategy @Inject constructor(
     }
 
     private fun computeFieldScore(
-        entity: com.adsamcik.riposte.core.database.entity.MemeEntity,
+        entity: MemeWithRank,
         query: String,
     ): Float {
         var score = BASE_MATCH_SCORE
@@ -80,7 +83,7 @@ class FtsSearchStrategy @Inject constructor(
         return score.coerceAtMost(1.0f)
     }
 
-    private fun com.adsamcik.riposte.core.database.entity.MemeEntity.toDomain(): Meme =
+    private fun MemeWithRank.toDomain(): Meme =
         Meme(
             id = id,
             filePath = filePath,
@@ -95,8 +98,8 @@ class FtsSearchStrategy @Inject constructor(
             emojiTags = MemeMapper.parseEmojiTagsJson(emojiTagsJson),
             textContent = textContent,
             isFavorite = isFavorite,
-            createdAt = createdAt,
-            useCount = useCount,
+            createdAt = importedAt,
+            useCount = 0,
         )
 
     companion object {
@@ -105,5 +108,7 @@ class FtsSearchStrategy @Inject constructor(
         private const val TITLE_MATCH_BONUS = 0.3f
         private const val DESCRIPTION_MATCH_BONUS = 0.15f
         private const val EMOJI_MATCH_BONUS = 0.1f
+        private const val BM25_WEIGHT = 0.6f
+        private const val FIELD_WEIGHT = 0.4f
     }
 }

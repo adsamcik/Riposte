@@ -1,11 +1,10 @@
 package com.adsamcik.riposte.core.search.data
 
 import com.adsamcik.riposte.core.database.dao.MemeSearchDao
-import com.adsamcik.riposte.core.database.entity.MemeEntity
+import com.adsamcik.riposte.core.database.dao.MemeWithRank
 import com.google.common.truth.Truth.assertThat
-import io.mockk.every
+import io.mockk.coEvery
 import io.mockk.mockk
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
@@ -35,7 +34,7 @@ class FtsSearchStrategyTest {
     @Test
     fun `search returns results from FTS DAO`() = runTest {
         val entity = createTestEntity(id = 1, title = "funny cat")
-        every { memeSearchDao.searchMemes(any()) } returns flowOf(listOf(entity))
+        coEvery { memeSearchDao.searchMemesRanked(any()) } returns listOf(entity)
 
         val results = strategy.search("funny", limit = 20)
 
@@ -45,10 +44,10 @@ class FtsSearchStrategyTest {
 
     @Test
     fun `search applies field scoring with title bonus`() = runTest {
-        val titleMatch = createTestEntity(id = 1, title = "funny cat")
-        val descriptionMatch = createTestEntity(id = 2, description = "funny dog")
-        every { memeSearchDao.searchMemes(any()) } returns
-            flowOf(listOf(titleMatch, descriptionMatch))
+        val titleMatch = createTestEntity(id = 1, title = "funny cat", rank = -0.5)
+        val descriptionMatch = createTestEntity(id = 2, description = "funny dog", rank = -0.5)
+        coEvery { memeSearchDao.searchMemesRanked(any()) } returns
+            listOf(titleMatch, descriptionMatch)
 
         val results = strategy.search("funny", limit = 20)
 
@@ -61,7 +60,7 @@ class FtsSearchStrategyTest {
     @Test
     fun `search respects limit parameter`() = runTest {
         val entities = (1L..5L).map { createTestEntity(id = it, title = "meme $it") }
-        every { memeSearchDao.searchMemes(any()) } returns flowOf(entities)
+        coEvery { memeSearchDao.searchMemesRanked(any()) } returns entities
 
         val results = strategy.search("meme", limit = 3)
 
@@ -83,7 +82,8 @@ class FtsSearchStrategyTest {
         title: String? = null,
         description: String? = null,
         emojiTagsJson: String = "[]",
-    ): MemeEntity = MemeEntity(
+        rank: Double = -1.0,
+    ): MemeWithRank = MemeWithRank(
         id = id,
         filePath = "/test/path/meme$id.jpg",
         fileName = "meme$id.jpg",
@@ -95,5 +95,9 @@ class FtsSearchStrategyTest {
         emojiTagsJson = emojiTagsJson,
         title = title,
         description = description,
+        textContent = null,
+        embedding = null,
+        isFavorite = false,
+        rank = rank,
     )
 }
