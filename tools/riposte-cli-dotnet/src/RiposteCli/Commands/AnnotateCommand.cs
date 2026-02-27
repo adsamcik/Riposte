@@ -156,6 +156,18 @@ public static class AnnotateCommand
                 });
             var resized = apiOptimizedMap.Count(kv => kv.Key != kv.Value);
             AnsiConsole.MarkupLine($"[green]✓ Prepared {apiOptimizedMap.Count} image(s) ({resized} downscaled)[/]");
+
+            // Update manifest for skip+reopt images (no API call, just optimization tracking)
+            var skipReoptPlans = plans.Where(p => p.Scope == RebuildScope.Skip && p.NeedsReoptimization).ToList();
+            foreach (var plan in skipReoptPlans)
+            {
+                var fileName = Path.GetFileName(plan.ImagePath);
+                if (buildManifest.Images.TryGetValue(fileName, out var entry))
+                {
+                    entry.OptimizationFingerprint = optimizationConfig.Fingerprint();
+                    entry.HasApiOptimized = true;
+                }
+            }
         }
 
         // Optimize all images to WebP for ZIP bundling
@@ -317,13 +329,16 @@ public static class AnnotateCommand
                                             var existing = SidecarMerger.LoadSidecar(imagePath, outputDir);
                                             if (existing is null)
                                             {
-                                                // Sidecar disappeared — fall back to treating as full result
-                                                metadata = SidecarService.CreateMetadata(result, primaryLanguage, contentHash);
+                                                // Sidecar disappeared between planning and execution — skip and report
+                                                AnsiConsole.MarkupLine(
+                                                    $"  [red]✗[/] {Path.GetFileName(imagePath)}: sidecar disappeared during partial rebuild, re-run to do full rebuild [dim]({sw.Elapsed.TotalSeconds:F1}s)[/]");
+                                                task.Increment(1);
+                                                lock (errors)
+                                                    errors.Add((imagePath, "Sidecar disappeared during partial rebuild"));
+                                                return;
                                             }
-                                            else
-                                            {
-                                                metadata = SidecarMerger.Merge(existing, result, plan.AffectedGroups);
-                                            }
+
+                                            metadata = SidecarMerger.Merge(existing, result, plan.AffectedGroups);
                                             sidecarPath = SidecarService.WriteSidecar(imagePath, metadata, outputDir);
 
                                             lock (manifestLock)
@@ -499,6 +514,17 @@ public static class AnnotateCommand
                         bundled++;
                     }
                 }
+            }
+
+            // Record bundle optimization in manifest
+            if (bundleOptimizedMap is not null)
+            {
+                foreach (var imagePath in allImages)
+                {
+                    if (bundleOptimizedMap.ContainsKey(imagePath))
+                        ManifestService.RecordBundleOptimized(buildManifest, Path.GetFileName(imagePath));
+                }
+                ManifestService.Save(outputDir, buildManifest);
             }
 
             if (bundled > 0)

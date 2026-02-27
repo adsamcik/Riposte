@@ -53,7 +53,7 @@ public static class SidecarMerger
             switch (group)
             {
                 case PromptHasher.GroupCore:
-                    emojis = partial.Emojis;
+                    emojis = partial.Emojis ?? emojis;
                     title = partial.Title ?? title;
                     description = partial.Description ?? description;
                     break;

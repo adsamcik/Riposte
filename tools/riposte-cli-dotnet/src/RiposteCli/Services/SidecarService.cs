@@ -125,7 +125,7 @@ public static class SidecarService
     {
         return new SidecarMetadata
         {
-            Emojis = result.Emojis,
+            Emojis = result.Emojis ?? [],
             Title = result.Title,
             Description = result.Description,
             Tags = result.Tags,
