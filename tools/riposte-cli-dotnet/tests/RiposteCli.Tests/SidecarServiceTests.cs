@@ -342,7 +342,7 @@ public class SidecarServiceTests : IDisposable
         var doc = JsonDocument.Parse(json);
         var root = doc.RootElement;
 
-        Assert.Equal("1.3", root.GetProperty("schemaVersion").GetString());
+        Assert.Equal("1.4", root.GetProperty("schemaVersion").GetString());
         Assert.Equal(2, root.GetProperty("emojis").GetArrayLength());
         Assert.Equal("😂", root.GetProperty("emojis")[0].GetString());
         Assert.Equal("Test Meme", root.GetProperty("title").GetString());

@@ -55,7 +55,7 @@ public class IntegrationTests : IDisposable
         Assert.Equal("en", readBack.PrimaryLanguage);
         Assert.Equal(contentHash, readBack.ContentHash);
         Assert.Equal("Programmer humor", readBack.BasedOn);
-        Assert.Equal("1.3", readBack.SchemaVersion);
+        Assert.Equal("1.4", readBack.SchemaVersion);
     }
 
     [Fact]

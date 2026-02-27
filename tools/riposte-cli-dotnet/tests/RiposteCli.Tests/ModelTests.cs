@@ -12,10 +12,10 @@ public class ModelTests
     #region SidecarMetadata Defaults
 
     [Fact]
-    public void SidecarMetadata_SchemaVersion_Is13()
+    public void SidecarMetadata_SchemaVersion_Is14()
     {
         var meta = new SidecarMetadata { Emojis = ["😂"] };
-        Assert.Equal("1.3", meta.SchemaVersion);
+        Assert.Equal("1.4", meta.SchemaVersion);
     }
 
     [Fact]
@@ -118,7 +118,7 @@ public class ModelTests
         Assert.Equal(original.PrimaryLanguage, deserialized.PrimaryLanguage);
         Assert.Equal(original.ContentHash, deserialized.ContentHash);
         Assert.Equal(original.BasedOn, deserialized.BasedOn);
-        Assert.Equal("1.3", deserialized.SchemaVersion);
+        Assert.Equal("1.4", deserialized.SchemaVersion);
     }
 
     #endregion

@@ -21,7 +21,7 @@ public class SidecarMetadataTests
         var metadata = SidecarService.CreateMetadata(
             emojis: ["😂", "🔥"]);
 
-        Assert.Equal("1.3", metadata.SchemaVersion);
+        Assert.Equal("1.4", metadata.SchemaVersion);
         Assert.Equal(["😂", "🔥"], metadata.Emojis);
         Assert.NotNull(metadata.CreatedAt);
         Assert.NotNull(metadata.CliToolVersion);

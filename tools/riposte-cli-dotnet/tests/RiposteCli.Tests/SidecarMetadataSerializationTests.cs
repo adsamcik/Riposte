@@ -21,7 +21,7 @@ public class SidecarMetadataSerializationTests
         var doc = JsonDocument.Parse(json);
         var root = doc.RootElement;
 
-        Assert.Equal("1.3", root.GetProperty("schemaVersion").GetString());
+        Assert.Equal("1.4", root.GetProperty("schemaVersion").GetString());
         Assert.Single(root.GetProperty("emojis").EnumerateArray());
         Assert.True(root.TryGetProperty("createdAt", out _));
         Assert.True(root.TryGetProperty("appVersion", out _));

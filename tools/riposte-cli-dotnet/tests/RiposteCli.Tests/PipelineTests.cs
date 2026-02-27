@@ -329,7 +329,7 @@ public class PipelineTests : IDisposable
 
         // Required fields
         Assert.True(root.TryGetProperty("schemaVersion", out var sv));
-        Assert.Equal("1.3", sv.GetString());
+        Assert.Equal("1.4", sv.GetString());
 
         Assert.True(root.TryGetProperty("emojis", out var emojis));
         Assert.Equal(JsonValueKind.Array, emojis.ValueKind);
