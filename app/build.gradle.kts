@@ -19,8 +19,8 @@ android {
         applicationId = "com.adsamcik.riposte"
         minSdk = 31
         targetSdk = 36
-        versionCode = 7
-        versionName = "0.3.4"
+        versionCode = 8
+        versionName = "0.4.0"
 
         testInstrumentationRunner = "com.adsamcik.riposte.core.testing.HiltTestRunner"
 

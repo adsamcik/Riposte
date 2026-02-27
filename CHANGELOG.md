@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-02-27
+
+### Added
+
+- Emotion-based semantic search — memes are now indexed with structured emotion metadata (sentiment, core emotions, usage context) for much better results on abstract queries like "funny", "sad", or "happy"
+- Persistent query embedding cache — search query embeddings survive app restarts, making repeated searches instant
+- Gallery: Extended FAB with "Import" label for first-time discoverability
+- Gallery: Select All / Deselect All toggle in selection mode
+- Gallery: End-of-results hint below sparse search results
+- Import screen: Supported formats note (JPEG, PNG, WebP, GIF)
+- Duplicates screen: Sensitivity level descriptions below slider
+- Search results header now shows query text (e.g., "2 results for 'cat'")
+
+### Changed
+
+- Removed legacy MediaPipe model support — only EmbeddingGemma (768-dimensional) is supported going forward
+- On model upgrade, outdated embeddings are deleted and regenerated from scratch instead of attempting backwards-compatible migration
+- Removed mediapipe-tasks-text dependency (smaller APK)
+- Metadata schema bumped to v1.4 with emotion taxonomy fields
+
+### Fixed
+
+- MemeDetail: landscape images now center vertically instead of showing black void
+- MemeDetail: back button has shadow for visibility on bright images
+- MemeDetail: unified action button styling (Share uses IconButton with primaryContainer background)
+- Delete dialog: neutral gray Cancel button for clearer contrast against red Delete
+- Emoji filter toggle: re-tapping active chip now properly clears the filter
+- MemeEdit: neutral Discard button color for clearer Save/Discard hierarchy
+- Settings: search index info uses onSurfaceVariant instead of error-red
+- Share sheet: image preview now appears via ClipData
+- Gallery selection mode: Share/Delete buttons show selection count
+- FTS migration correctly rebuilds virtual table after adding emotionsJson column
+
+### Improved
+
+- Expanded test suite: model upgrade/delete flow tests, embedding version manager tests, adversarial DAO tests
+
 ## [0.3.4] - 2026-02-22
 
 ### Added
