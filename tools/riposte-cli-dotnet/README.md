@@ -74,7 +74,7 @@ Annotate images with AI-generated metadata.
 | `--output, -o` | Output directory for sidecar files |
 | `--model, -m` | Model to use (default: `gpt-5-mini`) |
 | `--languages, -l` | Comma-separated BCP 47 language codes (default: `en`) |
-| `--concurrency, -j` | Max parallel API requests, 1-10 (default: `4`) |
+| `--concurrency, -j` | Max parallel API requests, 1-50 (default: `4`) |
 | `--force, -f` | Regenerate all sidecars |
 | `--continue` | Only process images without existing sidecars |
 | `--add-new` | Alias for `--continue` |

@@ -1,5 +1,7 @@
 namespace RiposteCli;
 
+using RiposteCli.Services;
+
 /// <summary>
 /// System prompts for meme analysis and language mapping.
 /// </summary>
@@ -103,6 +105,54 @@ public static class Prompts
             8. "localizations": An object containing translations for each additional language. Each key is a language code, and each value is an object with "title", "description", "tags", and "searchPhrases" fields in that language.
 
             Respond ONLY with valid JSON, no markdown or explanation.
+            """;
+    }
+
+    // --- Partial prompts for smart rebuild ---
+
+    /// <summary>
+    /// Build a partial prompt requesting only the specified field groups.
+    /// </summary>
+    public static string GetPartialPrompt(IReadOnlyList<string> fieldGroups, IReadOnlyList<string> languages)
+    {
+        var primaryLang = languages.Count > 0 ? languages[0] : "en";
+        var primaryName = GetLanguageName(primaryLang);
+
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine("You are a meme analysis assistant. I already have partial metadata for this meme image. I need you to generate ONLY the following fields.\n");
+
+        var fieldNumber = 1;
+        foreach (var group in fieldGroups)
+        {
+            var spec = group switch
+            {
+                PromptHasher.GroupCore => PromptHasher.GetCoreSpec(primaryName, primaryLang),
+                PromptHasher.GroupSearch => PromptHasher.GetSearchSpec(primaryName, primaryLang),
+                PromptHasher.GroupCultural => PromptHasher.GetCulturalSpec(),
+                PromptHasher.GroupEmotions => PromptHasher.GetEmotionsSpec(primaryName, primaryLang),
+                _ when group.StartsWith(PromptHasher.LocalizationPrefix) =>
+                    GetLocalizationPartialSpec(group, languages),
+                _ => null,
+            };
+
+            if (spec is not null)
+            {
+                sb.AppendLine(spec.Trim());
+                sb.AppendLine();
+                fieldNumber++;
+            }
+        }
+
+        sb.AppendLine("Respond ONLY with valid JSON containing just the requested fields, no markdown or explanation.");
+        return sb.ToString();
+    }
+
+    private static string GetLocalizationPartialSpec(string group, IReadOnlyList<string> languages)
+    {
+        var langCode = group[PromptHasher.LocalizationPrefix.Length..];
+        var langName = GetLanguageName(langCode);
+        return $$"""
+            "localizations": An object with key "{{langCode}}" containing translations in {{langName}}. The value is an object with "title", "description", "tags", and "searchPhrases" fields, all in {{langName}}.
             """;
     }
 }

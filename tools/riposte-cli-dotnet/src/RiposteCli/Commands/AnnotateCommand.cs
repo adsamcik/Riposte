@@ -25,7 +25,7 @@ public static class AnnotateCommand
         var thresholdOpt = new Option<int>("--similarity-threshold") { Description = "Max Hamming distance for near-duplicate detection (0-256)", DefaultValueFactory = _ => 10 };
         var dryRunOpt = new Option<bool>("--dry-run") { Description = "Show what would be processed" };
         var verboseOpt = new Option<bool>("--verbose", "-v") { Description = "Show detailed progress" };
-        var concurrencyOpt = new Option<int>("--concurrency", "-j") { Description = "Max parallel API requests (1-10)", DefaultValueFactory = _ => 4 };
+        var concurrencyOpt = new Option<int>("--concurrency", "-j") { Description = "Max parallel API requests (1-50)", DefaultValueFactory = _ => 4 };
 
         var command = new Command("annotate", "Annotate images in a folder with AI-generated metadata")
         {
@@ -47,7 +47,7 @@ public static class AnnotateCommand
             var threshold = parseResult.GetValue(thresholdOpt);
             var dryRun = parseResult.GetValue(dryRunOpt);
             var verbose = parseResult.GetValue(verboseOpt);
-            var concurrency = Math.Clamp(parseResult.GetValue(concurrencyOpt), 1, 10);
+            var concurrency = Math.Clamp(parseResult.GetValue(concurrencyOpt), 1, 50);
 
             await ExecuteAsync(folder, createZip, output, model, languages, force,
                 continueMissing, addNew, noDedup, threshold, dryRun, verbose, concurrency);
@@ -83,30 +83,96 @@ public static class AnnotateCommand
             return;
         }
 
-        // Filter
-        var (images, skipped) = SidecarService.FilterImagesByMode(allImages, outputDir, force);
-
-        // Deduplication
-        var manifest = ImageHashService.LoadManifest(outputDir);
+        // Deduplication (runs on all images before planning)
+        var hashManifest = ImageHashService.LoadManifest(outputDir);
         var exactDupes = 0;
         var nearDupes = 0;
+        var imagesToProcess = allImages.ToList();
 
-        if (!noDedup && images.Count > 0)
+        if (!noDedup)
         {
             AnsiConsole.MarkupLine("[dim]Checking for duplicates...[/]");
-            var dedupResult = ImageHashService.Deduplicate(images, manifest,
+            var dedupResult = ImageHashService.Deduplicate(imagesToProcess, hashManifest,
                 detectNearDuplicates: true, similarityThreshold: threshold, verbose: verbose);
 
             exactDupes = dedupResult.ExactDuplicates.Count;
             nearDupes = dedupResult.NearDuplicates.Count;
-            images = dedupResult.UniqueImages;
-            ImageHashService.SaveManifest(outputDir, manifest);
+            imagesToProcess = dedupResult.UniqueImages;
+            ImageHashService.SaveManifest(outputDir, hashManifest);
+        }
+
+        // --- Smart Rebuild Planning ---
+        var currentPromptHashes = PromptHasher.ComputeAll(languageList);
+        var buildManifest = ManifestService.Load(outputDir);
+        var currentSchemaVersion = "1.4";
+
+        List<ImageRebuildPlan> plans;
+        if (force)
+        {
+            // Force mode: full rebuild for all images
+            plans = imagesToProcess.Select(img => new ImageRebuildPlan
+            {
+                ImagePath = img,
+                Scope = RebuildScope.Full,
+                Reason = "force mode",
+            }).ToList();
+        }
+        else if (continueMissing || addNew)
+        {
+            // Continue mode: only images without sidecars
+            plans = imagesToProcess.Select(img => !SidecarService.HasSidecar(img, outputDir)
+                ? new ImageRebuildPlan { ImagePath = img, Scope = RebuildScope.Full, Reason = "no existing sidecar" }
+                : new ImageRebuildPlan { ImagePath = img, Scope = RebuildScope.Skip, Reason = "has sidecar" }
+            ).ToList();
+        }
+        else
+        {
+            // Smart mode (default): field-level diffing
+            plans = RebuildPlanner.Plan(imagesToProcess, buildManifest, currentPromptHashes, model, currentSchemaVersion, outputDir);
+        }
+
+        var (skipCount, fullCount, partialCount) = RebuildPlanner.Summarize(plans);
+        var workPlans = plans.Where(p => p.Scope != RebuildScope.Skip).ToList();
+
+        // Downscale images for API calls
+        Dictionary<string, string>? apiOptimizedMap = null;
+        if (workPlans.Count > 0 && !dryRun)
+        {
+            var imagesToOptimize = workPlans.Select(p => p.ImagePath).ToList();
+            AnsiConsole.MarkupLine("[dim]Downscaling images for API (max 1200px, Lanczos3)...[/]");
+            var optimizeCount = 0;
+            apiOptimizedMap = ImageOptimizer.OptimizeBatchForApi(imagesToOptimize, outputDir, concurrency: concurrency,
+                onComplete: (orig, opt) =>
+                {
+                    var count = Interlocked.Increment(ref optimizeCount);
+                    if (verbose)
+                    {
+                        var label = orig == opt ? "already ≤1200px" : Path.GetFileName(opt);
+                        AnsiConsole.MarkupLine($"  [dim]Prepared {count}/{imagesToOptimize.Count}: {Path.GetFileName(orig)} → {label}[/]");
+                    }
+                });
+            var resized = apiOptimizedMap.Count(kv => kv.Key != kv.Value);
+            AnsiConsole.MarkupLine($"[green]✓ Prepared {apiOptimizedMap.Count} image(s) ({resized} downscaled)[/]");
+        }
+
+        // Optimize all images to WebP for ZIP bundling
+        Dictionary<string, string>? bundleOptimizedMap = null;
+        if (createZip && !dryRun)
+        {
+            AnsiConsole.MarkupLine($"[dim]Converting {allImages.Count} image(s) to WebP for ZIP bundle...[/]");
+            bundleOptimizedMap = ImageOptimizer.OptimizeBatchForBundle(allImages, outputDir, concurrency: concurrency);
+            AnsiConsole.MarkupLine($"[green]✓ Converted {bundleOptimizedMap.Count} image(s) to WebP[/]");
         }
 
         // Show mode and counts
-        var modeDesc = force
-            ? "[bold red]Force mode[/] - regenerating all sidecars"
-            : "[bold]Incremental mode[/] - skipping existing sidecars";
+        string modeDesc;
+        if (force)
+            modeDesc = "[bold red]Force mode[/] — regenerating all sidecars";
+        else if (continueMissing || addNew)
+            modeDesc = "[bold]Continue mode[/] — only new images";
+        else
+            modeDesc = "[bold cyan]Smart mode[/] — field-level rebuild";
+
         AnsiConsole.MarkupLine($"\n{modeDesc}");
         AnsiConsole.MarkupLine($"Total images: {allImages.Count}");
 
@@ -115,44 +181,54 @@ public static class AnnotateCommand
         else
             AnsiConsole.MarkupLine($"Languages: {primaryLanguage} (primary), {string.Join(", ", languageList.Skip(1))}");
 
-        if (skipped > 0)
-            AnsiConsole.MarkupLine($"[dim]Skipping {skipped} image(s) with existing sidecars[/]");
         if (exactDupes > 0)
             AnsiConsole.MarkupLine($"[dim]Skipping {exactDupes} exact duplicate(s)[/]");
         if (nearDupes > 0)
             AnsiConsole.MarkupLine($"[dim]Skipping {nearDupes} near-duplicate(s)[/]");
+        if (skipCount > 0)
+            AnsiConsole.MarkupLine($"[dim]Skipping {skipCount} up-to-date image(s)[/]");
+        if (fullCount > 0)
+            AnsiConsole.MarkupLine($"[bold]Full rebuild: {fullCount} image(s)[/]");
+        if (partialCount > 0)
+            AnsiConsole.MarkupLine($"[bold]Partial rebuild: {partialCount} image(s)[/]");
 
-        AnsiConsole.MarkupLine($"[bold]Processing {images.Count} image(s)[/]");
-        if (images.Count > 0)
+        if (workPlans.Count > 0)
             AnsiConsole.MarkupLine($"[dim]Concurrency: {concurrency} parallel workers[/]");
         AnsiConsole.WriteLine();
 
-        if (images.Count == 0)
+        if (workPlans.Count == 0)
         {
-            AnsiConsole.MarkupLine("[green]✓ All images already have sidecars![/]");
+            AnsiConsole.MarkupLine("[green]✓ All images up to date![/]");
             if (!createZip) return;
         }
 
         if (dryRun)
         {
-            AnsiConsole.MarkupLine("[dim]Dry run - no files will be created[/]\n");
-            foreach (var img in images)
+            AnsiConsole.MarkupLine("[dim]Dry run — no files will be created[/]\n");
+            foreach (var plan in plans)
             {
-                var exists = SidecarService.HasSidecar(img, outputDir);
-                var status = exists ? "[yellow]overwrite[/]" : "[green]new[/]";
-                AnsiConsole.MarkupLine($"  • {Path.GetFileName(img)} ({status})");
+                var icon = plan.Scope switch
+                {
+                    RebuildScope.Skip => "[dim]skip[/]",
+                    RebuildScope.Full => "[green]full[/]",
+                    RebuildScope.Partial => $"[yellow]partial ({string.Join(", ", plan.AffectedGroups)})[/]",
+                    _ => "[dim]?[/]",
+                };
+                AnsiConsole.MarkupLine($"  • {Path.GetFileName(plan.ImagePath)} — {icon} [dim]({plan.Reason})[/]");
             }
             return;
         }
 
+        // --- Execute rebuilds ---
         var processed = new List<(string Image, string Sidecar)>();
         var errors = new List<(string Image, string Error)>();
 
-        if (images.Count > 0)
+        if (workPlans.Count > 0)
         {
             var rateLimiter = new RateLimiter();
             var limiter = new ConcurrencyLimiter(maxConcurrency: concurrency, rateLimiter: rateLimiter);
             var client = new CopilotClient(new CopilotClientOptions());
+            var manifestLock = new object();
 
             try
             {
@@ -169,15 +245,19 @@ public static class AnnotateCommand
                         new RemainingTimeColumn())
                     .StartAsync(async ctx =>
                     {
-                        var task = ctx.AddTask($"Annotating ({concurrency} workers)...", maxValue: images.Count);
+                        var task = ctx.AddTask($"Annotating ({concurrency} workers)...", maxValue: workPlans.Count);
 
                         var semaphore = new SemaphoreSlim(concurrency);
-                        var tasks = images.Select(async imagePath =>
+                        var tasks = workPlans.Select(async plan =>
                         {
                             await semaphore.WaitAsync();
                             try
                             {
+                                var imagePath = plan.ImagePath;
+                                var analysisPath = apiOptimizedMap is not null && apiOptimizedMap.TryGetValue(imagePath, out var optPath)
+                                    ? optPath : imagePath;
                                 var sw = Stopwatch.StartNew();
+
                                 for (var attempt = 0; attempt < 5; attempt++)
                                 {
                                     try
@@ -186,8 +266,16 @@ public static class AnnotateCommand
                                         AnalysisResult result;
                                         try
                                         {
-                                            result = await CopilotService.AnalyzeImageAsync(
-                                                imagePath, model, verbose, languageList, client, rateLimiter);
+                                            if (plan.Scope == RebuildScope.Full)
+                                            {
+                                                result = await CopilotService.AnalyzeImageAsync(
+                                                    analysisPath, model, verbose, languageList, client, rateLimiter);
+                                            }
+                                            else
+                                            {
+                                                result = await CopilotService.AnalyzePartialAsync(
+                                                    analysisPath, plan.AffectedGroups, model, verbose, languageList, client, rateLimiter);
+                                            }
                                         }
                                         finally
                                         {
@@ -195,13 +283,44 @@ public static class AnnotateCommand
                                         }
 
                                         var contentHash = ImageHashService.GetContentHash(imagePath);
-                                        var metadata = SidecarService.CreateMetadata(result, primaryLanguage, contentHash);
-                                        var sidecarPath = SidecarService.WriteSidecar(imagePath, metadata, outputDir);
+                                        SidecarMetadata metadata;
+                                        string sidecarPath;
+
+                                        if (plan.Scope == RebuildScope.Full)
+                                        {
+                                            metadata = SidecarService.CreateMetadata(result, primaryLanguage, contentHash);
+                                            sidecarPath = SidecarService.WriteSidecar(imagePath, metadata, outputDir);
+
+                                            lock (manifestLock)
+                                                ManifestService.RecordImageBuild(buildManifest, Path.GetFileName(imagePath),
+                                                    contentHash, model, currentSchemaVersion, currentPromptHashes);
+                                        }
+                                        else
+                                        {
+                                            // Partial: merge into existing sidecar
+                                            var existing = SidecarMerger.LoadSidecar(imagePath, outputDir);
+                                            if (existing is null)
+                                            {
+                                                // Sidecar disappeared — fall back to treating as full result
+                                                metadata = SidecarService.CreateMetadata(result, primaryLanguage, contentHash);
+                                            }
+                                            else
+                                            {
+                                                metadata = SidecarMerger.Merge(existing, result, plan.AffectedGroups);
+                                            }
+                                            sidecarPath = SidecarService.WriteSidecar(imagePath, metadata, outputDir);
+
+                                            lock (manifestLock)
+                                                ManifestService.RecordPartialBuild(buildManifest, Path.GetFileName(imagePath),
+                                                    contentHash, model, currentSchemaVersion, plan.AffectedGroups, currentPromptHashes);
+                                        }
 
                                         await limiter.RecordSuccessAsync();
-                                        var emojis = string.Join(" ", result.Emojis);
+
+                                        var scopeLabel = plan.Scope == RebuildScope.Full ? "" : $" [dim]partial:{string.Join(",", plan.AffectedGroups)}[/]";
+                                        var emojis = string.Join(" ", metadata.Emojis);
                                         AnsiConsole.MarkupLine(
-                                            $"  [green]✓[/] {Path.GetFileName(imagePath)} → {emojis} [dim]({sw.Elapsed.TotalSeconds:F1}s)[/]");
+                                            $"  [green]✓[/] {Path.GetFileName(imagePath)} → {emojis}{scopeLabel} [dim]({sw.Elapsed.TotalSeconds:F1}s)[/]");
                                         task.Increment(1);
 
                                         lock (processed)
@@ -269,6 +388,15 @@ public static class AnnotateCommand
                 await client.DisposeAsync();
             }
 
+            // Update manifest global state and save
+            buildManifest = buildManifest with
+            {
+                Model = model,
+                SchemaVersion = currentSchemaVersion,
+                PromptHashes = currentPromptHashes,
+            };
+            ManifestService.Save(outputDir, buildManifest);
+
             // Summary
             AnsiConsole.WriteLine();
             if (processed.Count > 0)
@@ -281,6 +409,8 @@ public static class AnnotateCommand
         if (createZip)
         {
             var zipPath = Path.Combine(folder.Parent!.FullName, $"{folder.Name}.meme.zip");
+            if (File.Exists(zipPath))
+                File.Delete(zipPath);
             var bundled = 0;
 
             using (var zip = ZipFile.Open(zipPath, ZipArchiveMode.Create))
@@ -290,8 +420,26 @@ public static class AnnotateCommand
                     var sidecarPath = Path.Combine(outputDir, Path.GetFileName(imagePath) + ".json");
                     if (File.Exists(sidecarPath))
                     {
-                        zip.CreateEntryFromFile(imagePath, Path.GetFileName(imagePath));
-                        zip.CreateEntryFromFile(sidecarPath, Path.GetFileName(sidecarPath));
+                        // Use optimized WebP image if available, otherwise original
+                        var bundlePath = bundleOptimizedMap is not null && bundleOptimizedMap.TryGetValue(imagePath, out var optPath)
+                            ? optPath : imagePath;
+                        var bundleImageName = Path.GetFileName(bundlePath);
+                        var bundleSidecarName = bundleImageName + ".json";
+
+                        zip.CreateEntryFromFile(bundlePath, bundleImageName);
+
+                        // If image was optimized (name changed), copy sidecar with matching name
+                        if (bundleSidecarName != Path.GetFileName(sidecarPath))
+                        {
+                            var entry = zip.CreateEntry(bundleSidecarName);
+                            using var entryStream = entry.Open();
+                            using var sidecarStream = File.OpenRead(sidecarPath);
+                            sidecarStream.CopyTo(entryStream);
+                        }
+                        else
+                        {
+                            zip.CreateEntryFromFile(sidecarPath, bundleSidecarName);
+                        }
                         bundled++;
                     }
                 }

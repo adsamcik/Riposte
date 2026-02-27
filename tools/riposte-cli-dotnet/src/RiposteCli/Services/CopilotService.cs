@@ -56,7 +56,6 @@ public sealed class CopilotService
 
             try
             {
-                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(120));
                 var response = await session.SendAndWaitAsync(new MessageOptions
                 {
                     Prompt = "Analyze this meme and provide the JSON metadata.",
@@ -68,7 +67,7 @@ public sealed class CopilotService
                             DisplayName = Path.GetFileName(imagePath),
                         }
                     ],
-                });
+                }, TimeSpan.FromMinutes(10));
 
                 if (response?.Data?.Content is not { Length: > 0 } resultContent)
                     throw new CopilotAnalysisException("No response from Copilot");
@@ -110,6 +109,137 @@ public sealed class CopilotService
             if (ownsClient)
                 await client.DisposeAsync();
         }
+    }
+
+    /// <summary>
+    /// Run a partial analysis requesting only specific field groups.
+    /// </summary>
+    public static async Task<AnalysisResult> AnalyzePartialAsync(
+        string imagePath,
+        IReadOnlyList<string> fieldGroups,
+        string model = "gpt-5-mini",
+        bool verbose = false,
+        IReadOnlyList<string>? languages = null,
+        CopilotClient? client = null,
+        RateLimiter? rateLimiter = null)
+    {
+        languages ??= ["en"];
+        var systemPrompt = Prompts.GetPartialPrompt(fieldGroups, languages);
+
+        if (verbose)
+        {
+            Console.WriteLine($"  [DEBUG] Partial analysis: {Path.GetFileName(imagePath)}");
+            Console.WriteLine($"  [DEBUG] Field groups: {string.Join(", ", fieldGroups)}");
+        }
+
+        if (rateLimiter is not null)
+            await rateLimiter.WaitIfNeededAsync();
+
+        var ownsClient = client is null;
+        client ??= new CopilotClient(new CopilotClientOptions());
+
+        try
+        {
+            if (ownsClient)
+                await client.StartAsync();
+
+            var session = await client.CreateSessionAsync(new SessionConfig
+            {
+                Model = model,
+                SystemMessage = new SystemMessageConfig
+                {
+                    Mode = SystemMessageMode.Replace,
+                    Content = systemPrompt,
+                },
+                InfiniteSessions = new InfiniteSessionConfig { Enabled = false },
+            });
+
+            try
+            {
+                var response = await session.SendAndWaitAsync(new MessageOptions
+                {
+                    Prompt = "Analyze this meme and provide the requested JSON fields only.",
+                    Attachments =
+                    [
+                        new UserMessageDataAttachmentsItemFile
+                        {
+                            Path = Path.GetFullPath(imagePath),
+                            DisplayName = Path.GetFileName(imagePath),
+                        }
+                    ],
+                }, TimeSpan.FromMinutes(10));
+
+                if (response?.Data?.Content is not { Length: > 0 } resultContent)
+                    throw new CopilotAnalysisException("No response from Copilot");
+
+                return ParsePartialResponse(resultContent, fieldGroups);
+            }
+            catch (OperationCanceledException)
+            {
+                throw new CopilotAnalysisException("Timeout waiting for Copilot response");
+            }
+            catch (CopilotAnalysisException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                ClassifyAndThrow(ex, rateLimiter);
+                throw; // unreachable
+            }
+            finally
+            {
+                var sessionId = session.SessionId;
+                await session.DisposeAsync();
+                try { await client.DeleteSessionAsync(sessionId); }
+                catch { /* best-effort cleanup */ }
+            }
+        }
+        catch (FileNotFoundException)
+        {
+            throw new CopilotNotAuthenticatedException(
+                "GitHub Copilot CLI not found. Install it from https://github.com/github/copilot-cli");
+        }
+        finally
+        {
+            if (ownsClient)
+                await client.DisposeAsync();
+        }
+    }
+
+    /// <summary>
+    /// Parse partial response — more lenient than full parse since emojis may not be present.
+    /// </summary>
+    internal static AnalysisResult ParsePartialResponse(string content, IReadOnlyList<string> fieldGroups)
+    {
+        content = content.Trim();
+
+        if (content.StartsWith("```json"))
+            content = content[7..];
+        if (content.StartsWith("```"))
+            content = content[3..];
+        if (content.EndsWith("```"))
+            content = content[..^3];
+        content = content.Trim();
+
+        AnalysisResult? result;
+        try
+        {
+            result = JsonSerializer.Deserialize<AnalysisResult>(content);
+        }
+        catch (JsonException ex)
+        {
+            throw new CopilotAnalysisException(
+                $"Failed to parse partial API response as JSON: {ex.Message}\nContent: {content[..Math.Min(200, content.Length)]}");
+        }
+
+        if (result is null)
+        {
+            throw new CopilotAnalysisException(
+                $"Partial API response was null: {content[..Math.Min(200, content.Length)]}");
+        }
+
+        return result;
     }
 
     /// <summary>

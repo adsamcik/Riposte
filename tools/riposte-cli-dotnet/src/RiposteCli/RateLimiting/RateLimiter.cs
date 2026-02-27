@@ -23,7 +23,7 @@ public sealed class RateLimiter
     public double CurrentDelay => _currentDelay;
 
     public RateLimiter(
-        double minDelay = 1.0,
+        double minDelay = 0.1,
         double maxDelay = 300.0,
         double baseBackoff = 2.0,
         int maxBackoffAttempts = 8,
