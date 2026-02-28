@@ -56,6 +56,7 @@
 
     <!-- Status Messages -->
     <string name="import_status_staging">Preparando imágenes…</string>
+    <string name="import_status_staging_progress">Preparando imagen %1$d de %2$d…</string>
     <string name="import_status_zip_extract_errors">%d archivo(s) no se pudieron extraer del paquete</string>
 
     <!-- Duplicate Detection Dialog -->

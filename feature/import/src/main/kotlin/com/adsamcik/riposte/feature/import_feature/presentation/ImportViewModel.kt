@@ -564,7 +564,8 @@ class ImportViewModel
             _uiState.update {
                 it.copy(
                     isImporting = true,
-                    importProgress = -1f,
+                    importProgress = 0f,
+                    totalImportCount = images.size,
                     statusMessage = context.getString(R.string.import_status_staging),
                 )
             }
@@ -576,11 +577,22 @@ class ImportViewModel
                 val stagingInputs =
                     images.mapIndexed { index, image ->
                         ImportStagingManager.StagingInput(
-                            id = "${requestId}_$index",
+                            id = buildStagingFileId(requestId, index, image.fileName),
                             uri = image.uri,
                         )
                     }
-                val stagingDir = importStagingManager.stageImages(stagingInputs)
+                val stagingDir = importStagingManager.stageImages(stagingInputs) { completed, total ->
+                    _uiState.update {
+                        it.copy(
+                            importProgress = completed.toFloat() / total,
+                            statusMessage = context.getString(
+                                R.string.import_status_staging_progress,
+                                completed,
+                                total,
+                            ),
+                        )
+                    }
+                }
 
                 // Create import request items with full metadata
                 val items =
@@ -629,6 +641,7 @@ class ImportViewModel
             image: ImportImage,
             stagingDir: java.io.File,
         ): ImportRequestItemData {
+            val stagedFileId = buildStagingFileId(requestId, index, image.fileName)
             val emojiStrings = image.emojis.map { it.emoji }
             val metadataJson =
                 if (emojiStrings.isNotEmpty()) {
@@ -657,8 +670,8 @@ class ImportViewModel
                     null
                 }
             return ImportRequestItemData(
-                id = "${requestId}_$index",
-                stagedFilePath = java.io.File(stagingDir, "${requestId}_$index").absolutePath,
+                id = stagedFileId,
+                stagedFilePath = java.io.File(stagingDir, stagedFileId).absolutePath,
                 originalFileName = image.fileName,
                 emojis = image.emojis.joinToString(",") { it.emoji },
                 title = image.title,
@@ -666,6 +679,19 @@ class ImportViewModel
                 extractedText = image.extractedText,
                 metadataJson = metadataJson,
             )
+        }
+
+        private fun buildStagingFileId(
+            requestId: String,
+            index: Int,
+            originalFileName: String,
+        ): String {
+            val extension = originalFileName.substringAfterLast('.', "").takeIf { it.isNotBlank() }
+            return if (extension != null) {
+                "${requestId}_$index.$extension"
+            } else {
+                "${requestId}_$index"
+            }
         }
 
         private fun cancelImport() {

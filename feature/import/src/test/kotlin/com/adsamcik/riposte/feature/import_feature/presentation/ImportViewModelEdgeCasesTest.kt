@@ -79,7 +79,7 @@ class ImportViewModelEdgeCasesTest : BaseImportViewModelTest() {
             advanceUntilIdle()
 
             // Should only stage once (one import request)
-            coVerify(exactly = 1) { importStagingManager.stageImages(any()) }
+            coVerify(exactly = 1) { importStagingManager.stageImages(any(), any()) }
             coVerify(exactly = 1) { importRepository.createImportRequest(any(), any(), any()) }
         }
 
@@ -293,7 +293,7 @@ class ImportViewModelEdgeCasesTest : BaseImportViewModelTest() {
             advanceUntilIdle()
 
             // Both images should be staged (worker handles per-image failures)
-            coVerify { importStagingManager.stageImages(match { it.size == 2 }) }
+            coVerify { importStagingManager.stageImages(match { it.size == 2 }, any()) }
             coVerify { importRepository.createImportRequestItems(any(), match { it.size == 2 }) }
         }
 
@@ -419,7 +419,7 @@ class ImportViewModelEdgeCasesTest : BaseImportViewModelTest() {
             viewModel.onIntent(ImportIntent.StartImport)
             advanceUntilIdle()
 
-            coVerify { importStagingManager.stageImages(any()) }
+            coVerify { importStagingManager.stageImages(any(), any()) }
             coVerify { importRepository.createImportRequest(any(), any(), any()) }
         }
 
@@ -466,7 +466,7 @@ class ImportViewModelEdgeCasesTest : BaseImportViewModelTest() {
             viewModel.onIntent(ImportIntent.ImportDuplicatesAnyway)
             advanceUntilIdle()
 
-            coVerify { importStagingManager.stageImages(any()) }
+            coVerify { importStagingManager.stageImages(any(), any()) }
             coVerify { importRepository.createImportRequest(any(), any(), any()) }
             viewModel.uiState.test {
                 val state = awaitItem()
@@ -497,7 +497,7 @@ class ImportViewModelEdgeCasesTest : BaseImportViewModelTest() {
             advanceUntilIdle()
 
             // Only non-duplicate should be staged and submitted
-            coVerify { importStagingManager.stageImages(match { it.size == 1 }) }
+            coVerify { importStagingManager.stageImages(match { it.size == 1 }, any()) }
             coVerify { importRepository.createImportRequestItems(any(), match { it.size == 1 }) }
         }
 
@@ -627,7 +627,7 @@ class ImportViewModelEdgeCasesTest : BaseImportViewModelTest() {
             advanceUntilIdle()
 
             // Verify all images were staged for import (worker handles success/failure reporting)
-            coVerify { importStagingManager.stageImages(match { it.size == 2 }) }
+            coVerify { importStagingManager.stageImages(match { it.size == 2 }, any()) }
             coVerify { importRepository.createImportRequest(any(), any(), any()) }
             coVerify { importRepository.createImportRequestItems(any(), match { it.size == 2 }) }
         }
@@ -649,7 +649,7 @@ class ImportViewModelEdgeCasesTest : BaseImportViewModelTest() {
             advanceUntilIdle()
 
             // Staging should have happened
-            coVerify { importStagingManager.stageImages(any()) }
+            coVerify { importStagingManager.stageImages(any(), any()) }
 
             // RetryFailedImports is a no-op when importResult is null
             // (import results now come from WorkInfo observation)
@@ -697,7 +697,7 @@ class ImportViewModelEdgeCasesTest : BaseImportViewModelTest() {
             // Verify metadata was updated for the duplicate
             coVerify { updateMemeMetadataUseCase(42L, any()) }
             // Verify the non-duplicate was staged for import
-            coVerify { importStagingManager.stageImages(match { it.size == 1 }) }
+            coVerify { importStagingManager.stageImages(match { it.size == 1 }, any()) }
         }
 
     @Test
@@ -825,7 +825,7 @@ class ImportViewModelEdgeCasesTest : BaseImportViewModelTest() {
                 assertThat(state.showDuplicateDialog).isFalse()
             }
             // Import should have been triggered (staging called)
-            coVerify { importStagingManager.stageImages(any()) }
+            coVerify { importStagingManager.stageImages(any(), any()) }
         }
 
     @Test
@@ -850,7 +850,7 @@ class ImportViewModelEdgeCasesTest : BaseImportViewModelTest() {
             advanceUntilIdle()
 
             // Should NOT have staged anything for import
-            coVerify(exactly = 0) { importStagingManager.stageImages(any()) }
+            coVerify(exactly = 0) { importStagingManager.stageImages(any(), any()) }
 
             // Selected images should be empty
             viewModel.uiState.test {
@@ -891,7 +891,7 @@ class ImportViewModelEdgeCasesTest : BaseImportViewModelTest() {
             }
 
             // Import should NOT have been triggered
-            coVerify(exactly = 0) { importStagingManager.stageImages(any()) }
+            coVerify(exactly = 0) { importStagingManager.stageImages(any(), any()) }
         }
 
     @Test
