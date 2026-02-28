@@ -39,6 +39,20 @@ public sealed record BuildManifest
     /// </summary>
     [JsonPropertyName("images")]
     public Dictionary<string, ImageManifestEntry> Images { get; init; } = new();
+
+    /// <summary>
+    /// Timestamp of the last full bundle creation.
+    /// </summary>
+    [JsonPropertyName("lastFullBundleAt")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? LastFullBundleAt { get; init; }
+
+    /// <summary>
+    /// Timestamp of the last patch bundle creation.
+    /// </summary>
+    [JsonPropertyName("lastPatchBundleAt")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? LastPatchBundleAt { get; init; }
 }
 
 /// <summary>

@@ -74,7 +74,7 @@ public class CommandInvocationTests
         var root = new RootCommand("test") { cmd };
 
         var result = root.Parse(
-            "annotate . --zip --model gpt-5 --languages en,cs --force --dry-run --verbose -j 2 --similarity-threshold 5 --no-dedup");
+            "annotate . --zip full --model gpt-5 --languages en,cs --force --dry-run --verbose -j 2 --similarity-threshold 5 --no-dedup");
         Assert.Empty(result.Errors);
     }
 

@@ -70,7 +70,7 @@ Annotate images with AI-generated metadata.
 
 | Option | Description |
 |--------|-------------|
-| `--zip` | Bundle images and sidecars into a `.meme.zip` file |
+| `--zip [mode]` | Create ZIP bundle: `full` (all images, default) or `patch` (only changed/new) |
 | `--output, -o` | Output directory for sidecar files |
 | `--model, -m` | Model to use (default: `gpt-5-mini`) |
 | `--languages, -l` | Comma-separated BCP 47 language codes (default: `en`) |

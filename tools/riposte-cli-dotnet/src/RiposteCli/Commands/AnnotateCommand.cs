@@ -14,7 +14,7 @@ public static class AnnotateCommand
     public static Command Create()
     {
         var folderArg = new Argument<DirectoryInfo>("folder") { Description = "Path to a directory containing images to annotate" };
-        var zipOpt = new Option<bool>("--zip") { Description = "Bundle images and sidecars into a .meme.zip file" };
+        var zipOpt = new Option<string?>("--zip") { Description = "Create ZIP bundle: 'full' (all images) or 'patch' (only changed/new). Omit value for full.", DefaultValueFactory = _ => null };
         var outputOpt = new Option<DirectoryInfo?>("--output", "-o") { Description = "Output directory for sidecar files" };
         var modelOpt = new Option<string>("--model", "-m") { Description = "Model to use for analysis", DefaultValueFactory = _ => "gpt-5-mini" };
         var languagesOpt = new Option<string>("--languages", "-l") { Description = "Comma-separated BCP 47 language codes (e.g., 'en,cs,de')", DefaultValueFactory = _ => "en" };
@@ -36,7 +36,8 @@ public static class AnnotateCommand
         command.SetAction(async (parseResult, cancellationToken) =>
         {
             var folder = parseResult.GetValue(folderArg)!;
-            var createZip = parseResult.GetValue(zipOpt);
+            var zipValue = parseResult.GetValue(zipOpt);
+            var zipMode = ParseZipMode(zipValue);
             var output = parseResult.GetValue(outputOpt);
             var model = parseResult.GetValue(modelOpt)!;
             var languages = parseResult.GetValue(languagesOpt)!;
@@ -49,15 +50,26 @@ public static class AnnotateCommand
             var verbose = parseResult.GetValue(verboseOpt);
             var concurrency = Math.Clamp(parseResult.GetValue(concurrencyOpt), 1, 50);
 
-            await ExecuteAsync(folder, createZip, output, model, languages, force,
+            await ExecuteAsync(folder, zipMode, output, model, languages, force,
                 continueMissing, addNew, noDedup, threshold, dryRun, verbose, concurrency);
         });
 
         return command;
     }
 
+    private static ZipMode? ParseZipMode(string? value)
+    {
+        if (value is null) return null;
+        return value.ToLowerInvariant() switch
+        {
+            "" or "full" or "true" => ZipMode.Full,
+            "patch" or "delta" => ZipMode.Patch,
+            _ => throw new ArgumentException($"Unknown --zip mode: '{value}'. Use 'full' or 'patch'."),
+        };
+    }
+
     private static async Task ExecuteAsync(
-        DirectoryInfo folder, bool createZip, DirectoryInfo? output, string model,
+        DirectoryInfo folder, ZipMode? zipMode, DirectoryInfo? output, string model,
         string languages, bool force, bool continueMissing, bool addNew,
         bool noDedup, int threshold, bool dryRun, bool verbose, int concurrency)
     {
@@ -170,9 +182,9 @@ public static class AnnotateCommand
             }
         }
 
-        // Optimize all images to WebP for ZIP bundling
+        // Optimize images to WebP for ZIP bundling (full: all images, patch: deferred to bundler)
         Dictionary<string, string>? bundleOptimizedMap = null;
-        if (createZip && !dryRun)
+        if (zipMode == ZipMode.Full && !dryRun)
         {
             AnsiConsole.MarkupLine($"[dim]Converting {allImages.Count} image(s) to WebP for ZIP bundle...[/]");
             bundleOptimizedMap = ImageOptimizer.OptimizeBatchForBundle(allImages, outputDir, concurrency: concurrency);
@@ -220,7 +232,7 @@ public static class AnnotateCommand
         if (workPlans.Count == 0)
         {
             AnsiConsole.MarkupLine("[green]✓ All images up to date![/]");
-            if (!createZip) return;
+            if (zipMode is null) return;
         }
 
         if (dryRun)
@@ -477,60 +489,26 @@ public static class AnnotateCommand
         }
 
         // Create ZIP bundle
-        if (createZip)
+        if (zipMode is not null)
         {
-            var zipPath = Path.Combine(folder.Parent!.FullName, $"{folder.Name}.meme.zip");
-            if (File.Exists(zipPath))
-                File.Delete(zipPath);
-            var bundled = 0;
+            var result = ZipBundler.CreateBundle(
+                zipMode.Value, folder, outputDir, allImages, plans, processed,
+                bundleOptimizedMap, buildManifest, verbose);
 
-            using (var zip = ZipFile.Open(zipPath, ZipArchiveMode.Create))
+            if (result.ImageCount > 0)
             {
-                foreach (var imagePath in allImages)
+                // Record bundled images and update manifest
+                ZipBundler.RecordBundledImages(buildManifest, result.BundledImagePaths);
+                buildManifest = buildManifest with
                 {
-                    var sidecarPath = Path.Combine(outputDir, Path.GetFileName(imagePath) + ".json");
-                    if (File.Exists(sidecarPath))
-                    {
-                        // Use optimized WebP image if available, otherwise original
-                        var bundlePath = bundleOptimizedMap is not null && bundleOptimizedMap.TryGetValue(imagePath, out var optPath)
-                            ? optPath : imagePath;
-                        var bundleImageName = Path.GetFileName(bundlePath);
-                        var bundleSidecarName = bundleImageName + ".json";
-
-                        zip.CreateEntryFromFile(bundlePath, bundleImageName);
-
-                        // If image was optimized (name changed), copy sidecar with matching name
-                        if (bundleSidecarName != Path.GetFileName(sidecarPath))
-                        {
-                            var entry = zip.CreateEntry(bundleSidecarName);
-                            using var entryStream = entry.Open();
-                            using var sidecarStream = File.OpenRead(sidecarPath);
-                            sidecarStream.CopyTo(entryStream);
-                        }
-                        else
-                        {
-                            zip.CreateEntryFromFile(sidecarPath, bundleSidecarName);
-                        }
-                        bundled++;
-                    }
-                }
-            }
-
-            // Record bundle optimization in manifest
-            if (bundleOptimizedMap is not null)
-            {
-                foreach (var imagePath in allImages)
-                {
-                    if (bundleOptimizedMap.ContainsKey(imagePath))
-                        ManifestService.RecordBundleOptimized(buildManifest, Path.GetFileName(imagePath));
-                }
+                    LastFullBundleAt = zipMode == ZipMode.Full ? DateTimeOffset.UtcNow.ToString("o") : buildManifest.LastFullBundleAt,
+                    LastPatchBundleAt = zipMode == ZipMode.Patch ? DateTimeOffset.UtcNow.ToString("o") : buildManifest.LastPatchBundleAt,
+                };
                 ManifestService.Save(outputDir, buildManifest);
-            }
 
-            if (bundled > 0)
-            {
-                AnsiConsole.MarkupLine($"\n[bold blue]📦 Created bundle: {zipPath}[/]");
-                AnsiConsole.MarkupLine($"[dim]{bundled} image(s) bundled. Transfer to your Android device and open with Riposte[/]");
+                var modeLabel = zipMode == ZipMode.Patch ? "patch " : "";
+                AnsiConsole.MarkupLine($"\n[bold blue]📦 Created {modeLabel}bundle: {result.ZipPath}[/]");
+                AnsiConsole.MarkupLine($"[dim]{result.ImageCount} image(s) bundled. Transfer to your Android device and open with Riposte[/]");
             }
             else
             {
