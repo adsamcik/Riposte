@@ -34,6 +34,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -64,9 +65,17 @@ class GalleryViewModel
 
         /**
          * Paged memes flow for the "All" filter.
+         * During import, sorts by newest-first so new memes appear at the top
+         * without disrupting scroll position. Reverts to emoji sort when idle.
          */
         val pagedMemes: Flow<PagingData<Meme>> =
-            galleryRepository.getPagedMemes("emoji")
+            _uiState
+                .map { it.importStatus is ImportWorkStatus.InProgress }
+                .distinctUntilChanged()
+                .flatMapLatest { isImporting ->
+                    val sortBy = if (isImporting) "recent" else "emoji"
+                    galleryRepository.getPagedMemes(sortBy)
+                }
                 .cachedIn(viewModelScope)
 
         private val _effects = Channel<GalleryEffect>(Channel.BUFFERED)
