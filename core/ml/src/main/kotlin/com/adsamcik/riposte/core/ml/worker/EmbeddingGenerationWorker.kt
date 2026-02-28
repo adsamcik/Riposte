@@ -70,6 +70,7 @@ class EmbeddingGenerationWorker
 
                     var totalSuccess = 0
                     var totalFailure = 0
+                    val initialTotal = embeddingRepository.countMemesNeedingEmbeddings()
 
                     // Process all pending memes in a continuous loop with yields for responsiveness.
                     // WorkManager's 10-min execution limit is the natural boundary.
@@ -79,10 +80,12 @@ class EmbeddingGenerationWorker
                         val pendingMemes = embeddingRepository.getMemesNeedingEmbeddings(BATCH_FETCH_SIZE)
                         if (pendingMemes.isEmpty()) break
 
+                        // Use the larger of initial count and running total so progress never regresses
+                        val overallTotal = maxOf(initialTotal, totalSuccess + totalFailure + pendingMemes.size)
                         val (successCount, failureCount) = processAdaptiveBatch(
                             pendingMemes,
-                            totalSuccess,
-                            totalSuccess + totalFailure + pendingMemes.size,
+                            totalSuccess + totalFailure,
+                            overallTotal,
                         )
                         totalSuccess += successCount
                         totalFailure += failureCount
