@@ -49,7 +49,7 @@ public class CommandInvocationTests
         };
 
         var result = root.Parse("unknown-command");
-        Assert.True(result.Errors.Count > 0);
+        Assert.NotEmpty(result.Errors);
     }
 
     #endregion
@@ -95,7 +95,7 @@ public class CommandInvocationTests
         var root = new RootCommand("test") { cmd };
 
         var result = root.Parse("annotate");
-        Assert.True(result.Errors.Count > 0);
+        Assert.NotEmpty(result.Errors);
     }
 
     #endregion
@@ -163,7 +163,7 @@ public class CommandInvocationTests
         var root = new RootCommand("test") { cmd };
 
         var result = root.Parse("auth unknown");
-        Assert.True(result.Errors.Count > 0);
+        Assert.NotEmpty(result.Errors);
     }
 
     [Fact]

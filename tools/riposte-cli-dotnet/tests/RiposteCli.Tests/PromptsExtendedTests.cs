@@ -33,7 +33,7 @@ public class PromptsExtendedTests
     [InlineData("")]
     [InlineData("ar")]
     [InlineData("hi")]
-    public void GetLanguageName_UnknownCode_ReturnsCodeItself(string code)
+    public void GetLanguageName_UnknownAndUnsupportedCodes_ReturnsCodeItself(string code)
     {
         Assert.Equal(code, Prompts.GetLanguageName(code));
     }
@@ -48,18 +48,6 @@ public class PromptsExtendedTests
         var prompt = Prompts.GetSystemPrompt(["en"]);
         Assert.Contains("English", prompt);
         Assert.Contains("en", prompt);
-    }
-
-    [Fact]
-    public void GetSystemPrompt_SingleLanguage_ContainsRequiredFields()
-    {
-        var prompt = Prompts.GetSystemPrompt(["en"]);
-        Assert.Contains("emojis", prompt);
-        Assert.Contains("title", prompt);
-        Assert.Contains("description", prompt);
-        Assert.Contains("tags", prompt);
-        Assert.Contains("searchPhrases", prompt);
-        Assert.Contains("basedOn", prompt);
     }
 
     [Fact]

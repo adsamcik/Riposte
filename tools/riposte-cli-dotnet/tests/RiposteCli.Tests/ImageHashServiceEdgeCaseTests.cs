@@ -144,8 +144,8 @@ public class ImageHashServiceEdgeCaseTests : IDisposable
 
         var loaded = ImageHashService.LoadManifest(_tempDir);
         Assert.Single(loaded);
-        Assert.True(loaded.ContainsKey("new.jpg"));
-        Assert.False(loaded.ContainsKey("old.jpg"));
+        Assert.Contains("new.jpg", (IDictionary<string, HashEntry>)loaded);
+        Assert.DoesNotContain("old.jpg", (IDictionary<string, HashEntry>)loaded);
     }
 
     #endregion

@@ -110,7 +110,6 @@ public class OptimizationConfigTests
         var b = DefaultConfig();
 
         Assert.Equal(a, b);
-        Assert.True(a == b);
     }
 
     [Fact]

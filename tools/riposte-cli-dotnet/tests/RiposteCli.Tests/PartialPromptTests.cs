@@ -218,11 +218,4 @@ public class PartialPromptTests
         Assert.Equal(expected, result);
     }
 
-    [Fact]
-    public void GetLanguageName_UnknownCode_ReturnsCodeItself()
-    {
-        var result = Prompts.GetLanguageName("xx");
-
-        Assert.Equal("xx", result);
-    }
 }
