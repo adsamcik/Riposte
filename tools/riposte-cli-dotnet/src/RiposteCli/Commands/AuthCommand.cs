@@ -55,7 +55,7 @@ public static class AuthCommand
             }
             catch (Exception ex)
             {
-                AnsiConsole.MarkupLine($"[red]❌ Connection failed: {ex.Message}[/]");
+                AnsiConsole.MarkupLineInterpolated($"[red]❌ Connection failed: {ex.Message}[/]");
                 AnsiConsole.MarkupLine("\nMake sure you're logged in to Copilot CLI:");
                 AnsiConsole.MarkupLine("  copilot auth login");
             }

@@ -46,7 +46,7 @@ public static class AnnotateCommand
             }
             catch (ArgumentException ex)
             {
-                AnsiConsole.MarkupLine($"[red]Error: {Markup.Escape(ex.Message)}[/]");
+                AnsiConsole.MarkupLineInterpolated($"[red]Error: {ex.Message}[/]");
                 return;
             }
             var output = parseResult.GetValue(outputOpt);
@@ -107,7 +107,7 @@ public static class AnnotateCommand
         var allImages = SidecarService.GetImagesInFolder(folder.FullName);
         if (allImages.Count == 0)
         {
-            AnsiConsole.MarkupLine($"[yellow]No supported images found in {folder.FullName}[/]");
+            AnsiConsole.MarkupLineInterpolated($"[yellow]No supported images found in {folder.FullName}[/]");
             return;
         }
 
@@ -141,7 +141,7 @@ public static class AnnotateCommand
         else if (isNewManifest)
             AnsiConsole.MarkupLine("[dim]No build manifest — fresh build[/]");
         else
-            AnsiConsole.MarkupLine($"[dim]Build manifest: {buildManifest.Images.Count} tracked image(s), model={buildManifest.Model}[/]");
+            AnsiConsole.MarkupLineInterpolated($"[dim]Build manifest: {buildManifest.Images.Count} tracked image(s), model={buildManifest.Model}[/]");
 
         List<ImageRebuildPlan> plans;
         if (force)
@@ -187,7 +187,7 @@ public static class AnnotateCommand
                     if (verbose)
                     {
                         var label = orig == opt ? "already ≤1200px" : Path.GetFileName(opt);
-                        AnsiConsole.MarkupLine($"  [dim]Prepared {count}/{imagesToOptimize.Count}: {Path.GetFileName(orig)} → {label}[/]");
+                        AnsiConsole.MarkupLineInterpolated($"  [dim]Prepared {count}/{imagesToOptimize.Count}: {Path.GetFileName(orig)} → {label}[/]");
                     }
                 });
             var resized = apiOptimizedMap.Count(kv => kv.Key != kv.Value);
@@ -262,7 +262,7 @@ public static class AnnotateCommand
             foreach (var group in reasonGroups)
             {
                 var scope = group.First().Scope == RebuildScope.Full ? "full" : "partial";
-                AnsiConsole.MarkupLine($"  [dim]{group.Count()}× {scope}: {Markup.Escape(group.Key)}[/]");
+                AnsiConsole.MarkupLineInterpolated($"  [dim]{group.Count()}× {scope}: {group.Key}[/]");
             }
 
             if (verbose)
@@ -320,7 +320,7 @@ public static class AnnotateCommand
                 if (verbose)
                 {
                     foreach (var img in wouldBundle)
-                        AnsiConsole.MarkupLine($"  [dim]📦 {Path.GetFileName(img)}[/]");
+                        AnsiConsole.MarkupLineInterpolated($"  [dim]📦 {Path.GetFileName(img)}[/]");
                 }
             }
             return;
@@ -409,7 +409,7 @@ public static class AnnotateCommand
                                             if (existing is null)
                                             {
                                                 // Sidecar disappeared between planning and execution — skip and report
-                                                AnsiConsole.MarkupLine(
+                                                AnsiConsole.MarkupLineInterpolated(
                                                     $"  [red]✗[/] {Path.GetFileName(imagePath)}: sidecar disappeared during partial rebuild, re-run to do full rebuild [dim]({sw.Elapsed.TotalSeconds:F1}s)[/]");
                                                 task.Increment(1);
                                                 lock (errors)
@@ -430,7 +430,7 @@ public static class AnnotateCommand
                                         var scopeLabel = plan.Scope == RebuildScope.Full ? "" : $" [dim]partial:{string.Join(",", plan.AffectedGroups)}[/]";
                                         var emojis = string.Join(" ", metadata.Emojis);
                                         AnsiConsole.MarkupLine(
-                                            $"  [green]✓[/] {Path.GetFileName(imagePath)} → {emojis}{scopeLabel} [dim]({sw.Elapsed.TotalSeconds:F1}s)[/]");
+                                            $"  [green]✓[/] {Markup.Escape(Path.GetFileName(imagePath))} → {Markup.Escape(emojis)}{scopeLabel} [dim]({sw.Elapsed.TotalSeconds:F1}s)[/]");
                                         task.Increment(1);
 
                                         lock (processed)
@@ -439,7 +439,7 @@ public static class AnnotateCommand
                                     }
                                     catch (CopilotNotAuthenticatedException ex)
                                     {
-                                        AnsiConsole.MarkupLine($"\n[red]Error: {Markup.Escape(ex.Message)}[/]");
+                                        AnsiConsole.MarkupLineInterpolated($"\n[red]Error: {ex.Message}[/]");
                                         Environment.Exit(1);
                                     }
                                     catch (RateLimitException ex)
@@ -471,8 +471,8 @@ public static class AnnotateCommand
                                     }
                                     catch (CopilotAnalysisException ex)
                                     {
-                                        AnsiConsole.MarkupLine(
-                                            $"  [red]✗[/] {Markup.Escape(Path.GetFileName(imagePath))}: {Markup.Escape(ex.Message)} [dim]({sw.Elapsed.TotalSeconds:F1}s)[/]");
+                                        AnsiConsole.MarkupLineInterpolated(
+                                            $"  [red]✗[/] {Path.GetFileName(imagePath)}: {ex.Message} [dim]({sw.Elapsed.TotalSeconds:F1}s)[/]");
                                         task.Increment(1);
                                         lock (errors)
                                             errors.Add((imagePath, ex.Message));
@@ -574,7 +574,7 @@ public static class AnnotateCommand
                 ManifestService.Save(outputDir, buildManifest);
 
                 var modeLabel = zipMode == ZipMode.Patch ? "patch " : "";
-                AnsiConsole.MarkupLine($"\n[bold blue]📦 Created {modeLabel}bundle: {result.ZipPath}[/]");
+                AnsiConsole.MarkupLineInterpolated($"\n[bold blue]📦 Created {modeLabel}bundle: {result.ZipPath}[/]");
                 AnsiConsole.MarkupLine($"[dim]{result.ImageCount} image(s) bundled. Transfer to your Android device and open with Riposte[/]");
             }
             else

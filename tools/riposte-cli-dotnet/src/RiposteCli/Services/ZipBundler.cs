@@ -107,7 +107,7 @@ public static class ZipBundler
                 if (!usedEntryNames.Add(bundleImageName))
                 {
                     if (verbose)
-                        AnsiConsole.MarkupLine($"  [yellow]Skipped duplicate ZIP entry: {bundleImageName}[/]");
+                        AnsiConsole.MarkupLineInterpolated($"  [yellow]Skipped duplicate ZIP entry: {bundleImageName}[/]");
                     continue;
                 }
 
@@ -128,7 +128,7 @@ public static class ZipBundler
                 bundled.Add(imagePath);
 
                 if (verbose)
-                    AnsiConsole.MarkupLine($"  [dim]Bundled: {Path.GetFileName(imagePath)}[/]");
+                    AnsiConsole.MarkupLineInterpolated($"  [dim]Bundled: {Path.GetFileName(imagePath)}[/]");
             }
         }
 

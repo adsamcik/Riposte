@@ -46,7 +46,7 @@ public static class DedupeCommand
         var images = SidecarService.GetImagesInFolder(folder.FullName);
         if (images.Count == 0)
         {
-            AnsiConsole.MarkupLine($"[yellow]No supported images found in {folder.FullName}[/]");
+            AnsiConsole.MarkupLineInterpolated($"[yellow]No supported images found in {folder.FullName}[/]");
             return;
         }
 
@@ -132,14 +132,14 @@ public static class DedupeCommand
         {
             File.Delete(imagePath);
             deleted++;
-            if (verbose) AnsiConsole.MarkupLine($"  [dim]Deleted {Path.GetFileName(imagePath)}[/]");
+            if (verbose) AnsiConsole.MarkupLineInterpolated($"  [dim]Deleted {Path.GetFileName(imagePath)}[/]");
         }
 
         if (sidecarPath is not null && File.Exists(sidecarPath))
         {
             File.Delete(sidecarPath);
             deleted++;
-            if (verbose) AnsiConsole.MarkupLine($"  [dim]Deleted {Path.GetFileName(sidecarPath)}[/]");
+            if (verbose) AnsiConsole.MarkupLineInterpolated($"  [dim]Deleted {Path.GetFileName(sidecarPath)}[/]");
         }
 
         return deleted;
