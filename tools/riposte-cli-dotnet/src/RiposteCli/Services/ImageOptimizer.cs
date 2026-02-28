@@ -27,9 +27,23 @@ public static class ImageOptimizer
         int maxDimension = DefaultMaxDimension,
         int quality = DefaultQuality)
     {
+        var outputFileName = Path.GetFileNameWithoutExtension(imagePath) + ".webp";
+        return OptimizeForBundleCore(imagePath, outputDir, outputFileName, maxDimension, quality);
+    }
+
+    /// <summary>
+    /// Core bundle optimization with explicit output filename.
+    /// Used by batch optimization to provide collision-safe names.
+    /// </summary>
+    internal static string OptimizeForBundleCore(
+        string imagePath,
+        string outputDir,
+        string outputFileName,
+        int maxDimension,
+        int quality)
+    {
         Directory.CreateDirectory(outputDir);
 
-        var outputFileName = Path.GetFileNameWithoutExtension(imagePath) + ".webp";
         var outputPath = Path.Combine(outputDir, outputFileName);
 
         using var image = Image.Load(imagePath);
@@ -91,7 +105,21 @@ public static class ImageOptimizer
         int concurrency = 4,
         Action<string, string>? onComplete = null)
     {
-        return RunBatch(imagePaths, outputDir, OptimizeForBundle, maxDimension, quality, concurrency, onComplete);
+        var uniqueNames = ResolveUniqueWebpNames(imagePaths);
+        var result = new Dictionary<string, string>(imagePaths.Count);
+        var lockObj = new object();
+
+        Parallel.ForEach(imagePaths, new ParallelOptions { MaxDegreeOfParallelism = concurrency }, imagePath =>
+        {
+            var optimized = OptimizeForBundleCore(imagePath, outputDir, uniqueNames[imagePath], maxDimension, quality);
+            lock (lockObj)
+            {
+                result[imagePath] = optimized;
+            }
+            onComplete?.Invoke(imagePath, optimized);
+        });
+
+        return result;
     }
 
     /// <summary>
@@ -129,6 +157,39 @@ public static class ImageOptimizer
             }
             onComplete?.Invoke(imagePath, optimized);
         });
+
+        return result;
+    }
+
+    /// <summary>
+    /// Pre-compute unique WebP output filenames, disambiguating images that share
+    /// the same stem but have different source extensions (e.g. cat.png + cat.jpg).
+    /// </summary>
+    internal static Dictionary<string, string> ResolveUniqueWebpNames(IReadOnlyList<string> imagePaths)
+    {
+        var groups = imagePaths
+            .GroupBy(p => Path.GetFileNameWithoutExtension(p), StringComparer.OrdinalIgnoreCase);
+
+        var result = new Dictionary<string, string>(imagePaths.Count);
+
+        foreach (var group in groups)
+        {
+            var paths = group.ToList();
+            if (paths.Count == 1)
+            {
+                result[paths[0]] = group.Key + ".webp";
+            }
+            else
+            {
+                // Multiple source images would collide → include original extension in stem
+                foreach (var path in paths)
+                {
+                    var stem = Path.GetFileNameWithoutExtension(path);
+                    var ext = Path.GetExtension(path).TrimStart('.');
+                    result[path] = $"{stem}_{ext}.webp";
+                }
+            }
+        }
 
         return result;
     }

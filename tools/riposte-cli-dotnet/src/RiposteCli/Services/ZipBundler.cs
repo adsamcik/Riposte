@@ -86,6 +86,8 @@ public static class ZipBundler
 
         using (var zip = ZipFile.Open(zipPath, ZipArchiveMode.Create))
         {
+            var usedEntryNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
             foreach (var imagePath in imagesToBundle)
             {
                 var sidecarPath = Path.Combine(outputDir, Path.GetFileName(imagePath) + ".json");
@@ -96,6 +98,13 @@ public static class ZipBundler
                     ? optPath : imagePath;
                 var bundleImageName = Path.GetFileName(bundlePath);
                 var bundleSidecarName = bundleImageName + ".json";
+
+                if (!usedEntryNames.Add(bundleImageName))
+                {
+                    if (verbose)
+                        AnsiConsole.MarkupLine($"  [yellow]Skipped duplicate ZIP entry: {bundleImageName}[/]");
+                    continue;
+                }
 
                 zip.CreateEntryFromFile(bundlePath, bundleImageName);
 
@@ -166,6 +175,8 @@ public static class ZipBundler
         BuildManifest manifest)
     {
         var changedImages = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var processedImages = new HashSet<string>(
+            processed.Select(p => p.Image), StringComparer.OrdinalIgnoreCase);
 
         // Images that were successfully processed (full or partial rebuild)
         foreach (var (image, _) in processed)
@@ -179,8 +190,12 @@ public static class ZipBundler
         }
 
         // Images not yet in any previous bundle (new to the collection)
+        // Exclude images that were planned for rebuild but failed annotation
         foreach (var plan in plans)
         {
+            if (plan.Scope != RebuildScope.Skip && !processedImages.Contains(plan.ImagePath))
+                continue;
+
             var fileName = Path.GetFileName(plan.ImagePath);
             if (!manifest.Images.TryGetValue(fileName, out var entry) || !entry.HasBundleOptimized)
                 changedImages.Add(plan.ImagePath);
