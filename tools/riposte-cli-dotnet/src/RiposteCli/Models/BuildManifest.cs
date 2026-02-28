@@ -36,9 +36,10 @@ public sealed record BuildManifest
 
     /// <summary>
     /// Per-image build state keyed by image filename.
+    /// Uses case-insensitive comparison for Windows filesystem compatibility.
     /// </summary>
     [JsonPropertyName("images")]
-    public Dictionary<string, ImageManifestEntry> Images { get; init; } = new();
+    public Dictionary<string, ImageManifestEntry> Images { get; init; } = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Timestamp of the last full bundle creation.

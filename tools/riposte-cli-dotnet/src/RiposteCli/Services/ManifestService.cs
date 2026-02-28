@@ -26,12 +26,30 @@ public static class ManifestService
         try
         {
             var json = File.ReadAllText(path);
-            return JsonSerializer.Deserialize<BuildManifest>(json, JsonOptions) ?? new BuildManifest();
+            var manifest = JsonSerializer.Deserialize<BuildManifest>(json, JsonOptions) ?? new BuildManifest();
+            return EnsureCaseInsensitiveKeys(manifest);
         }
         catch
         {
             return new BuildManifest();
         }
+    }
+
+    /// <summary>
+    /// Ensure the Images dictionary uses case-insensitive key comparison.
+    /// System.Text.Json always creates dictionaries with ordinal comparer during deserialization,
+    /// but Windows filesystems are case-insensitive — "Photo.JPG" and "photo.jpg" are the same file.
+    /// </summary>
+    private static BuildManifest EnsureCaseInsensitiveKeys(BuildManifest manifest)
+    {
+        if (manifest.Images.Comparer == StringComparer.OrdinalIgnoreCase)
+            return manifest;
+
+        var ciImages = new Dictionary<string, ImageManifestEntry>(StringComparer.OrdinalIgnoreCase);
+        foreach (var (key, value) in manifest.Images)
+            ciImages.TryAdd(key, value);
+
+        return manifest with { Images = ciImages };
     }
 
     /// <summary>

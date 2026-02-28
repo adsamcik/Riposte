@@ -173,6 +173,7 @@ public static class SidecarService
 
     /// <summary>
     /// Write a JSON sidecar file for an image.
+    /// Uses atomic write (temp file + rename) to prevent corruption on crash.
     /// </summary>
     public static string WriteSidecar(string imagePath, SidecarMetadata metadata, string? outputDir = null)
     {
@@ -181,7 +182,9 @@ public static class SidecarService
         Directory.CreateDirectory(sidecarDir);
         var sidecarPath = Path.Combine(sidecarDir, Path.GetFileName(imagePath) + ".json");
         var json = JsonSerializer.Serialize(metadata, JsonOptions);
-        File.WriteAllText(sidecarPath, json);
+        var tempPath = sidecarPath + ".tmp";
+        File.WriteAllText(tempPath, json);
+        File.Move(tempPath, sidecarPath, overwrite: true);
         return sidecarPath;
     }
 
