@@ -54,7 +54,7 @@ class EmbeddingGenerationWorker
                 val startTime = System.currentTimeMillis()
                 Timber.i(
                     "Embedding generation starting (maxFetchSize=%d, attempt=%d)",
-                    MAX_FETCH_SIZE, runAttemptCount + 1,
+                    BATCH_FETCH_SIZE, runAttemptCount + 1,
                 )
                 try {
                     notificationManager.createChannel()
@@ -68,90 +68,68 @@ class EmbeddingGenerationWorker
                         )
                     }
 
-                    // Get a large pool of pending memes — we'll process as many as time allows
-                    val pendingMemes = embeddingRepository.getMemesNeedingEmbeddings(MAX_FETCH_SIZE)
+                    var totalSuccess = 0
+                    var totalFailure = 0
 
-                    if (pendingMemes.isEmpty()) {
-                        Timber.d("No memes need embeddings, finishing early")
-                        return@withContext Result.success(
-                            workDataOf(
-                                KEY_PROCESSED_COUNT to 0,
-                                KEY_REMAINING_COUNT to 0,
-                            ),
+                    // Process all pending memes in a continuous loop with yields for responsiveness.
+                    // WorkManager's 10-min execution limit is the natural boundary.
+                    while (true) {
+                        kotlinx.coroutines.yield() // Check for cancellation between batches
+
+                        val pendingMemes = embeddingRepository.getMemesNeedingEmbeddings(BATCH_FETCH_SIZE)
+                        if (pendingMemes.isEmpty()) break
+
+                        val (successCount, failureCount) = processAdaptiveBatch(
+                            pendingMemes,
+                            totalSuccess,
+                            totalSuccess + totalFailure + pendingMemes.size,
                         )
+                        totalSuccess += successCount
+                        totalFailure += failureCount
+
+                        // If the entire batch failed, the model is likely broken — stop looping
+                        if (successCount == 0 && failureCount > 0) {
+                            val postRunModelError = embeddingGenerator.initializationError
+                            if (postRunModelError != null) {
+                                Timber.w("Model error after batch: %s — giving up", postRunModelError)
+                                return@withContext Result.failure(
+                                    workDataOf(KEY_ERROR_MESSAGE to postRunModelError),
+                                )
+                            }
+                            Timber.w("Entire batch failed (%d items) — stopping", failureCount)
+                            break
+                        }
+
+                        // Brief pause between batches to reduce thermal/CPU pressure
+                        kotlinx.coroutines.delay(INTER_BATCH_DELAY_MS)
                     }
 
-                    val (successCount, failureCount) = processAdaptiveBatch(pendingMemes)
-
-                    // Check if there are more memes to process
                     val remainingCount = embeddingRepository.countMemesNeedingEmbeddings()
-
-                    val outputData =
-                        workDataOf(
-                            KEY_PROCESSED_COUNT to successCount,
-                            KEY_FAILED_COUNT to failureCount,
-                            KEY_REMAINING_COUNT to remainingCount,
-                        )
-
                     val elapsed = System.currentTimeMillis() - startTime
 
-                    // Only schedule continuation if we made progress this batch.
-                    // If no memes succeeded, the model is likely unavailable and
-                    // re-scheduling immediately would create an infinite loop that
-                    // floods the main thread with WorkManager overhead, causing ANR.
-                    if (remainingCount > 0 && successCount > 0) {
-                        Timber.i(
-                            "Embedding batch done in %dms: %d ok, %d failed, %d remaining — " +
-                                "will resume on next foreground return",
-                            elapsed, successCount, failureCount, remainingCount,
-                        )
-                    } else if (remainingCount > 0) {
-                        // Check whether this is a permanent model failure or a transient error
-                        val postRunModelError = embeddingGenerator.initializationError
-                        if (postRunModelError != null) {
-                            Timber.w(
-                                "Embedding batch done in %dms: 0 ok, %d failed, %d remaining — " +
-                                    "model error (%s), giving up",
-                                elapsed, failureCount, remainingCount, postRunModelError,
-                            )
-                            return@withContext Result.failure(
-                                workDataOf(KEY_ERROR_MESSAGE to postRunModelError),
-                            )
-                        }
+                    Timber.i(
+                        "Embedding generation done in %dms: %d ok, %d failed, %d remaining",
+                        elapsed, totalSuccess, totalFailure, remainingCount,
+                    )
 
-                        Timber.w(
-                            "Embedding batch done in %dms: 0 ok, %d failed, %d remaining — " +
-                                "retrying with backoff",
-                            elapsed, failureCount, remainingCount,
-                        )
-                        return@withContext if (runAttemptCount < MAX_RETRY_COUNT) {
-                            Result.retry()
-                        } else {
-                            Result.failure(
-                                workDataOf(
-                                    KEY_ERROR_MESSAGE to "All $failureCount memes failed to generate embeddings",
-                                ),
-                            )
-                        }
-                    } else {
-                        Timber.i(
-                            "Embedding generation complete in %dms: %d ok, %d failed, 0 remaining",
-                            elapsed, successCount, failureCount,
-                        )
-                    }
-
-                    // Show completion notification if app is in background and this is the last batch
-                    if (remainingCount == 0 && successCount > 0 && appLifecycleTracker.isInBackground.value) {
-                        notificationManager.showCompleteNotification(successCount, failureCount)
+                    if (remainingCount == 0 && totalSuccess > 0 && appLifecycleTracker.isInBackground.value) {
+                        notificationManager.showCompleteNotification(totalSuccess, totalFailure)
                     }
 
                     eventBus.emit(
                         EmbeddingsReady(
-                            processedCount = successCount,
-                            failedCount = failureCount,
+                            processedCount = totalSuccess,
+                            failedCount = totalFailure,
                             remainingCount = remainingCount,
                         ),
                     )
+
+                    val outputData =
+                        workDataOf(
+                            KEY_PROCESSED_COUNT to totalSuccess,
+                            KEY_FAILED_COUNT to totalFailure,
+                            KEY_REMAINING_COUNT to remainingCount,
+                        )
                     Result.success(outputData)
                 } catch (
                     @Suppress("TooGenericExceptionCaught") // Worker must not crash - reports failure instead
@@ -174,11 +152,14 @@ class EmbeddingGenerationWorker
             }
 
         /**
-         * Adaptive batch: process the first item to measure device speed, then
-         * fill the remaining time budget (7 min total, 3 min headroom = 4 min work).
+         * Processes a batch of memes with adaptive sizing based on device speed.
+         * Measures the first item to estimate how many fit in the time budget,
+         * yielding between items for responsiveness.
          */
         private suspend fun processAdaptiveBatch(
             pendingMemes: List<MemeDataForEmbedding>,
+            previouslyProcessed: Int,
+            overallTotal: Int,
         ): Pair<Int, Int> {
             var successCount = 0
             var failureCount = 0
@@ -189,11 +170,11 @@ class EmbeddingGenerationWorker
             processOneEmbedding(pendingMemes.first()).let { ok -> if (ok) successCount++ else failureCount++ }
             val firstDuration = (System.currentTimeMillis() - firstStart).coerceAtLeast(MIN_ITEM_DURATION_MS)
 
-            reportProgress(successCount, failureCount, pendingMemes.size)
+            reportProgress(previouslyProcessed + successCount + failureCount, overallTotal)
 
             // Calculate how many more fit in budget
             val elapsedMs = System.currentTimeMillis() - batchStartTime
-            val remainingBudgetMs = WORK_BUDGET_MS - elapsedMs
+            val remainingBudgetMs = BATCH_BUDGET_MS - elapsedMs
             val additionalItems = (remainingBudgetMs / firstDuration).toInt()
                 .coerceIn(0, pendingMemes.size - 1)
 
@@ -205,10 +186,9 @@ class EmbeddingGenerationWorker
             )
 
             for (i in 1..additionalItems) {
-                // Yield between items so the UI thread isn't starved by continuous inference
                 kotlinx.coroutines.yield()
                 processOneEmbedding(pendingMemes[i]).let { ok -> if (ok) successCount++ else failureCount++ }
-                reportProgress(successCount, failureCount, pendingMemes.size)
+                reportProgress(previouslyProcessed + successCount + failureCount, overallTotal)
             }
 
             return Pair(successCount, failureCount)
@@ -305,12 +285,13 @@ class EmbeddingGenerationWorker
             }
         }
 
-        private fun reportProgress(success: Int, failed: Int, total: Int) {
+        private fun reportProgress(processed: Int, total: Int) {
+            val safeTotal = total.coerceAtLeast(1)
             setProgressAsync(
                 workDataOf(
-                    KEY_PROGRESS to ((success + failed) * PERCENTAGE_MULTIPLIER / total),
-                    KEY_PROCESSED_COUNT to (success + failed),
-                    KEY_REMAINING_COUNT to (total - success - failed),
+                    KEY_PROGRESS to (processed * PERCENTAGE_MULTIPLIER / safeTotal),
+                    KEY_PROCESSED_COUNT to processed,
+                    KEY_REMAINING_COUNT to (safeTotal - processed).coerceAtLeast(0),
                 ),
             )
         }
@@ -490,15 +471,18 @@ class EmbeddingGenerationWorker
             private const val VARIATION_SELECTOR_15 = 0xFE0E
             private val SKIN_TONE_MODIFIER_RANGE = 0x1F3FB..0x1F3FF
 
-            /** Fetch up to this many pending memes; adaptive logic decides how many to process. */
-            private const val MAX_FETCH_SIZE = 200
+            /** Fetch this many memes per inner batch; adaptive logic trims based on device speed. */
+            private const val BATCH_FETCH_SIZE = 50
 
             /**
-             * Work budget per batch. Kept short (2 min) so the device gets breathing room
-             * between batches — each inference is CPU/GPU-intensive (308M param model × 5 types).
-             * WorkManager's continuation delay provides the gap.
+             * Time budget per adaptive batch. The outer loop in doWork() runs multiple
+             * batches continuously with a brief pause between them. This controls how
+             * long each inner batch runs before yielding to the inter-batch delay.
              */
-            private const val WORK_BUDGET_MS = 2L * 60 * 1000
+            private const val BATCH_BUDGET_MS = 2L * 60 * 1000
+
+            /** Brief pause between batches to reduce thermal pressure. */
+            private const val INTER_BATCH_DELAY_MS = 500L
 
             /** Floor for per-item duration to avoid division issues on very fast inference. */
             private const val MIN_ITEM_DURATION_MS = 50L
