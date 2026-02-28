@@ -129,45 +129,4 @@ public static class ManifestService
         if (manifest.Images.TryGetValue(imageFileName, out var entry))
             entry.HasBundleOptimized = true;
     }
-
-    /// <summary>
-    /// Seed manifest entries from existing legacy sidecars that have no manifest tracking.
-    /// This prevents unnecessary full rebuilds when upgrading from a pre-manifest CLI version.
-    /// Seeded entries get the current prompt hashes so they're treated as up-to-date.
-    /// </summary>
-    /// <returns>Number of images seeded.</returns>
-    public static int SeedFromLegacySidecars(
-        BuildManifest manifest,
-        IReadOnlyList<string> imagePaths,
-        string outputDir,
-        string model,
-        string schemaVersion,
-        Dictionary<string, string> currentPromptHashes)
-    {
-        var seeded = 0;
-
-        foreach (var imagePath in imagePaths)
-        {
-            var fileName = Path.GetFileName(imagePath);
-            if (manifest.Images.ContainsKey(fileName))
-                continue;
-
-            if (!SidecarService.HasSidecar(imagePath, outputDir))
-                continue;
-
-            // This image has a sidecar but no manifest entry — seed it
-            var contentHash = ImageHashService.GetContentHash(imagePath);
-            manifest.Images[fileName] = new ImageManifestEntry
-            {
-                ContentHash = contentHash,
-                Model = model,
-                SchemaVersion = schemaVersion,
-                GeneratedAt = DateTimeOffset.UtcNow.ToString("o"),
-                FieldHashes = new Dictionary<string, string>(currentPromptHashes),
-            };
-            seeded++;
-        }
-
-        return seeded;
-    }
 }

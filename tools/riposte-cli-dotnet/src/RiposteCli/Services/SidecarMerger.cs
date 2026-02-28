@@ -25,7 +25,15 @@ public static class SidecarMerger
             return null;
 
         var json = File.ReadAllText(sidecarPath);
-        return JsonSerializer.Deserialize<SidecarMetadata>(json, JsonOptions);
+        try
+        {
+            return JsonSerializer.Deserialize<SidecarMetadata>(json, JsonOptions);
+        }
+        catch (JsonException ex)
+        {
+            throw new CopilotAnalysisException(
+                $"Failed to parse sidecar JSON: {ex.Message}\nPath: {sidecarPath}");
+        }
     }
 
     /// <summary>

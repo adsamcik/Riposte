@@ -136,20 +136,10 @@ public static class AnnotateCommand
         var optimizationConfig = new OptimizationConfig();
         var isNewManifest = buildManifest.Images.Count == 0;
 
-        if (isNewManifest)
-        {
-            var seeded = ManifestService.SeedFromLegacySidecars(
-                buildManifest, imagesToProcess, outputDir, model, currentSchemaVersion, currentPromptHashes);
-            if (seeded > 0)
-            {
-                AnsiConsole.MarkupLine($"[dim]No build manifest found — seeded {seeded} image(s) from existing sidecars[/]");
-                ManifestService.Save(outputDir, buildManifest);
-            }
-            else
-            {
-                AnsiConsole.MarkupLine("[dim]No build manifest found — all images will be fully rebuilt[/]");
-            }
-        }
+        if (isNewManifest && imagesToProcess.Any(img => SidecarService.HasSidecar(img, outputDir)))
+            AnsiConsole.MarkupLine("[dim]No build manifest found — existing sidecars will be fully rebuilt to establish tracking[/]");
+        else if (isNewManifest)
+            AnsiConsole.MarkupLine("[dim]No build manifest — fresh build[/]");
         else
             AnsiConsole.MarkupLine($"[dim]Build manifest: {buildManifest.Images.Count} tracked image(s), model={buildManifest.Model}[/]");
 
