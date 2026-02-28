@@ -72,20 +72,26 @@ class EmbeddingGenerationWorker
                     var totalFailure = 0
                     val initialTotal = embeddingRepository.countMemesNeedingEmbeddings()
 
+                    // Track memes already processed in this run. Memes with missing
+                    // metadata legitimately produce fewer than EXPECTED_EMBEDDING_TYPES,
+                    // so the "incomplete" query would rediscover them endlessly.
+                    val processedMemeIds = mutableSetOf<Long>()
+
                     // Process all pending memes in a continuous loop with yields for responsiveness.
                     // WorkManager's 10-min execution limit is the natural boundary.
                     while (true) {
                         kotlinx.coroutines.yield() // Check for cancellation between batches
 
                         val pendingMemes = embeddingRepository.getMemesNeedingEmbeddings(BATCH_FETCH_SIZE)
+                            .filter { it.id !in processedMemeIds }
                         if (pendingMemes.isEmpty()) break
 
-                        // Use the larger of initial count and running total so progress never regresses
-                        val overallTotal = maxOf(initialTotal, totalSuccess + totalFailure + pendingMemes.size)
+                        processedMemeIds.addAll(pendingMemes.map { it.id })
+
                         val (successCount, failureCount) = processAdaptiveBatch(
                             pendingMemes,
                             totalSuccess + totalFailure,
-                            overallTotal,
+                            initialTotal.coerceAtLeast(1),
                         )
                         totalSuccess += successCount
                         totalFailure += failureCount
@@ -288,11 +294,17 @@ class EmbeddingGenerationWorker
             }
         }
 
+        /** High-water mark ensures reported progress never regresses. */
+        private var lastReportedProgress = 0
+
         private fun reportProgress(processed: Int, total: Int) {
             val safeTotal = total.coerceAtLeast(1)
+            val progress = (processed * PERCENTAGE_MULTIPLIER / safeTotal)
+                .coerceIn(0, PERCENTAGE_MULTIPLIER)
+            lastReportedProgress = maxOf(lastReportedProgress, progress)
             setProgressAsync(
                 workDataOf(
-                    KEY_PROGRESS to (processed * PERCENTAGE_MULTIPLIER / safeTotal),
+                    KEY_PROGRESS to lastReportedProgress,
                     KEY_PROCESSED_COUNT to processed,
                     KEY_REMAINING_COUNT to (safeTotal - processed).coerceAtLeast(0),
                 ),
