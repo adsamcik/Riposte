@@ -27,8 +27,9 @@ public static class ImageOptimizer
         int maxDimension = DefaultMaxDimension,
         int quality = DefaultQuality)
     {
+        var bundleDir = OutputPaths.GetBundleDir(outputDir);
         var outputFileName = Path.GetFileNameWithoutExtension(imagePath) + ".webp";
-        return OptimizeForBundleCore(imagePath, outputDir, outputFileName, maxDimension, quality);
+        return OptimizeForBundleCore(imagePath, bundleDir, outputFileName, maxDimension, quality);
     }
 
     /// <summary>
@@ -69,7 +70,8 @@ public static class ImageOptimizer
         int maxDimension = DefaultMaxDimension,
         int quality = DefaultQuality)
     {
-        Directory.CreateDirectory(outputDir);
+        var optimizedDir = OutputPaths.GetOptimizedDir(outputDir);
+        Directory.CreateDirectory(optimizedDir);
 
         using var image = Image.Load(imagePath);
 
@@ -82,7 +84,7 @@ public static class ImageOptimizer
         var outExt = usePng ? ".png" : ".jpg";
 
         var outputFileName = Path.GetFileNameWithoutExtension(imagePath) + "_api" + outExt;
-        var outputPath = Path.Combine(outputDir, outputFileName);
+        var outputPath = Path.Combine(optimizedDir, outputFileName);
 
         ResizeIfNeeded(image, maxDimension);
 
@@ -105,13 +107,14 @@ public static class ImageOptimizer
         int concurrency = 4,
         Action<string, string>? onComplete = null)
     {
+        var bundleDir = OutputPaths.GetBundleDir(outputDir);
         var uniqueNames = ResolveUniqueWebpNames(imagePaths);
         var result = new Dictionary<string, string>(imagePaths.Count);
         var lockObj = new object();
 
         Parallel.ForEach(imagePaths, new ParallelOptions { MaxDegreeOfParallelism = concurrency }, imagePath =>
         {
-            var optimized = OptimizeForBundleCore(imagePath, outputDir, uniqueNames[imagePath], maxDimension, quality);
+            var optimized = OptimizeForBundleCore(imagePath, bundleDir, uniqueNames[imagePath], maxDimension, quality);
             lock (lockObj)
             {
                 result[imagePath] = optimized;

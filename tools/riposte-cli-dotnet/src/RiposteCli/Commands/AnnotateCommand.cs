@@ -98,6 +98,11 @@ public static class AnnotateCommand
         var outputDir = output?.FullName ?? folder.FullName;
         Directory.CreateDirectory(outputDir);
 
+        // Migrate legacy flat layout to subdirectories
+        var migrated = OutputPaths.MigrateLegacyLayout(outputDir);
+        if (migrated > 0)
+            AnsiConsole.MarkupLine($"[dim]Migrated {migrated} file(s) to subdirectories[/]");
+
         // Find images
         var allImages = SidecarService.GetImagesInFolder(folder.FullName);
         if (allImages.Count == 0)

@@ -90,8 +90,8 @@ public static class ZipBundler
 
             foreach (var imagePath in imagesToBundle)
             {
-                var sidecarPath = Path.Combine(outputDir, Path.GetFileName(imagePath) + ".json");
-                if (!File.Exists(sidecarPath))
+                var sidecarPath = SidecarService.ResolveSidecarPath(imagePath, outputDir);
+                if (sidecarPath is null)
                     continue;
 
                 var bundlePath = bundleOptimizedMap.TryGetValue(imagePath, out var optPath)
