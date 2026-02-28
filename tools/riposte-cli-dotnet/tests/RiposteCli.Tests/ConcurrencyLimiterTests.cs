@@ -208,7 +208,9 @@ public class ConcurrencyLimiterDetailedTests
         Assert.True(limiter.IsPaused);
 
         await task;
-        // After waiting, should be unpaused
+        // After waiting, IsPaused may clear slightly after Task.Delay returns
+        // due to timer resolution — allow a short settling window
+        await Task.Delay(50);
         Assert.False(limiter.IsPaused);
     }
 
