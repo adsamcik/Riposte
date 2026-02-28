@@ -177,7 +177,7 @@ object FtsQuerySanitizer {
 
         return terms.joinToString(" OR ") { term ->
             columns.joinToString(" OR ") { column ->
-                "$column:\"$term\"*"
+                "$column:$term*"
             }
         }
     }
@@ -205,7 +205,7 @@ object FtsQuerySanitizer {
 
         if (sanitized.isBlank()) return ""
 
-        return "$column:\"$sanitized\""
+        return "$column:$sanitized"
     }
 
     /**

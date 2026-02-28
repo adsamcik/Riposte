@@ -182,13 +182,13 @@ class FtsQuerySanitizerTest {
     @Test
     fun `prepareForColumns formats single column correctly`() {
         assertThat(FtsQuerySanitizer.prepareForColumns("hello", listOf("title")))
-            .isEqualTo("title:\"hello\"*")
+            .isEqualTo("title:hello*")
     }
 
     @Test
     fun `prepareForColumns formats multiple columns with OR`() {
         assertThat(FtsQuerySanitizer.prepareForColumns("hello", listOf("title", "description")))
-            .isEqualTo("title:\"hello\"* OR description:\"hello\"*")
+            .isEqualTo("title:hello* OR description:hello*")
     }
 
     @Test
@@ -198,10 +198,10 @@ class FtsQuerySanitizerTest {
                 "hello world",
                 listOf("title", "description"),
             )
-        assertThat(result).contains("title:\"hello\"*")
-        assertThat(result).contains("description:\"hello\"*")
-        assertThat(result).contains("title:\"world\"*")
-        assertThat(result).contains("description:\"world\"*")
+        assertThat(result).contains("title:hello*")
+        assertThat(result).contains("description:hello*")
+        assertThat(result).contains("title:world*")
+        assertThat(result).contains("description:world*")
     }
 
     @Test
@@ -209,7 +209,7 @@ class FtsQuerySanitizerTest {
         val withRtl = "hello\u200Fworld"
         val result = FtsQuerySanitizer.prepareForColumns(withRtl, listOf("title"))
         assertThat(result).doesNotContain("\u200F")
-        assertThat(result).isEqualTo("title:\"helloworld\"*")
+        assertThat(result).isEqualTo("title:helloworld*")
     }
 
     @Test
@@ -217,7 +217,7 @@ class FtsQuerySanitizerTest {
         val withVariation = "star\uFE0F"
         val result = FtsQuerySanitizer.prepareForColumns(withVariation, listOf("title"))
         assertThat(result).doesNotContain("\uFE0F")
-        assertThat(result).isEqualTo("title:\"star\"*")
+        assertThat(result).isEqualTo("title:star*")
     }
 
     // endregion
@@ -233,21 +233,21 @@ class FtsQuerySanitizerTest {
     @Test
     fun `prepareEmojiQuery formats emoji with default column`() {
         assertThat(FtsQuerySanitizer.prepareEmojiQuery("😂"))
-            .isEqualTo("emojiTagsJson:\"😂\"")
+            .isEqualTo("emojiTagsJson:😂")
     }
 
     @Test
     fun `prepareEmojiQuery uses custom column`() {
         assertThat(FtsQuerySanitizer.prepareEmojiQuery("🔥", column = "emojis"))
-            .isEqualTo("emojis:\"🔥\"")
+            .isEqualTo("emojis:🔥")
     }
 
     @Test
     fun `prepareEmojiQuery removes special characters`() {
         assertThat(FtsQuerySanitizer.prepareEmojiQuery("😂*"))
-            .isEqualTo("emojiTagsJson:\"😂\"")
+            .isEqualTo("emojiTagsJson:😂")
         assertThat(FtsQuerySanitizer.prepareEmojiQuery("\"😂\""))
-            .isEqualTo("emojiTagsJson:\"😂\"")
+            .isEqualTo("emojiTagsJson:😂")
     }
 
     @Test
@@ -403,7 +403,7 @@ class FtsQuerySanitizerTest {
         val heartWithVS = "❤\uFE0F"
         val heartWithout = "❤"
         assertThat(FtsQuerySanitizer.prepareEmojiQuery(heartWithVS))
-            .isEqualTo("emojiTagsJson:\"$heartWithout\"")
+            .isEqualTo("emojiTagsJson:$heartWithout")
     }
 
     @Test
