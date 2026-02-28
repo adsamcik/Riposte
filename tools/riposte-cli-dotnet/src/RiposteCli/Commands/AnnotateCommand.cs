@@ -134,6 +134,24 @@ public static class AnnotateCommand
         var buildManifest = ManifestService.Load(outputDir);
         var currentSchemaVersion = "1.4";
         var optimizationConfig = new OptimizationConfig();
+        var isNewManifest = buildManifest.Images.Count == 0;
+
+        if (isNewManifest)
+        {
+            var seeded = ManifestService.SeedFromLegacySidecars(
+                buildManifest, imagesToProcess, outputDir, model, currentSchemaVersion, currentPromptHashes);
+            if (seeded > 0)
+            {
+                AnsiConsole.MarkupLine($"[dim]No build manifest found — seeded {seeded} image(s) from existing sidecars[/]");
+                ManifestService.Save(outputDir, buildManifest);
+            }
+            else
+            {
+                AnsiConsole.MarkupLine("[dim]No build manifest found — all images will be fully rebuilt[/]");
+            }
+        }
+        else
+            AnsiConsole.MarkupLine($"[dim]Build manifest: {buildManifest.Images.Count} tracked image(s), model={buildManifest.Model}[/]");
 
         List<ImageRebuildPlan> plans;
         if (force)
@@ -240,6 +258,33 @@ public static class AnnotateCommand
         var stripCount = plans.Count(p => p.NeedsStripping);
         if (stripCount > 0)
             AnsiConsole.MarkupLine($"[bold]Strip removed fields: {stripCount} image(s)[/]");
+
+        // Show reason breakdown for non-skip plans
+        if (!force && (fullCount > 0 || partialCount > 0))
+        {
+            var reasonGroups = plans
+                .Where(p => p.Scope != RebuildScope.Skip)
+                .GroupBy(p => p.Reason)
+                .OrderByDescending(g => g.Count())
+                .ToList();
+
+            AnsiConsole.MarkupLine("[dim]Rebuild reasons:[/]");
+            foreach (var group in reasonGroups)
+            {
+                var scope = group.First().Scope == RebuildScope.Full ? "full" : "partial";
+                AnsiConsole.MarkupLine($"  [dim]{group.Count()}× {scope}: {group.Key}[/]");
+            }
+
+            if (verbose)
+            {
+                AnsiConsole.MarkupLine("[dim]First 10 rebuild targets:[/]");
+                foreach (var plan in plans.Where(p => p.Scope != RebuildScope.Skip).Take(10))
+                {
+                    var scope = plan.Scope == RebuildScope.Full ? "[green]full[/]" : "[yellow]partial[/]";
+                    AnsiConsole.MarkupLine($"  [dim]• {Path.GetFileName(plan.ImagePath)} — {scope} ({plan.Reason})[/]");
+                }
+            }
+        }
 
         if (workPlans.Count > 0)
             AnsiConsole.MarkupLine($"[dim]Concurrency: {concurrency} parallel workers[/]");
