@@ -294,11 +294,11 @@ public class ZipAppCompatibilityTests : IDisposable
         using var zip = ZipFile.Open(zipPath, ZipArchiveMode.Create);
         foreach (var imagePath in allImages)
         {
-            var sidecarPath = Path.Combine(imageDir, Path.GetFileName(imagePath) + ".json");
-            if (File.Exists(sidecarPath))
+            var sidecarPath = SidecarService.ResolveSidecarPath(imagePath, imageDir);
+            if (sidecarPath != null)
             {
                 zip.CreateEntryFromFile(imagePath, Path.GetFileName(imagePath));
-                zip.CreateEntryFromFile(sidecarPath, Path.GetFileName(sidecarPath));
+                zip.CreateEntryFromFile(sidecarPath, Path.GetFileName(imagePath) + ".json");
             }
         }
     }

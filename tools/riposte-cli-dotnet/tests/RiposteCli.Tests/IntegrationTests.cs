@@ -278,8 +278,8 @@ public class IntegrationTests : IDisposable
         SidecarService.WriteSidecar(img2, meta2);
 
         // Verify each sidecar has correct content
-        var json1 = File.ReadAllText(Path.Combine(_tempDir, "meme1.jpg.json"));
-        var json2 = File.ReadAllText(Path.Combine(_tempDir, "meme2.png.json"));
+        var json1 = File.ReadAllText(Path.Combine(_tempDir, "sidecars", "meme1.jpg.json"));
+        var json2 = File.ReadAllText(Path.Combine(_tempDir, "sidecars", "meme2.png.json"));
 
         var read1 = JsonSerializer.Deserialize<SidecarMetadata>(json1);
         var read2 = JsonSerializer.Deserialize<SidecarMetadata>(json2);

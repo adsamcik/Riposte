@@ -88,11 +88,11 @@ public class PipelineTests : IDisposable
         {
             foreach (var img in images)
             {
-                var sidecarPath = Path.Combine(imageDir, Path.GetFileName(img) + ".json");
-                if (File.Exists(sidecarPath))
+                var sidecarPath = SidecarService.ResolveSidecarPath(img, imageDir);
+                if (sidecarPath != null)
                 {
                     zip.CreateEntryFromFile(img, Path.GetFileName(img));
-                    zip.CreateEntryFromFile(sidecarPath, Path.GetFileName(sidecarPath));
+                    zip.CreateEntryFromFile(sidecarPath, Path.GetFileName(img) + ".json");
                 }
             }
         }
@@ -182,9 +182,9 @@ public class PipelineTests : IDisposable
             SidecarService.WriteSidecar(img, meta, outputDir);
         }
 
-        // Verify: sidecars in output dir, not image dir
-        Assert.True(File.Exists(Path.Combine(outputDir, "photo1.jpg.json")));
-        Assert.True(File.Exists(Path.Combine(outputDir, "photo2.png.json")));
+        // Verify: sidecars in output dir's sidecars subdir, not image dir
+        Assert.True(File.Exists(Path.Combine(outputDir, "sidecars", "photo1.jpg.json")));
+        Assert.True(File.Exists(Path.Combine(outputDir, "sidecars", "photo2.png.json")));
         Assert.False(File.Exists(Path.Combine(imageDir, "photo1.jpg.json")));
         Assert.False(File.Exists(Path.Combine(imageDir, "photo2.png.json")));
 
@@ -221,7 +221,7 @@ public class PipelineTests : IDisposable
         var meta2 = SidecarService.CreateMetadata(emojis: ["🔥"], title: "Updated");
         SidecarService.WriteSidecar(imgPath, meta2);
 
-        var json = File.ReadAllText(Path.Combine(_tempDir, "meme.jpg.json"));
+        var json = File.ReadAllText(Path.Combine(_tempDir, "sidecars", "meme.jpg.json"));
         var readBack = JsonSerializer.Deserialize<SidecarMetadata>(json);
         Assert.Equal("Updated", readBack?.Title);
     }

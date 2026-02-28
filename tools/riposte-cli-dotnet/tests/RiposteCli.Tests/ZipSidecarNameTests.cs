@@ -416,8 +416,8 @@ public class ZipSidecarNameTests : IDisposable
 
             foreach (var imagePath in new[] { img1, img2 })
             {
-                var sidecarPath = Path.Combine(_outputDir, Path.GetFileName(imagePath) + ".json");
-                if (!File.Exists(sidecarPath))
+                var sidecarPath = SidecarService.ResolveSidecarPath(imagePath, _outputDir);
+                if (sidecarPath == null)
                     continue;
 
                 var bundlePath = badMap.TryGetValue(imagePath, out var optPath)
@@ -450,8 +450,8 @@ public class ZipSidecarNameTests : IDisposable
         string outputDir,
         Dictionary<string, string> optimizedMap)
     {
-        var sidecarPath = Path.Combine(outputDir, Path.GetFileName(imagePath) + ".json");
-        if (!File.Exists(sidecarPath))
+        var sidecarPath = SidecarService.ResolveSidecarPath(imagePath, outputDir);
+        if (sidecarPath == null)
             return;
 
         var bundlePath = optimizedMap.TryGetValue(imagePath, out var optPath)

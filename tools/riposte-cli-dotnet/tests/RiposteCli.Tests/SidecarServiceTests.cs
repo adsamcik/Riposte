@@ -324,7 +324,7 @@ public class SidecarServiceTests : IDisposable
 
         var result = SidecarService.WriteSidecar(imgPath, metadata);
 
-        Assert.Equal(Path.Combine(_tempDir, "meme.jpg.json"), result);
+        Assert.Equal(Path.Combine(_tempDir, "sidecars", "meme.jpg.json"), result);
         Assert.True(File.Exists(result));
     }
 
@@ -393,7 +393,9 @@ public class SidecarServiceTests : IDisposable
     public void WriteSidecar_OverwritesExisting()
     {
         var imgPath = CreateFileWithBytes("meme.jpg", [0xFF, 0xD8, 0xFF]);
-        var sidecarPath = Path.Combine(_tempDir, "meme.jpg.json");
+        var sidecarsDir = Path.Combine(_tempDir, "sidecars");
+        Directory.CreateDirectory(sidecarsDir);
+        var sidecarPath = Path.Combine(sidecarsDir, "meme.jpg.json");
         File.WriteAllText(sidecarPath, """{"old": true}""");
 
         var metadata = SidecarService.CreateMetadata(emojis: ["🔥"]);
