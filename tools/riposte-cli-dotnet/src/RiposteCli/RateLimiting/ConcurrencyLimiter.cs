@@ -161,10 +161,11 @@ public sealed class ConcurrencyLimiter
     {
         if (_currentConcurrency > _minConcurrency)
         {
-            _currentConcurrency--;
-            // Try to drain one permit
-            if (_semaphore.CurrentCount > 0)
-                _semaphore.Wait(0);
+            // Only decrement tracked concurrency if we actually drained a permit.
+            // Otherwise _currentConcurrency drifts below actual semaphore capacity,
+            // and later RecordSuccessAsync Release() calls exceed the max count.
+            if (_semaphore.Wait(0))
+                _currentConcurrency--;
         }
     }
 

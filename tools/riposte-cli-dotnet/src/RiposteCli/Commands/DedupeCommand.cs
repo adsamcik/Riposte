@@ -123,10 +123,10 @@ public static class DedupeCommand
         AnsiConsole.MarkupLine($"\n[green]✓ Removed {total} duplicate(s) ({deletedCount} file(s) deleted)[/]");
     }
 
-    private static int DeleteImageAndSidecar(string imagePath, string outputDir, bool verbose)
+    internal static int DeleteImageAndSidecar(string imagePath, string outputDir, bool verbose)
     {
         var deleted = 0;
-        var sidecarPath = Path.Combine(outputDir, Path.GetFileName(imagePath) + ".json");
+        var sidecarPath = SidecarService.ResolveSidecarPath(imagePath, outputDir);
 
         if (File.Exists(imagePath))
         {
@@ -135,7 +135,7 @@ public static class DedupeCommand
             if (verbose) AnsiConsole.MarkupLine($"  [dim]Deleted {Path.GetFileName(imagePath)}[/]");
         }
 
-        if (File.Exists(sidecarPath))
+        if (sidecarPath is not null && File.Exists(sidecarPath))
         {
             File.Delete(sidecarPath);
             deleted++;

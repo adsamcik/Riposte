@@ -95,7 +95,7 @@ public sealed class RateLimiter
             var elapsed = now - _lastRequestTime;
 
             var delay = _currentDelay;
-            var errorRate = GetErrorRate();
+            var errorRate = GetErrorRateUnsafe();
             if (errorRate > _errorThreshold)
                 delay *= 1 + errorRate;
 
@@ -113,7 +113,17 @@ public sealed class RateLimiter
 
     public double GetErrorRate()
     {
-        // Caller must hold _lock or call from within lock
+        lock (_lock)
+        {
+            return GetErrorRateUnsafe();
+        }
+    }
+
+    /// <summary>
+    /// Internal error rate calculation. Caller must hold <see cref="_lock"/>.
+    /// </summary>
+    private double GetErrorRateUnsafe()
+    {
         if (_recentResults.Count == 0) return 0.0;
         var failures = _recentResults.Count(r => !r);
         return (double)failures / _recentResults.Count;

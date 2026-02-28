@@ -106,7 +106,7 @@ public static class OutputPaths
 
             // Also check for collision-disambiguated names (e.g., cat_png.webp)
             var isDisambiguated = stem.Contains('_') && HasImageExtension(
-                stem[(stem.LastIndexOf('_') + 1)..] + ".x"); // crude check: suffix is an extension name
+                "_." + stem[(stem.LastIndexOf('_') + 1)..]); // crude check: suffix is an extension name
 
             if (isSourceImage && !isDisambiguated) continue;
 
