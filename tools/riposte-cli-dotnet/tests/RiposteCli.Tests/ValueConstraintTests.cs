@@ -297,6 +297,209 @@ public class ValueConstraintTests
         Assert.Equal(longTitle, merged.Title);
     }
 
+    // --- Required field enforcement (EmotionMetadata.Primary / .Sentiment) ---
+
+    [Fact]
+    public void ParseResponseContent_EmotionsMissingPrimary_Throws()
+    {
+        var ex = Assert.Throws<CopilotAnalysisException>(
+            () => ParseWithJson("""{"emojis":["😂"],"emotions":{"sentiment":"positive","intensity":"medium"}}"""));
+
+        Assert.Contains("JSON", ex.Message);
+    }
+
+    [Fact]
+    public void ParseResponseContent_EmotionsMissingSentiment_Throws()
+    {
+        var ex = Assert.Throws<CopilotAnalysisException>(
+            () => ParseWithJson("""{"emojis":["😂"],"emotions":{"primary":"humor","intensity":"medium"}}"""));
+
+        Assert.Contains("JSON", ex.Message);
+    }
+
+    [Fact]
+    public void ParseResponseContent_EmotionsMissingBothRequired_Throws()
+    {
+        var ex = Assert.Throws<CopilotAnalysisException>(
+            () => ParseWithJson("""{"emojis":["😂"],"emotions":{"intensity":"medium"}}"""));
+
+        Assert.Contains("JSON", ex.Message);
+    }
+
+    // --- Null/absent emotions object on AnalysisResult ---
+
+    [Fact]
+    public void ParseResponseContent_NullEmotionsObject_IsAllowed()
+    {
+        var result = ParseWithJson("""{"emojis":["😂"],"emotions":null}""");
+        Assert.Null(result.Emotions);
+    }
+
+    [Fact]
+    public void ParseResponseContent_AbsentEmotionsObject_IsAllowed()
+    {
+        var result = ParseWithJson("""{"emojis":["😂"]}""");
+        Assert.Null(result.Emotions);
+    }
+
+    // --- Valid primary emotion values from prompt spec ---
+
+    [Theory]
+    [InlineData("joy")]
+    [InlineData("humor")]
+    [InlineData("sarcasm")]
+    [InlineData("wholesome")]
+    [InlineData("sadness")]
+    [InlineData("anger")]
+    [InlineData("awe")]
+    public void ParseResponseContent_ValidPrimaryEmotions_ParseSuccessfully(string primary)
+    {
+        var result = ParseWithEmotions(new EmotionMetadata
+        {
+            Primary = primary,
+            Sentiment = "positive",
+            Intensity = "medium",
+        });
+
+        Assert.Equal(primary, result.Emotions!.Primary);
+    }
+
+    // --- Intensity default value ---
+
+    [Fact]
+    public void ParseResponseContent_IntensityDefaultsToMedium_WhenAbsentFromJson()
+    {
+        var result = ParseWithJson("""{"emojis":["😂"],"emotions":{"primary":"humor","sentiment":"positive"}}""");
+        Assert.Equal("medium", result.Emotions!.Intensity);
+    }
+
+    // --- Merge: emotion preservation and replacement ---
+
+    [Fact]
+    public void Merge_NullPartialEmotions_PreservesExisting()
+    {
+        var existing = CreateExisting();
+        var partial = new AnalysisResult { Emotions = null };
+
+        var merged = SidecarMerger.Merge(existing, partial, [PromptHasher.GroupEmotions]);
+
+        Assert.NotNull(merged.Emotions);
+        Assert.Equal("humor", merged.Emotions!.Primary);
+        Assert.Equal("positive", merged.Emotions.Sentiment);
+    }
+
+    [Fact]
+    public void Merge_EmotionsGroupNotInAffectedGroups_PreservesExisting()
+    {
+        var existing = CreateExisting();
+        var partial = new AnalysisResult
+        {
+            Emotions = new EmotionMetadata
+            {
+                Primary = "sadness",
+                Sentiment = "negative",
+                Intensity = "high",
+            },
+        };
+
+        var merged = SidecarMerger.Merge(existing, partial, [PromptHasher.GroupCore]);
+
+        Assert.Equal("humor", merged.Emotions!.Primary);
+        Assert.Equal("positive", merged.Emotions.Sentiment);
+    }
+
+    [Fact]
+    public void Merge_ReplacesEmotionsEntirely_WhenGroupIncluded()
+    {
+        var existing = CreateExisting();
+        var partial = new AnalysisResult
+        {
+            Emotions = new EmotionMetadata
+            {
+                Primary = "sadness",
+                Sentiment = "negative",
+                Intensity = "high",
+                Secondary = ["anger", "frustration"],
+                MemeUsage = ["when everything goes wrong"],
+            },
+        };
+
+        var merged = SidecarMerger.Merge(existing, partial, [PromptHasher.GroupEmotions]);
+
+        Assert.Equal("sadness", merged.Emotions!.Primary);
+        Assert.Equal("negative", merged.Emotions.Sentiment);
+        Assert.Equal("high", merged.Emotions.Intensity);
+        Assert.Equal(["anger", "frustration"], merged.Emotions.Secondary);
+        Assert.Equal(["when everything goes wrong"], merged.Emotions.MemeUsage);
+    }
+
+    [Fact]
+    public void Merge_PreservesEmotionSubFields_WhenNonEmotionGroupUpdated()
+    {
+        var existing = new SidecarMetadata
+        {
+            Emojis = ["😂"],
+            Emotions = new EmotionMetadata
+            {
+                Primary = "humor",
+                Sentiment = "positive",
+                Intensity = "high",
+                Secondary = ["joy", "amusement"],
+                MemeUsage = ["when code compiles on first try"],
+            },
+        };
+        var partial = new AnalysisResult { Tags = ["funny", "meme"] };
+
+        var merged = SidecarMerger.Merge(existing, partial, [PromptHasher.GroupSearch]);
+
+        Assert.Equal("high", merged.Emotions!.Intensity);
+        Assert.Equal(["joy", "amusement"], merged.Emotions.Secondary);
+        Assert.Equal(["when code compiles on first try"], merged.Emotions.MemeUsage);
+    }
+
+    // --- ParsePartialResponse: emotion constraints ---
+
+    [Fact]
+    public void ParsePartialResponse_EmotionsWithoutEmojis_ParsesSuccessfully()
+    {
+        var json = JsonSerializer.Serialize(new
+        {
+            emotions = new EmotionMetadata
+            {
+                Primary = "humor",
+                Sentiment = "positive",
+                Intensity = "medium",
+            },
+        });
+
+        var result = CopilotService.ParsePartialResponse(json, [PromptHasher.GroupEmotions]);
+
+        Assert.Equal("humor", result.Emotions!.Primary);
+        Assert.Equal("positive", result.Emotions.Sentiment);
+    }
+
+    [Fact]
+    public void ParsePartialResponse_EmotionsMissingSentiment_Throws()
+    {
+        var ex = Assert.Throws<CopilotAnalysisException>(
+            () => CopilotService.ParsePartialResponse(
+                """{"emotions":{"primary":"humor","intensity":"medium"}}""",
+                [PromptHasher.GroupEmotions]));
+
+        Assert.Contains("JSON", ex.Message);
+    }
+
+    [Fact]
+    public void ParsePartialResponse_EmotionsMissingPrimary_Throws()
+    {
+        var ex = Assert.Throws<CopilotAnalysisException>(
+            () => CopilotService.ParsePartialResponse(
+                """{"emotions":{"sentiment":"positive","intensity":"medium"}}""",
+                [PromptHasher.GroupEmotions]));
+
+        Assert.Contains("JSON", ex.Message);
+    }
+
     private static AnalysisResult ParseWithEmotions(EmotionMetadata emotions) =>
         ParseWithJson(JsonSerializer.Serialize(new
         {

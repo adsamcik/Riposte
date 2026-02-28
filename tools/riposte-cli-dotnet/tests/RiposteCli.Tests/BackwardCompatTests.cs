@@ -292,7 +292,7 @@ public sealed class BackwardCompatTests : IDisposable
     }
 
     [Fact]
-    public void EmptyManifest_SeededFromSidecars_PlannerReturnsSkip()
+    public void EmptyManifest_WithLegacySidecar_PlannerReturnsFull()
     {
         var imagePath = CreateTestImage("legacy.png");
         SidecarService.WriteSidecar(imagePath, new SidecarMetadata { Emojis = ["😂"] }, _outputDir);
@@ -306,20 +306,6 @@ public sealed class BackwardCompatTests : IDisposable
             [PromptHasher.GroupEmotions] = "h4",
         };
 
-        var fileName = Path.GetFileName(imagePath);
-        var seeded = 0;
-        if (SidecarService.HasSidecar(imagePath, _outputDir))
-        {
-            ManifestService.RecordImageBuild(
-                manifest,
-                fileName,
-                ImageHashService.GetContentHash(imagePath),
-                model: "gpt-5-mini",
-                schemaVersion: "1.4",
-                fieldHashes: promptHashes);
-            seeded = 1;
-        }
-
         var plan = RebuildPlanner.PlanForImage(
             imagePath,
             manifest,
@@ -328,8 +314,8 @@ public sealed class BackwardCompatTests : IDisposable
             currentSchemaVersion: "1.4",
             outputDir: _outputDir);
 
-        Assert.Equal(1, seeded);
-        Assert.Equal(RebuildScope.Skip, plan.Scope);
+        Assert.Equal(RebuildScope.Full, plan.Scope);
+        Assert.Contains("legacy", plan.Reason, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -402,6 +388,213 @@ public sealed class BackwardCompatTests : IDisposable
         Assert.Equal("1.4", result.SchemaVersion);
         Assert.Equal("gpt-5-mini", result.Model);
         Assert.Empty(result.Images);
+    }
+
+    [Fact]
+    public void FullUpgradePath_LegacySidecar_FullRebuild_ThenSkipOnSecondRun()
+    {
+        var imagePath = CreateTestImage("upgrade.png");
+        SidecarService.WriteSidecar(imagePath, new SidecarMetadata { Emojis = ["🔥"] }, _outputDir);
+
+        var manifest = new BuildManifest();
+        var promptHashes = new Dictionary<string, string>
+        {
+            [PromptHasher.GroupCore] = "h1",
+            [PromptHasher.GroupSearch] = "h2",
+            [PromptHasher.GroupCultural] = "h3",
+            [PromptHasher.GroupEmotions] = "h4",
+        };
+
+        // First run: legacy sidecar, no manifest entry → Full rebuild
+        var firstPlan = RebuildPlanner.PlanForImage(
+            imagePath, manifest, promptHashes,
+            currentModel: "gpt-5-mini", currentSchemaVersion: "1.4", outputDir: _outputDir);
+
+        Assert.Equal(RebuildScope.Full, firstPlan.Scope);
+
+        // Simulate successful rebuild: record in manifest
+        ManifestService.RecordImageBuild(
+            manifest,
+            Path.GetFileName(imagePath),
+            ImageHashService.GetContentHash(imagePath),
+            model: "gpt-5-mini",
+            schemaVersion: "1.4",
+            fieldHashes: promptHashes);
+
+        // Second run: same config → Skip
+        var secondPlan = RebuildPlanner.PlanForImage(
+            imagePath, manifest, promptHashes,
+            currentModel: "gpt-5-mini", currentSchemaVersion: "1.4", outputDir: _outputDir);
+
+        Assert.Equal(RebuildScope.Skip, secondPlan.Scope);
+    }
+
+    [Fact]
+    public void MigrateLegacyLayout_MovesSidecarsToSubdir()
+    {
+        var imagePath = CreateTestImage("photo.jpg");
+
+        // Write sidecar directly in the legacy flat location (outputDir root)
+        var legacyPath = Path.Combine(_outputDir, "photo.jpg.json");
+        File.WriteAllText(legacyPath, """{"schemaVersion":"1.3","emojis":["😂"],"title":"Legacy"}""");
+
+        Assert.True(File.Exists(legacyPath));
+
+        var migrated = OutputPaths.MigrateLegacyLayout(_outputDir);
+
+        Assert.Equal(1, migrated);
+        Assert.False(File.Exists(legacyPath));
+        Assert.True(File.Exists(Path.Combine(_outputDir, OutputPaths.SidecarDir, "photo.jpg.json")));
+    }
+
+    [Fact]
+    public void MigrateLegacyLayout_SkipsManifestFiles()
+    {
+        // Write manifest in outputDir — should NOT be migrated
+        File.WriteAllText(
+            Path.Combine(_outputDir, BuildManifest.FileName),
+            """{"manifestVersion":"1.0","schemaVersion":"1.4","model":"gpt-5-mini","promptHashes":{},"images":{}}""");
+
+        var migrated = OutputPaths.MigrateLegacyLayout(_outputDir);
+
+        Assert.Equal(0, migrated);
+        Assert.True(File.Exists(Path.Combine(_outputDir, BuildManifest.FileName)));
+    }
+
+    [Fact]
+    public void MigrateLegacyLayout_MigratedSidecar_StillFoundByHasSidecar()
+    {
+        var imagePath = CreateTestImage("migrated.png");
+
+        // Place sidecar in legacy flat location
+        var legacyPath = Path.Combine(_outputDir, "migrated.png.json");
+        File.WriteAllText(legacyPath, """{"schemaVersion":"1.3","emojis":["🔥"],"title":"Legacy"}""");
+
+        Assert.True(SidecarService.HasSidecar(imagePath, _outputDir));
+
+        OutputPaths.MigrateLegacyLayout(_outputDir);
+
+        // After migration, sidecar should still be found
+        Assert.True(SidecarService.HasSidecar(imagePath, _outputDir));
+    }
+
+    [Fact]
+    public void ManifestLoad_OlderVersionMissingBundleTimestamps_RoundTripsWithNulls()
+    {
+        var manifestJson = """
+            {
+              "manifestVersion": "1.0",
+              "schemaVersion": "1.3",
+              "model": "gpt-5-mini",
+              "promptHashes": { "core": "abc" },
+              "images": {
+                "old.png": {
+                  "contentHash": "def",
+                  "schemaVersion": "1.3",
+                  "model": "gpt-5-mini",
+                  "generatedAt": "2025-01-01T00:00:00Z",
+                  "fieldHashes": { "core": "abc" }
+                }
+              }
+            }
+            """;
+        File.WriteAllText(Path.Combine(_outputDir, BuildManifest.FileName), manifestJson);
+
+        var loaded = ManifestService.Load(_outputDir);
+
+        Assert.NotNull(loaded);
+        Assert.Null(loaded.Optimization);
+        Assert.Null(loaded.LastFullBundleAt);
+        Assert.Null(loaded.LastPatchBundleAt);
+        Assert.Single(loaded.Images);
+        Assert.Null(loaded.Images["old.png"].OptimizationFingerprint);
+        Assert.False(loaded.Images["old.png"].HasApiOptimized);
+        Assert.False(loaded.Images["old.png"].HasBundleOptimized);
+    }
+
+    [Fact]
+    public void StaleManifestEntry_ImageDeletedFromDisk_PlannerSkipsWithoutCrash()
+    {
+        // Create image, record it in manifest, then delete image from disk
+        var imagePath = CreateTestImage("stale.png");
+        var manifest = new BuildManifest();
+        var promptHashes = new Dictionary<string, string>
+        {
+            [PromptHasher.GroupCore] = "h1",
+            [PromptHasher.GroupSearch] = "h2",
+            [PromptHasher.GroupCultural] = "h3",
+            [PromptHasher.GroupEmotions] = "h4",
+        };
+
+        SidecarService.WriteSidecar(imagePath, new SidecarMetadata { Emojis = ["😂"] }, _outputDir);
+        ManifestService.RecordImageBuild(
+            manifest, Path.GetFileName(imagePath),
+            ImageHashService.GetContentHash(imagePath),
+            model: "gpt-5-mini", schemaVersion: "1.4", fieldHashes: promptHashes);
+
+        // Delete the image file
+        File.Delete(imagePath);
+
+        // Simulate discovery: GetImagesInFolder won't return the deleted file
+        var discoveredImages = SidecarService.GetImagesInFolder(_tempDir);
+        Assert.DoesNotContain(imagePath, discoveredImages);
+
+        // Manifest still has the stale entry — verify it doesn't break anything
+        Assert.True(manifest.Images.ContainsKey("stale.png"));
+
+        // Plan only processes discovered images — stale entry is harmlessly ignored
+        var plans = RebuildPlanner.Plan(
+            discoveredImages, manifest, promptHashes,
+            currentModel: "gpt-5-mini", currentSchemaVersion: "1.4", outputDir: _outputDir);
+
+        Assert.DoesNotContain(plans, p => Path.GetFileName(p.ImagePath) == "stale.png");
+    }
+
+    [Fact]
+    public void DeletedSidecar_ManifestHasEntry_PlannerReturnsFull()
+    {
+        var imagePath = CreateTestImage("orphan.png");
+        var manifest = new BuildManifest();
+        var promptHashes = new Dictionary<string, string>
+        {
+            [PromptHasher.GroupCore] = "h1",
+            [PromptHasher.GroupSearch] = "h2",
+            [PromptHasher.GroupCultural] = "h3",
+            [PromptHasher.GroupEmotions] = "h4",
+        };
+
+        // Write sidecar + record in manifest
+        SidecarService.WriteSidecar(imagePath, new SidecarMetadata { Emojis = ["😂"] }, _outputDir);
+        ManifestService.RecordImageBuild(
+            manifest, Path.GetFileName(imagePath),
+            ImageHashService.GetContentHash(imagePath),
+            model: "gpt-5-mini", schemaVersion: "1.4", fieldHashes: promptHashes);
+
+        // Delete only the sidecar file (simulate manual deletion)
+        var sidecarPath = SidecarService.ResolveSidecarPath(imagePath, _outputDir);
+        Assert.NotNull(sidecarPath);
+        File.Delete(sidecarPath);
+
+        // Planner should detect missing sidecar and request full rebuild
+        var plan = RebuildPlanner.PlanForImage(
+            imagePath, manifest, promptHashes,
+            currentModel: "gpt-5-mini", currentSchemaVersion: "1.4", outputDir: _outputDir);
+
+        Assert.Equal(RebuildScope.Full, plan.Scope);
+        Assert.Contains("no existing sidecar", plan.Reason);
+    }
+
+    [Fact]
+    public void LegacySidecar_InFlatDir_FoundBeforeMigration()
+    {
+        var imagePath = CreateTestImage("flat.png");
+
+        // Write sidecar in legacy flat location (not in sidecars/ subdir)
+        var legacyPath = Path.Combine(_outputDir, "flat.png.json");
+        File.WriteAllText(legacyPath, """{"schemaVersion":"1.3","emojis":["🔥"],"title":"Flat"}""");
+
+        // HasSidecar should find it even at the legacy location
+        Assert.True(SidecarService.HasSidecar(imagePath, _outputDir));
     }
 
     private string CreateTestImage(string filename)

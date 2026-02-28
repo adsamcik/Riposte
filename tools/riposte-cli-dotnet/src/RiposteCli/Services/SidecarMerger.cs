@@ -72,7 +72,7 @@ public static class SidecarMerger
                     break;
 
                 case PromptHasher.GroupCultural:
-                    basedOn = partial.BasedOn;
+                    basedOn = partial.BasedOn ?? basedOn;
                     break;
 
                 case PromptHasher.GroupEmotions:
