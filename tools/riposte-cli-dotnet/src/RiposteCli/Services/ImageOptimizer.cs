@@ -27,6 +27,8 @@ public static class ImageOptimizer
         int maxDimension = DefaultMaxDimension,
         int quality = DefaultQuality)
     {
+        Directory.CreateDirectory(outputDir);
+
         var outputFileName = Path.GetFileNameWithoutExtension(imagePath) + ".webp";
         var outputPath = Path.Combine(outputDir, outputFileName);
 
@@ -53,6 +55,8 @@ public static class ImageOptimizer
         int maxDimension = DefaultMaxDimension,
         int quality = DefaultQuality)
     {
+        Directory.CreateDirectory(outputDir);
+
         using var image = Image.Load(imagePath);
 
         if (image.Width <= maxDimension && image.Height <= maxDimension)
