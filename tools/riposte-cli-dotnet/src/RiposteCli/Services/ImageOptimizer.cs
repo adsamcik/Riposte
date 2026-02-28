@@ -55,7 +55,7 @@ public static class ImageOptimizer
             Quality = quality,
             FileFormat = WebpFileFormatType.Lossy,
         };
-        image.Save(outputPath, encoder);
+        SaveWithSharing(image, outputPath, encoder);
 
         return outputPath;
     }
@@ -92,7 +92,7 @@ public static class ImageOptimizer
             ? new PngEncoder { CompressionLevel = PngCompressionLevel.BestSpeed }
             : new JpegEncoder { Quality = quality };
 
-        image.Save(outputPath, encoder);
+        SaveWithSharing(image, outputPath, encoder);
         return outputPath;
     }
 
@@ -195,6 +195,30 @@ public static class ImageOptimizer
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// Save image using a FileStream with FileShare.ReadWrite so cloud sync
+    /// services (e.g. Proton Drive) holding the file open for reading don't block writes.
+    /// Retries with exponential backoff if the file is still locked.
+    /// </summary>
+    private static void SaveWithSharing(Image image, string outputPath, IImageEncoder encoder)
+    {
+        const int maxRetries = 5;
+        for (var attempt = 0; attempt <= maxRetries; attempt++)
+        {
+            try
+            {
+                using var stream = new FileStream(
+                    outputPath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
+                image.Save(stream, encoder);
+                return;
+            }
+            catch (IOException) when (attempt < maxRetries)
+            {
+                Thread.Sleep(200 * (1 << attempt)); // 200ms, 400ms, 800ms, 1.6s, 3.2s
+            }
+        }
     }
 
     private static void ResizeIfNeeded(Image image, int maxDimension)
