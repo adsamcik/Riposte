@@ -245,10 +245,18 @@ interface MemeEmbeddingDao {
     suspend fun countMemesWithoutEmbeddings(): Int
 
     /**
-     * Get total count of embeddings needing regeneration.
+     * Get total count of embedding rows needing regeneration.
+     * Used for statistics display.
      */
     @Query("SELECT COUNT(*) FROM meme_embeddings WHERE needsRegeneration = 1")
     suspend fun countEmbeddingsNeedingRegeneration(): Int
+
+    /**
+     * Get total count of distinct memes needing regeneration.
+     * Used for worker progress tracking (counts memes, not rows).
+     */
+    @Query("SELECT COUNT(DISTINCT memeId) FROM meme_embeddings WHERE needsRegeneration = 1")
+    suspend fun countMemesNeedingRegeneration(): Int
 
     /**
      * Get count of distinct memes with valid embeddings.

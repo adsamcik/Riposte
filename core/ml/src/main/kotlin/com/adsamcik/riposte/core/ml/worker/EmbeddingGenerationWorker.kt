@@ -113,7 +113,11 @@ class EmbeddingGenerationWorker
                         kotlinx.coroutines.delay(INTER_BATCH_DELAY_MS)
                     }
 
-                    val remainingCount = embeddingRepository.countMemesNeedingEmbeddings()
+                    // Subtract memes we already processed from the remaining count.
+                    // "Incomplete" memes (fewer than 5 types due to missing metadata)
+                    // are legitimately done — they just can't produce all types.
+                    val rawRemaining = embeddingRepository.countMemesNeedingEmbeddings()
+                    val remainingCount = (rawRemaining - processedMemeIds.size).coerceAtLeast(0)
                     val elapsed = System.currentTimeMillis() - startTime
 
                     Timber.i(

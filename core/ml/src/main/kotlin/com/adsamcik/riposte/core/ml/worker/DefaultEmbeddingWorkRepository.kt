@@ -82,12 +82,16 @@ class DefaultEmbeddingWorkRepository
         }
 
         override suspend fun countMemesNeedingEmbeddings(): Int {
-            return memeEmbeddingDao.countMemesWithoutEmbeddings() +
-                memeEmbeddingDao.countEmbeddingsNeedingRegeneration() +
-                memeEmbeddingDao.countMemesWithIncompleteEmbeddings(
-                    expectedTypeCount = EXPECTED_EMBEDDING_TYPES,
-                    currentVersion = EmbeddingGenerationWorker.CURRENT_MODEL_VERSION,
-                )
+            // Count distinct memes across all three sources to avoid double-counting.
+            // A meme can appear in multiple sources (e.g., no embeddings AND incomplete).
+            val withoutEmbeddings = memeEmbeddingDao.getMemeIdsWithoutEmbeddings(Int.MAX_VALUE).toSet()
+            val needingRegen = memeEmbeddingDao.getMemeIdsNeedingRegeneration(Int.MAX_VALUE).toSet()
+            val incomplete = memeEmbeddingDao.getMemeIdsWithIncompleteEmbeddings(
+                expectedTypeCount = EXPECTED_EMBEDDING_TYPES,
+                currentVersion = EmbeddingGenerationWorker.CURRENT_MODEL_VERSION,
+                limit = Int.MAX_VALUE,
+            ).toSet()
+            return (withoutEmbeddings + needingRegen + incomplete).size
         }
 
         override suspend fun deleteOutdatedEmbeddings(currentVersion: String) {
