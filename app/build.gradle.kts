@@ -88,16 +88,10 @@ android {
             )
         }
 
-        // Google Play: include generic model as fallback for APK sideloading.
-        // AI Packs deliver the same (or device-targeted) model via AAB on Play Store.
-        // When both are present, the AI Pack model takes precedence (same filename).
+        // Google Play: models delivered via AI Packs (assetPacks) in AAB builds.
+        // For APK sideload testing, use the 'standard' flavor instead.
         getByName("googleplay") {
-            assets.setSrcDirs(
-                listOf(
-                    "src/main/assets",
-                    "src/main/assets_standard",
-                ),
-            )
+            assets.setSrcDirs(listOf("src/main/assets"))
         }
     }
 
