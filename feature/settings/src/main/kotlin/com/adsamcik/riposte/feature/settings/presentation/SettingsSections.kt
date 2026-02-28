@@ -194,7 +194,7 @@ private fun EmbeddingSearchSettings(uiState: SettingsUiState) {
             supportingContent = {
                 Text(
                     text = embeddingErrorMessage(embeddingState.modelError),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = MaterialTheme.colorScheme.error,
                 )
             },
             leadingContent = { Icon(imageVector = Icons.Default.Storage, contentDescription = null) },
@@ -218,6 +218,12 @@ private fun EmbeddingSearchSettings(uiState: SettingsUiState) {
                             }
                         },
                         modifier = Modifier.padding(end = 16.dp),
+                    )
+                    Spacer(Modifier.size(4.dp))
+                    Text(
+                        text = stringResource(R.string.settings_search_index_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
