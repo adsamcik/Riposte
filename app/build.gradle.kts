@@ -88,9 +88,16 @@ android {
             )
         }
 
-        // Google Play: no local models — delivered via AI Packs
+        // Google Play: include generic model in APK as fallback.
+        // AI Packs deliver models via AAB on Play Store, but the generic model
+        // must also be in the APK for local/sideload testing and as a safety net.
         getByName("googleplay") {
-            assets.setSrcDirs(listOf("src/main/assets"))
+            assets.setSrcDirs(
+                listOf(
+                    "src/main/assets",
+                    "src/main/assets_standard",
+                ),
+            )
         }
     }
 
