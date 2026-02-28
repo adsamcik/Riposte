@@ -18,13 +18,13 @@ interface MemeDao {
     /**
      * Get all memes ordered by import date (newest first).
      */
-    @Query("SELECT * FROM memes ORDER BY importedAt DESC")
+    @Query("SELECT * FROM memes ORDER BY importedAt DESC, id DESC")
     fun getAllMemes(): Flow<List<MemeEntity>>
 
     /**
      * Get all favorite memes ordered by import date.
      */
-    @Query("SELECT * FROM memes WHERE isFavorite = 1 ORDER BY importedAt DESC")
+    @Query("SELECT * FROM memes WHERE isFavorite = 1 ORDER BY importedAt DESC, id DESC")
     fun getFavoriteMemes(): Flow<List<MemeEntity>>
 
     /**
@@ -143,7 +143,7 @@ interface MemeDao {
         SELECT DISTINCT m.* FROM memes m
         INNER JOIN emoji_tags e ON m.id = e.memeId
         WHERE e.emoji = :emoji
-        ORDER BY m.importedAt DESC
+        ORDER BY m.importedAt DESC, m.id DESC
     """,
     )
     fun getMemesByEmoji(emoji: String): Flow<List<MemeEntity>>
@@ -170,7 +170,7 @@ interface MemeDao {
      * Get all memes as a PagingSource for efficient pagination.
      * Used for large collections (1000+ memes).
      */
-    @Query("SELECT * FROM memes ORDER BY importedAt DESC")
+    @Query("SELECT * FROM memes ORDER BY importedAt DESC, id DESC")
     fun getAllMemesPaged(): PagingSource<Int, MemeEntity>
 
     /**
@@ -182,7 +182,7 @@ interface MemeDao {
         SELECT DISTINCT m.* FROM memes m
         INNER JOIN emoji_tags e ON m.id = e.memeId
         WHERE e.emoji IN (:emojis)
-        ORDER BY m.importedAt DESC
+        ORDER BY m.importedAt DESC, m.id DESC
         """,
     )
     fun getMemesByEmojisPaged(emojis: List<String>): PagingSource<Int, MemeEntity>
@@ -190,7 +190,7 @@ interface MemeDao {
     /**
      * Get all memes as a PagingSource sorted by most used first.
      */
-    @Query("SELECT * FROM memes ORDER BY useCount DESC, importedAt DESC")
+    @Query("SELECT * FROM memes ORDER BY useCount DESC, importedAt DESC, id DESC")
     fun getAllMemesPagedByMostUsed(): PagingSource<Int, MemeEntity>
 
     /**
@@ -200,7 +200,7 @@ interface MemeDao {
         """
         SELECT m.* FROM memes m
         LEFT JOIN (SELECT memeId, MIN(emoji) as primaryEmoji FROM emoji_tags GROUP BY memeId) e ON m.id = e.memeId
-        ORDER BY COALESCE(e.primaryEmoji, 'zzz') ASC, m.importedAt DESC
+        ORDER BY COALESCE(e.primaryEmoji, 'zzz') ASC, m.importedAt DESC, m.id DESC
         """,
     )
     fun getAllMemesPagedByEmoji(): PagingSource<Int, MemeEntity>
@@ -208,7 +208,7 @@ interface MemeDao {
     /**
      * Get all meme IDs for bulk operations (e.g., select all).
      */
-    @Query("SELECT id FROM memes ORDER BY importedAt DESC")
+    @Query("SELECT id FROM memes ORDER BY importedAt DESC, id DESC")
     suspend fun getAllMemeIds(): List<Long>
 
     /**

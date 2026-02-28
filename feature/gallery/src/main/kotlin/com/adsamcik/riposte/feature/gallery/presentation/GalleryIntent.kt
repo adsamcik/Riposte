@@ -107,6 +107,11 @@ sealed interface GalleryIntent {
     data object ClearSearch : GalleryIntent
 
     /**
+     * Submit the current query from IME search action.
+     */
+    data object SubmitSearch : GalleryIntent
+
+    /**
      * Select a recent search and perform it.
      */
     data class SelectRecentSearch(val query: String) : GalleryIntent

@@ -361,7 +361,12 @@ private fun MemeDetailContent(
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
         sheetPeekHeight = adaptivePeekHeight,
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost = {
+            SnackbarHost(
+                snackbarHostState,
+                modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars),
+            )
+        },
         sheetDragHandle =
             if (zoomState.isZoomed) {
                 { /* empty — suppress drag handle when zoomed */ }

@@ -4,7 +4,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navOptions
 import com.adsamcik.riposte.core.common.navigation.GalleryRoute
 import com.adsamcik.riposte.core.common.navigation.MemeDetailRoute
@@ -30,8 +29,8 @@ import com.adsamcik.riposte.feature.settings.navigation.settingsScreen
  */
 @Composable
 fun RiposteNavHost(
+    navController: NavHostController,
     modifier: Modifier = Modifier,
-    navController: NavHostController = rememberNavController(),
     startDestination: Any = GalleryRoute,
 ) {
     NavHost(

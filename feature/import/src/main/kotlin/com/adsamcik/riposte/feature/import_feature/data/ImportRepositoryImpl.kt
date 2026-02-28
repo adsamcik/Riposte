@@ -162,6 +162,7 @@ class ImportRepositoryImpl
                     @Suppress("TooGenericExceptionCaught") // Worker must not crash - reports failure instead
                     e: Exception,
                 ) {
+                    Timber.e(e, "Failed to import image from URI: %s", uri)
                     Result.failure(e)
                 }
             }

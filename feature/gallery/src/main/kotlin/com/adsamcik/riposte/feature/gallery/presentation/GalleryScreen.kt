@@ -25,12 +25,15 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -86,6 +89,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -153,6 +157,8 @@ fun GalleryScreen(
     val pagedMemes = viewModel.pagedMemes.collectAsLazyPagingItems()
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
     val hapticFeedback = LocalHapticFeedback.current
     var showDeleteDialog by remember { mutableStateOf(false) }
     var deleteCount by remember { mutableStateOf(0) }
@@ -163,7 +169,12 @@ fun GalleryScreen(
     LaunchedEffect(Unit) {
         viewModel.effects.collectLatest { effect ->
             when (effect) {
-                is GalleryEffect.NavigateToMeme -> onNavigateToMeme(effect.memeId)
+                is GalleryEffect.NavigateToMeme -> {
+                    keyboardController?.hide()
+                    focusManager.clearFocus(force = true)
+                    viewModel.onIntent(GalleryIntent.SearchFieldFocusChanged(false))
+                    onNavigateToMeme(effect.memeId)
+                }
                 is GalleryEffect.NavigateToImport -> onNavigateToImport()
                 is GalleryEffect.ShowSnackbar -> snackbarHostState.showSnackbar(effect.message)
                 is GalleryEffect.ShowDeleteConfirmation -> {
@@ -480,7 +491,12 @@ private fun GalleryScreenContent(
                 )
             }
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost = {
+            SnackbarHost(
+                snackbarHostState,
+                modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars),
+            )
+        },
     ) { paddingValues ->
         Box(
             modifier =
@@ -527,18 +543,25 @@ private fun GalleryScreenContent(
                     remember(uiState.searchState.results) {
                         uiState.searchState.results.distinctBy { it.meme.id }
                     }
+                var hasRenderedContent by rememberSaveable { mutableStateOf(false) }
 
                 val contentKey = when {
                     uiState.screenMode != ScreenMode.Searching && uiState.isLoading -> "loading"
                     uiState.screenMode != ScreenMode.Searching && uiState.error != null -> "error"
                     uiState.screenMode != ScreenMode.Searching && uiState.isEmpty && !uiState.usePaging -> "empty"
                     uiState.screenMode != ScreenMode.Searching && uiState.usePaging && pagedMemes != null &&
-                        pagedMemes.loadState.refresh is LoadState.Loading && pagedMemes.itemCount == 0 -> "paged-loading"
+                        pagedMemes.loadState.refresh is LoadState.Loading && pagedMemes.itemCount == 0 &&
+                        !hasRenderedContent -> "paged-loading"
                     uiState.screenMode != ScreenMode.Searching && uiState.usePaging && pagedMemes != null &&
                         pagedMemes.loadState.refresh is LoadState.Error && pagedMemes.itemCount == 0 -> "paged-error"
                     uiState.screenMode != ScreenMode.Searching && uiState.usePaging && pagedMemes != null &&
-                        pagedMemes.itemCount == 0 -> "paged-empty"
+                        pagedMemes.loadState.refresh is LoadState.NotLoading && pagedMemes.itemCount == 0 -> "paged-empty"
                     else -> "content"
+                }
+                LaunchedEffect(contentKey) {
+                    if (contentKey == "content") {
+                        hasRenderedContent = true
+                    }
                 }
 
                 Crossfade(targetState = contentKey, label = "gallery_content") { targetKey ->
@@ -1108,7 +1131,7 @@ private fun FloatingSearchBar(
             com.adsamcik.riposte.core.ui.component.SearchBar(
                 query = uiState.searchState.query,
                 onQueryChange = { onIntent(GalleryIntent.UpdateSearchQuery(it)) },
-                onSearch = { /* debounce handles it */ },
+                onSearch = { onIntent(GalleryIntent.SubmitSearch) },
                 placeholder = stringResource(SearchR.string.search_placeholder),
                 onFocusChanged = { focused -> onIntent(GalleryIntent.SearchFieldFocusChanged(focused)) },
                 modifier = Modifier.weight(1f),

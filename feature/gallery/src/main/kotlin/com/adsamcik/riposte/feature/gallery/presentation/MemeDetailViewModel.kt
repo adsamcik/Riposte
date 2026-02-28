@@ -40,6 +40,7 @@ class MemeDetailViewModel
 
         private val _effects = Channel<MemeDetailEffect>(Channel.BUFFERED)
         val effects = _effects.receiveAsFlow()
+        private var isShareInProgress = false
 
         init {
             loadMeme()
@@ -72,21 +73,26 @@ class MemeDetailViewModel
         }
 
         private fun share() {
+            if (isShareInProgress) return
+            isShareInProgress = true
             viewModelScope.launch {
                 _uiState.update { it.copy(isSharing = true) }
-                shareMemeUseCase(currentMemeId)
-                    .onSuccess { intent ->
-                        _uiState.update { it.copy(isSharing = false) }
-                        _effects.send(MemeDetailEffect.LaunchShareIntent(intent))
-                    }
-                    .onFailure { error ->
-                        _uiState.update { it.copy(isSharing = false) }
-                        _effects.send(
-                            MemeDetailEffect.ShowError(
-                                error.message ?: context.getString(R.string.gallery_error_default),
-                            ),
-                        )
-                    }
+                try {
+                    shareMemeUseCase(currentMemeId)
+                        .onSuccess { intent ->
+                            _effects.send(MemeDetailEffect.LaunchShareIntent(intent))
+                        }
+                        .onFailure { error ->
+                            _effects.send(
+                                MemeDetailEffect.ShowError(
+                                    error.message ?: context.getString(R.string.gallery_error_default),
+                                ),
+                            )
+                        }
+                } finally {
+                    isShareInProgress = false
+                    _uiState.update { it.copy(isSharing = false) }
+                }
             }
         }
 

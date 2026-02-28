@@ -5,9 +5,11 @@ import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavOptions
 import androidx.navigation.compose.composable
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.adsamcik.riposte.core.common.navigation.GalleryRoute
 import com.adsamcik.riposte.core.common.navigation.MemeDetailRoute
 import com.adsamcik.riposte.feature.gallery.presentation.GalleryScreen
+import com.adsamcik.riposte.feature.gallery.presentation.GalleryViewModel
 import com.adsamcik.riposte.feature.gallery.presentation.MemeDetailScreen
 
 fun NavController.navigateToGallery(navOptions: NavOptions? = null) {
@@ -28,6 +30,7 @@ fun NavGraphBuilder.galleryScreen(
 ) {
     composable<GalleryRoute> { backStackEntry ->
         val savedStateHandle = backStackEntry.savedStateHandle
+        val viewModel: GalleryViewModel = hiltViewModel(backStackEntry)
         val emojiFilter =
             savedStateHandle.getStateFlow<String?>(EMOJI_FILTER_KEY, null)
                 .collectAsStateWithLifecycle()
@@ -38,6 +41,7 @@ fun NavGraphBuilder.galleryScreen(
             onNavigateToSettings = onNavigateToSettings,
             initialEmojiFilter = emojiFilter.value,
             onEmojiFilterConsumed = { savedStateHandle.remove<String>(EMOJI_FILTER_KEY) },
+            viewModel = viewModel,
         )
     }
 }

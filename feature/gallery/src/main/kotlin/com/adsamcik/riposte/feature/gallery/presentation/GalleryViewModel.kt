@@ -136,6 +136,7 @@ class GalleryViewModel
                 is GalleryIntent.DeleteRecentSearch,
                 is GalleryIntent.ClearRecentSearches,
                 is GalleryIntent.ClearSearch,
+                is GalleryIntent.SubmitSearch,
                 -> searchDelegate.onIntent(intent, viewModelScope)
             }
         }
@@ -527,6 +528,7 @@ class GalleryViewModel
             if (_uiState.value.isSelectionMode) {
                 toggleSelection(memeId)
             } else {
+                _uiState.update { it.copy(isSearchFocused = false) }
                 viewModelScope.launch {
                     _effects.send(GalleryEffect.NavigateToMeme(memeId))
                 }
@@ -558,8 +560,12 @@ class GalleryViewModel
         }
 
         private fun enterSelectionMode() {
+            searchDelegate.onIntent(GalleryIntent.ClearSearch, viewModelScope)
             _uiState.update {
-                it.copy(isSelectionMode = true)
+                it.copy(
+                    isSelectionMode = true,
+                    isSearchFocused = false,
+                )
             }
         }
 
