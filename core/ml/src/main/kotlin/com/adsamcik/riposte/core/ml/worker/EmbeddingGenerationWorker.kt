@@ -99,9 +99,18 @@ class EmbeddingGenerationWorker
                     } else if (remainingCount > 0) {
                         Timber.w(
                             "Embedding batch done in %dms: 0 ok, %d failed, %d remaining — " +
-                                "not scheduling continuation to avoid busy loop",
+                                "retrying with backoff",
                             elapsed, failureCount, remainingCount,
                         )
+                        return@withContext if (runAttemptCount < MAX_RETRY_COUNT) {
+                            Result.retry()
+                        } else {
+                            Result.failure(
+                                workDataOf(
+                                    KEY_ERROR_MESSAGE to "All $failureCount memes failed to generate embeddings",
+                                ),
+                            )
+                        }
                     } else {
                         Timber.i(
                             "Embedding generation complete in %dms: %d ok, %d failed, 0 remaining",

@@ -476,7 +476,7 @@ class EmbeddingGenerationWorkerTest {
     // region Continuation Scheduling Tests
 
     @Test
-    fun `doWork does not schedule continuation when all memes fail`() =
+    fun `doWork retries with backoff when all memes fail`() =
         runTest {
             val memes =
                 listOf(
@@ -492,11 +492,7 @@ class EmbeddingGenerationWorkerTest {
             val worker = createWorker()
             val result = worker.doWork()
 
-            assertThat(result).isInstanceOf(ListenableWorker.Result.Success::class.java)
-            val data = (result as ListenableWorker.Result.Success).outputData
-            assertThat(data.getInt(EmbeddingGenerationWorker.KEY_PROCESSED_COUNT, -1)).isEqualTo(0)
-            assertThat(data.getInt(EmbeddingGenerationWorker.KEY_FAILED_COUNT, -1)).isEqualTo(2)
-            assertThat(data.getInt(EmbeddingGenerationWorker.KEY_REMAINING_COUNT, -1)).isEqualTo(5)
+            assertThat(result).isInstanceOf(ListenableWorker.Result.Retry::class.java)
         }
 
     @Test

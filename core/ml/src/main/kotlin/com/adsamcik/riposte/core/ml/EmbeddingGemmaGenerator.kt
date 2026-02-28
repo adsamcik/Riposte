@@ -290,10 +290,24 @@ class EmbeddingGemmaGenerator
                     return
                 }
 
-                if (!tryInitializeWithGpu(modelPath) &&
-                    acceleratorStrategy.getBestAccelerator() != Accelerator.CPU
-                ) {
-                    initializeWithCpu(modelPath)
+                if (!tryInitializeWithGpu(modelPath)) {
+                    // Optimized/AOT model may contain DISPATCH_OP nodes requiring
+                    // vendor NPU delegates that aren't available. Fall back to
+                    // the generic model on CPU which never has custom ops.
+                    val genericPath = getGenericModelPath()
+                    if (genericPath != null && genericPath != modelPath) {
+                        Timber.i("Optimized model failed — falling back to generic model on CPU")
+                        initializeWithCpu(genericPath)
+                    } else if (acceleratorStrategy.getBestAccelerator() != Accelerator.CPU) {
+                        // Same model, but try CPU accelerator (no AOT conflict)
+                        initializeWithCpu(modelPath)
+                    }
+                }
+
+                // Safety net: if all init paths completed but model is still null, set error
+                if (compiledModel == null && _initializationError == null) {
+                    Timber.e("EmbeddingGemma initialization completed with no model and no error — setting error")
+                    _initializationError = ERROR_INIT_FAILED
                 }
             } catch (e: UnsatisfiedLinkError) {
                 Timber.e(e, "Native library not available for EmbeddingGemma (unsupported ABI?)")
@@ -343,12 +357,20 @@ class EmbeddingGemmaGenerator
                 Timber.d("Initializing EmbeddingGemma with LiteRT (accelerator=$accelerator)")
                 Timber.d("Model path: $modelPath")
 
-                compiledModel =
+                val model =
                     CompiledModel.create(
                         modelPath,
                         CompiledModel.Options(accelerator),
                     )
 
+                // Canary check: verify buffers can be created (catches DISPATCH_OP errors
+                // where model loads but the runtime lacks required custom ops)
+                val testOutputs = model.createOutputBuffers()
+                val testInputs = model.createInputBuffers()
+
+                compiledModel = model
+                cachedOutputBuffers = testOutputs
+                cachedInputBuffers = testInputs
                 Timber.i("EmbeddingGemma initialized successfully (dimension: $embeddingDimension)")
                 _initializationError = null
                 true
@@ -364,11 +386,19 @@ class EmbeddingGemmaGenerator
         private fun initializeWithCpu(modelPath: String) {
             Timber.i("Retrying with CPU...")
             try {
-                compiledModel =
+                val model =
                     CompiledModel.create(
                         modelPath,
                         CompiledModel.Options(Accelerator.CPU),
                     )
+
+                // Canary check: verify buffers can be created
+                val testOutputs = model.createOutputBuffers()
+                val testInputs = model.createInputBuffers()
+
+                compiledModel = model
+                cachedOutputBuffers = testOutputs
+                cachedInputBuffers = testInputs
                 Timber.i("EmbeddingGemma initialized with CPU fallback")
                 _initializationError = null
             } catch (cpuError: UnsatisfiedLinkError) {
@@ -480,6 +510,7 @@ class EmbeddingGemmaGenerator
 
         /**
          * Copies a single file from assets to the target directory if it doesn't exist.
+         * Uses atomic write (temp file + rename) to prevent partial files from interrupted copies.
          * @return true if file exists (either copied or already present), false if not available.
          */
         private fun copyAssetIfNeeded(
@@ -487,15 +518,26 @@ class EmbeddingGemmaGenerator
             targetDir: File,
         ): Boolean {
             val targetFile = File(targetDir, assetName)
-            if (targetFile.exists()) {
+            if (targetFile.exists() && targetFile.length() > 0) {
                 return true
+            }
+            // Remove any zero-byte leftover from a previously interrupted copy
+            if (targetFile.exists()) {
+                targetFile.delete()
             }
 
             return try {
+                val tempFile = File(targetDir, "$assetName.tmp")
                 context.assets.open("$MODEL_DIRECTORY/$assetName").use { input ->
-                    targetFile.outputStream().use { output ->
+                    tempFile.outputStream().use { output ->
                         input.copyTo(output)
                     }
+                }
+                // Atomic rename — prevents partial files if interrupted before this point
+                if (!tempFile.renameTo(targetFile)) {
+                    tempFile.delete()
+                    Timber.e("Failed to rename temp file to: $assetName")
+                    return false
                 }
                 Timber.d("Copied asset: $assetName (${targetFile.length() / BYTES_PER_KB / BYTES_PER_KB} MB)")
                 true
@@ -504,6 +546,8 @@ class EmbeddingGemmaGenerator
                 e: Exception,
             ) {
                 Timber.d(e, "Asset not found in assets: $assetName")
+                // Clean up temp file on failure
+                File(targetDir, "$assetName.tmp").delete()
                 false
             }
         }
@@ -530,6 +574,15 @@ class EmbeddingGemmaGenerator
                 // Return expected path for error messaging
                 else -> optimizedPath.absolutePath
             }
+        }
+
+        /**
+         * Gets the path to the generic model file, or null if it doesn't exist.
+         * Used as a fallback when SoC-specific AOT models fail due to missing NPU delegates.
+         */
+        private fun getGenericModelPath(): String? {
+            val genericFile = File(File(context.filesDir, MODEL_DIRECTORY), MODEL_FILENAME_GENERIC)
+            return if (genericFile.exists()) genericFile.absolutePath else null
         }
 
         /**
@@ -640,34 +693,21 @@ class EmbeddingGemmaGenerator
             private const val BYTES_PER_KB = 1024
 
             /**
-             * Detects the device's SoC model and returns the best model filename.
-             * Falls back to generic model if no optimized variant is available.
+             * Returns the generic model filename for all devices.
+             *
+             * SoC-specific AOT models are disabled because they contain DISPATCH_OP
+             * custom ops requiring vendor NPU delegate libraries (.so) that aren't
+             * bundled with the app. Until the NPU delegate integration is complete,
+             * all devices use the generic model with GPU/CPU acceleration.
+             *
+             * TODO: Re-enable SoC-specific model selection when vendor NPU delegates
+             *  are bundled and validated. See PLATFORM_MODELS map and device_targeting_config.xml.
+             *  The AOT models need matching delegate .so files on the device at runtime.
              */
             fun getBestModelFilename(): String {
                 val socModel = Build.SOC_MODEL.lowercase()
-                Timber.d("Detected SoC: $socModel")
-
-                val socMatch = PLATFORM_MODELS.entries.firstOrNull { (chipset, _) ->
-                    socModel.contains(chipset.lowercase())
-                }
-                val match = socMatch ?: PLATFORM_MODELS.entries.firstOrNull { (chipset, _) ->
-                    Build.BOARD.lowercase().contains(chipset.lowercase())
-                }
-
-                return when {
-                    socMatch != null -> {
-                        Timber.i("Using optimized model for ${socMatch.key}: ${socMatch.value}")
-                        socMatch.value
-                    }
-                    match != null -> {
-                        Timber.i("Using optimized model for ${match.key} (from board): ${match.value}")
-                        match.value
-                    }
-                    else -> {
-                        Timber.i("Using generic model (no optimized variant for $socModel)")
-                        MODEL_FILENAME_GENERIC
-                    }
-                }
+                Timber.d("Detected SoC: $socModel (using generic model — AOT models disabled)")
+                return MODEL_FILENAME_GENERIC
             }
 
             /**
