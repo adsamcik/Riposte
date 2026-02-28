@@ -59,6 +59,15 @@ class EmbeddingGenerationWorker
                 try {
                     notificationManager.createChannel()
 
+                    // Bail out early if the model is known to be broken — no point processing memes
+                    val modelError = embeddingGenerator.initializationError
+                    if (modelError != null) {
+                        Timber.w("Embedding model unavailable (%s), skipping work", modelError)
+                        return@withContext Result.failure(
+                            workDataOf(KEY_ERROR_MESSAGE to modelError),
+                        )
+                    }
+
                     // Get a large pool of pending memes — we'll process as many as time allows
                     val pendingMemes = embeddingRepository.getMemesNeedingEmbeddings(MAX_FETCH_SIZE)
 
@@ -97,6 +106,19 @@ class EmbeddingGenerationWorker
                         )
                         enqueueContinuation(context)
                     } else if (remainingCount > 0) {
+                        // Check whether this is a permanent model failure or a transient error
+                        val postRunModelError = embeddingGenerator.initializationError
+                        if (postRunModelError != null) {
+                            Timber.w(
+                                "Embedding batch done in %dms: 0 ok, %d failed, %d remaining — " +
+                                    "model error (%s), giving up",
+                                elapsed, failureCount, remainingCount, postRunModelError,
+                            )
+                            return@withContext Result.failure(
+                                workDataOf(KEY_ERROR_MESSAGE to postRunModelError),
+                            )
+                        }
+
                         Timber.w(
                             "Embedding batch done in %dms: 0 ok, %d failed, %d remaining — " +
                                 "retrying with backoff",
