@@ -52,6 +52,7 @@ class EmbeddingGenerationWorkerTest {
         isInBackgroundFlow = MutableStateFlow(false)
 
         every { appLifecycleTracker.isInBackground } returns isInBackgroundFlow
+        every { embeddingGenerator.initializationError } returns null
     }
 
     private fun createWorker(): EmbeddingGenerationWorker {
@@ -348,7 +349,7 @@ class EmbeddingGenerationWorkerTest {
             val result = worker.doWork()
 
             val data = (result as ListenableWorker.Result.Success).outputData
-            assertThat(data.getInt(EmbeddingGenerationWorker.KEY_REMAINING_COUNT, -1)).isEqualTo(15)
+            assertThat(data.getInt(EmbeddingGenerationWorker.KEY_REMAINING_COUNT, -1)).isEqualTo(14)
         }
 
     // endregion
@@ -476,7 +477,7 @@ class EmbeddingGenerationWorkerTest {
     // region Continuation Scheduling Tests
 
     @Test
-    fun `doWork retries with backoff when all memes fail`() =
+    fun `doWork returns success with failure counts when all memes fail but model is healthy`() =
         runTest {
             val memes =
                 listOf(
@@ -492,7 +493,10 @@ class EmbeddingGenerationWorkerTest {
             val worker = createWorker()
             val result = worker.doWork()
 
-            assertThat(result).isInstanceOf(ListenableWorker.Result.Retry::class.java)
+            // Model is healthy — individual meme failures are not retriable
+            assertThat(result).isInstanceOf(ListenableWorker.Result.Success::class.java)
+            val data = (result as ListenableWorker.Result.Success).outputData
+            assertThat(data.getInt(EmbeddingGenerationWorker.KEY_FAILED_COUNT, -1)).isEqualTo(2)
         }
 
     @Test

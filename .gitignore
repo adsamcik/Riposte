@@ -75,3 +75,11 @@ app/googleplay/
 
 # Crash logs
 crash_logs.txt
+
+# Temporary/debug artifacts
+temp_riposte.db
+test_screenshot.png
+ui_dump.txt
+test_run_output.txt
+test_fun_fact.kts
+.kotlin/
