@@ -440,7 +440,10 @@ public static class AnnotateCommand
                                     catch (CopilotNotAuthenticatedException ex)
                                     {
                                         AnsiConsole.MarkupLineInterpolated($"\n[red]Error: {ex.Message}[/]");
-                                        Environment.Exit(1);
+                                        task.Increment(1);
+                                        lock (errors)
+                                            errors.Add((imagePath, $"Auth error: {ex.Message}"));
+                                        return;
                                     }
                                     catch (RateLimitException ex)
                                     {
@@ -478,6 +481,15 @@ public static class AnnotateCommand
                                             errors.Add((imagePath, ex.Message));
                                         return;
                                     }
+                                    catch (Exception ex)
+                                    {
+                                        AnsiConsole.MarkupLineInterpolated(
+                                            $"  [red]✗[/] {Markup.Escape(Path.GetFileName(imagePath))}: Unexpected {ex.GetType().Name}: {Markup.Escape(ex.Message)} [dim]({sw.Elapsed.TotalSeconds:F1}s)[/]");
+                                        task.Increment(1);
+                                        lock (errors)
+                                            errors.Add((imagePath, $"{ex.GetType().Name}: {ex.Message}"));
+                                        return;
+                                    }
                                 }
 
                                 task.Increment(1);
@@ -493,6 +505,17 @@ public static class AnnotateCommand
                         await Task.WhenAll(tasks);
                     });
             }
+            catch (Exception ex)
+            {
+                AnsiConsole.MarkupLineInterpolated($"\n[red]Fatal error during annotation: {ex.GetType().Name}: {Markup.Escape(ex.Message)}[/]");
+                if (ex is AggregateException agg)
+                {
+                    foreach (var inner in agg.Flatten().InnerExceptions)
+                        AnsiConsole.MarkupLineInterpolated($"  [red]• {inner.GetType().Name}: {Markup.Escape(inner.Message)}[/]");
+                }
+                AnsiConsole.MarkupLine($"[dim]{Markup.Escape(ex.StackTrace ?? "")}[/]");
+                throw;
+            }
             finally
             {
                 await client.DisposeAsync();
@@ -503,7 +526,13 @@ public static class AnnotateCommand
             if (processed.Count > 0)
                 AnsiConsole.MarkupLine($"[green]✓ Successfully annotated {processed.Count} image(s)[/]");
             if (errors.Count > 0)
-                AnsiConsole.MarkupLine($"[red]✗ Failed to annotate {errors.Count} image(s)[/]");
+            {
+                AnsiConsole.MarkupLine($"[red]✗ Failed to annotate {errors.Count} image(s):[/]");
+                foreach (var (img, err) in errors.Take(20))
+                    AnsiConsole.MarkupLineInterpolated($"  [red]•[/] {Markup.Escape(Path.GetFileName(img))}: {Markup.Escape(err)}");
+                if (errors.Count > 20)
+                    AnsiConsole.MarkupLine($"  [dim]... and {errors.Count - 20} more[/]");
+            }
         }
 
         // Always update manifest global state (even if no work plans ran)
