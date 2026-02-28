@@ -88,9 +88,9 @@ android {
             )
         }
 
-        // Google Play: include generic model in APK as fallback.
-        // AI Packs deliver models via AAB on Play Store, but the generic model
-        // must also be in the APK for local/sideload testing and as a safety net.
+        // Google Play: include generic model as fallback for APK sideloading.
+        // AI Packs deliver the same (or device-targeted) model via AAB on Play Store.
+        // When both are present, the AI Pack model takes precedence (same filename).
         getByName("googleplay") {
             assets.setSrcDirs(
                 listOf(
