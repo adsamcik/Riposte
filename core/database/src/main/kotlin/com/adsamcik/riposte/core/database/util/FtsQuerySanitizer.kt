@@ -1,5 +1,7 @@
 package com.adsamcik.riposte.core.database.util
 
+import com.adsamcik.riposte.core.model.EmojiTag
+
 /**
  * Sanitizes user input for safe use in FTS4 MATCH clauses.
  *
@@ -36,8 +38,8 @@ object FtsQuerySanitizer {
     /** RTL/LTR marks and other directional formatting characters. */
     private val RTL_MARKS_REGEX = Regex("[\\u200E\\u200F\\u202A-\\u202E\\u2066-\\u2069]")
 
-    /** Emoji variation selectors that can cause FTS issues. */
-    private val VARIATION_SELECTORS_REGEX = Regex("[\\uFE00-\\uFE0F]")
+    /** Emoji variation selectors — delegated to [EmojiTag.normalizeEmoji] for consistency. */
+    private fun stripVariationSelectors(text: String): String = EmojiTag.normalizeEmoji(text)
 
     /**
      * Sanitizes a query string for FTS4 MATCH clause.
@@ -66,7 +68,7 @@ object FtsQuerySanitizer {
         val withoutControlChars =
             query
                 .replace(RTL_MARKS_REGEX, "")
-                .replace(VARIATION_SELECTORS_REGEX, "")
+                .let { stripVariationSelectors(it) }
 
         // Step 2: Remove FTS special characters and operators
         val sanitized =
@@ -108,7 +110,7 @@ object FtsQuerySanitizer {
         val withoutControlChars =
             query
                 .replace(RTL_MARKS_REGEX, "")
-                .replace(VARIATION_SELECTORS_REGEX, "")
+                .let { stripVariationSelectors(it) }
 
         // Step 2: Remove FTS special characters and operators
         val sanitized =
@@ -155,7 +157,7 @@ object FtsQuerySanitizer {
         val withoutControlChars =
             query
                 .replace(RTL_MARKS_REGEX, "")
-                .replace(VARIATION_SELECTORS_REGEX, "")
+                .let { stripVariationSelectors(it) }
 
         // Step 2: Remove FTS special characters and operators
         val sanitized =
@@ -198,7 +200,7 @@ object FtsQuerySanitizer {
             emoji
                 .replace(RTL_MARKS_REGEX, "")
                 .replace(FTS_SPECIAL_CHARS_REGEX, "")
-                .replace(VARIATION_SELECTORS_REGEX, "")
+                .let { stripVariationSelectors(it) }
                 .trim()
 
         if (sanitized.isBlank()) return ""
@@ -243,6 +245,6 @@ object FtsQuerySanitizer {
         return FTS_SPECIAL_CHARS_REGEX.containsMatchIn(query) ||
             FTS_OPERATORS_REGEX.containsMatchIn(query) ||
             RTL_MARKS_REGEX.containsMatchIn(query) ||
-            VARIATION_SELECTORS_REGEX.containsMatchIn(query)
+            query != stripVariationSelectors(query)
     }
 }

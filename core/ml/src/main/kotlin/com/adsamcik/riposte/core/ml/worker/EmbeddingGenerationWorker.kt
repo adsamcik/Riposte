@@ -205,6 +205,8 @@ class EmbeddingGenerationWorker
             )
 
             for (i in 1..additionalItems) {
+                // Yield between items so the UI thread isn't starved by continuous inference
+                kotlinx.coroutines.yield()
                 processOneEmbedding(pendingMemes[i]).let { ok -> if (ok) successCount++ else failureCount++ }
                 reportProgress(successCount, failureCount, pendingMemes.size)
             }
@@ -492,8 +494,12 @@ class EmbeddingGenerationWorker
             /** Fetch up to this many pending memes; adaptive logic decides how many to process. */
             private const val MAX_FETCH_SIZE = 200
 
-            /** 7 min total minus 3 min headroom = 4 min work budget per batch. */
-            private const val WORK_BUDGET_MS = 4L * 60 * 1000
+            /**
+             * Work budget per batch. Kept short (2 min) so the device gets breathing room
+             * between batches — each inference is CPU/GPU-intensive (308M param model × 5 types).
+             * WorkManager's continuation delay provides the gap.
+             */
+            private const val WORK_BUDGET_MS = 2L * 60 * 1000
 
             /** Floor for per-item duration to avoid division issues on very fast inference. */
             private const val MIN_ITEM_DURATION_MS = 50L

@@ -415,8 +415,35 @@ val MIGRATION_7_8 =
     }
 
 /**
+ * Migration from version 8 to 9:
+ * - Normalizes emoji variation selectors (U+FE0F) in emojiTagsJson and emoji_tags.
+ *   The FtsQuerySanitizer strips VS from search queries, so stored data must also
+ *   be stripped for FTS MATCH to work.
+ * - Rebuilds FTS index after data normalization.
+ */
+val MIGRATION_8_9 =
+    object : Migration(8, 9) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            // 1. Strip variation selector U+FE0F (char 65039) from emojiTagsJson
+            db.execSQL(
+                "UPDATE memes SET emojiTagsJson = REPLACE(emojiTagsJson, char(65039), '') " +
+                    "WHERE emojiTagsJson LIKE '%' || char(65039) || '%'",
+            )
+
+            // 2. Strip variation selector U+FE0F from emoji_tags.emoji column
+            db.execSQL(
+                "UPDATE emoji_tags SET emoji = REPLACE(emoji, char(65039), '') " +
+                    "WHERE emoji LIKE '%' || char(65039) || '%'",
+            )
+
+            // 3. Rebuild FTS index to reflect normalized data
+            db.execSQL("INSERT INTO memes_fts(memes_fts) VALUES('rebuild')")
+        }
+    }
+
+/**
  * All migrations in order. Used by [DatabaseModule] and migration tests
  * to ensure the full chain is registered and validated.
  */
 val ALL_MIGRATIONS =
-    arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
+    arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
