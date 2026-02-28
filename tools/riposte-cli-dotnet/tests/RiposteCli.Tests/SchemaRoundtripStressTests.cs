@@ -222,11 +222,15 @@ public sealed class SchemaRoundtripStressTests : IDisposable
         var merged = SidecarMerger.Merge(full, partial, [PromptHasher.GroupEmotions]);
 
         AssertEmotionEqual(partial.Emotions, merged.Emotions);
+        Assert.Equal(full.SchemaVersion, merged.SchemaVersion);
         Assert.Equal(full.Emojis, merged.Emojis);
+        Assert.Equal(full.CreatedAt, merged.CreatedAt);
         Assert.Equal(full.Title, merged.Title);
         Assert.Equal(full.Description, merged.Description);
         Assert.Equal(full.Tags, merged.Tags);
         Assert.Equal(full.SearchPhrases, merged.SearchPhrases);
+        Assert.Equal(full.PrimaryLanguage, merged.PrimaryLanguage);
+        Assert.Equal(full.ContentHash, merged.ContentHash);
         Assert.Equal(full.BasedOn, merged.BasedOn);
         AssertLocalizationsEqual(full.Localizations, merged.Localizations);
     }
@@ -303,6 +307,10 @@ public sealed class SchemaRoundtripStressTests : IDisposable
 
         var merged = SidecarMerger.Merge(existing, partial, groups);
 
+        Assert.Equal(existing.SchemaVersion, merged.SchemaVersion);
+        Assert.Equal(existing.CreatedAt, merged.CreatedAt);
+        Assert.Equal(existing.PrimaryLanguage, merged.PrimaryLanguage);
+        Assert.Equal(existing.ContentHash, merged.ContentHash);
         Assert.Equal(partial.Emojis, merged.Emojis);
         Assert.Equal(partial.Title, merged.Title);
         Assert.Equal(partial.Description, merged.Description);
@@ -315,7 +323,14 @@ public sealed class SchemaRoundtripStressTests : IDisposable
         Assert.True(merged.Localizations.ContainsKey("de"));
         Assert.True(merged.Localizations.ContainsKey("fr"));
         Assert.Equal("Sloučený titulek", merged.Localizations["cs"].Title);
+        Assert.Equal("Sloučený popis", merged.Localizations["cs"].Description);
+        Assert.Equal(new[] { "slouceny" }, merged.Localizations["cs"].Tags);
+        Assert.Equal(new[] { "sloucena fraze" }, merged.Localizations["cs"].SearchPhrases);
         Assert.Equal("Zusammengeführt", merged.Localizations["de"].Title);
+        Assert.Equal("Beschreibung", merged.Localizations["de"].Description);
+        Assert.Equal(new[] { "zusammen" }, merged.Localizations["de"].Tags);
+        Assert.Equal(new[] { "suchbegriff" }, merged.Localizations["de"].SearchPhrases);
+        Assert.Equal("Ancien titre", merged.Localizations["fr"].Title);
     }
 
     [Fact]
@@ -411,6 +426,183 @@ public sealed class SchemaRoundtripStressTests : IDisposable
 
         Assert.NotNull(roundtrip);
         Assert.Equal(metadata.Tags, roundtrip.Tags);
+    }
+
+    [Fact]
+    public void SidecarMetadata_FivePlusLocalizations_RoundtripsAllLanguages()
+    {
+        var metadata = new SidecarMetadata
+        {
+            Emojis = ["🌍"],
+            Title = "Polyglot meme",
+            PrimaryLanguage = "en",
+            Localizations = new Dictionary<string, LocalizedContent>
+            {
+                ["cs"] = new()
+                {
+                    Title = "Český",
+                    Description = "Český popis",
+                    Tags = ["vtip"],
+                    SearchPhrases = ["český meme"],
+                },
+                ["de"] = new()
+                {
+                    Title = "Deutsch",
+                    Description = "Deutsche Beschreibung",
+                    Tags = ["lustig"],
+                    SearchPhrases = ["deutsches meme"],
+                },
+                ["fr"] = new()
+                {
+                    Title = "Français",
+                    Description = "Description française",
+                    Tags = ["drôle"],
+                    SearchPhrases = ["mème français"],
+                },
+                ["ja"] = new()
+                {
+                    Title = "日本語タイトル",
+                    Description = "日本語の説明",
+                    Tags = ["ミーム", "面白い"],
+                    SearchPhrases = ["日本語ミーム", "面白い画像"],
+                },
+                ["ar"] = new()
+                {
+                    Title = "عنوان عربي",
+                    Description = "وصف عربي",
+                    Tags = ["ميم", "مضحك"],
+                    SearchPhrases = ["ميم عربي"],
+                },
+                ["ko"] = new()
+                {
+                    Title = "한국어 제목",
+                    Description = "한국어 설명",
+                    Tags = ["밈"],
+                    SearchPhrases = ["한국어 밈"],
+                },
+            },
+        };
+
+        var json = JsonSerializer.Serialize(metadata, JsonOptions);
+        var roundtrip = JsonSerializer.Deserialize<SidecarMetadata>(json, JsonOptions);
+
+        Assert.NotNull(roundtrip);
+        AssertSidecarEqual(metadata, roundtrip);
+    }
+
+    [Fact]
+    public void SidecarMetadata_FivePlusLocalizations_WriteSidecarThenLoad_RoundtripsAllLanguages()
+    {
+        var metadata = new SidecarMetadata
+        {
+            Emojis = ["🌍"],
+            Title = "Polyglot file roundtrip",
+            PrimaryLanguage = "en",
+            Localizations = new Dictionary<string, LocalizedContent>
+            {
+                ["cs"] = new() { Title = "Český", Description = "Popis", Tags = ["tag-cs"], SearchPhrases = ["fráze"] },
+                ["de"] = new() { Title = "Deutsch", Description = "Beschreibung", Tags = ["tag-de"], SearchPhrases = ["suche"] },
+                ["fr"] = new() { Title = "Français", Description = "Description", Tags = ["tag-fr"], SearchPhrases = ["phrase"] },
+                ["ja"] = new() { Title = "日本語", Description = "説明", Tags = ["tag-ja"], SearchPhrases = ["検索"] },
+                ["ar"] = new() { Title = "عربي", Description = "وصف", Tags = ["tag-ar"], SearchPhrases = ["بحث"] },
+            },
+        };
+
+        var outputDir = Path.Combine(_tempDir, "polyglot");
+        Directory.CreateDirectory(outputDir);
+        var imagePath = Path.Combine(outputDir, "polyglot.png");
+        File.WriteAllBytes(imagePath, [0x89, 0x50, 0x4E, 0x47]);
+
+        SidecarService.WriteSidecar(imagePath, metadata, outputDir);
+        var loaded = SidecarMerger.LoadSidecar(imagePath, outputDir);
+
+        Assert.NotNull(loaded);
+        AssertSidecarEqual(metadata, loaded);
+    }
+
+    [Fact]
+    public void BuildManifest_OptimizationConfigEdgeValues_SaveLoad_RoundtripsCorrectly()
+    {
+        var outputDir = Path.Combine(_tempDir, "manifest-edge");
+        Directory.CreateDirectory(outputDir);
+        var manifest = new BuildManifest
+        {
+            ManifestVersion = BuildManifest.CurrentManifestVersion,
+            SchemaVersion = "1.4",
+            Model = "gpt-5-mini",
+            Optimization = new OptimizationConfig
+            {
+                ApiMaxDimension = 0,
+                ApiFormat = "",
+                BundleMaxDimension = int.MaxValue,
+                BundleFormat = "webp",
+                Quality = 1,
+            },
+            Images = new Dictionary<string, ImageManifestEntry>
+            {
+                ["edge.png"] = new()
+                {
+                    ContentHash = "edge-hash",
+                    Model = "gpt-5-mini",
+                    GeneratedAt = "2026-01-01T00:00:00Z",
+                    HasApiOptimized = false,
+                    HasBundleOptimized = false,
+                },
+            },
+        };
+
+        ManifestService.Save(outputDir, manifest);
+        var loaded = ManifestService.Load(outputDir);
+
+        Assert.NotNull(loaded.Optimization);
+        Assert.Equal(0, loaded.Optimization.ApiMaxDimension);
+        Assert.Equal("", loaded.Optimization.ApiFormat);
+        Assert.Equal(int.MaxValue, loaded.Optimization.BundleMaxDimension);
+        Assert.Equal(1, loaded.Optimization.Quality);
+        Assert.Equal(manifest.Optimization.Fingerprint(), loaded.Optimization.Fingerprint());
+    }
+
+    [Fact]
+    public void Merge_CreatedAtIsNeverOverwritten_AcrossAllGroupCombinations()
+    {
+        var existing = CreateMaximalSidecarMetadata();
+        var originalCreatedAt = existing.CreatedAt;
+
+        var partial = new AnalysisResult
+        {
+            Emojis = ["🆕"],
+            Title = "New title",
+            Description = "New desc",
+            Tags = ["new-tag"],
+            SearchPhrases = ["new phrase"],
+            BasedOn = "New source",
+            Emotions = new EmotionMetadata
+            {
+                Primary = "awe",
+                Sentiment = "positive",
+                Intensity = "high",
+            },
+            Localizations = new Dictionary<string, LocalizedContent>
+            {
+                ["cs"] = new() { Title = "Nový" },
+            },
+        };
+
+        var allGroups = new[]
+        {
+            PromptHasher.GroupCore,
+            PromptHasher.GroupSearch,
+            PromptHasher.GroupCultural,
+            PromptHasher.GroupEmotions,
+            PromptHasher.LocalizationGroup("cs"),
+        };
+
+        var merged = SidecarMerger.Merge(existing, partial, allGroups);
+
+        Assert.Equal(originalCreatedAt, merged.CreatedAt);
+        Assert.Equal(existing.SchemaVersion, merged.SchemaVersion);
+        Assert.Equal(existing.PrimaryLanguage, merged.PrimaryLanguage);
+        Assert.Equal(existing.ContentHash, merged.ContentHash);
     }
 
     private static SidecarMetadata CreateMaximalSidecarMetadata() => new()
