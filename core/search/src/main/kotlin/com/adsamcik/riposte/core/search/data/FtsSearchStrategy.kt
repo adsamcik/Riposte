@@ -31,12 +31,11 @@ class FtsSearchStrategy @Inject constructor(
 
         val rankedEntities = memeSearchDao.searchMemesRanked(ftsQuery)
         return rankedEntities.map { entity ->
-            val bm25Score = 1.0f / (1.0f + (-entity.rank).toFloat())
+            // FTS4 does not provide bm25 ranking; rely on field-level scoring only.
             val fieldScore = computeFieldScore(entity, query)
-            val finalScore = bm25Score * BM25_WEIGHT + fieldScore * FIELD_WEIGHT
             SearchResult(
                 meme = entity.toDomain(),
-                relevanceScore = finalScore,
+                relevanceScore = fieldScore,
                 matchType = determineMatchType(entity, query),
             )
         }
@@ -108,7 +107,5 @@ class FtsSearchStrategy @Inject constructor(
         private const val TITLE_MATCH_BONUS = 0.3f
         private const val DESCRIPTION_MATCH_BONUS = 0.15f
         private const val EMOJI_MATCH_BONUS = 0.1f
-        private const val BM25_WEIGHT = 0.6f
-        private const val FIELD_WEIGHT = 0.4f
     }
 }

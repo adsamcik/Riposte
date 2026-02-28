@@ -33,16 +33,19 @@ interface MemeSearchDao {
 
     /**
      * Search memes and return with relevance ranking.
-     * Uses BM25 ranking for better search results.
+     *
+     * Note: FTS4 does not support `bm25()` (FTS5-only). We return a zero rank
+     * and let [com.adsamcik.riposte.core.search.data.FtsSearchStrategy] compute
+     * field-level relevance scores in Kotlin instead.
      */
     @RewriteQueriesToDropUnusedColumns
     @Query(
         """
-        SELECT m.*, bm25(memes_fts) as `rank`
+        SELECT m.*, 0 as `rank`
         FROM memes m
         INNER JOIN memes_fts fts ON m.rowid = fts.rowid
         WHERE memes_fts MATCH :query
-        ORDER BY `rank`
+        ORDER BY m.importedAt DESC
     """,
     )
     suspend fun searchMemesRanked(query: String): List<MemeWithRank>
