@@ -36,16 +36,21 @@ public static class ManifestService
 
     /// <summary>
     /// Save a build manifest to the output directory.
+    /// Uses atomic write (temp file + rename) to prevent corruption on crash.
     /// </summary>
     public static void Save(string outputDir, BuildManifest manifest)
     {
         var path = Path.Combine(outputDir, BuildManifest.FileName);
+        var tempPath = path + ".tmp";
         var json = JsonSerializer.Serialize(manifest, JsonOptions);
-        File.WriteAllText(path, json);
+        File.WriteAllText(tempPath, json);
+        File.Move(tempPath, path, overwrite: true);
     }
 
     /// <summary>
     /// Update or create a manifest entry for an image after successful generation.
+    /// <para>Thread-safety: This method mutates <paramref name="manifest"/>.Images directly.
+    /// Callers MUST hold an external lock when invoking concurrently.</para>
     /// </summary>
     public static void RecordImageBuild(
         BuildManifest manifest,
@@ -72,6 +77,8 @@ public static class ManifestService
     /// <summary>
     /// Update specific field hashes for an image after a partial rebuild.
     /// Preserves field hashes for groups that weren't regenerated.
+    /// <para>Thread-safety: This method mutates <paramref name="manifest"/>.Images directly.
+    /// Callers MUST hold an external lock when invoking concurrently.</para>
     /// </summary>
     public static void RecordPartialBuild(
         BuildManifest manifest,
