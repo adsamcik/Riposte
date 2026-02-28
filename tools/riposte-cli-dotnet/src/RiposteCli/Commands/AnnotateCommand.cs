@@ -14,7 +14,7 @@ public static class AnnotateCommand
     public static Command Create()
     {
         var folderArg = new Argument<DirectoryInfo>("folder") { Description = "Path to a directory containing images to annotate" };
-        var zipOpt = new Option<string?>("--zip") { Description = "Create ZIP bundle: 'full' (all images) or 'patch' (only changed/new). Omit value for full.", DefaultValueFactory = _ => null };
+        var zipOpt = new Option<string?>("--zip") { Description = "Create ZIP bundle: 'full' (all images) or 'patch' (only changed/new). Omit value for full.", Arity = ArgumentArity.ZeroOrOne };
         var outputOpt = new Option<DirectoryInfo?>("--output", "-o") { Description = "Output directory for sidecar files" };
         var modelOpt = new Option<string>("--model", "-m") { Description = "Model to use for analysis", DefaultValueFactory = _ => "gpt-5-mini" };
         var languagesOpt = new Option<string>("--languages", "-l") { Description = "Comma-separated BCP 47 language codes (e.g., 'en,cs,de')", DefaultValueFactory = _ => "en" };
@@ -36,8 +36,19 @@ public static class AnnotateCommand
         command.SetAction(async (parseResult, cancellationToken) =>
         {
             var folder = parseResult.GetValue(folderArg)!;
-            var zipValue = parseResult.GetValue(zipOpt);
-            var zipMode = ParseZipMode(zipValue);
+            var zipRawValue = parseResult.GetValue(zipOpt);
+            var zipOptionPresent = parseResult.GetResult(zipOpt) is not null;
+            var zipValue = zipOptionPresent ? (zipRawValue ?? "") : null;
+            ZipMode? zipMode;
+            try
+            {
+                zipMode = ParseZipMode(zipValue);
+            }
+            catch (ArgumentException ex)
+            {
+                AnsiConsole.MarkupLine($"[red]Error: {ex.Message}[/]");
+                return;
+            }
             var output = parseResult.GetValue(outputOpt);
             var model = parseResult.GetValue(modelOpt)!;
             var languages = parseResult.GetValue(languagesOpt)!;
@@ -57,7 +68,7 @@ public static class AnnotateCommand
         return command;
     }
 
-    private static ZipMode? ParseZipMode(string? value)
+    internal static ZipMode? ParseZipMode(string? value)
     {
         if (value is null) return null;
         return value.ToLowerInvariant() switch
@@ -255,6 +266,22 @@ public static class AnnotateCommand
                 if (plan.NeedsStripping) parts.Add($"[red]strip ({string.Join(", ", plan.RemovedGroups)})[/]");
 
                 AnsiConsole.MarkupLine($"  • {Path.GetFileName(plan.ImagePath)} — {string.Join(" + ", parts)} [dim]({plan.Reason})[/]");
+            }
+            if (zipMode is not null)
+            {
+                // Simulate all work plans succeeding for bundle preview
+                var simulatedProcessed = workPlans
+                    .Select(p => (p.ImagePath, Path.Combine(outputDir, Path.GetFileName(p.ImagePath) + ".json")))
+                    .ToList();
+                var wouldBundle = ZipBundler.SelectImagesForBundle(
+                    zipMode.Value, allImages, outputDir, plans, simulatedProcessed, buildManifest);
+                var modeLabel = zipMode == ZipMode.Patch ? "patch " : "";
+                AnsiConsole.MarkupLine($"\n[dim]Would create {modeLabel}bundle with {wouldBundle.Count} image(s)[/]");
+                if (verbose)
+                {
+                    foreach (var img in wouldBundle)
+                        AnsiConsole.MarkupLine($"  [dim]📦 {Path.GetFileName(img)}[/]");
+                }
             }
             return;
         }

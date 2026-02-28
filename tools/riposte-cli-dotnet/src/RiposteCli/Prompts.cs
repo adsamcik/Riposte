@@ -1,5 +1,6 @@
 namespace RiposteCli;
 
+using System.Text.RegularExpressions;
 using RiposteCli.Services;
 
 /// <summary>
@@ -122,37 +123,74 @@ public static class Prompts
         sb.AppendLine("You are a meme analysis assistant. I already have partial metadata for this meme image. I need you to generate ONLY the following fields.\n");
 
         var fieldNumber = 1;
+        var localizationGroups = fieldGroups
+            .Where(g => g.StartsWith(PromptHasher.LocalizationPrefix))
+            .ToList();
+
         foreach (var group in fieldGroups)
         {
+            if (group.StartsWith(PromptHasher.LocalizationPrefix))
+                continue;
+
             var spec = group switch
             {
                 PromptHasher.GroupCore => PromptHasher.GetCoreSpec(primaryName, primaryLang),
                 PromptHasher.GroupSearch => PromptHasher.GetSearchSpec(primaryName, primaryLang),
                 PromptHasher.GroupCultural => PromptHasher.GetCulturalSpec(),
                 PromptHasher.GroupEmotions => PromptHasher.GetEmotionsSpec(primaryName, primaryLang),
-                _ when group.StartsWith(PromptHasher.LocalizationPrefix) =>
-                    GetLocalizationPartialSpec(group, languages),
                 _ => null,
             };
 
             if (spec is not null)
             {
-                sb.AppendLine(spec.Trim());
+                sb.AppendLine(RenumberSpec(spec.Trim(), ref fieldNumber));
                 sb.AppendLine();
-                fieldNumber++;
             }
+        }
+
+        if (localizationGroups.Count > 0)
+        {
+            sb.AppendLine(BuildLocalizationSpec(localizationGroups, ref fieldNumber));
+            sb.AppendLine();
         }
 
         sb.AppendLine("Respond ONLY with valid JSON containing just the requested fields, no markdown or explanation.");
         return sb.ToString();
     }
 
-    private static string GetLocalizationPartialSpec(string group, IReadOnlyList<string> languages)
+    /// <summary>
+    /// Renumber hardcoded field numbers (e.g., "4. " → "1. ") so partial prompts
+    /// have sequential numbering starting from the current fieldNumber.
+    /// </summary>
+    private static string RenumberSpec(string spec, ref int fieldNumber)
     {
-        var langCode = group[PromptHasher.LocalizationPrefix.Length..];
-        var langName = GetLanguageName(langCode);
-        return $$"""
-            "localizations": An object with key "{{langCode}}" containing translations in {{langName}}. The value is an object with "title", "description", "tags", and "searchPhrases" fields, all in {{langName}}.
-            """;
+        var num = fieldNumber;
+        var result = Regex.Replace(spec, @"(?m)^\d+\. ", _ => $"{num++}. ");
+        fieldNumber = num;
+        return result;
+    }
+
+    /// <summary>
+    /// Build a single localization instruction covering one or more languages,
+    /// avoiding duplicate "localizations" keys in the prompt.
+    /// </summary>
+    private static string BuildLocalizationSpec(IReadOnlyList<string> groups, ref int fieldNumber)
+    {
+        if (groups.Count == 1)
+        {
+            var langCode = groups[0][PromptHasher.LocalizationPrefix.Length..];
+            var langName = GetLanguageName(langCode);
+            return $"{fieldNumber++}. \"localizations\": An object with key \"{langCode}\" containing translations in {langName}. The value is an object with \"title\", \"description\", \"tags\", and \"searchPhrases\" fields, all in {langName}.";
+        }
+
+        var sb = new System.Text.StringBuilder();
+        sb.Append($"{fieldNumber++}. \"localizations\": An object containing translations for the following languages:");
+        foreach (var group in groups)
+        {
+            var langCode = group[PromptHasher.LocalizationPrefix.Length..];
+            var langName = GetLanguageName(langCode);
+            sb.Append($"\n   - \"{langCode}\": An object with \"title\", \"description\", \"tags\", and \"searchPhrases\" fields, all in {langName}.");
+        }
+        return sb.ToString();
     }
 }
