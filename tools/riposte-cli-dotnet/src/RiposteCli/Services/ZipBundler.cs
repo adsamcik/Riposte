@@ -47,8 +47,13 @@ public static class ZipBundler
         BuildManifest manifest,
         bool verbose = false)
     {
+        if (folder.Parent is null)
+            throw new ArgumentException(
+                $"Cannot create bundle: folder '{folder.FullName}' has no parent directory. " +
+                "Use a subfolder, not a drive root.", nameof(folder));
+
         var zipSuffix = mode == ZipMode.Patch ? ".patch.meme.zip" : ".meme.zip";
-        var zipPath = Path.Combine(folder.Parent!.FullName, $"{folder.Name}{zipSuffix}");
+        var zipPath = Path.Combine(folder.Parent.FullName, $"{folder.Name}{zipSuffix}");
         if (File.Exists(zipPath))
             File.Delete(zipPath);
 
