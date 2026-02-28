@@ -52,6 +52,7 @@ public sealed class CopilotService
                     Content = systemPrompt,
                 },
                 InfiniteSessions = new InfiniteSessionConfig { Enabled = false },
+                OnPermissionRequest = PermissionHandler.ApproveAll,
             });
 
             try
@@ -152,6 +153,7 @@ public sealed class CopilotService
                     Content = systemPrompt,
                 },
                 InfiniteSessions = new InfiniteSessionConfig { Enabled = false },
+                OnPermissionRequest = PermissionHandler.ApproveAll,
             });
 
             try
