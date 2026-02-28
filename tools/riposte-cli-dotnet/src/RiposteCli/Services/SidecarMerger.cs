@@ -20,8 +20,8 @@ public static class SidecarMerger
     /// </summary>
     public static SidecarMetadata? LoadSidecar(string imagePath, string outputDir)
     {
-        var sidecarPath = Path.Combine(outputDir, Path.GetFileName(imagePath) + ".json");
-        if (!File.Exists(sidecarPath))
+        var sidecarPath = SidecarService.ResolveSidecarPath(imagePath, outputDir);
+        if (sidecarPath is null)
             return null;
 
         var json = File.ReadAllText(sidecarPath);
