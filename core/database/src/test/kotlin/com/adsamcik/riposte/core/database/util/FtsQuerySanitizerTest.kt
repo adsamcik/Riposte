@@ -394,4 +394,27 @@ class FtsQuerySanitizerTest {
     }
 
     // endregion
+
+    // region Variation selector consistency with EmojiTag.normalizeEmoji
+
+    @Test
+    fun `prepareEmojiQuery strips variation selectors matching EmojiTag normalizeEmoji`() {
+        // ❤️ = U+2764 + U+FE0F — sanitizer strips VS16
+        val heartWithVS = "❤\uFE0F"
+        val heartWithout = "❤"
+        assertThat(FtsQuerySanitizer.prepareEmojiQuery(heartWithVS))
+            .isEqualTo("emojiTagsJson:\"$heartWithout\"")
+    }
+
+    @Test
+    fun `prepareForMatch and normalizeEmoji produce consistent tokens for ZWJ emoji`() {
+        // 🏋️‍♂️ = U+1F3CB U+FE0F U+200D U+2642 U+FE0F
+        val raw = "\uD83C\uDFCB\uFE0F\u200D\u2642\uFE0F"
+        val normalized = com.adsamcik.riposte.core.model.EmojiTag.normalizeEmoji(raw)
+        val ftsQuery = FtsQuerySanitizer.prepareForMatch(raw)
+        // Both sides should reference the same normalized emoji
+        assertThat(ftsQuery).contains(normalized)
+    }
+
+    // endregion
 }
