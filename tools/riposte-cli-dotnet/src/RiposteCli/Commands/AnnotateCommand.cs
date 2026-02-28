@@ -46,7 +46,7 @@ public static class AnnotateCommand
             }
             catch (ArgumentException ex)
             {
-                AnsiConsole.MarkupLine($"[red]Error: {ex.Message}[/]");
+                AnsiConsole.MarkupLine($"[red]Error: {Markup.Escape(ex.Message)}[/]");
                 return;
             }
             var output = parseResult.GetValue(outputOpt);
@@ -262,7 +262,7 @@ public static class AnnotateCommand
             foreach (var group in reasonGroups)
             {
                 var scope = group.First().Scope == RebuildScope.Full ? "full" : "partial";
-                AnsiConsole.MarkupLine($"  [dim]{group.Count()}× {scope}: {group.Key}[/]");
+                AnsiConsole.MarkupLine($"  [dim]{group.Count()}× {scope}: {Markup.Escape(group.Key)}[/]");
             }
 
             if (verbose)
@@ -271,7 +271,7 @@ public static class AnnotateCommand
                 foreach (var plan in plans.Where(p => p.Scope != RebuildScope.Skip).Take(10))
                 {
                     var scope = plan.Scope == RebuildScope.Full ? "[green]full[/]" : "[yellow]partial[/]";
-                    AnsiConsole.MarkupLine($"  [dim]• {Path.GetFileName(plan.ImagePath)} — {scope} ({plan.Reason})[/]");
+                    AnsiConsole.MarkupLine($"  [dim]• {Markup.Escape(Path.GetFileName(plan.ImagePath))} — {scope} ({Markup.Escape(plan.Reason)})[/]");
                 }
             }
         }
@@ -305,7 +305,7 @@ public static class AnnotateCommand
                 if (plan.NeedsReoptimization) parts.Add("[cyan]reoptimize[/]");
                 if (plan.NeedsStripping) parts.Add($"[red]strip ({string.Join(", ", plan.RemovedGroups)})[/]");
 
-                AnsiConsole.MarkupLine($"  • {Path.GetFileName(plan.ImagePath)} — {string.Join(" + ", parts)} [dim]({plan.Reason})[/]");
+                AnsiConsole.MarkupLine($"  • {Markup.Escape(Path.GetFileName(plan.ImagePath))} — {string.Join(" + ", parts)} [dim]({Markup.Escape(plan.Reason)})[/]");
             }
             if (zipMode is not null)
             {
@@ -439,7 +439,7 @@ public static class AnnotateCommand
                                     }
                                     catch (CopilotNotAuthenticatedException ex)
                                     {
-                                        AnsiConsole.MarkupLine($"\n[red]Error: {ex.Message}[/]");
+                                        AnsiConsole.MarkupLine($"\n[red]Error: {Markup.Escape(ex.Message)}[/]");
                                         Environment.Exit(1);
                                     }
                                     catch (RateLimitException ex)
@@ -472,7 +472,7 @@ public static class AnnotateCommand
                                     catch (CopilotAnalysisException ex)
                                     {
                                         AnsiConsole.MarkupLine(
-                                            $"  [red]✗[/] {Path.GetFileName(imagePath)}: {ex.Message} [dim]({sw.Elapsed.TotalSeconds:F1}s)[/]");
+                                            $"  [red]✗[/] {Markup.Escape(Path.GetFileName(imagePath))}: {Markup.Escape(ex.Message)} [dim]({sw.Elapsed.TotalSeconds:F1}s)[/]");
                                         task.Increment(1);
                                         lock (errors)
                                             errors.Add((imagePath, ex.Message));
