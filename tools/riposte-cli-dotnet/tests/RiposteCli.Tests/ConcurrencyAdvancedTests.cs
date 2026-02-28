@@ -38,7 +38,7 @@ public class ConcurrencyAdvancedTests
 
         // The acquire should complete shortly after
         var completed = await Task.WhenAny(acquireTask, Task.Delay(5000));
-        Assert.Same(acquireTask, completed);
+        Assert.True(ReferenceEquals(acquireTask, completed), "Acquire should complete after unpause");
         Assert.True(acquired);
     }
 
@@ -160,9 +160,9 @@ public class ConcurrencyAdvancedTests
             rl.WaitIfNeededAsync()
         ).ToArray();
 
-        var completed = await Task.WhenAny(Task.WhenAll(tasks), Task.Delay(5000));
-        Assert.True(completed != await Task.WhenAny(Task.Delay(5000)),
-            "WaitIfNeededAsync deadlocked");
+        var allDone = Task.WhenAll(tasks);
+        var completed = await Task.WhenAny(allDone, Task.Delay(5000));
+        Assert.True(ReferenceEquals(allDone, completed), "All WaitIfNeeded calls should complete without deadlock");
     }
 
     #endregion
