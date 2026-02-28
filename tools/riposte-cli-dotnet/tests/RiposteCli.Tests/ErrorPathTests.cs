@@ -86,20 +86,17 @@ public sealed class ErrorPathTests : IDisposable
     }
 
     [Fact]
-    public void LoadSidecar_WrongSchema_ReturnsObjectWithNullFields()
+    public void LoadSidecar_MissingRequiredEmojis_ThrowsCopilotAnalysisException()
     {
+        // SidecarMetadata.Emojis is 'required' — .NET 8 STJ enforces this during
+        // deserialization, so a JSON object without "emojis" throws JsonException,
+        // which LoadSidecar wraps as CopilotAnalysisException.
         var imagePath = Path.Combine(_tempDir, "schema.jpg");
         var sidecarDir = OutputPaths.GetSidecarDir(_tempDir);
         Directory.CreateDirectory(sidecarDir);
         File.WriteAllText(Path.Combine(sidecarDir, "schema.jpg.json"), """{"unknown":"value"}""");
 
-        var loaded = SidecarMerger.LoadSidecar(imagePath, _tempDir);
-
-        Assert.NotNull(loaded);
-        Assert.Null(loaded!.Emojis);
-        Assert.Null(loaded!.Title);
-        Assert.Null(loaded.Description);
-        Assert.Null(loaded.Tags);
+        Assert.Throws<CopilotAnalysisException>(() => SidecarMerger.LoadSidecar(imagePath, _tempDir));
     }
 
     [Fact]
@@ -212,6 +209,62 @@ public sealed class ErrorPathTests : IDisposable
                 plans: [],
                 processed: [],
                 manifest: new BuildManifest()));
+    }
+
+    [Fact]
+    public void ClassifyAndThrow_GenericMessage_ThrowsCopilotAnalysisException()
+    {
+        // Messages that don't match rate-limit or server-error patterns fall through
+        // to the default CopilotAnalysisException on line 310 of CopilotService.cs.
+        var ex = InvokeClassifyAndThrow<CopilotAnalysisException>("Something unexpected happened");
+        Assert.Contains("Copilot error:", ex.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ClassifyAndThrow_429Numeric_ThrowsRateLimitException()
+    {
+        // The regex \b429\b path (line 288), distinct from the "rate limit" text path.
+        var ex = InvokeClassifyAndThrow<RateLimitException>("Error code 429 from upstream");
+        Assert.Contains("Rate limit", ex.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ClassifyAndThrow_TextServerError_ThrowsServerErrorExceptionWith503()
+    {
+        // Text-based server error path (lines 303-308): no numeric status code in message,
+        // but matches Contains("gateway timeout"). Falls through the regex check, hits the
+        // text pattern branch, and throws with default StatusCode 503.
+        var ex = InvokeClassifyAndThrow<ServerErrorException>("The server returned gateway timeout");
+        Assert.Equal(503, ex.StatusCode);
+    }
+
+    [Fact]
+    public void ParseResponseContent_InvalidJson_ThrowsCopilotAnalysisException()
+    {
+        // Exercises the catch(JsonException) path, not the null/missing-emojis path.
+        var ex = Assert.Throws<CopilotAnalysisException>(() =>
+            CopilotService.ParseResponseContent("not json at all"));
+
+        Assert.Contains("Failed to parse", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void ParsePartialResponse_InvalidJson_ThrowsCopilotAnalysisException()
+    {
+        // Same JsonException path but in the partial response parser.
+        var ex = Assert.Throws<CopilotAnalysisException>(() =>
+            CopilotService.ParsePartialResponse("not json", [PromptHasher.GroupCore]));
+
+        Assert.Contains("Failed to parse partial", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void IsSupportedImage_UnsupportedExtension_ReturnsFalse()
+    {
+        // Extension check (line 43-44) rejects before magic-byte inspection.
+        var path = Path.Combine(_tempDir, "document.txt");
+        File.WriteAllText(path, "not an image");
+        Assert.False(SidecarService.IsSupportedImage(path));
     }
 
     private static TException InvokeClassifyAndThrow<TException>(string message) where TException : Exception

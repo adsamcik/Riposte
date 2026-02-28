@@ -13,9 +13,12 @@ public class AndroidContractTests : IDisposable
     private const long MaxAppEntryBytes = 50L * 1024 * 1024;
     private readonly string _tempRoot;
 
+    // Must match DefaultZipImporter.SUPPORTED_IMAGE_EXTENSIONS on Android side
     private static readonly HashSet<string> SupportedExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".webp", ".jpg", ".jpeg", ".png", ".gif",
+        ".bmp", ".tiff", ".tif", ".heic", ".heif",
+        ".avif", ".jxl",
     };
 
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -143,6 +146,96 @@ public class AndroidContractTests : IDisposable
         var result = BuildBundle(ZipMode.Patch);
         Assert.EndsWith(".patch.meme.zip", result.ZipPath, StringComparison.OrdinalIgnoreCase);
         Assert.Contains(".meme.zip", Path.GetFileName(result.ZipPath), StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void SchemaVersion_MatchesAndroidCurrentVersion()
+    {
+        // Must stay in sync with MemeMetadata.CURRENT_SCHEMA_VERSION ("1.4") on Android.
+        var metadata = new SidecarMetadata { Emojis = ["😂"] };
+        using var doc = JsonDocument.Parse(JsonSerializer.Serialize(metadata, JsonOptions));
+        Assert.Equal("1.4", doc.RootElement.GetProperty("schemaVersion").GetString());
+    }
+
+    [Fact]
+    public void BundleSidecars_HaveNonEmptyEmojis_RequiredByAndroid()
+    {
+        // Android MemeMetadata init block: require(emojis.isNotEmpty())
+        // Empty emojis will throw during deserialization, skipping the meme.
+        var result = BuildBundle(ZipMode.Full);
+        using var zip = ZipFile.OpenRead(result.ZipPath);
+
+        var sidecarEntries = zip.Entries
+            .Where(e => e.Name.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        Assert.NotEmpty(sidecarEntries);
+        foreach (var entry in sidecarEntries)
+        {
+            using var stream = entry.Open();
+            using var doc = JsonDocument.Parse(stream);
+            var emojis = doc.RootElement.GetProperty("emojis");
+            Assert.Equal(JsonValueKind.Array, emojis.ValueKind);
+            Assert.NotEqual(0, emojis.GetArrayLength());
+        }
+    }
+
+    [Fact]
+    public void EmotionsObject_CompatibleWithAndroidEmotionData()
+    {
+        // Verifies all field names match Android's EmotionData @SerialName annotations:
+        // primary, secondary, sentiment, intensity, memeUsage
+        var metadata = new SidecarMetadata
+        {
+            Emojis = ["😂"],
+            Emotions = new EmotionMetadata
+            {
+                Primary = "humor",
+                Sentiment = "positive",
+                Intensity = "high",
+                Secondary = ["joy", "amusement"],
+                MemeUsage = ["when something is hilarious"],
+            },
+        };
+
+        using var doc = JsonDocument.Parse(JsonSerializer.Serialize(metadata, JsonOptions));
+        var emotions = doc.RootElement.GetProperty("emotions");
+
+        Assert.Equal("humor", emotions.GetProperty("primary").GetString());
+        Assert.Equal("positive", emotions.GetProperty("sentiment").GetString());
+        Assert.Equal("high", emotions.GetProperty("intensity").GetString());
+        Assert.Equal(JsonValueKind.Array, emotions.GetProperty("secondary").ValueKind);
+        Assert.Equal(JsonValueKind.Array, emotions.GetProperty("memeUsage").ValueKind);
+    }
+
+    [Fact]
+    public void FullBundle_NoEntriesStartWithDot()
+    {
+        // Android DefaultZipImporter skips entries starting with "."
+        var result = BuildBundle(ZipMode.Full);
+        using var zip = ZipFile.OpenRead(result.ZipPath);
+        Assert.All(zip.Entries, entry =>
+            Assert.False(entry.Name.StartsWith('.'),
+                $"Entry '{entry.Name}' starts with dot — Android skips these"));
+    }
+
+    [Fact]
+    public void Sidecar_ExtraCliFields_PresentButSafeForAndroid()
+    {
+        // Android uses ignoreUnknownKeys = true, so CLI-specific fields are safely
+        // ignored. This test documents which extra fields the CLI writes.
+        var metadata = new SidecarMetadata { Emojis = ["😂"] };
+        using var doc = JsonDocument.Parse(JsonSerializer.Serialize(metadata, JsonOptions));
+        var root = doc.RootElement;
+
+        // CLI-specific provenance fields not in Android's MemeMetadata
+        Assert.True(root.TryGetProperty("appVersion", out _), "appVersion must be present for CLI provenance");
+        Assert.True(root.TryGetProperty("cliVersion", out _), "cliVersion must be present for CLI provenance");
+
+        // These fields ARE in Android's MemeMetadata and must serialize correctly
+        Assert.True(root.TryGetProperty("schemaVersion", out _));
+        Assert.True(root.TryGetProperty("emojis", out _));
+        Assert.True(root.TryGetProperty("createdAt", out _));
     }
 
     private ZipBundleResult BuildBundle(ZipMode mode)
