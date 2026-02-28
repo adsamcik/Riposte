@@ -101,10 +101,10 @@ class EmbeddingGenerationWorker
                     // floods the main thread with WorkManager overhead, causing ANR.
                     if (remainingCount > 0 && successCount > 0) {
                         Timber.i(
-                            "Embedding batch done in %dms: %d ok, %d failed, %d remaining — scheduling next",
+                            "Embedding batch done in %dms: %d ok, %d failed, %d remaining — " +
+                                "will resume on next foreground return",
                             elapsed, successCount, failureCount, remainingCount,
                         )
-                        enqueueContinuation(context)
                     } else if (remainingCount > 0) {
                         // Check whether this is a permanent model failure or a transient error
                         val postRunModelError = embeddingGenerator.initializationError
@@ -479,7 +479,6 @@ class EmbeddingGenerationWorker
             const val WORK_NAME = "embedding_generation_work"
             const val MAX_RETRY_COUNT = 3
             const val CURRENT_MODEL_VERSION = "embeddinggemma:1.3.0"
-            private const val CONTINUATION_DELAY_SECONDS = 5L
             private const val PERCENTAGE_MULTIPLIER = 100
             private const val BYTES_PER_FLOAT = 4
             private const val HASH_BYTE_LENGTH = 16
@@ -536,37 +535,6 @@ class EmbeddingGenerationWorker
                     .enqueueUniqueWork(
                         WORK_NAME,
                         ExistingWorkPolicy.KEEP,
-                        request,
-                    )
-            }
-
-            /**
-             * Enqueues a continuation batch from within a running worker.
-             * Uses REPLACE because the current work is still technically active
-             * when this is called, so KEEP would silently drop the request.
-             */
-            private fun enqueueContinuation(context: Context) {
-                val constraints =
-                    Constraints.Builder()
-                        .setRequiresBatteryNotLow(true)
-                        .build()
-
-                val request =
-                    OneTimeWorkRequestBuilder<EmbeddingGenerationWorker>()
-                        .setConstraints(constraints)
-                        .setInitialDelay(CONTINUATION_DELAY_SECONDS, TimeUnit.SECONDS)
-                        .setBackoffCriteria(
-                            BackoffPolicy.EXPONENTIAL,
-                            BACKOFF_SECONDS,
-                            TimeUnit.SECONDS,
-                        )
-                        .addTag(WORK_NAME)
-                        .build()
-
-                WorkManager.getInstance(context)
-                    .enqueueUniqueWork(
-                        WORK_NAME,
-                        ExistingWorkPolicy.REPLACE,
                         request,
                     )
             }
