@@ -7,6 +7,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-02-28
+
+### Added
+
+- Gallery: Sort by newest during import for stable scrolling
+- Import: Hardened cloud URI import with cleanup and progress tracking
+- Settings: Richer AI search indexing status display
+
+### Changed
+
+- Upgraded Compose BOM to 2026.02.01
+- Moved sentencepiece.model to flavor-specific source sets
+- Reduced embedding worker CPU pressure for smoother device experience
+
+### Fixed
+
+- FTS4 search: replaced FTS5-only `bm25()` with FTS4-compatible query in search DAO
+- Emoji search: use unquoted column filters in FTS4 queries
+- Emoji import: normalize variation selectors for consistent FTS search
+- Embedding worker: checks model availability before processing, fails fast on model error
+- Embedding worker: removed self-cancelling continuation loop, improved notification messaging
+- Embedding indexing: continuous indexing with adaptive batching and inter-batch yields
+- Embedding model: resolved DISPATCH_OP failure and silent init errors
+- Snackbar respects navigation bar insets on all screens
+- Progress banner debounced to prevent flickering
+- Google Play flavor: bundled generic model for sideload/fallback
+- Resolved 22 chaos QA bugs across 6 root cause clusters
+
+### Improved
+
+- Expanded test suite: comprehensive migration tests for schema versions 6→7 and 7→8
+
+### CLI
+
+- **Smart rebuild system** — incremental annotation with build manifest tracking, skips unchanged images
+- **Image optimization** — automatic image optimization during annotation pipeline
+- **ZIP bundle modes** — full and patch bundle generation
+- **Output subdirectory layout** — organized output into `sidecars/`, `optimized/`, `bundle/` with legacy migration
+- **Legacy manifest seeding** — bootstrap rebuild manifests from existing sidecar files
+- **Rebuild reason diagnostics** — detailed reporting on why images are re-annotated
+- **Detect and strip removed schema fields** from existing sidecar files
+- **Track optimization config** in build manifest for change detection
+- Fixed BasedOn silent data loss in partial merge
+- Fixed case-insensitive filename lookups + atomic sidecar writes
+- Fixed ZIP entry collision when images share stem but differ in extension
+- Fixed Spectre.Console markup injection via dynamic content escaping
+- Fixed silent failures during annotation
+- Fixed atomic manifest save for concurrency safety
+- Added OnPermissionRequest handler for Copilot SDK update
+- Removed broken legacy seeding implementation
+- 600+ new tests across smart rebuild, schema validation, bundling, and concurrency
+
 ## [0.4.0] - 2026-02-27
 
 ### Added
@@ -301,7 +353,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Adaptive rate limiting with exponential backoff
 - Schema v1.1 with localization support
 
-[Unreleased]: https://github.com/adsamcik/riposte/compare/v0.3.4...HEAD
+[Unreleased]: https://github.com/adsamcik/riposte/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/adsamcik/riposte/compare/v0.4.0...v0.4.1
+[0.4.0]: https://github.com/adsamcik/riposte/compare/v0.3.4...v0.4.0
 [0.3.4]: https://github.com/adsamcik/riposte/compare/v0.3.3...v0.3.4
 [0.3.3]: https://github.com/adsamcik/riposte/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/adsamcik/riposte/compare/v0.3.1...v0.3.2
