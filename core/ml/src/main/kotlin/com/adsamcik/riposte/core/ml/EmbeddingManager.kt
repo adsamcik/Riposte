@@ -82,7 +82,17 @@ class EmbeddingManager
                     Timber.w(e, "Embedding model warm-up failed (non-fatal)")
                 }
 
-                // 2. Resume incomplete indexing (runs after warm-up completes)
+                // 2. Purge NaN-corrupted embeddings from prior GPU inference failures
+                try {
+                    purgeCorruptedEmbeddings()
+                } catch (
+                    @Suppress("TooGenericExceptionCaught")
+                    e: Exception,
+                ) {
+                    Timber.w(e, "Failed to check for corrupted embeddings")
+                }
+
+                // 3. Resume incomplete indexing (runs after warm-up completes)
                 try {
                     checkAndHandleModelUpgrade()
 
@@ -259,6 +269,40 @@ class EmbeddingManager
                         }
                     }
             }
+        }
+
+        /**
+         * Samples stored embeddings and checks for NaN/Inf values caused by
+         * GPU inference failures. If any corrupted embeddings are found, all
+         * embeddings are deleted since they were likely all generated with the
+         * same broken GPU accelerator.
+         */
+        private suspend fun purgeCorruptedEmbeddings() {
+            val samples = memeEmbeddingDao.sampleEmbeddingBlobs()
+            if (samples.isEmpty()) return
+
+            val hasCorrupted = samples.any { blob -> isCorruptedBlob(blob) }
+            if (!hasCorrupted) return
+
+            val totalCount = memeEmbeddingDao.countValidEmbeddings()
+            Timber.w(
+                "Detected NaN-corrupted embeddings (GPU inference failure) — " +
+                    "deleting all %d embeddings for regeneration",
+                totalCount,
+            )
+            memeEmbeddingDao.deleteAllEmbeddings()
+        }
+
+        private fun isCorruptedBlob(blob: ByteArray): Boolean {
+            if (blob.size < BYTES_PER_FLOAT) return true
+            val buffer = ByteBuffer.wrap(blob).order(ByteOrder.LITTLE_ENDIAN).asFloatBuffer()
+            var allZero = true
+            for (i in 0 until buffer.remaining()) {
+                val v = buffer.get()
+                if (!v.isFinite()) return true
+                if (v != 0f) allZero = false
+            }
+            return allZero
         }
 
         /**

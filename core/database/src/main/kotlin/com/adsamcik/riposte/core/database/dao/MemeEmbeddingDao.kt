@@ -316,4 +316,11 @@ interface MemeEmbeddingDao {
      */
     @Query("SELECT COUNT(*) FROM meme_embeddings WHERE modelVersion != :currentVersion AND needsRegeneration = 0")
     suspend fun countOutdatedEmbeddings(currentVersion: String): Int
+
+    /**
+     * Returns a small sample of embedding BLOBs for integrity validation.
+     * Used to detect NaN-corrupted embeddings from GPU inference failures.
+     */
+    @Query("SELECT embedding FROM meme_embeddings WHERE needsRegeneration = 0 LIMIT :limit")
+    suspend fun sampleEmbeddingBlobs(limit: Int = 5): List<ByteArray>
 }
