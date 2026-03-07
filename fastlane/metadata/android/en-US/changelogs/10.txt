@@ -1,0 +1,7 @@
+Bug fixes & reliability
+
+🧠 Fixed semantic search returning no results on some devices (GPU inference producing invalid values — now auto-falls back to CPU)
+🧹 Corrupted embeddings are automatically detected and regenerated on startup
+♿ Improved accessibility for screen readers
+🔙 Fixed back navigation in meme edit mode
+🔧 Fixed Play Store build packaging issue
