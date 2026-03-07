@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-03-07
+
+### Fixed
+
+- ML inference: detect GPU NaN output and automatically fall back to CPU accelerator
+- ML inference: fix `normalize()` not catching NaN norm values (IEEE 754 edge case)
+- Embeddings: auto-detect and purge NaN-corrupted embeddings on app startup
+- Semantic search: add emoji to scoring slots so unannotated memes participate in search
+- Accessibility: add contentDescription to Import FAB (was invisible to TalkBack)
+- Navigation: back press in edit mode now exits to view mode instead of leaving MemeDetail
+- Build: resolve AAB asset conflict between base and generic_embedding AI Pack
+- Logging: add release-build Logcat tree for ML pipeline failure visibility
+
 ## [0.4.1] - 2026-02-28
 
 ### Added

@@ -275,8 +275,8 @@ class GalleryViewModel
                                 }
                             }
                         }
-                } catch (_: IllegalStateException) {
-                    Timber.d("WorkManager not available, skipping import work observation")
+                } catch (e: IllegalStateException) {
+                    Timber.d(e, "WorkManager not available, skipping import work observation")
                 }
             }
         }
@@ -359,8 +359,8 @@ class GalleryViewModel
                                 }
                             }
                         }
-                } catch (_: IllegalStateException) {
-                    Timber.d("WorkManager not available, skipping embedding work observation")
+                } catch (e: IllegalStateException) {
+                    Timber.d(e, "WorkManager not available, skipping embedding work observation")
                 }
             }
         }

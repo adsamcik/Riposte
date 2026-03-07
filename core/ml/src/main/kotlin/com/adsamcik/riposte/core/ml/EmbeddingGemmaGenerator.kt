@@ -348,7 +348,7 @@ class EmbeddingGemmaGenerator
             try {
                 val modelBytes = File(tokenizerPath).readBytes()
                 rustTokenizer = RustTokenizer.parse(modelBytes)
-                Timber.i("Rust SentencePiece tokenizer loaded (vocab=%d)", rustTokenizer!!.vocabSize())
+                Timber.i("Rust SentencePiece tokenizer loaded (vocab=%d)", rustTokenizer?.vocabSize())
                 return
             } catch (e: UnsatisfiedLinkError) {
                 Timber.w("Rust tokenizer unavailable — native library not loaded: %s", e.message)

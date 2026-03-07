@@ -91,7 +91,8 @@ internal class RustTokenizer private constructor(
             return try {
                 loadNativeLibrary()
                 true
-            } catch (_: UnsatisfiedLinkError) {
+            } catch (e: UnsatisfiedLinkError) {
+                Timber.d(e, "Rust tokenizer native library not available")
                 false
             }
         }

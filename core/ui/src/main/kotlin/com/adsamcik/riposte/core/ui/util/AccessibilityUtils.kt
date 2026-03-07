@@ -38,7 +38,8 @@ fun rememberReducedMotion(): Boolean {
                 Settings.Global.ANIMATOR_DURATION_SCALE,
                 1f,
             ) == 0f
-        } catch (_: Settings.SettingNotFoundException) {
+        } catch (e: Settings.SettingNotFoundException) { // Expected on some OEMs
+            android.util.Log.d("AccessibilityUtils", "Animator duration scale not found", e)
             false
         }
     }

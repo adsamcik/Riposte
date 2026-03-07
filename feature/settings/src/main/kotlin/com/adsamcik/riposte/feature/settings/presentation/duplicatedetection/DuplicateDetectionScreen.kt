@@ -173,7 +173,7 @@ fun DuplicateDetectionScreen(
             // Duplicate groups
             items(
                 items = uiState.duplicateGroups,
-                key = { it.duplicateId },
+                key = { "duplicate_${it.duplicateId}" },
             ) { group ->
                 DuplicateGroupCard(
                     group = group,

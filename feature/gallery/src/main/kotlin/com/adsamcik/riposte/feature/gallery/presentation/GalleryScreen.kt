@@ -609,10 +609,10 @@ private fun GalleryScreenContent(
                         )
                     }
                     "paged-error" -> {
-                        val error = (pagedMemes!!.loadState.refresh as LoadState.Error).error
+                        val error = (pagedMemes?.loadState?.refresh as? LoadState.Error)?.error
                         ErrorState(
-                            message = error.message ?: stringResource(R.string.gallery_error_load_failed),
-                            onRetry = { pagedMemes.retry() },
+                            message = error?.message ?: stringResource(R.string.gallery_error_load_failed),
+                            onRetry = { pagedMemes?.retry() },
                             modifier = Modifier.semantics { liveRegion = LiveRegionMode.Assertive },
                         )
                     }

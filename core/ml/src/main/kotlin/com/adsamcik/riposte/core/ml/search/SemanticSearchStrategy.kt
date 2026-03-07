@@ -239,7 +239,8 @@ class SemanticSearchStrategy @Inject constructor(
             val embeddingsByType = memeRows
                 .filter { it.embedding != null && it.embeddingType != null }
                 .mapNotNull { row ->
-                    val decoded = decodeEmbedding(row.embedding!!)
+                    val embedding = row.embedding ?: return@mapNotNull null
+                    val decoded = decodeEmbedding(embedding)
                     if (decoded.size < 2) {
                         Timber.w("Skipping embedding with invalid dimensions: %d", decoded.size)
                         return@mapNotNull null
