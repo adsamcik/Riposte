@@ -153,6 +153,9 @@ class EmbeddingGemmaGenerator
 
                 try {
                     runInference(model, formattedText)
+                } catch (e: GpuInferenceException) {
+                    Timber.w(e, "GPU produced NaN output — falling back to CPU")
+                    fallbackToCpuAndRetry(formattedText)
                 } catch (
                     @Suppress("TooGenericExceptionCaught")
                     e: Exception,
@@ -161,6 +164,25 @@ class EmbeddingGemmaGenerator
                     throw e
                 }
             }
+
+        /**
+         * Re-initializes the model with CPU accelerator and retries inference.
+         * Called when GPU inference produces NaN/Inf values. Must be called while holding the mutex.
+         */
+        private fun fallbackToCpuAndRetry(text: String): FloatArray {
+            val modelPath = getModelPath()
+            compiledModel?.close()
+            compiledModel = null
+            cachedInputBuffers = null
+            cachedOutputBuffers = null
+
+            Timber.i("Re-initializing EmbeddingGemma with CPU after GPU NaN failure")
+            initializeWithCpu(modelPath)
+
+            val model = compiledModel
+                ?: throw IllegalStateException("CPU fallback initialization failed")
+            return runInference(model, text)
+        }
 
         override suspend fun generateFromImage(bitmap: Bitmap): FloatArray =
             withContext(Dispatchers.Default) {
@@ -479,8 +501,25 @@ class EmbeddingGemmaGenerator
             check(embedding.size == embeddingDimension) {
                 "Model output dimension mismatch: expected $embeddingDimension, got ${embedding.size}"
             }
-            return EmbeddingUtils.normalize(embedding)
+
+            val normalized = EmbeddingUtils.normalize(embedding)
+
+            // Detect NaN/Inf output from GPU — indicates driver or precision issue
+            if (normalized.any { !it.isFinite() }) {
+                throw GpuInferenceException(
+                    "GPU inference produced NaN/Inf values (${normalized.count { !it.isFinite() }}/" +
+                        "${normalized.size} non-finite)",
+                )
+            }
+
+            return normalized
         }
+
+        /**
+         * Thrown when GPU inference produces non-finite (NaN/Inf) output values.
+         * Triggers automatic fallback to CPU accelerator.
+         */
+        internal class GpuInferenceException(message: String) : RuntimeException(message)
 
         /**
          * Copies model files from assets to internal storage if they don't exist.

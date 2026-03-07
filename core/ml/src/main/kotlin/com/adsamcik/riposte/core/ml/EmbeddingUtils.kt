@@ -50,7 +50,7 @@ object EmbeddingUtils {
         }
         val norm = sqrt(sumSquares)
 
-        if (norm <= 0f) return embedding.copyOf()
+        if (!norm.isFinite() || norm <= 0f) return embedding.copyOf()
 
         return FloatArray(embedding.size) { i -> embedding[i] / norm }
     }

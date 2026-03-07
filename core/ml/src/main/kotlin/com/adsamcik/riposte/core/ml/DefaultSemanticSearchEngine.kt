@@ -326,6 +326,6 @@ class DefaultSemanticSearchEngine
             )
 
             /** Only these embedding slots are used for query→meme scoring. */
-            val SCORING_SLOTS = setOf("intent", "content", "emotion")
+            val SCORING_SLOTS = setOf("intent", "content", "emotion", "emoji")
         }
     }
