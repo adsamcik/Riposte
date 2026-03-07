@@ -327,15 +327,7 @@ class MemeDetailViewModel
         }
 
         private fun dismiss() {
-            viewModelScope.launch {
-                if (_uiState.value.hasUnsavedChanges) {
-                    _effects.send(
-                        MemeDetailEffect.ShowSnackbar(context.getString(R.string.gallery_snackbar_unsaved_changes)),
-                    )
-                } else {
-                    _effects.send(MemeDetailEffect.NavigateBack)
-                }
-            }
+            discardChanges()
         }
 
         private fun loadSimilarMemes() {

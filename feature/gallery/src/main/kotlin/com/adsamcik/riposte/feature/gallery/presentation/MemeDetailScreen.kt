@@ -196,10 +196,7 @@ private fun MemeDetailScreenContent(
     val onRequestBack = {
         when {
             uiState.isEditMode && uiState.hasUnsavedChanges -> showDiscardDialog = true
-            uiState.isEditMode -> {
-                onIntent(MemeDetailIntent.DiscardChanges)
-                onNavigateBack()
-            }
+            uiState.isEditMode -> onIntent(MemeDetailIntent.DiscardChanges)
             else -> onNavigateBack()
         }
     }
@@ -226,7 +223,6 @@ private fun MemeDetailScreenContent(
         onConfirmDiscard = {
             showDiscardDialog = false
             onIntent(MemeDetailIntent.DiscardChanges)
-            onNavigateBack()
         },
         onIntent = onIntent,
     )

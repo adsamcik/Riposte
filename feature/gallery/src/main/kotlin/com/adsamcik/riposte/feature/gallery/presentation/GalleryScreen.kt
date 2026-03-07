@@ -486,7 +486,7 @@ private fun GalleryScreenContent(
                     shape = RiposteShapes.FABDefault,
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
-                    icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                    icon = { Icon(Icons.Default.Add, contentDescription = stringResource(R.string.gallery_fab_import)) },
                     text = { Text(stringResource(R.string.gallery_fab_import)) },
                 )
             }

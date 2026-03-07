@@ -545,22 +545,23 @@ class MemeDetailViewModelTest {
     // region Dismiss Tests
 
     @Test
-    fun `Dismiss navigates back when no changes`() =
+    fun `Dismiss exits edit mode when no changes`() =
         runTest {
             viewModel = createViewModel()
             advanceUntilIdle()
 
-            viewModel.effects.test {
-                viewModel.onIntent(MemeDetailIntent.Dismiss)
-                advanceUntilIdle()
+            viewModel.onIntent(MemeDetailIntent.ToggleEditMode)
+            advanceUntilIdle()
+            assertThat(viewModel.uiState.value.isEditMode).isTrue()
 
-                val effect = awaitItem()
-                assertThat(effect).isEqualTo(MemeDetailEffect.NavigateBack)
-            }
+            viewModel.onIntent(MemeDetailIntent.Dismiss)
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.isEditMode).isFalse()
         }
 
     @Test
-    fun `Dismiss shows warning when unsaved changes`() =
+    fun `Dismiss discards unsaved changes and exits edit mode`() =
         runTest {
             viewModel = createViewModel()
             advanceUntilIdle()
@@ -568,15 +569,13 @@ class MemeDetailViewModelTest {
             viewModel.onIntent(MemeDetailIntent.ToggleEditMode)
             viewModel.onIntent(MemeDetailIntent.UpdateTitle("New Title"))
             advanceUntilIdle()
+            assertThat(viewModel.uiState.value.hasUnsavedChanges).isTrue()
 
-            viewModel.effects.test {
-                viewModel.onIntent(MemeDetailIntent.Dismiss)
-                advanceUntilIdle()
+            viewModel.onIntent(MemeDetailIntent.Dismiss)
+            advanceUntilIdle()
 
-                val effect = awaitItem()
-                assertThat(effect).isInstanceOf(MemeDetailEffect.ShowSnackbar::class.java)
-                assertThat((effect as MemeDetailEffect.ShowSnackbar).message).contains("unsaved changes")
-            }
+            assertThat(viewModel.uiState.value.isEditMode).isFalse()
+            assertThat(viewModel.uiState.value.hasUnsavedChanges).isFalse()
         }
 
     // endregion
