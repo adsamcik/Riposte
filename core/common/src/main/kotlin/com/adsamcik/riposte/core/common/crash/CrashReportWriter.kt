@@ -33,8 +33,9 @@ class CrashReportWriter(
     ) {
         try {
             writeCrashReport(thread, throwable)
-        } catch (_: Exception) {
+        } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
             // Best-effort — never let logging prevent the default handler from running.
+            android.util.Log.w("CrashReport", "Failed to write crash report", e)
         }
         previousHandler?.uncaughtException(thread, throwable)
     }

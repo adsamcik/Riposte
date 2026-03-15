@@ -37,6 +37,41 @@ data class LocalizedContent(
 )
 
 /**
+ * Structured emotion metadata for mood-based semantic search.
+ * Uses a 3-tier taxonomy: sentiment → core emotions → usage context.
+ * Added in schema v1.4.
+ */
+@Serializable
+data class EmotionData(
+    /**
+     * Primary emotion/mood category (e.g., "humor", "sadness", "wholesome").
+     */
+    @SerialName("primary")
+    val primary: String,
+    /**
+     * Additional emotions that also apply (1-4 items).
+     */
+    @SerialName("secondary")
+    val secondary: List<String> = emptyList(),
+    /**
+     * Overall sentiment: "positive", "negative", "neutral", or "mixed".
+     */
+    @SerialName("sentiment")
+    val sentiment: String = "neutral",
+    /**
+     * Emotion intensity: "low", "medium", or "high".
+     */
+    @SerialName("intensity")
+    val intensity: String = "medium",
+    /**
+     * Natural language descriptions of when/how someone would use this meme.
+     * E.g., "when something unexpectedly funny happens", "me on Monday morning".
+     */
+    @SerialName("memeUsage")
+    val memeUsage: List<String> = emptyList(),
+)
+
+/**
  * XMP Metadata format for embedding meme information in images.
  * This follows the XMP standard and uses a custom namespace for meme-specific data.
  *
@@ -116,6 +151,13 @@ data class MemeMetadata(
     @SerialName("basedOn")
     val basedOn: String? = null,
     /**
+     * Structured emotion metadata for mood-based semantic search.
+     * Contains primary/secondary emotions, sentiment, intensity, and meme usage context.
+     * Added in schema v1.4.
+     */
+    @SerialName("emotions")
+    val emotions: EmotionData? = null,
+    /**
      * BCP 47 language code of the primary content (title, description, tags).
      * Examples: "en", "cs", "de", "zh-TW"
      * Added in schema v1.1.
@@ -140,7 +182,7 @@ data class MemeMetadata(
     fun toEmojiTags(): List<EmojiTag> = emojis.map { EmojiTag.fromEmoji(it) }
 
     companion object {
-        const val CURRENT_SCHEMA_VERSION = "1.3"
+        const val CURRENT_SCHEMA_VERSION = "1.4"
 
         // Legacy schema version for backward compatibility
         const val LEGACY_SCHEMA_VERSION = "1.0"

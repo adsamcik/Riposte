@@ -87,8 +87,13 @@ public static class SidecarService
     public static bool HasSidecar(string imagePath, string? outputDir = null)
     {
         outputDir ??= Path.GetDirectoryName(imagePath)!;
-        var sidecarPath = Path.Combine(outputDir, Path.GetFileName(imagePath) + ".json");
-        return File.Exists(sidecarPath);
+        var sidecarDir = OutputPaths.GetSidecarDir(outputDir);
+        var sidecarPath = Path.Combine(sidecarDir, Path.GetFileName(imagePath) + ".json");
+        if (File.Exists(sidecarPath)) return true;
+
+        // Check legacy location (flat in outputDir)
+        var legacyPath = Path.Combine(outputDir, Path.GetFileName(imagePath) + ".json");
+        return File.Exists(legacyPath);
     }
 
     /// <summary>
@@ -125,7 +130,7 @@ public static class SidecarService
     {
         return new SidecarMetadata
         {
-            Emojis = result.Emojis,
+            Emojis = result.Emojis ?? [],
             Title = result.Title,
             Description = result.Description,
             Tags = result.Tags,
@@ -134,6 +139,7 @@ public static class SidecarService
             Localizations = result.Localizations,
             ContentHash = contentHash,
             BasedOn = result.BasedOn,
+            Emotions = result.Emotions,
         };
     }
 
@@ -167,13 +173,33 @@ public static class SidecarService
 
     /// <summary>
     /// Write a JSON sidecar file for an image.
+    /// Uses atomic write (temp file + rename) to prevent corruption on crash.
     /// </summary>
     public static string WriteSidecar(string imagePath, SidecarMetadata metadata, string? outputDir = null)
     {
         outputDir ??= Path.GetDirectoryName(imagePath)!;
-        var sidecarPath = Path.Combine(outputDir, Path.GetFileName(imagePath) + ".json");
+        var sidecarDir = OutputPaths.GetSidecarDir(outputDir);
+        Directory.CreateDirectory(sidecarDir);
+        var sidecarPath = Path.Combine(sidecarDir, Path.GetFileName(imagePath) + ".json");
         var json = JsonSerializer.Serialize(metadata, JsonOptions);
-        File.WriteAllText(sidecarPath, json);
+        var tempPath = sidecarPath + ".tmp";
+        File.WriteAllText(tempPath, json);
+        File.Move(tempPath, sidecarPath, overwrite: true);
         return sidecarPath;
+    }
+
+    /// <summary>
+    /// Resolve the path to an existing sidecar, checking subdirectory first then legacy flat path.
+    /// </summary>
+    public static string? ResolveSidecarPath(string imagePath, string outputDir)
+    {
+        var sidecarName = Path.GetFileName(imagePath) + ".json";
+        var subDirPath = Path.Combine(OutputPaths.GetSidecarDir(outputDir), sidecarName);
+        if (File.Exists(subDirPath)) return subDirPath;
+
+        var legacyPath = Path.Combine(outputDir, sidecarName);
+        if (File.Exists(legacyPath)) return legacyPath;
+
+        return null;
     }
 }

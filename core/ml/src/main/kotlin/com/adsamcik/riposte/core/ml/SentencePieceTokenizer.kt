@@ -244,7 +244,8 @@ internal class SentencePieceTokenizer private constructor(
             val hex = token.substring(3, token.length - 1)
             return try {
                 hex.toInt(HEX_RADIX)
-            } catch (_: NumberFormatException) {
+            } catch (e: NumberFormatException) {
+                Timber.d(e, "Invalid byte-piece hex token: %s", token)
                 -1
             }
         }

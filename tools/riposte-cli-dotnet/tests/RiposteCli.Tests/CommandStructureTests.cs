@@ -170,7 +170,7 @@ public class CommandStructureTests
 
         Assert.Contains("--output", optionNames);
         Assert.Contains("--similarity-threshold", optionNames);
-        Assert.Contains("--no-near", optionNames);
+        Assert.Contains("--include-near", optionNames);
         Assert.Contains("--dry-run", optionNames);
         Assert.Contains("--yes", optionNames);
         Assert.Contains("--verbose", optionNames);

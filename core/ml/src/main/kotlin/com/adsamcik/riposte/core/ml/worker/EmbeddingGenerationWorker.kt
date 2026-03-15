@@ -54,73 +54,102 @@ class EmbeddingGenerationWorker
                 val startTime = System.currentTimeMillis()
                 Timber.i(
                     "Embedding generation starting (maxFetchSize=%d, attempt=%d)",
-                    MAX_FETCH_SIZE, runAttemptCount + 1,
+                    BATCH_FETCH_SIZE, runAttemptCount + 1,
                 )
                 try {
                     notificationManager.createChannel()
 
-                    // Get a large pool of pending memes — we'll process as many as time allows
-                    val pendingMemes = embeddingRepository.getMemesNeedingEmbeddings(MAX_FETCH_SIZE)
-
-                    if (pendingMemes.isEmpty()) {
-                        Timber.d("No memes need embeddings, finishing early")
-                        return@withContext Result.success(
-                            workDataOf(
-                                KEY_PROCESSED_COUNT to 0,
-                                KEY_REMAINING_COUNT to 0,
-                            ),
+                    // Bail out early if the model is known to be broken — no point processing memes
+                    val modelError = embeddingGenerator.initializationError
+                    if (modelError != null) {
+                        Timber.w("Embedding model unavailable (%s), skipping work", modelError)
+                        return@withContext Result.failure(
+                            workDataOf(KEY_ERROR_MESSAGE to modelError),
                         )
                     }
 
-                    val (successCount, failureCount) = processAdaptiveBatch(pendingMemes)
+                    var totalSuccess = 0
+                    var totalFailure = 0
+                    val initialTotal = embeddingRepository.countMemesNeedingEmbeddings()
 
-                    // Check if there are more memes to process
-                    val remainingCount = embeddingRepository.countMemesNeedingEmbeddings()
+                    // Track memes already processed in this run. Memes with missing
+                    // metadata legitimately produce fewer than EXPECTED_EMBEDDING_TYPES,
+                    // so the "incomplete" query would rediscover them endlessly.
+                    val processedMemeIds = mutableSetOf<Long>()
 
-                    val outputData =
-                        workDataOf(
-                            KEY_PROCESSED_COUNT to successCount,
-                            KEY_FAILED_COUNT to failureCount,
-                            KEY_REMAINING_COUNT to remainingCount,
+                    // Process all pending memes in a continuous loop with yields for responsiveness.
+                    // WorkManager's 10-min execution limit is the natural boundary.
+                    while (true) {
+                        kotlinx.coroutines.yield() // Check for cancellation between batches
+
+                        val pendingMemes = embeddingRepository.getMemesNeedingEmbeddings(BATCH_FETCH_SIZE)
+                            .filter { it.id !in processedMemeIds }
+                        if (pendingMemes.isEmpty()) break
+
+                        processedMemeIds.addAll(pendingMemes.map { it.id })
+
+                        val (successCount, failureCount) = processAdaptiveBatch(
+                            pendingMemes,
+                            totalSuccess + totalFailure,
+                            initialTotal.coerceAtLeast(1),
                         )
+                        totalSuccess += successCount
+                        totalFailure += failureCount
 
+                        // Persist attempt count so future runs skip legitimately-incomplete memes
+                        for (meme in pendingMemes) {
+                            try {
+                                embeddingRepository.markMemeFullyAttempted(meme.id)
+                            } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
+                                Timber.d(e, "Failed to mark meme %d as attempted", meme.id)
+                            }
+                        }
+
+                        // If the entire batch failed, the model is likely broken — stop looping
+                        if (successCount == 0 && failureCount > 0) {
+                            val postRunModelError = embeddingGenerator.initializationError
+                            if (postRunModelError != null) {
+                                Timber.w("Model error after batch: %s — giving up", postRunModelError)
+                                return@withContext Result.failure(
+                                    workDataOf(KEY_ERROR_MESSAGE to postRunModelError),
+                                )
+                            }
+                            Timber.w("Entire batch failed (%d items) — stopping", failureCount)
+                            break
+                        }
+
+                        // Brief pause between batches to reduce thermal/CPU pressure
+                        kotlinx.coroutines.delay(INTER_BATCH_DELAY_MS)
+                    }
+
+                    // Count remaining work — the DB now excludes already-attempted memes
+                    // via indexingAttempts, so no in-memory adjustment needed.
+                    val remainingCount = embeddingRepository.countMemesNeedingEmbeddings()
                     val elapsed = System.currentTimeMillis() - startTime
 
-                    // Only schedule continuation if we made progress this batch.
-                    // If no memes succeeded, the model is likely unavailable and
-                    // re-scheduling immediately would create an infinite loop that
-                    // floods the main thread with WorkManager overhead, causing ANR.
-                    if (remainingCount > 0 && successCount > 0) {
-                        Timber.i(
-                            "Embedding batch done in %dms: %d ok, %d failed, %d remaining — scheduling next",
-                            elapsed, successCount, failureCount, remainingCount,
-                        )
-                        enqueueContinuation(context)
-                    } else if (remainingCount > 0) {
-                        Timber.w(
-                            "Embedding batch done in %dms: 0 ok, %d failed, %d remaining — " +
-                                "not scheduling continuation to avoid busy loop",
-                            elapsed, failureCount, remainingCount,
-                        )
-                    } else {
-                        Timber.i(
-                            "Embedding generation complete in %dms: %d ok, %d failed, 0 remaining",
-                            elapsed, successCount, failureCount,
-                        )
-                    }
+                    Timber.i(
+                        "Embedding generation done in %dms: %d ok, %d failed, %d remaining",
+                        elapsed, totalSuccess, totalFailure, remainingCount,
+                    )
 
-                    // Show completion notification if app is in background and this is the last batch
-                    if (remainingCount == 0 && successCount > 0 && appLifecycleTracker.isInBackground.value) {
-                        notificationManager.showCompleteNotification(successCount, failureCount)
+                    if (remainingCount == 0 && totalSuccess > 0 && appLifecycleTracker.isInBackground.value) {
+                        notificationManager.showCompleteNotification(totalSuccess, totalFailure)
                     }
 
                     eventBus.emit(
                         EmbeddingsReady(
-                            processedCount = successCount,
-                            failedCount = failureCount,
+                            processedCount = totalSuccess,
+                            failedCount = totalFailure,
                             remainingCount = remainingCount,
                         ),
                     )
+
+                    val outputData =
+                        workDataOf(
+                            KEY_PROCESSED_COUNT to totalSuccess,
+                            KEY_FAILED_COUNT to totalFailure,
+                            KEY_REMAINING_COUNT to remainingCount,
+                        )
                     Result.success(outputData)
                 } catch (
                     @Suppress("TooGenericExceptionCaught") // Worker must not crash - reports failure instead
@@ -143,11 +172,14 @@ class EmbeddingGenerationWorker
             }
 
         /**
-         * Adaptive batch: process the first item to measure device speed, then
-         * fill the remaining time budget (7 min total, 3 min headroom = 4 min work).
+         * Processes a batch of memes with adaptive sizing based on device speed.
+         * Measures the first item to estimate how many fit in the time budget,
+         * yielding between items for responsiveness.
          */
         private suspend fun processAdaptiveBatch(
             pendingMemes: List<MemeDataForEmbedding>,
+            previouslyProcessed: Int,
+            overallTotal: Int,
         ): Pair<Int, Int> {
             var successCount = 0
             var failureCount = 0
@@ -158,11 +190,11 @@ class EmbeddingGenerationWorker
             processOneEmbedding(pendingMemes.first()).let { ok -> if (ok) successCount++ else failureCount++ }
             val firstDuration = (System.currentTimeMillis() - firstStart).coerceAtLeast(MIN_ITEM_DURATION_MS)
 
-            reportProgress(successCount, failureCount, pendingMemes.size)
+            reportProgress(previouslyProcessed + successCount + failureCount, overallTotal)
 
             // Calculate how many more fit in budget
             val elapsedMs = System.currentTimeMillis() - batchStartTime
-            val remainingBudgetMs = WORK_BUDGET_MS - elapsedMs
+            val remainingBudgetMs = BATCH_BUDGET_MS - elapsedMs
             val additionalItems = (remainingBudgetMs / firstDuration).toInt()
                 .coerceIn(0, pendingMemes.size - 1)
 
@@ -174,8 +206,9 @@ class EmbeddingGenerationWorker
             )
 
             for (i in 1..additionalItems) {
+                kotlinx.coroutines.yield()
                 processOneEmbedding(pendingMemes[i]).let { ok -> if (ok) successCount++ else failureCount++ }
-                reportProgress(successCount, failureCount, pendingMemes.size)
+                reportProgress(previouslyProcessed + successCount + failureCount, overallTotal)
             }
 
             return Pair(successCount, failureCount)
@@ -186,9 +219,11 @@ class EmbeddingGenerationWorker
             return try {
                 var generatedAny = false
 
-                val contentText = buildContentText(memeData)
+                // Use two-arg generateFromText so EmbeddingGemma gets the structured "title: X | text: Y" prompt
+                val (title, body) = buildContentParts(memeData)
+                val contentText = if (title != null) "$title. $body" else body
                 if (contentText.isNotBlank()) {
-                    val embedding = embeddingGenerator.generateFromText(contentText)
+                    val embedding = embeddingGenerator.generateFromText(body, title)
                     val sourceHash = generateHash(contentText)
                     embeddingRepository.saveEmbedding(
                         memeId = memeData.id,
@@ -245,6 +280,21 @@ class EmbeddingGenerationWorker
                     )
                     generatedAny = true
                 }
+
+                val emotionText = buildEmotionText(memeData)
+                if (emotionText.isNotBlank()) {
+                    val embedding = embeddingGenerator.generateFromText(emotionText)
+                    val sourceHash = generateHash(emotionText)
+                    embeddingRepository.saveEmbedding(
+                        memeId = memeData.id,
+                        embedding = encodeEmbedding(embedding),
+                        dimension = embedding.size,
+                        modelVersion = CURRENT_MODEL_VERSION,
+                        sourceTextHash = sourceHash,
+                        embeddingType = EmbeddingType.EMOTION.key,
+                    )
+                    generatedAny = true
+                }
                 generatedAny
             } catch (
                 @Suppress("TooGenericExceptionCaught")
@@ -255,12 +305,19 @@ class EmbeddingGenerationWorker
             }
         }
 
-        private fun reportProgress(success: Int, failed: Int, total: Int) {
+        /** High-water mark ensures reported progress never regresses. */
+        private var lastReportedProgress = 0
+
+        private fun reportProgress(processed: Int, total: Int) {
+            val safeTotal = total.coerceAtLeast(1)
+            val progress = (processed * PERCENTAGE_MULTIPLIER / safeTotal)
+                .coerceIn(0, PERCENTAGE_MULTIPLIER)
+            lastReportedProgress = maxOf(lastReportedProgress, progress)
             setProgressAsync(
                 workDataOf(
-                    KEY_PROGRESS to ((success + failed) * PERCENTAGE_MULTIPLIER / total),
-                    KEY_PROCESSED_COUNT to (success + failed),
-                    KEY_REMAINING_COUNT to (total - success - failed),
+                    KEY_PROGRESS to lastReportedProgress,
+                    KEY_PROCESSED_COUNT to processed,
+                    KEY_REMAINING_COUNT to (safeTotal - processed).coerceAtLeast(0),
                 ),
             )
         }
@@ -380,6 +437,36 @@ class EmbeddingGenerationWorker
             return parts.joinToString(" | ")
         }
 
+        /**
+         * Build text for emotion embedding slot from structured emotion metadata.
+         * Combines primary emotion, secondary emotions, and meme usage context
+         * into a natural language text optimized for semantic matching.
+         */
+        private fun buildEmotionText(memeData: MemeDataForEmbedding): String {
+            val jsonString = memeData.emotionsJson?.takeIf { it.isNotBlank() } ?: return ""
+            return try {
+                val emotions = kotlinx.serialization.json.Json.decodeFromString<
+                    com.adsamcik.riposte.core.model.EmotionData,
+                >(jsonString)
+                val parts = mutableListOf<String>()
+                parts.add(emotions.primary)
+                if (emotions.secondary.isNotEmpty()) {
+                    parts.add(emotions.secondary.joinToString(", "))
+                }
+                parts.add("${emotions.sentiment} ${emotions.intensity}")
+                if (emotions.memeUsage.isNotEmpty()) {
+                    parts.addAll(emotions.memeUsage)
+                }
+                parts.joinToString(". ")
+            } catch (
+                @Suppress("TooGenericExceptionCaught")
+                e: Exception,
+            ) {
+                Timber.d(e, "Failed to parse emotions JSON")
+                ""
+            }
+        }
+
         private fun encodeEmbedding(embedding: FloatArray): ByteArray {
             val buffer =
                 ByteBuffer.allocate(embedding.size * BYTES_PER_FLOAT)
@@ -398,8 +485,12 @@ class EmbeddingGenerationWorker
         companion object {
             const val WORK_NAME = "embedding_generation_work"
             const val MAX_RETRY_COUNT = 3
-            const val CURRENT_MODEL_VERSION = "embeddinggemma:1.3.0"
-            private const val CONTINUATION_DELAY_SECONDS = 5L
+
+            /**
+             * Current model version — delegates to the single source of truth in
+             * [com.adsamcik.riposte.core.ml.EmbeddingModelVersionManager].
+             */
+            val CURRENT_MODEL_VERSION = com.adsamcik.riposte.core.ml.EmbeddingModelVersionManager.CURRENT_VERSION
             private const val PERCENTAGE_MULTIPLIER = 100
             private const val BYTES_PER_FLOAT = 4
             private const val HASH_BYTE_LENGTH = 16
@@ -411,11 +502,18 @@ class EmbeddingGenerationWorker
             private const val VARIATION_SELECTOR_15 = 0xFE0E
             private val SKIN_TONE_MODIFIER_RANGE = 0x1F3FB..0x1F3FF
 
-            /** Fetch up to this many pending memes; adaptive logic decides how many to process. */
-            private const val MAX_FETCH_SIZE = 200
+            /** Fetch this many memes per inner batch; adaptive logic trims based on device speed. */
+            private const val BATCH_FETCH_SIZE = 50
 
-            /** 7 min total minus 3 min headroom = 4 min work budget per batch. */
-            private const val WORK_BUDGET_MS = 4L * 60 * 1000
+            /**
+             * Time budget per adaptive batch. The outer loop in doWork() runs multiple
+             * batches continuously with a brief pause between them. This controls how
+             * long each inner batch runs before yielding to the inter-batch delay.
+             */
+            private const val BATCH_BUDGET_MS = 2L * 60 * 1000
+
+            /** Brief pause between batches to reduce thermal pressure. */
+            private const val INTER_BATCH_DELAY_MS = 500L
 
             /** Floor for per-item duration to avoid division issues on very fast inference. */
             private const val MIN_ITEM_DURATION_MS = 50L
@@ -456,70 +554,6 @@ class EmbeddingGenerationWorker
                     )
             }
 
-            /**
-             * Enqueues a continuation batch from within a running worker.
-             * Uses REPLACE because the current work is still technically active
-             * when this is called, so KEEP would silently drop the request.
-             */
-            private fun enqueueContinuation(context: Context) {
-                val constraints =
-                    Constraints.Builder()
-                        .setRequiresBatteryNotLow(true)
-                        .build()
-
-                val request =
-                    OneTimeWorkRequestBuilder<EmbeddingGenerationWorker>()
-                        .setConstraints(constraints)
-                        .setInitialDelay(CONTINUATION_DELAY_SECONDS, TimeUnit.SECONDS)
-                        .setBackoffCriteria(
-                            BackoffPolicy.EXPONENTIAL,
-                            BACKOFF_SECONDS,
-                            TimeUnit.SECONDS,
-                        )
-                        .addTag(WORK_NAME)
-                        .build()
-
-                WorkManager.getInstance(context)
-                    .enqueueUniqueWork(
-                        WORK_NAME,
-                        ExistingWorkPolicy.REPLACE,
-                        request,
-                    )
-            }
-
-            /**
-             * Enqueues embedding regeneration work for outdated model versions.
-             */
-            // Parameter reserved for future version-specific migration logic
-            @Suppress("UnusedParameter")
-            fun enqueueRegeneration(
-                context: Context,
-                currentVersion: String,
-            ) {
-                val constraints =
-                    Constraints.Builder()
-                        .setRequiresBatteryNotLow(true)
-                        .setRequiresCharging(true) // Regeneration can be expensive
-                        .build()
-
-                val request =
-                    OneTimeWorkRequestBuilder<EmbeddingGenerationWorker>()
-                        .setConstraints(constraints)
-                        .setBackoffCriteria(
-                            BackoffPolicy.EXPONENTIAL,
-                            1,
-                            TimeUnit.MINUTES,
-                        )
-                        .addTag("${WORK_NAME}_regeneration")
-                        .build()
-
-                WorkManager.getInstance(context)
-                    .enqueueUniqueWork(
-                        "${WORK_NAME}_regeneration",
-                        ExistingWorkPolicy.REPLACE,
-                        request,
-                    )
-            }
         }
     }
 
@@ -535,6 +569,7 @@ data class MemeDataForEmbedding(
     val searchPhrases: String?,
     val emojiTagsJson: String? = null,
     val basedOn: String? = null,
+    val emotionsJson: String? = null,
 )
 
 /**
@@ -565,7 +600,14 @@ interface EmbeddingWorkRepository {
     suspend fun countMemesNeedingEmbeddings(): Int
 
     /**
-     * Mark embeddings with outdated model version for regeneration.
+     * Delete embeddings with outdated model version.
      */
-    suspend fun markOutdatedEmbeddings(currentVersion: String)
+    suspend fun deleteOutdatedEmbeddings(currentVersion: String)
+
+    /**
+     * Mark a meme as having been fully attempted for embedding generation.
+     * Persists the attempt count so future worker runs skip memes
+     * that legitimately produce fewer than all embedding types.
+     */
+    suspend fun markMemeFullyAttempted(memeId: Long)
 }

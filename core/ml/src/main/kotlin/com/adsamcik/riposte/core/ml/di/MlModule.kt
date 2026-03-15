@@ -38,8 +38,4 @@ abstract class MlModule {
     @Binds
     @IntoSet
     abstract fun bindSemanticSearchStrategy(impl: SemanticSearchStrategy): SearchStrategy
-
-    // NOTE: MediaPipeEmbeddingGenerator class is retained but NOT provided by Hilt.
-    // It was causing DISPATCH_OP errors at startup because Hilt eagerly constructed it,
-    // loading an incompatible TFLite model. The primary generator is EmbeddingGemma.
 }

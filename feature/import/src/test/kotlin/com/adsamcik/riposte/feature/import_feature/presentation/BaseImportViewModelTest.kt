@@ -81,7 +81,7 @@ abstract class BaseImportViewModelTest {
             }
         importStagingManager =
             mockk(relaxed = true) {
-                coEvery { stageImages(any()) } returns java.io.File(System.getProperty("java.io.tmpdir"), "staging")
+                coEvery { stageImages(any(), any()) } returns java.io.File(System.getProperty("java.io.tmpdir"), "staging")
             }
         importRepository = mockk(relaxed = true)
         viewModel = createViewModel()

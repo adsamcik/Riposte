@@ -78,7 +78,7 @@ class ImportRepositoryImpl
         ): Result<Meme> =
             withContext(Dispatchers.IO) {
                 try {
-                    val emojis = metadata?.emojis ?: emptyList()
+                    val emojis = (metadata?.emojis ?: emptyList()).map { EmojiTag.normalizeEmoji(it) }
                     val description = metadata?.description
 
                     val processed = copyImageToInternal(uri)
@@ -129,7 +129,7 @@ class ImportRepositoryImpl
                             val emojiTag = EmojiTag.fromEmoji(emoji)
                             EmojiTagEntity(
                                 memeId = memeId,
-                                emoji = emoji,
+                                emoji = emojiTag.emoji,
                                 emojiName = emojiTag.name,
                             )
                         }
@@ -162,6 +162,7 @@ class ImportRepositoryImpl
                     @Suppress("TooGenericExceptionCaught") // Worker must not crash - reports failure instead
                     e: Exception,
                 ) {
+                    Timber.e(e, "Failed to import image from URI: %s", uri)
                     Result.failure(e)
                 }
             }
@@ -354,6 +355,8 @@ class ImportRepositoryImpl
                         memeDao.getMemeById(memeId)
                             ?: return@withContext Result.failure(Exception("Meme not found"))
 
+                    val normalizedEmojis = metadata.emojis.map { EmojiTag.normalizeEmoji(it) }
+
                     // Update entity fields
                     val searchPhrasesJson =
                         if (metadata.searchPhrases.isNotEmpty()) {
@@ -363,7 +366,7 @@ class ImportRepositoryImpl
                         }
                     val updated =
                         existing.copy(
-                            emojiTagsJson = kotlinx.serialization.json.Json.encodeToString(metadata.emojis),
+                            emojiTagsJson = kotlinx.serialization.json.Json.encodeToString(normalizedEmojis),
                             title = metadata.title ?: existing.title,
                             description = metadata.description ?: existing.description,
                             textContent = metadata.textContent ?: existing.textContent,
@@ -374,17 +377,21 @@ class ImportRepositoryImpl
                                 metadata.localizations.takeIf { it.isNotEmpty() }?.let {
                                     kotlinx.serialization.json.Json.encodeToString(it)
                                 } ?: existing.localizationsJson,
+                            emotionsJson =
+                                metadata.emotions?.let {
+                                    kotlinx.serialization.json.Json.encodeToString(it)
+                                } ?: existing.emotionsJson,
                         )
                     memeDao.updateMeme(updated)
 
                     // Replace emoji tags
                     emojiTagDao.deleteEmojiTagsForMeme(memeId)
                     val emojiTagEntities =
-                        metadata.emojis.map { emoji ->
+                        normalizedEmojis.map { emoji ->
                             val emojiTag = EmojiTag.fromEmoji(emoji)
                             EmojiTagEntity(
                                 memeId = memeId,
-                                emoji = emoji,
+                                emoji = emojiTag.emoji,
                                 emojiName = emojiTag.name,
                             )
                         }
@@ -459,7 +466,7 @@ class ImportRepositoryImpl
             uri: Uri,
             extractedText: String?,
         ): MemeEntity {
-            val emojis = metadata?.emojis ?: emptyList()
+            val emojis = (metadata?.emojis ?: emptyList()).map { EmojiTag.normalizeEmoji(it) }
             val searchPhrases = metadata?.searchPhrases ?: emptyList()
             val originalFileName = getFileNameFromUri(uri) ?: "Untitled"
             val mimeType = context.contentResolver.getType(uri) ?: "image/jpeg"
@@ -489,6 +496,10 @@ class ImportRepositoryImpl
                 primaryLanguage = metadata?.primaryLanguage,
                 localizationsJson =
                     metadata?.localizations?.takeIf { it.isNotEmpty() }?.let {
+                        kotlinx.serialization.json.Json.encodeToString(it)
+                    },
+                emotionsJson =
+                    metadata?.emotions?.let {
                         kotlinx.serialization.json.Json.encodeToString(it)
                     },
             )

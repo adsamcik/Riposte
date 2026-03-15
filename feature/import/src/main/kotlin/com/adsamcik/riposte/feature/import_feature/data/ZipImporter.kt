@@ -431,6 +431,10 @@ class DefaultZipImporter
                                     errors[entryName] =
                                         "File size limit exceeded (max: ${maxMb}MB)"
                                     outputFile.delete()
+                                } else if (written == 0L) {
+                                    errors[entryName] =
+                                        "Empty file (possible interrupted download)"
+                                    outputFile.delete()
                                 } else {
                                     bytesExtracted = written
                                     extractedImages[safeFileName] = outputFile
@@ -516,6 +520,14 @@ class DefaultZipImporter
                                 if (written < 0) {
                                     events.add(
                                         ZipExtractionEvent.Error(entryName, "File size limit exceeded"),
+                                    )
+                                    outputFile.delete()
+                                } else if (written == 0L) {
+                                    events.add(
+                                        ZipExtractionEvent.Error(
+                                            entryName,
+                                            "Empty file (possible interrupted download)",
+                                        ),
                                     )
                                     outputFile.delete()
                                 } else {

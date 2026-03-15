@@ -320,6 +320,40 @@ class ShareRepositoryImplTest {
             assertThat(result.exceptionOrNull()?.message).isEqualTo("Failed to create media entry")
         }
 
+    @Test
+    fun `saveToGallery cleans up temp file when processImage fails`() =
+        runTest {
+            val meme = TestDataFactory.createMeme(id = 1L)
+            val config = ShareConfig.DEFAULT
+            val galleryUri = Uri.parse("content://media/external/images/media/42")
+            val mockResolver = mockk<ContentResolver>()
+
+            every { context.contentResolver } returns mockResolver
+            every { mockResolver.insert(any(), any()) } returns galleryUri
+            every { mockResolver.openOutputStream(galleryUri) } returns ByteArrayOutputStream()
+            every { mockResolver.delete(any(), null, null) } returns 1
+            every { imageProcessor.processImage(any(), any(), any()) } answers {
+                val outputFile = thirdArg<File>()
+                outputFile.parentFile?.mkdirs()
+                outputFile.writeBytes(byteArrayOf(1, 2, 3))
+                ImageProcessor.ProcessResult.Error("Decode failed")
+            }
+
+            val result = repository.saveToGallery(meme, config)
+
+            assertThat(result.isFailure).isTrue()
+            assertThat(result.exceptionOrNull()?.message).isEqualTo("Decode failed")
+
+            // Verify temp file was cleaned up
+            val shareCacheDir = File(tempFolder.root, "share_cache")
+            val remainingTempFiles =
+                shareCacheDir.listFiles()?.filter { it.name.startsWith("temp_gallery_") } ?: emptyList()
+            assertThat(remainingTempFiles).isEmpty()
+
+            // Verify MediaStore entry was also cleaned up
+            verify { mockResolver.delete(galleryUri, null, null) }
+        }
+
     // endregion
 
     // region Helper Functions

@@ -411,7 +411,7 @@ class ImportViewModelTest : BaseImportViewModelTest() {
             advanceUntilIdle()
 
             // Import now stages images and enqueues a worker instead of importing directly
-            coVerify { importStagingManager.stageImages(any()) }
+            coVerify { importStagingManager.stageImages(any(), any()) }
             coVerify { importRepository.createImportRequest(any(), any(), any()) }
             coVerify { importRepository.createImportRequestItems(any(), any()) }
         }
@@ -496,7 +496,7 @@ class ImportViewModelTest : BaseImportViewModelTest() {
             viewModel.onIntent(ImportIntent.StartImport)
             advanceUntilIdle()
 
-            coVerify { importStagingManager.stageImages(any()) }
+            coVerify { importStagingManager.stageImages(any(), any()) }
         }
 
     @Test
@@ -507,7 +507,7 @@ class ImportViewModelTest : BaseImportViewModelTest() {
             coEvery { suggestEmojisUseCase(any()) } returns emptyList()
             coEvery { extractTextUseCase(any()) } returns null
             coEvery { findDuplicateMemeIdUseCase(any()) } returns null
-            coEvery { importStagingManager.stageImages(any()) } throws RuntimeException("staging failed")
+            coEvery { importStagingManager.stageImages(any(), any()) } throws RuntimeException("staging failed")
 
             viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uri)))
             advanceUntilIdle()
@@ -519,6 +519,30 @@ class ImportViewModelTest : BaseImportViewModelTest() {
                 val state = awaitItem()
                 assertThat(state.isImporting).isFalse()
             }
+        }
+
+    @Test
+    fun `concurrent import attempts are prevented by atomic guard`() =
+        runTest {
+            val uri = mockk<Uri> { every { lastPathSegment } returns "meme.jpg" }
+
+            coEvery { suggestEmojisUseCase(any()) } returns emptyList()
+            coEvery { extractTextUseCase(any()) } returns null
+            coEvery { findDuplicateMemeIdUseCase(any()) } returns null
+
+            viewModel.onIntent(ImportIntent.ImagesSelected(listOf(uri)))
+            advanceUntilIdle()
+
+            // Fire two StartImport intents without advancing — the atomic guard
+            // in _uiState.update {} synchronously sets isImporting=true on the first call,
+            // so the second call sees isImporting=true and returns immediately.
+            viewModel.onIntent(ImportIntent.StartImport)
+            viewModel.onIntent(ImportIntent.StartImport)
+            advanceUntilIdle()
+
+            // Only one import should have actually been executed
+            coVerify(exactly = 1) { importStagingManager.stageImages(any(), any()) }
+            coVerify(exactly = 1) { importRepository.createImportRequest(any(), any(), any()) }
         }
 
     // endregion
@@ -613,7 +637,7 @@ class ImportViewModelTest : BaseImportViewModelTest() {
             }
 
             // Both images were staged (all images, including the duplicate)
-            coVerify { importStagingManager.stageImages(match { it.size == 2 }) }
+            coVerify { importStagingManager.stageImages(match { it.size == 2 }, any()) }
             coVerify { importRepository.createImportRequest(any(), eq(2), any()) }
         }
 
@@ -645,7 +669,7 @@ class ImportViewModelTest : BaseImportViewModelTest() {
             }
 
             // Only 1 non-duplicate image was staged
-            coVerify { importStagingManager.stageImages(match { it.size == 1 }) }
+            coVerify { importStagingManager.stageImages(match { it.size == 1 }, any()) }
             coVerify { importRepository.createImportRequest(any(), eq(1), any()) }
         }
 
@@ -676,7 +700,7 @@ class ImportViewModelTest : BaseImportViewModelTest() {
             }
 
             // No import should have been started
-            coVerify(exactly = 0) { importStagingManager.stageImages(any()) }
+            coVerify(exactly = 0) { importStagingManager.stageImages(any(), any()) }
         }
 
     @Test
@@ -713,7 +737,7 @@ class ImportViewModelTest : BaseImportViewModelTest() {
             coVerify { updateMemeMetadataUseCase(eq(100L), any()) }
 
             // Only the non-duplicate image was staged for import
-            coVerify { importStagingManager.stageImages(match { it.size == 1 }) }
+            coVerify { importStagingManager.stageImages(match { it.size == 1 }, any()) }
             coVerify { importRepository.createImportRequest(any(), eq(1), any()) }
 
             viewModel.uiState.test {
@@ -760,7 +784,7 @@ class ImportViewModelTest : BaseImportViewModelTest() {
             }
 
             // No staging since all images were duplicates
-            coVerify(exactly = 0) { importStagingManager.stageImages(any()) }
+            coVerify(exactly = 0) { importStagingManager.stageImages(any(), any()) }
         }
 
     // endregion

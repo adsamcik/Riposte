@@ -12,6 +12,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import com.adsamcik.riposte.log.ReleaseTree
 import timber.log.Timber
 import java.io.File
 import javax.inject.Inject
@@ -39,6 +40,8 @@ class RiposteApplication : Application(), Configuration.Provider {
         super.onCreate()
         if (BuildConfig.DEBUG) {
             Timber.plant(Timber.DebugTree())
+        } else {
+            Timber.plant(ReleaseTree())
         }
         installCrashHandler()
         appLifecycleTracker.init()

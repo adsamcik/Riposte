@@ -7,6 +7,108 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-03-07
+
+### Fixed
+
+- ML inference: detect GPU NaN output and automatically fall back to CPU accelerator
+- ML inference: fix `normalize()` not catching NaN norm values (IEEE 754 edge case)
+- Embeddings: auto-detect and purge NaN-corrupted embeddings on app startup
+- Semantic search: add emoji to scoring slots so unannotated memes participate in search
+- Accessibility: add contentDescription to Import FAB (was invisible to TalkBack)
+- Navigation: back press in edit mode now exits to view mode instead of leaving MemeDetail
+- Build: resolve AAB asset conflict between base and generic_embedding AI Pack
+- Logging: add release-build Logcat tree for ML pipeline failure visibility
+
+## [0.4.1] - 2026-02-28
+
+### Added
+
+- Gallery: Sort by newest during import for stable scrolling
+- Import: Hardened cloud URI import with cleanup and progress tracking
+- Settings: Richer AI search indexing status display
+
+### Changed
+
+- Upgraded Compose BOM to 2026.02.01
+- Moved sentencepiece.model to flavor-specific source sets
+- Reduced embedding worker CPU pressure for smoother device experience
+
+### Fixed
+
+- FTS4 search: replaced FTS5-only `bm25()` with FTS4-compatible query in search DAO
+- Emoji search: use unquoted column filters in FTS4 queries
+- Emoji import: normalize variation selectors for consistent FTS search
+- Embedding worker: checks model availability before processing, fails fast on model error
+- Embedding worker: removed self-cancelling continuation loop, improved notification messaging
+- Embedding indexing: continuous indexing with adaptive batching and inter-batch yields
+- Embedding model: resolved DISPATCH_OP failure and silent init errors
+- Snackbar respects navigation bar insets on all screens
+- Progress banner debounced to prevent flickering
+- Google Play flavor: bundled generic model for sideload/fallback
+- Resolved 22 chaos QA bugs across 6 root cause clusters
+
+### Improved
+
+- Expanded test suite: comprehensive migration tests for schema versions 6→7 and 7→8
+
+### CLI
+
+- **Smart rebuild system** — incremental annotation with build manifest tracking, skips unchanged images
+- **Image optimization** — automatic image optimization during annotation pipeline
+- **ZIP bundle modes** — full and patch bundle generation
+- **Output subdirectory layout** — organized output into `sidecars/`, `optimized/`, `bundle/` with legacy migration
+- **Legacy manifest seeding** — bootstrap rebuild manifests from existing sidecar files
+- **Rebuild reason diagnostics** — detailed reporting on why images are re-annotated
+- **Detect and strip removed schema fields** from existing sidecar files
+- **Track optimization config** in build manifest for change detection
+- Fixed BasedOn silent data loss in partial merge
+- Fixed case-insensitive filename lookups + atomic sidecar writes
+- Fixed ZIP entry collision when images share stem but differ in extension
+- Fixed Spectre.Console markup injection via dynamic content escaping
+- Fixed silent failures during annotation
+- Fixed atomic manifest save for concurrency safety
+- Added OnPermissionRequest handler for Copilot SDK update
+- Removed broken legacy seeding implementation
+- 600+ new tests across smart rebuild, schema validation, bundling, and concurrency
+
+## [0.4.0] - 2026-02-27
+
+### Added
+
+- Emotion-based semantic search — memes are now indexed with structured emotion metadata (sentiment, core emotions, usage context) for much better results on abstract queries like "funny", "sad", or "happy"
+- Persistent query embedding cache — search query embeddings survive app restarts, making repeated searches instant
+- Gallery: Extended FAB with "Import" label for first-time discoverability
+- Gallery: Select All / Deselect All toggle in selection mode
+- Gallery: End-of-results hint below sparse search results
+- Import screen: Supported formats note (JPEG, PNG, WebP, GIF)
+- Duplicates screen: Sensitivity level descriptions below slider
+- Search results header now shows query text (e.g., "2 results for 'cat'")
+
+### Changed
+
+- Removed legacy MediaPipe model support — only EmbeddingGemma (768-dimensional) is supported going forward
+- On model upgrade, outdated embeddings are deleted and regenerated from scratch instead of attempting backwards-compatible migration
+- Removed mediapipe-tasks-text dependency (smaller APK)
+- Metadata schema bumped to v1.4 with emotion taxonomy fields
+
+### Fixed
+
+- MemeDetail: landscape images now center vertically instead of showing black void
+- MemeDetail: back button has shadow for visibility on bright images
+- MemeDetail: unified action button styling (Share uses IconButton with primaryContainer background)
+- Delete dialog: neutral gray Cancel button for clearer contrast against red Delete
+- Emoji filter toggle: re-tapping active chip now properly clears the filter
+- MemeEdit: neutral Discard button color for clearer Save/Discard hierarchy
+- Settings: search index info uses onSurfaceVariant instead of error-red
+- Share sheet: image preview now appears via ClipData
+- Gallery selection mode: Share/Delete buttons show selection count
+- FTS migration correctly rebuilds virtual table after adding emotionsJson column
+
+### Improved
+
+- Expanded test suite: model upgrade/delete flow tests, embedding version manager tests, adversarial DAO tests
+
 ## [0.3.4] - 2026-02-22
 
 ### Added
@@ -264,7 +366,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Adaptive rate limiting with exponential backoff
 - Schema v1.1 with localization support
 
-[Unreleased]: https://github.com/adsamcik/riposte/compare/v0.3.4...HEAD
+[Unreleased]: https://github.com/adsamcik/riposte/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/adsamcik/riposte/compare/v0.4.0...v0.4.1
+[0.4.0]: https://github.com/adsamcik/riposte/compare/v0.3.4...v0.4.0
 [0.3.4]: https://github.com/adsamcik/riposte/compare/v0.3.3...v0.3.4
 [0.3.3]: https://github.com/adsamcik/riposte/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/adsamcik/riposte/compare/v0.3.1...v0.3.2

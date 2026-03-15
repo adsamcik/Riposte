@@ -61,8 +61,8 @@ data class MemeEmbeddingEntity(
     /**
      * Version identifier for the embedding model used.
      *
-     * Format: "model_name:version" (e.g., "use_v1:1.0.0", "litert_use:2.0.0")
-     * Used to detect when embeddings need re-generation due to model updates.
+     * Format: "model_name:version" (e.g., "embeddinggemma:1.3.0")
+     * Used to detect when embeddings need deletion due to model updates.
      */
     val modelVersion: String,
     /**
@@ -134,7 +134,11 @@ data class MemeEmbeddingEntity(
     companion object {
         /**
          * Current model version string.
-         * Update this when the embedding model changes.
+         *
+         * IMPORTANT: Must be kept in sync with
+         * [com.adsamcik.riposte.core.ml.EmbeddingModelVersionManager.CURRENT_VERSION] in core/ml.
+         * Cannot reference it directly due to module dependency direction
+         * (core/database cannot depend on core/ml).
          */
         const val CURRENT_MODEL_VERSION = "embeddinggemma:1.3.0"
 

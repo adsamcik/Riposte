@@ -54,31 +54,32 @@ public static class ImageHashService
 
     /// <summary>
     /// Load hash manifest from a directory.
+    /// Uses case-insensitive keys for Windows filesystem compatibility.
     /// </summary>
     public static Dictionary<string, HashEntry> LoadManifest(string directory)
     {
         var manifestPath = Path.Combine(directory, HashManifestFilename);
         if (!File.Exists(manifestPath))
-            return new Dictionary<string, HashEntry>();
+            return new Dictionary<string, HashEntry>(StringComparer.OrdinalIgnoreCase);
 
         try
         {
             var json = File.ReadAllText(manifestPath);
             var raw = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json);
-            if (raw is null) return new Dictionary<string, HashEntry>();
+            if (raw is null) return new Dictionary<string, HashEntry>(StringComparer.OrdinalIgnoreCase);
 
-            var manifest = new Dictionary<string, HashEntry>();
+            var manifest = new Dictionary<string, HashEntry>(StringComparer.OrdinalIgnoreCase);
             foreach (var (key, value) in raw)
             {
                 var contentHash = value.TryGetProperty("content_hash", out var ch) ? ch.GetString() ?? "" : "";
                 var phashStr = value.TryGetProperty("phash", out var ph) ? ph.GetString() : null;
-                manifest[key] = new HashEntry(contentHash, phashStr);
+                manifest.TryAdd(key, new HashEntry(contentHash, phashStr));
             }
             return manifest;
         }
         catch
         {
-            return new Dictionary<string, HashEntry>();
+            return new Dictionary<string, HashEntry>(StringComparer.OrdinalIgnoreCase);
         }
     }
 
@@ -87,6 +88,7 @@ public static class ImageHashService
     /// </summary>
     public static void SaveManifest(string directory, Dictionary<string, HashEntry> manifest)
     {
+        Directory.CreateDirectory(directory);
         var manifestPath = Path.Combine(directory, HashManifestFilename);
         var raw = new Dictionary<string, object>();
         foreach (var (key, entry) in manifest)

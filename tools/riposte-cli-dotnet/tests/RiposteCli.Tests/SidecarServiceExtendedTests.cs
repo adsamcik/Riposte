@@ -209,7 +209,7 @@ public class SidecarServiceExtendedTests : IDisposable
         var metadata = SidecarService.CreateMetadata(emojis: ["😂"]);
         var sidecarPath = SidecarService.WriteSidecar(imgPath, metadata);
 
-        Assert.Equal(Path.Combine(_tempDir, "test.jpg.json"), sidecarPath);
+        Assert.Equal(Path.Combine(_tempDir, "sidecars", "test.jpg.json"), sidecarPath);
         Assert.True(File.Exists(sidecarPath));
     }
 
@@ -223,7 +223,7 @@ public class SidecarServiceExtendedTests : IDisposable
         var metadata = SidecarService.CreateMetadata(emojis: ["😂"]);
         var sidecarPath = SidecarService.WriteSidecar(imgPath, metadata, outputDir);
 
-        Assert.Equal(Path.Combine(outputDir, "test.jpg.json"), sidecarPath);
+        Assert.Equal(Path.Combine(outputDir, "sidecars", "test.jpg.json"), sidecarPath);
         Assert.True(File.Exists(sidecarPath));
     }
 
@@ -231,7 +231,9 @@ public class SidecarServiceExtendedTests : IDisposable
     public void WriteSidecar_OverwritesExisting()
     {
         var imgPath = CreateImage("test.jpg");
-        var sidecarPath = Path.Combine(_tempDir, "test.jpg.json");
+        var sidecarsDir = Path.Combine(_tempDir, "sidecars");
+        Directory.CreateDirectory(sidecarsDir);
+        var sidecarPath = Path.Combine(sidecarsDir, "test.jpg.json");
         File.WriteAllText(sidecarPath, "old content");
 
         var metadata = SidecarService.CreateMetadata(emojis: ["🔥"], title: "New");
@@ -249,7 +251,7 @@ public class SidecarServiceExtendedTests : IDisposable
         var metadata = SidecarService.CreateMetadata(emojis: ["😂"], title: "Test");
         SidecarService.WriteSidecar(imgPath, metadata);
 
-        var json = File.ReadAllText(Path.Combine(_tempDir, "test.jpg.json"));
+        var json = File.ReadAllText(Path.Combine(_tempDir, "sidecars", "test.jpg.json"));
         Assert.Contains("\n", json);
         Assert.Contains("  ", json); // Indentation
     }
@@ -261,7 +263,7 @@ public class SidecarServiceExtendedTests : IDisposable
         var metadata = SidecarService.CreateMetadata(emojis: ["😂"]);
         SidecarService.WriteSidecar(imgPath, metadata);
 
-        var json = File.ReadAllText(Path.Combine(_tempDir, "test.jpg.json"));
+        var json = File.ReadAllText(Path.Combine(_tempDir, "sidecars", "test.jpg.json"));
         Assert.DoesNotContain("\"title\"", json);
         Assert.DoesNotContain("\"description\"", json);
         Assert.DoesNotContain("\"basedOn\"", json);

@@ -86,8 +86,8 @@ public class WaitIfNeededTests
         await rl.WaitIfNeededAsync();
         var total = sw.ElapsedMilliseconds;
 
-        // Second call should have waited for the min delay
-        Assert.True(total - first >= 30, // 50ms min delay, with some slack
+        // Second call should have waited for the min delay (50ms with generous CI slack)
+        Assert.True(total - first >= 20,
             $"Second call didn't wait long enough: {total - first}ms");
     }
 

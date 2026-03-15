@@ -25,12 +25,15 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -61,6 +64,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -85,6 +89,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -108,6 +113,7 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -151,6 +157,8 @@ fun GalleryScreen(
     val pagedMemes = viewModel.pagedMemes.collectAsLazyPagingItems()
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
     val hapticFeedback = LocalHapticFeedback.current
     var showDeleteDialog by remember { mutableStateOf(false) }
     var deleteCount by remember { mutableStateOf(0) }
@@ -161,7 +169,12 @@ fun GalleryScreen(
     LaunchedEffect(Unit) {
         viewModel.effects.collectLatest { effect ->
             when (effect) {
-                is GalleryEffect.NavigateToMeme -> onNavigateToMeme(effect.memeId)
+                is GalleryEffect.NavigateToMeme -> {
+                    keyboardController?.hide()
+                    focusManager.clearFocus(force = true)
+                    viewModel.onIntent(GalleryIntent.SearchFieldFocusChanged(false))
+                    onNavigateToMeme(effect.memeId)
+                }
                 is GalleryEffect.NavigateToImport -> onNavigateToImport()
                 is GalleryEffect.ShowSnackbar -> snackbarHostState.showSnackbar(effect.message)
                 is GalleryEffect.ShowDeleteConfirmation -> {
@@ -374,10 +387,29 @@ private fun GalleryScreenContent(
                         }
                     },
                     actions = {
-                        IconButton(onClick = { onIntent(GalleryIntent.SelectAll) }) {
+                        val totalCount = if (uiState.usePaging) {
+                            pagedMemes?.itemCount ?: 0
+                        } else {
+                            uiState.memes.size
+                        }
+                        val isAllSelected = uiState.selectionCount > 0 &&
+                            uiState.selectionCount >= totalCount
+                        IconButton(
+                            onClick = {
+                                if (isAllSelected) {
+                                    onIntent(GalleryIntent.DeselectAll)
+                                } else {
+                                    onIntent(GalleryIntent.SelectAll)
+                                }
+                            },
+                        ) {
                             Icon(
-                                Icons.Default.SelectAll,
-                                contentDescription = stringResource(R.string.gallery_cd_select_all),
+                                if (isAllSelected) Icons.Default.Close else Icons.Default.SelectAll,
+                                contentDescription = if (isAllSelected) {
+                                    stringResource(R.string.gallery_cd_deselect_all)
+                                } else {
+                                    stringResource(R.string.gallery_cd_select_all)
+                                },
                             )
                         }
                     },
@@ -407,7 +439,11 @@ private fun GalleryScreenContent(
                                 )
                             }
                             Text(
-                                text = stringResource(R.string.gallery_cd_share),
+                                text = if (uiState.selectionCount > 0) {
+                                    "${stringResource(R.string.gallery_cd_share)} (${uiState.selectionCount})"
+                                } else {
+                                    stringResource(R.string.gallery_cd_share)
+                                },
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurface,
                             )
@@ -423,7 +459,11 @@ private fun GalleryScreenContent(
                                 )
                             }
                             Text(
-                                text = stringResource(R.string.gallery_cd_delete),
+                                text = if (uiState.selectionCount > 0) {
+                                    "${stringResource(R.string.gallery_cd_delete)} (${uiState.selectionCount})"
+                                } else {
+                                    stringResource(R.string.gallery_cd_delete)
+                                },
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.error,
                             )
@@ -441,17 +481,22 @@ private fun GalleryScreenContent(
                 enter = fadeIn(),
                 exit = fadeOut(),
             ) {
-                FloatingActionButton(
+                ExtendedFloatingActionButton(
                     onClick = { onIntent(GalleryIntent.NavigateToImport) },
                     shape = RiposteShapes.FABDefault,
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.gallery_cd_import_memes))
-                }
+                    icon = { Icon(Icons.Default.Add, contentDescription = stringResource(R.string.gallery_fab_import)) },
+                    text = { Text(stringResource(R.string.gallery_fab_import)) },
+                )
             }
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost = {
+            SnackbarHost(
+                snackbarHostState,
+                modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars),
+            )
+        },
     ) { paddingValues ->
         Box(
             modifier =
@@ -498,18 +543,25 @@ private fun GalleryScreenContent(
                     remember(uiState.searchState.results) {
                         uiState.searchState.results.distinctBy { it.meme.id }
                     }
+                var hasRenderedContent by rememberSaveable { mutableStateOf(false) }
 
                 val contentKey = when {
                     uiState.screenMode != ScreenMode.Searching && uiState.isLoading -> "loading"
                     uiState.screenMode != ScreenMode.Searching && uiState.error != null -> "error"
                     uiState.screenMode != ScreenMode.Searching && uiState.isEmpty && !uiState.usePaging -> "empty"
                     uiState.screenMode != ScreenMode.Searching && uiState.usePaging && pagedMemes != null &&
-                        pagedMemes.loadState.refresh is LoadState.Loading && pagedMemes.itemCount == 0 -> "paged-loading"
+                        pagedMemes.loadState.refresh is LoadState.Loading && pagedMemes.itemCount == 0 &&
+                        !hasRenderedContent -> "paged-loading"
                     uiState.screenMode != ScreenMode.Searching && uiState.usePaging && pagedMemes != null &&
                         pagedMemes.loadState.refresh is LoadState.Error && pagedMemes.itemCount == 0 -> "paged-error"
                     uiState.screenMode != ScreenMode.Searching && uiState.usePaging && pagedMemes != null &&
-                        pagedMemes.itemCount == 0 -> "paged-empty"
+                        pagedMemes.loadState.refresh is LoadState.NotLoading && pagedMemes.itemCount == 0 -> "paged-empty"
                     else -> "content"
+                }
+                LaunchedEffect(contentKey) {
+                    if (contentKey == "content") {
+                        hasRenderedContent = true
+                    }
                 }
 
                 Crossfade(targetState = contentKey, label = "gallery_content") { targetKey ->
@@ -557,10 +609,10 @@ private fun GalleryScreenContent(
                         )
                     }
                     "paged-error" -> {
-                        val error = (pagedMemes!!.loadState.refresh as LoadState.Error).error
+                        val error = (pagedMemes?.loadState?.refresh as? LoadState.Error)?.error
                         ErrorState(
-                            message = error.message ?: stringResource(R.string.gallery_error_load_failed),
-                            onRetry = { pagedMemes.retry() },
+                            message = error?.message ?: stringResource(R.string.gallery_error_load_failed),
+                            onRetry = { pagedMemes?.retry() },
                             modifier = Modifier.semantics { liveRegion = LiveRegionMode.Assertive },
                         )
                     }
@@ -687,7 +739,6 @@ private fun GalleryScreenContent(
                                             query = uiState.searchState.query,
                                             resultCount = uiState.searchState.totalResultCount,
                                             durationMs = uiState.searchState.searchDurationMs,
-                                            isTextOnly = uiState.searchState.isTextOnly,
                                         )
                                     }
                                     // Result items - reuse MemeGridItem
@@ -702,6 +753,18 @@ private fun GalleryScreenContent(
                                             isSelectionMode = uiState.isSelectionMode,
                                             onIntent = onIntent,
                                             showEmojis = true,
+                                        )
+                                    }
+                                    // End-of-results hint
+                                    item(span = { GridItemSpan(maxLineSpan) }, key = "search_end_hint") {
+                                        Text(
+                                            text = stringResource(R.string.gallery_search_end_hint),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            textAlign = TextAlign.Center,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(vertical = Spacing.lg),
                                         )
                                     }
                                 }
@@ -964,7 +1027,13 @@ private fun GalleryEmojiFilterRail(
             EmojiFilterRail(
                 emojis = uniqueEmojis,
                 activeFilter = activeEmojiFilter,
-                onEmojiSelected = { emoji -> onIntent(GalleryIntent.UpdateSearchQuery(emoji)) },
+                onEmojiSelected = { emoji ->
+                    if (emoji == activeEmojiFilter) {
+                        onIntent(GalleryIntent.UpdateSearchQuery(""))
+                    } else {
+                        onIntent(GalleryIntent.UpdateSearchQuery(emoji))
+                    }
+                },
                 leadingContent = if (showFavoritesChip) {
                     {
                         item(key = "favorites_chip") {
@@ -1062,7 +1131,7 @@ private fun FloatingSearchBar(
             com.adsamcik.riposte.core.ui.component.SearchBar(
                 query = uiState.searchState.query,
                 onQueryChange = { onIntent(GalleryIntent.UpdateSearchQuery(it)) },
-                onSearch = { /* debounce handles it */ },
+                onSearch = { onIntent(GalleryIntent.SubmitSearch) },
                 placeholder = stringResource(SearchR.string.search_placeholder),
                 onFocusChanged = { focused -> onIntent(GalleryIntent.SearchFieldFocusChanged(focused)) },
                 modifier = Modifier.weight(1f),

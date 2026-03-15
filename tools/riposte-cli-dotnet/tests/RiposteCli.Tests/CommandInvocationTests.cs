@@ -49,7 +49,7 @@ public class CommandInvocationTests
         };
 
         var result = root.Parse("unknown-command");
-        Assert.True(result.Errors.Count > 0);
+        Assert.NotEmpty(result.Errors);
     }
 
     #endregion
@@ -74,7 +74,7 @@ public class CommandInvocationTests
         var root = new RootCommand("test") { cmd };
 
         var result = root.Parse(
-            "annotate . --zip --model gpt-5 --languages en,cs --force --dry-run --verbose -j 2 --similarity-threshold 5 --no-dedup");
+            "annotate . --zip full --model gpt-5 --languages en,cs --force --dry-run --verbose -j 2 --similarity-threshold 5 --no-dedup");
         Assert.Empty(result.Errors);
     }
 
@@ -95,7 +95,7 @@ public class CommandInvocationTests
         var root = new RootCommand("test") { cmd };
 
         var result = root.Parse("annotate");
-        Assert.True(result.Errors.Count > 0);
+        Assert.NotEmpty(result.Errors);
     }
 
     #endregion
@@ -118,7 +118,7 @@ public class CommandInvocationTests
         var cmd = DedupeCommand.Create();
         var root = new RootCommand("test") { cmd };
 
-        var result = root.Parse("dedupe . --dry-run --yes --verbose --no-near --similarity-threshold 5");
+        var result = root.Parse("dedupe . --dry-run --yes --verbose --include-near --similarity-threshold 5");
         Assert.Empty(result.Errors);
     }
 
@@ -163,7 +163,7 @@ public class CommandInvocationTests
         var root = new RootCommand("test") { cmd };
 
         var result = root.Parse("auth unknown");
-        Assert.True(result.Errors.Count > 0);
+        Assert.NotEmpty(result.Errors);
     }
 
     [Fact]

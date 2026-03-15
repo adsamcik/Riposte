@@ -40,6 +40,11 @@ sealed interface GalleryIntent {
     data object SelectAll : GalleryIntent
 
     /**
+     * Deselect all memes (stay in selection mode).
+     */
+    data object DeselectAll : GalleryIntent
+
+    /**
      * Toggle favorite status for a meme.
      */
     data class ToggleFavorite(val memeId: Long) : GalleryIntent
@@ -100,6 +105,11 @@ sealed interface GalleryIntent {
      * Clear the search query and reset search state.
      */
     data object ClearSearch : GalleryIntent
+
+    /**
+     * Submit the current query from IME search action.
+     */
+    data object SubmitSearch : GalleryIntent
 
     /**
      * Select a recent search and perform it.

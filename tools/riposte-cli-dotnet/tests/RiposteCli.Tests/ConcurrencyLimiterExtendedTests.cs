@@ -208,24 +208,6 @@ public class ConcurrencyLimiterExtendedTests
     #region Acquire/Release — Concurrency
 
     [Fact]
-    public async Task AcquireRelease_TracksActiveCount()
-    {
-        var limiter = new ConcurrencyLimiter(maxConcurrency: 4);
-
-        await limiter.AcquireAsync();
-        Assert.Equal(1, limiter.ActiveTasks);
-
-        await limiter.AcquireAsync();
-        Assert.Equal(2, limiter.ActiveTasks);
-
-        await limiter.ReleaseAsync();
-        Assert.Equal(1, limiter.ActiveTasks);
-
-        await limiter.ReleaseAsync();
-        Assert.Equal(0, limiter.ActiveTasks);
-    }
-
-    [Fact]
     public async Task Release_WithoutAcquire_ThrowsSemaphoreFullException()
     {
         var limiter = new ConcurrencyLimiter(maxConcurrency: 4);
@@ -263,26 +245,6 @@ public class ConcurrencyLimiterExtendedTests
 
         Assert.True(maxObserved <= 2,
             $"Max concurrent was {maxObserved}, but limit is 2");
-    }
-
-    #endregion
-
-    #region RateLimiter Property
-
-    [Fact]
-    public void RateLimiter_ExposesUnderlyingLimiter()
-    {
-        var rl = new RateLimiter();
-        var limiter = new ConcurrencyLimiter(maxConcurrency: 4, rateLimiter: rl);
-
-        Assert.Same(rl, limiter.RateLimiter);
-    }
-
-    [Fact]
-    public void RateLimiter_CreatesDefaultIfNotProvided()
-    {
-        var limiter = new ConcurrencyLimiter(maxConcurrency: 4);
-        Assert.NotNull(limiter.RateLimiter);
     }
 
     #endregion

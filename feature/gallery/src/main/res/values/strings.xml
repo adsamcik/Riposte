@@ -6,11 +6,13 @@
     <string name="gallery_chip_favorites">Favorites</string>
     <string name="gallery_cd_cancel_selection">Cancel selection</string>
     <string name="gallery_cd_select_all">Select all</string>
+    <string name="gallery_cd_deselect_all">Deselect all</string>
     <string name="gallery_cd_search">Search</string>
     <string name="gallery_cd_more_options">More options</string>
     <string name="gallery_cd_share">Share</string>
     <string name="gallery_cd_delete">Delete</string>
     <string name="gallery_cd_import_memes">Import memes</string>
+    <string name="gallery_fab_import">Import</string>
     <string name="gallery_cd_navigate_back">Navigate back</string>
     <string name="gallery_cd_favorite">Favorite</string>
     <string name="gallery_cd_edit">Edit</string>
@@ -101,4 +103,5 @@
     <string name="gallery_dialog_clear_searches_title">Clear recent searches?</string>
     <string name="gallery_dialog_clear_searches_message">This will remove all your recent search history.</string>
     <string name="gallery_dialog_clear_searches_confirm">Clear</string>
+    <string name="gallery_search_end_hint">Try different terms or emoji filters for more results</string>
 </resources>

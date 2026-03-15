@@ -11,6 +11,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -59,6 +60,8 @@ class SearchDelegate
                         if (query.isNotBlank()) {
                             performSearch(query, scope = scope)
                         } else {
+                            currentSearchJob?.cancel()
+                            currentSearchJob = null
                             _state.update {
                                 it.copy(
                                     results = emptyList(),
@@ -75,6 +78,9 @@ class SearchDelegate
             scope.launch {
                 searchUseCases.getRecentSearches()
                     .map { searches -> searches.filterNot { it.isInternalQuerySyntax() } }
+                    .catch { e ->
+                        Timber.e(e, "Failed to observe recent searches")
+                    }
                     .collectLatest { filtered ->
                         _state.update { it.copy(recentSearches = filtered) }
                     }
@@ -91,16 +97,21 @@ class SearchDelegate
                 is GalleryIntent.SelectRecentSearch -> selectRecentSearch(intent.query, scope)
                 is GalleryIntent.DeleteRecentSearch -> deleteRecentSearch(intent.query, scope)
                 is GalleryIntent.ClearRecentSearches -> clearRecentSearches(scope)
+                is GalleryIntent.SubmitSearch -> submitSearch(scope)
                 else -> {} // Not a search intent
             }
         }
 
         private fun updateQuery(query: String) {
+            currentSearchJob?.cancel()
+            currentSearchJob = null
             _state.update { it.copy(query = query) }
             queryFlow.value = query
         }
 
         private fun clearSearch() {
+            currentSearchJob?.cancel()
+            currentSearchJob = null
             _state.update {
                 SearchSliceState(recentSearches = it.recentSearches)
             }
@@ -113,9 +124,25 @@ class SearchDelegate
         ) {
             updateQuery(query)
             scope.launch {
-                searchUseCases.addRecentSearch(query)
+                try {
+                    searchUseCases.addRecentSearch(query)
+                } catch (
+                    @Suppress("TooGenericExceptionCaught")
+                    e: Exception,
+                ) {
+                    Timber.e(e, "Failed to add recent search")
+                }
             }
             // Search is triggered immediately rather than waiting for debounce
+            performSearch(query, scope = scope)
+        }
+
+        private fun submitSearch(scope: CoroutineScope) {
+            val query = _state.value.query.trim()
+            if (query.isBlank()) {
+                Timber.d("Ignoring blank search submit")
+                return
+            }
             performSearch(query, scope = scope)
         }
 
@@ -124,17 +151,31 @@ class SearchDelegate
             scope: CoroutineScope,
         ) {
             scope.launch {
-                searchUseCases.deleteRecentSearch(query)
-                _state.update { state ->
-                    state.copy(recentSearches = state.recentSearches - query)
+                try {
+                    searchUseCases.deleteRecentSearch(query)
+                    _state.update { state ->
+                        state.copy(recentSearches = state.recentSearches - query)
+                    }
+                } catch (
+                    @Suppress("TooGenericExceptionCaught")
+                    e: Exception,
+                ) {
+                    Timber.e(e, "Failed to delete recent search")
                 }
             }
         }
 
         private fun clearRecentSearches(scope: CoroutineScope) {
             scope.launch {
-                searchUseCases.clearRecentSearches()
-                _state.update { it.copy(recentSearches = emptyList()) }
+                try {
+                    searchUseCases.clearRecentSearches()
+                    _state.update { it.copy(recentSearches = emptyList()) }
+                } catch (
+                    @Suppress("TooGenericExceptionCaught")
+                    e: Exception,
+                ) {
+                    Timber.e(e, "Failed to clear recent searches")
+                }
             }
         }
 
@@ -143,13 +184,15 @@ class SearchDelegate
             scope: CoroutineScope? = null,
         ) {
             val searchScope = scope ?: return
+            val normalizedQuery = query.trim()
+            if (normalizedQuery.isBlank()) return
             currentSearchJob?.cancel()
             currentSearchJob = searchScope.launch {
                 _state.update { it.copy(isSearching = true, searchError = null) }
                 val startTime = System.currentTimeMillis()
 
                 try {
-                    val results = searchUseCases.hybridSearch(query)
+                    val results = searchUseCases.hybridSearch(normalizedQuery)
                     val endTime = System.currentTimeMillis()
                     val hasSemanticResults = results.any {
                         it.matchType == MatchType.SEMANTIC || it.matchType == MatchType.HYBRID
@@ -166,7 +209,7 @@ class SearchDelegate
                         )
                     }
 
-                    searchUseCases.addRecentSearch(query)
+                    searchUseCases.addRecentSearch(normalizedQuery)
                 } catch (e: UnsatisfiedLinkError) {
                     Timber.e(e, "Native library not available for semantic search")
                     _state.update {
@@ -203,8 +246,16 @@ class SearchDelegate
             }
         }
 
+        /**
+         * Invalidate cached search data (e.g., embedding candidate caches).
+         * Call when new embeddings are generated.
+         */
+        fun invalidateSearchCaches() {
+            searchUseCases.invalidateSearchCaches()
+        }
+
         companion object {
-            private const val SEARCH_DEBOUNCE_MS = 300L
+            private const val SEARCH_DEBOUNCE_MS = 200L
                 private val INTERNAL_QUERY_REGEX= Regex("^(is|type):", RegexOption.IGNORE_CASE)
 
             fun String.isInternalQuerySyntax(): Boolean = INTERNAL_QUERY_REGEX.containsMatchIn(this.trim())

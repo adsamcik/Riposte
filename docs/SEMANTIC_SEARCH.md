@@ -89,11 +89,9 @@ The app tracks model versions to ensure embedding compatibility:
 
 | Version | Model | Dimensions | Notes |
 | ------- | ----- | ---------- | ----- |
-| `embeddinggemma:1.0.0` | EmbeddingGemma 300M | 768 | Current version |
-| `mediapipe_use:1.0.0` | Universal Sentence Encoder | 512 | Legacy fallback |
-| `litert_use:1.0.0` | Legacy | 512 | Deprecated |
+| `embeddinggemma:1.3.0` | EmbeddingGemma 300M | 768 | Current version |
 
-When the model version changes, existing embeddings are marked for regeneration.
+When the model version changes, existing embeddings are deleted and regenerated from scratch.
 
 ## Embedding Storage
 
@@ -171,10 +169,10 @@ Later, the fallback was removed entirely ("No Silent Fallback") — ML errors pr
 ### Model Not Loading
 
 ```
-W/MediaPipeEmbedding: Model file not found: universal_sentence_encoder.tflite
+E/EmbeddingGemma: Model files not found
 ```
 
-Ensure the model file is placed in `app/src/main/assets/`.
+Ensure AI Packs are installed (the embedding model is delivered via `aipacks/generic_embedding`).
 
 ### Zero Embeddings
 

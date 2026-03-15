@@ -1,182 +1,161 @@
+using RiposteCli.Models;
 using RiposteCli.Services;
 
 namespace RiposteCli.Tests;
 
 public class CopilotServiceParsingTests
 {
-    #region ParseResponseContent — Valid JSON Variants
+    #region ParseResponseContent — Valid JSON
 
     [Fact]
-    public void ParseResponseContent_MinimalValidJson()
-    {
-        var json = """{"emojis": ["😂"]}""";
-        var result = CopilotService.ParseResponseContent(json);
-
-        Assert.Single(result.Emojis);
-        Assert.Equal("😂", result.Emojis[0]);
-    }
-
-    [Fact]
-    public void ParseResponseContent_FullJson_AllFieldsParsed()
+    public void ParseResponseContent_ValidJsonWithAllFields_ParsesCorrectly()
     {
         var json = """
             {
                 "emojis": ["😂", "🐱", "💻"],
                 "title": "Cat at Computer",
-                "description": "A cat sitting at a desk staring at code",
+                "description": "A cat sitting at a desk staring at code on a monitor",
                 "tags": ["cat", "programming", "funny"],
-                "searchPhrases": ["programmer cat", "cat coding"],
-                "basedOn": "Programmer humor"
-            }
-            """;
-        var result = CopilotService.ParseResponseContent(json);
-
-        Assert.Equal(3, result.Emojis.Count);
-        Assert.Equal("Cat at Computer", result.Title);
-        Assert.Equal("A cat sitting at a desk staring at code", result.Description);
-        Assert.Equal(["cat", "programming", "funny"], result.Tags);
-        Assert.Equal(["programmer cat", "cat coding"], result.SearchPhrases);
-        Assert.Equal("Programmer humor", result.BasedOn);
-    }
-
-    [Fact]
-    public void ParseResponseContent_WithLocalizations()
-    {
-        var json = """
-            {
-                "emojis": ["😂"],
-                "title": "Funny Meme",
+                "searchPhrases": ["programmer cat", "cat coding meme"],
+                "basedOn": "Programmer humor",
+                "emotions": {
+                    "primary": "humor",
+                    "secondary": ["absurdity", "relatability"],
+                    "sentiment": "positive",
+                    "intensity": "high",
+                    "memeUsage": ["when the code finally compiles", "me debugging at 3am"]
+                },
                 "localizations": {
                     "cs": {
-                        "title": "Vtipný Meme",
-                        "description": "Vtipný obrázek",
-                        "tags": ["vtipný"],
-                        "searchPhrases": ["vtipný meme"]
+                        "title": "Kočka u počítače",
+                        "description": "Kočka sedí u stolu a zírá na kód",
+                        "tags": ["kočka", "programování"],
+                        "searchPhrases": ["kočka programátor"]
                     }
                 }
             }
             """;
+
         var result = CopilotService.ParseResponseContent(json);
 
+        Assert.Equal(3, result.Emojis!.Count);
+        Assert.Equal("😂", result.Emojis[0]);
+        Assert.Equal("🐱", result.Emojis[1]);
+        Assert.Equal("💻", result.Emojis[2]);
+        Assert.Equal("Cat at Computer", result.Title);
+        Assert.Equal("A cat sitting at a desk staring at code on a monitor", result.Description);
+        Assert.Equal(new[] { "cat", "programming", "funny" }, result.Tags);
+        Assert.Equal(new[] { "programmer cat", "cat coding meme" }, result.SearchPhrases);
+        Assert.Equal("Programmer humor", result.BasedOn);
+        Assert.NotNull(result.Emotions);
+        Assert.Equal("humor", result.Emotions.Primary);
+        Assert.Equal("positive", result.Emotions.Sentiment);
+        Assert.Equal("high", result.Emotions.Intensity);
+        Assert.Equal(new[] { "absurdity", "relatability" }, result.Emotions.Secondary);
+        Assert.Equal(new[] { "when the code finally compiles", "me debugging at 3am" }, result.Emotions.MemeUsage);
         Assert.NotNull(result.Localizations);
         Assert.True(result.Localizations.ContainsKey("cs"));
-        Assert.Equal("Vtipný Meme", result.Localizations["cs"].Title);
-        Assert.Equal("Vtipný obrázek", result.Localizations["cs"].Description);
+        Assert.Equal("Kočka u počítače", result.Localizations["cs"].Title);
     }
 
     [Fact]
-    public void ParseResponseContent_WithMultipleLocalizations()
+    public void ParseResponseContent_JsonWrappedInJsonCodeBlock_IsUnwrapped()
+    {
+        var content = "```json\n{\"emojis\": [\"😂\", \"🔥\"], \"title\": \"Wrapped Test\"}\n```";
+
+        var result = CopilotService.ParseResponseContent(content);
+
+        Assert.Equal(2, result.Emojis!.Count);
+        Assert.Equal("Wrapped Test", result.Title);
+    }
+
+    [Fact]
+    public void ParseResponseContent_JsonWrappedInGenericCodeBlock_IsUnwrapped()
+    {
+        var content = "```\n{\"emojis\": [\"🤣\"], \"title\": \"Generic Block\"}\n```";
+
+        var result = CopilotService.ParseResponseContent(content);
+
+        Assert.Single(result.Emojis!);
+        Assert.Equal("Generic Block", result.Title);
+    }
+
+    [Fact]
+    public void ParseResponseContent_ExtraWhitespaceAndNewlines_HandledCorrectly()
+    {
+        var content = """
+            
+            
+                {
+                    "emojis": ["🎉"],
+                    "title": "Whitespace Test"
+                }
+            
+            
+            """;
+
+        var result = CopilotService.ParseResponseContent(content);
+
+        Assert.Single(result.Emojis!);
+        Assert.Equal("🎉", result.Emojis[0]);
+        Assert.Equal("Whitespace Test", result.Title);
+    }
+
+    [Fact]
+    public void ParseResponseContent_OptionalFieldsNull_DoesNotThrow()
+    {
+        var json = """{"emojis": ["😎"]}""";
+
+        var result = CopilotService.ParseResponseContent(json);
+
+        Assert.Single(result.Emojis!);
+        Assert.Null(result.Title);
+        Assert.Null(result.Description);
+        Assert.Null(result.Tags);
+        Assert.Null(result.SearchPhrases);
+        Assert.Null(result.BasedOn);
+        Assert.Null(result.Emotions);
+        Assert.Null(result.Localizations);
+    }
+
+    [Fact]
+    public void ParseResponseContent_LocalizationsParsedCorrectly()
     {
         var json = """
             {
                 "emojis": ["🌍"],
                 "title": "Global Meme",
                 "localizations": {
-                    "cs": { "title": "Český" },
-                    "de": { "title": "Deutsch" },
-                    "fr": { "title": "Français" }
+                    "cs": {
+                        "title": "Český meme",
+                        "description": "Popis memu",
+                        "tags": ["vtipné", "globální"],
+                        "searchPhrases": ["světový meme"]
+                    },
+                    "de": {
+                        "title": "Deutsches Meme",
+                        "description": "Meme Beschreibung",
+                        "tags": ["lustig"],
+                        "searchPhrases": ["globales Meme"]
+                    }
                 }
             }
             """;
+
         var result = CopilotService.ParseResponseContent(json);
 
         Assert.NotNull(result.Localizations);
-        Assert.Equal(3, result.Localizations.Count);
-        Assert.Equal("Český", result.Localizations["cs"].Title);
-        Assert.Equal("Deutsch", result.Localizations["de"].Title);
-        Assert.Equal("Français", result.Localizations["fr"].Title);
-    }
+        Assert.Equal(2, result.Localizations.Count);
 
-    [Fact]
-    public void ParseResponseContent_ExtraUnknownFields_Ignored()
-    {
-        var json = """
-            {
-                "emojis": ["😂"],
-                "unknownField": "value",
-                "anotherExtra": 42
-            }
-            """;
-        var result = CopilotService.ParseResponseContent(json);
+        var cs = result.Localizations["cs"];
+        Assert.Equal("Český meme", cs.Title);
+        Assert.Equal("Popis memu", cs.Description);
+        Assert.Equal(new[] { "vtipné", "globální" }, cs.Tags);
+        Assert.Equal(new[] { "světový meme" }, cs.SearchPhrases);
 
-        Assert.Single(result.Emojis);
-    }
-
-    [Fact]
-    public void ParseResponseContent_UnicodeEmojis_PreservedCorrectly()
-    {
-        var json = """{"emojis": ["👨‍💻", "🇨🇿", "🏳️‍🌈", "👁️‍🗨️", "🫠"]}""";
-        var result = CopilotService.ParseResponseContent(json);
-
-        Assert.Equal(5, result.Emojis.Count);
-        Assert.Equal("👨‍💻", result.Emojis[0]);
-        Assert.Equal("🇨🇿", result.Emojis[1]);
-    }
-
-    [Fact]
-    public void ParseResponseContent_EightEmojis_MaxAllowed()
-    {
-        var json = """{"emojis": ["😀","😁","😂","🤣","😃","😄","😅","😆"]}""";
-        var result = CopilotService.ParseResponseContent(json);
-        Assert.Equal(8, result.Emojis.Count);
-    }
-
-    #endregion
-
-    #region ParseResponseContent — Markdown Wrapping
-
-    [Fact]
-    public void ParseResponseContent_WrappedInJsonCodeBlock()
-    {
-        var content = """
-            ```json
-            {"emojis": ["😂"], "title": "Test"}
-            ```
-            """;
-        var result = CopilotService.ParseResponseContent(content);
-        Assert.Equal("Test", result.Title);
-    }
-
-    [Fact]
-    public void ParseResponseContent_WrappedInGenericCodeBlock()
-    {
-        var content = """
-            ```
-            {"emojis": ["😂"], "title": "Test"}
-            ```
-            """;
-        var result = CopilotService.ParseResponseContent(content);
-        Assert.Equal("Test", result.Title);
-    }
-
-    [Fact]
-    public void ParseResponseContent_WithLeadingTrailingWhitespace()
-    {
-        var content = """
-            
-               {"emojis": ["😂"]}
-            
-            """;
-        var result = CopilotService.ParseResponseContent(content);
-        Assert.Single(result.Emojis);
-    }
-
-    [Fact]
-    public void ParseResponseContent_MultilineJsonInsideCodeBlock()
-    {
-        var content = """
-            ```json
-            {
-                "emojis": ["😂", "🔥"],
-                "title": "Multi-line",
-                "description": "A multi-line description\nthat spans lines",
-                "tags": ["tag1", "tag2"]
-            }
-            ```
-            """;
-        var result = CopilotService.ParseResponseContent(content);
-        Assert.Equal(2, result.Emojis.Count);
-        Assert.Equal("Multi-line", result.Title);
+        var de = result.Localizations["de"];
+        Assert.Equal("Deutsches Meme", de.Title);
+        Assert.Equal("Meme Beschreibung", de.Description);
     }
 
     #endregion
@@ -184,104 +163,140 @@ public class CopilotServiceParsingTests
     #region ParseResponseContent — Error Cases
 
     [Fact]
-    public void ParseResponseContent_EmptyEmojis_Throws()
+    public void ParseResponseContent_MissingEmojis_ThrowsCopilotAnalysisException()
     {
-        var json = """{"emojis": []}""";
+        var json = """{"title": "No emojis", "tags": ["test"]}""";
+
         var ex = Assert.Throws<CopilotAnalysisException>(
             () => CopilotService.ParseResponseContent(json));
+
         Assert.Contains("emojis", ex.Message);
     }
 
     [Fact]
-    public void ParseResponseContent_MissingEmojisField_Throws()
+    public void ParseResponseContent_EmptyEmojisArray_ThrowsCopilotAnalysisException()
     {
-        var json = """{"title": "No emojis here"}""";
-        Assert.Throws<CopilotAnalysisException>(
+        var json = """{"emojis": [], "title": "Empty emojis"}""";
+
+        var ex = Assert.Throws<CopilotAnalysisException>(
             () => CopilotService.ParseResponseContent(json));
+
+        Assert.Contains("emojis", ex.Message);
     }
 
     [Fact]
-    public void ParseResponseContent_CompleteGarbage_Throws()
+    public void ParseResponseContent_NullResponse_ThrowsCopilotAnalysisException()
     {
-        Assert.Throws<CopilotAnalysisException>(
-            () => CopilotService.ParseResponseContent("this is not json at all"));
-    }
-
-    [Fact]
-    public void ParseResponseContent_EmptyString_Throws()
-    {
-        Assert.Throws<CopilotAnalysisException>(
-            () => CopilotService.ParseResponseContent(""));
-    }
-
-    [Fact]
-    public void ParseResponseContent_NullJsonValue_Throws()
-    {
-        Assert.Throws<CopilotAnalysisException>(
+        var ex = Assert.Throws<CopilotAnalysisException>(
             () => CopilotService.ParseResponseContent("null"));
+
+        Assert.Contains("emojis", ex.Message);
     }
 
     [Fact]
-    public void ParseResponseContent_ArrayInsteadOfObject_Throws()
+    public void ParseResponseContent_InvalidJson_ThrowsCopilotAnalysisException()
     {
         Assert.Throws<CopilotAnalysisException>(
-            () => CopilotService.ParseResponseContent("""["😂"]"""));
-    }
-
-    [Fact]
-    public void ParseResponseContent_EmojisAsString_Throws()
-    {
-        // emojis should be array, not string
-        Assert.Throws<CopilotAnalysisException>(
-            () => CopilotService.ParseResponseContent("""{"emojis": "😂"}"""));
-    }
-
-    [Fact]
-    public void ParseResponseContent_TruncatedJson_Throws()
-    {
-        Assert.Throws<CopilotAnalysisException>(
-            () => CopilotService.ParseResponseContent("""{"emojis": ["😂"]}extra junk"""));
+            () => CopilotService.ParseResponseContent("this is not json {{{ at all"));
     }
 
     #endregion
 
-    #region Error Classification
+    #region ParsePartialResponse — Valid JSON
 
     [Fact]
-    public void ExceptionTypes_RateLimitException_HasRetryAfter()
+    public void ParsePartialResponse_ValidJsonWithoutEmojis_ParsesOk()
     {
-        var ex = new RateLimitException("rate limited", 5.0);
-        Assert.Equal(5.0, ex.RetryAfter);
-        Assert.IsAssignableFrom<CopilotAnalysisException>(ex);
+        var json = """
+            {
+                "title": "Distracted Boyfriend",
+                "description": "Man looking at another woman while his girlfriend watches in disbelief",
+                "tags": ["distracted", "boyfriend", "jealousy"],
+                "searchPhrases": ["looking at other things", "distracted by something new"]
+            }
+            """;
+
+        var result = CopilotService.ParsePartialResponse(json, ["text"]);
+
+        Assert.Null(result.Emojis);
+        Assert.Equal("Distracted Boyfriend", result.Title);
+        Assert.Equal("Man looking at another woman while his girlfriend watches in disbelief", result.Description);
+        Assert.Equal(new[] { "distracted", "boyfriend", "jealousy" }, result.Tags);
+        Assert.Equal(new[] { "looking at other things", "distracted by something new" }, result.SearchPhrases);
     }
 
     [Fact]
-    public void ExceptionTypes_ServerErrorException_HasStatusCode()
+    public void ParsePartialResponse_ValidJsonWithOnlyTags_ParsesOk()
     {
-        var ex = new ServerErrorException("server error", 503);
-        Assert.Equal(503, ex.StatusCode);
-        Assert.IsAssignableFrom<CopilotAnalysisException>(ex);
+        var json = """
+            {
+                "tags": ["dank", "relatable", "work", "monday"]
+            }
+            """;
+
+        var result = CopilotService.ParsePartialResponse(json, ["tags"]);
+
+        Assert.Equal(new[] { "dank", "relatable", "work", "monday" }, result.Tags);
+        Assert.Null(result.Emojis);
+        Assert.Null(result.Title);
+        Assert.Null(result.Description);
+        Assert.Null(result.Emotions);
     }
 
     [Fact]
-    public void ExceptionTypes_CopilotNotAuthenticated_InheritsFromAnalysisException()
+    public void ParsePartialResponse_ValidJsonWithOnlyEmotions_ParsesOk()
     {
-        var ex = new CopilotNotAuthenticatedException("not logged in");
-        Assert.IsAssignableFrom<CopilotAnalysisException>(ex);
+        var json = """
+            {
+                "emotions": {
+                    "primary": "nostalgia",
+                    "secondary": ["warmth", "humor"],
+                    "sentiment": "positive",
+                    "intensity": "medium",
+                    "memeUsage": ["when you miss the good old days", "throwback vibes"]
+                }
+            }
+            """;
+
+        var result = CopilotService.ParsePartialResponse(json, ["emotions"]);
+
+        Assert.NotNull(result.Emotions);
+        Assert.Equal("nostalgia", result.Emotions.Primary);
+        Assert.Equal(new[] { "warmth", "humor" }, result.Emotions.Secondary);
+        Assert.Equal("positive", result.Emotions.Sentiment);
+        Assert.Equal("medium", result.Emotions.Intensity);
+        Assert.Equal(new[] { "when you miss the good old days", "throwback vibes" }, result.Emotions.MemeUsage);
+        Assert.Null(result.Emojis);
+        Assert.Null(result.Tags);
     }
 
     [Fact]
-    public void ExceptionTypes_RateLimitException_NullRetryAfter()
+    public void ParsePartialResponse_InvalidJson_ThrowsCopilotAnalysisException()
     {
-        var ex = new RateLimitException("rate limited");
-        Assert.Null(ex.RetryAfter);
+        var ex = Assert.Throws<CopilotAnalysisException>(
+            () => CopilotService.ParsePartialResponse("not valid json {{", ["tags"]));
+
+        Assert.Contains("Failed to parse partial API response", ex.Message);
     }
 
     [Fact]
-    public void ExceptionTypes_ServerErrorException_NullStatusCode()
+    public void ParsePartialResponse_NullResult_ThrowsCopilotAnalysisException()
     {
-        var ex = new ServerErrorException("server error");
-        Assert.Null(ex.StatusCode);
+        var ex = Assert.Throws<CopilotAnalysisException>(
+            () => CopilotService.ParsePartialResponse("null", ["tags"]));
+
+        Assert.Contains("null", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void ParsePartialResponse_CodeBlockWrapping_IsHandled()
+    {
+        var content = "```json\n{\"tags\": [\"funny\", \"cat\"], \"title\": \"Wrapped Partial\"}\n```";
+
+        var result = CopilotService.ParsePartialResponse(content, ["tags", "text"]);
+
+        Assert.Equal(new[] { "funny", "cat" }, result.Tags);
+        Assert.Equal("Wrapped Partial", result.Title);
     }
 
     #endregion

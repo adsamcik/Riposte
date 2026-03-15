@@ -123,7 +123,7 @@ class MemeEmbeddingDaoTest {
         }
 
     @Test
-    fun `markOutdatedForRegeneration marks embeddings with different version`() =
+    fun `deleteOutdatedEmbeddings removes embeddings with different version`() =
         runTest {
             // Given
             val meme1Id = insertTestMeme("meme1")
@@ -133,14 +133,95 @@ class MemeEmbeddingDaoTest {
             embeddingDao.insertEmbedding(createTestEmbedding(meme2Id, modelVersion = "new:2.0.0"))
 
             // When
-            embeddingDao.markOutdatedForRegeneration("new:2.0.0")
+            embeddingDao.deleteOutdatedEmbeddings("new:2.0.0")
 
             // Then
             val embedding1 = embeddingDao.getEmbeddingByMemeId(meme1Id)
             val embedding2 = embeddingDao.getEmbeddingByMemeId(meme2Id)
 
-            assertThat(embedding1!!.needsRegeneration).isTrue()
+            assertThat(embedding1).isNull()
+            assertThat(embedding2).isNotNull()
             assertThat(embedding2!!.needsRegeneration).isFalse()
+        }
+
+    @Test
+    fun `deleteOutdatedEmbeddings removes all embedding types for outdated memes`() =
+        runTest {
+            // Given — one meme with multiple embedding types, all from old version
+            val memeId = insertTestMeme()
+            embeddingDao.insertEmbedding(
+                createTestEmbedding(memeId, modelVersion = "old:1.0.0").copy(embeddingType = "content"),
+            )
+            embeddingDao.insertEmbedding(
+                createTestEmbedding(memeId, modelVersion = "old:1.0.0").copy(embeddingType = "intent"),
+            )
+            embeddingDao.insertEmbedding(
+                createTestEmbedding(memeId, modelVersion = "old:1.0.0").copy(embeddingType = "emoji"),
+            )
+
+            // When
+            embeddingDao.deleteOutdatedEmbeddings("new:2.0.0")
+
+            // Then — all embedding types deleted
+            val allValid = embeddingDao.getAllValidEmbeddings()
+            assertThat(allValid).isEmpty()
+        }
+
+    @Test
+    fun `deleteOutdatedEmbeddings is no-op when all embeddings are current`() =
+        runTest {
+            // Given
+            val meme1Id = insertTestMeme("meme1")
+            val meme2Id = insertTestMeme("meme2")
+            embeddingDao.insertEmbedding(createTestEmbedding(meme1Id, modelVersion = "current:1.0.0"))
+            embeddingDao.insertEmbedding(createTestEmbedding(meme2Id, modelVersion = "current:1.0.0"))
+
+            // When
+            embeddingDao.deleteOutdatedEmbeddings("current:1.0.0")
+
+            // Then — nothing deleted
+            assertThat(embeddingDao.countValidEmbeddings()).isEqualTo(2)
+        }
+
+    @Test
+    fun `deleteOutdatedEmbeddings removes multiple different old versions`() =
+        runTest {
+            // Given — three memes with three different old versions, one current
+            val meme1Id = insertTestMeme("meme1")
+            val meme2Id = insertTestMeme("meme2")
+            val meme3Id = insertTestMeme("meme3")
+            val meme4Id = insertTestMeme("meme4")
+
+            embeddingDao.insertEmbedding(createTestEmbedding(meme1Id, modelVersion = "ancient:0.1.0"))
+            embeddingDao.insertEmbedding(createTestEmbedding(meme2Id, modelVersion = "old:1.0.0"))
+            embeddingDao.insertEmbedding(createTestEmbedding(meme3Id, modelVersion = "stale:2.0.0"))
+            embeddingDao.insertEmbedding(createTestEmbedding(meme4Id, modelVersion = "current:3.0.0"))
+
+            // When
+            embeddingDao.deleteOutdatedEmbeddings("current:3.0.0")
+
+            // Then — only current version survives
+            assertThat(embeddingDao.countValidEmbeddings()).isEqualTo(1)
+            assertThat(embeddingDao.getEmbeddingByMemeId(meme4Id)).isNotNull()
+        }
+
+    @Test
+    fun `deleteOutdatedEmbeddings makes memes appear in getMemeIdsWithoutEmbeddings`() =
+        runTest {
+            // Given — two memes, both have embeddings
+            val meme1Id = insertTestMeme("meme1")
+            val meme2Id = insertTestMeme("meme2")
+            embeddingDao.insertEmbedding(createTestEmbedding(meme1Id, modelVersion = "old:1.0.0"))
+            embeddingDao.insertEmbedding(createTestEmbedding(meme2Id, modelVersion = "current:2.0.0"))
+
+            assertThat(embeddingDao.getMemeIdsWithoutEmbeddings()).isEmpty()
+
+            // When — delete old embeddings
+            embeddingDao.deleteOutdatedEmbeddings("current:2.0.0")
+
+            // Then — meme1 now shows up as needing embeddings
+            val idsWithout = embeddingDao.getMemeIdsWithoutEmbeddings()
+            assertThat(idsWithout).containsExactly(meme1Id)
         }
 
     @Test
@@ -301,6 +382,231 @@ class MemeEmbeddingDaoTest {
             val count = embeddingDao.countValidEmbeddings()
 
             // Then — COUNT(DISTINCT memeId) means 1, not 2
+            assertThat(count).isEqualTo(1)
+        }
+
+    @Test
+    fun `incrementIndexingAttempts increments counter for meme embeddings`() =
+        runTest {
+            // Given
+            val memeId = insertTestMeme()
+            embeddingDao.insertEmbedding(
+                createTestEmbedding(
+                    memeId = memeId,
+                    modelVersion = MemeEmbeddingEntity.CURRENT_MODEL_VERSION,
+                ),
+            )
+
+            // When
+            embeddingDao.incrementIndexingAttempts(memeId)
+            val afterFirstAttempt = embeddingDao.getEmbeddingByMemeId(memeId)
+
+            // Then
+            assertThat(afterFirstAttempt).isNotNull()
+            assertThat(afterFirstAttempt!!.indexingAttempts).isEqualTo(1)
+            assertThat(afterFirstAttempt.lastAttemptAt).isNotNull()
+
+            // When
+            embeddingDao.incrementIndexingAttempts(memeId)
+            val afterSecondAttempt = embeddingDao.getEmbeddingByMemeId(memeId)
+
+            // Then
+            assertThat(afterSecondAttempt).isNotNull()
+            assertThat(afterSecondAttempt!!.indexingAttempts).isEqualTo(2)
+            assertThat(afterSecondAttempt.lastAttemptAt).isNotNull()
+        }
+
+    @Test
+    fun `markForRegeneration resets indexingAttempts and lastAttemptAt`() =
+        runTest {
+            // Given
+            val memeId = insertTestMeme()
+            embeddingDao.insertEmbedding(
+                createTestEmbedding(
+                    memeId = memeId,
+                    modelVersion = MemeEmbeddingEntity.CURRENT_MODEL_VERSION,
+                ).copy(
+                    indexingAttempts = 2,
+                    lastAttemptAt = System.currentTimeMillis(),
+                ),
+            )
+
+            // When
+            embeddingDao.markForRegeneration(memeId)
+            val retrieved = embeddingDao.getEmbeddingByMemeId(memeId)
+
+            // Then
+            assertThat(retrieved).isNotNull()
+            assertThat(retrieved!!.needsRegeneration).isTrue()
+            assertThat(retrieved.indexingAttempts).isEqualTo(0)
+            assertThat(retrieved.lastAttemptAt).isNull()
+        }
+
+    @Test
+    fun `markAllForRegeneration resets indexingAttempts on all embeddings`() =
+        runTest {
+            // Given
+            val meme1Id = insertTestMeme("meme1")
+            val meme2Id = insertTestMeme("meme2")
+            embeddingDao.insertEmbeddings(
+                listOf(
+                    createTestEmbedding(
+                        memeId = meme1Id,
+                        modelVersion = MemeEmbeddingEntity.CURRENT_MODEL_VERSION,
+                    ).copy(
+                        indexingAttempts = 1,
+                        lastAttemptAt = System.currentTimeMillis(),
+                    ),
+                    createTestEmbedding(
+                        memeId = meme2Id,
+                        modelVersion = MemeEmbeddingEntity.CURRENT_MODEL_VERSION,
+                    ).copy(
+                        embeddingType = "intent",
+                        indexingAttempts = 3,
+                        lastAttemptAt = System.currentTimeMillis(),
+                    ),
+                ),
+            )
+
+            // When
+            embeddingDao.markAllForRegeneration()
+            val embeddings = embeddingDao.getEmbeddingsByMemeIds(listOf(meme1Id, meme2Id))
+
+            // Then
+            assertThat(embeddings).hasSize(2)
+            assertThat(embeddings.map { it.indexingAttempts }).containsExactly(0, 0)
+            assertThat(embeddings.map { it.lastAttemptAt }).containsExactly(null, null)
+            assertThat(embeddings.map { it.needsRegeneration }).containsExactly(true, true)
+        }
+
+    @Test
+    fun `getMemeIdsWithIncompleteEmbeddings excludes memes with indexingAttempts greater than zero`() =
+        runTest {
+            // Given
+            val memeAId = insertTestMeme("memeA")
+            val memeBId = insertTestMeme("memeB")
+            embeddingDao.insertEmbeddings(
+                listOf(
+                    createTestEmbedding(
+                        memeId = memeAId,
+                        modelVersion = MemeEmbeddingEntity.CURRENT_MODEL_VERSION,
+                    ).copy(embeddingType = "content"),
+                    createTestEmbedding(
+                        memeId = memeAId,
+                        modelVersion = MemeEmbeddingEntity.CURRENT_MODEL_VERSION,
+                    ).copy(embeddingType = "intent"),
+                    createTestEmbedding(
+                        memeId = memeBId,
+                        modelVersion = MemeEmbeddingEntity.CURRENT_MODEL_VERSION,
+                    ).copy(
+                        embeddingType = "content",
+                        indexingAttempts = 1,
+                        lastAttemptAt = System.currentTimeMillis(),
+                    ),
+                    createTestEmbedding(
+                        memeId = memeBId,
+                        modelVersion = MemeEmbeddingEntity.CURRENT_MODEL_VERSION,
+                    ).copy(
+                        embeddingType = "intent",
+                        indexingAttempts = 1,
+                        lastAttemptAt = System.currentTimeMillis(),
+                    ),
+                ),
+            )
+
+            // When
+            val incompleteIds =
+                embeddingDao.getMemeIdsWithIncompleteEmbeddings(
+                    expectedTypeCount = 5,
+                    currentVersion = MemeEmbeddingEntity.CURRENT_MODEL_VERSION,
+                )
+
+            // Then
+            assertThat(incompleteIds).containsExactly(memeAId)
+        }
+
+    @Test
+    fun `countAllMemesNeedingEmbeddings combines all three sources`() =
+        runTest {
+            // Given
+            val memeAId = insertTestMeme("memeA")
+            val memeBId = insertTestMeme("memeB")
+            val memeCId = insertTestMeme("memeC")
+
+            embeddingDao.insertEmbedding(
+                createTestEmbedding(
+                    memeId = memeBId,
+                    modelVersion = MemeEmbeddingEntity.CURRENT_MODEL_VERSION,
+                    needsRegeneration = true,
+                ),
+            )
+            embeddingDao.insertEmbeddings(
+                listOf(
+                    createTestEmbedding(
+                        memeId = memeCId,
+                        modelVersion = MemeEmbeddingEntity.CURRENT_MODEL_VERSION,
+                    ).copy(embeddingType = "content"),
+                    createTestEmbedding(
+                        memeId = memeCId,
+                        modelVersion = MemeEmbeddingEntity.CURRENT_MODEL_VERSION,
+                    ).copy(embeddingType = "intent"),
+                ),
+            )
+
+            // When
+            val count =
+                embeddingDao.countAllMemesNeedingEmbeddings(
+                    expectedTypeCount = 5,
+                    currentVersion = MemeEmbeddingEntity.CURRENT_MODEL_VERSION,
+                )
+
+            // Then
+            assertThat(count).isEqualTo(3)
+        }
+
+    @Test
+    fun `countAllMemesNeedingEmbeddings excludes attempted-incomplete memes`() =
+        runTest {
+            // Given
+            val memeAId = insertTestMeme("memeA")
+            val memeBId = insertTestMeme("memeB")
+            embeddingDao.insertEmbeddings(
+                listOf(
+                    createTestEmbedding(
+                        memeId = memeAId,
+                        modelVersion = MemeEmbeddingEntity.CURRENT_MODEL_VERSION,
+                    ).copy(embeddingType = "content"),
+                    createTestEmbedding(
+                        memeId = memeAId,
+                        modelVersion = MemeEmbeddingEntity.CURRENT_MODEL_VERSION,
+                    ).copy(embeddingType = "intent"),
+                    createTestEmbedding(
+                        memeId = memeBId,
+                        modelVersion = MemeEmbeddingEntity.CURRENT_MODEL_VERSION,
+                    ).copy(
+                        embeddingType = "content",
+                        indexingAttempts = 1,
+                        lastAttemptAt = System.currentTimeMillis(),
+                    ),
+                    createTestEmbedding(
+                        memeId = memeBId,
+                        modelVersion = MemeEmbeddingEntity.CURRENT_MODEL_VERSION,
+                    ).copy(
+                        embeddingType = "intent",
+                        indexingAttempts = 1,
+                        lastAttemptAt = System.currentTimeMillis(),
+                    ),
+                ),
+            )
+
+            // When
+            val count =
+                embeddingDao.countAllMemesNeedingEmbeddings(
+                    expectedTypeCount = 5,
+                    currentVersion = MemeEmbeddingEntity.CURRENT_MODEL_VERSION,
+                )
+
+            // Then
             assertThat(count).isEqualTo(1)
         }
 

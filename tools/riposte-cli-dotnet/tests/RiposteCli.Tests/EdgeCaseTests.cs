@@ -53,7 +53,7 @@ public class EdgeCaseTests : IDisposable
         var metadata = SidecarService.CreateMetadata(emojis: ["😂"]);
         var sidecarPath = SidecarService.WriteSidecar(imgPath, metadata);
 
-        Assert.Equal(Path.Combine(_tempDir, "my meme image.jpg.json"), sidecarPath);
+        Assert.Equal(Path.Combine(_tempDir, "sidecars", "my meme image.jpg.json"), sidecarPath);
         Assert.True(File.Exists(sidecarPath));
     }
 

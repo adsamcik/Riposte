@@ -329,6 +329,49 @@ class SearchOrchestratorTest {
         assertThat(results[0].matchType).isEqualTo(MatchType.HYBRID)
     }
 
+    // region Cache invalidation
+
+    @Test
+    fun `invalidateCaches calls invalidateCache on all strategies`() {
+        var strategy1Invalidated = false
+        var strategy2Invalidated = false
+        var strategy3Invalidated = false
+
+        val strategy1 = object : SearchStrategy {
+            override val name = "fts"
+            override val priority = 100
+            override fun isAvailable() = true
+            override suspend fun search(query: String, limit: Int) = emptyList<SearchResult>()
+            override fun invalidateCache() { strategy1Invalidated = true }
+        }
+        val strategy2 = object : SearchStrategy {
+            override val name = "semantic"
+            override val priority = 200
+            override fun isAvailable() = true
+            override suspend fun search(query: String, limit: Int) = emptyList<SearchResult>()
+            override fun invalidateCache() { strategy2Invalidated = true }
+        }
+        val strategy3 = object : SearchStrategy {
+            override val name = "emoji"
+            override val priority = 50
+            override fun isAvailable() = false
+            override suspend fun search(query: String, limit: Int) = emptyList<SearchResult>()
+            override fun invalidateCache() { strategy3Invalidated = true }
+        }
+
+        val orchestrator = SearchOrchestrator(
+            strategies = setOf(strategy1, strategy2, strategy3),
+        )
+
+        orchestrator.invalidateCaches()
+
+        assertThat(strategy1Invalidated).isTrue()
+        assertThat(strategy2Invalidated).isTrue()
+        assertThat(strategy3Invalidated).isTrue()
+    }
+
+    // endregion
+
     // region Helpers
 
     private fun createTestMeme(id: Long): Meme = Meme(

@@ -217,12 +217,66 @@ class EmojiTagTest {
             listOf(
                 "😀", "😂", "🤣", "😊", "😍", "🥺", "😭", "😤", "😡", "🤔",
                 "😏", "😴", "🤯", "🥳", "😎", "🤡", "👀", "💀", "🔥", "💯",
-                "❤️", "💔", "👍", "👎", "👏", "🙏", "💪", "🎉", "✨", "🌟",
+                "💔", "👍", "👎", "👏", "🙏", "💪", "🎉", "✨", "🌟",
             )
 
         testEmojis.forEach { emoji ->
             val tag = EmojiTag.fromEmoji(emoji)
             assertThat(tag.name).isEqualTo(emoji)
         }
+    }
+
+    // normalizeEmoji tests
+
+    @Test
+    fun `normalizeEmoji strips variation selector from heart emoji`() {
+        // ❤️ = U+2764 + U+FE0F
+        assertThat(EmojiTag.normalizeEmoji("❤️")).isEqualTo("❤")
+    }
+
+    @Test
+    fun `normalizeEmoji strips variation selectors from ZWJ sequence`() {
+        // 🏋️‍♂️ = U+1F3CB U+FE0F U+200D U+2642 U+FE0F
+        val raw = "\uD83C\uDFCB\uFE0F\u200D\u2642\uFE0F"
+        val expected = "\uD83C\uDFCB\u200D\u2642"
+        assertThat(EmojiTag.normalizeEmoji(raw)).isEqualTo(expected)
+    }
+
+    @Test
+    fun `normalizeEmoji preserves simple emoji without variation selector`() {
+        assertThat(EmojiTag.normalizeEmoji("😂")).isEqualTo("😂")
+        assertThat(EmojiTag.normalizeEmoji("🔥")).isEqualTo("🔥")
+        assertThat(EmojiTag.normalizeEmoji("💪")).isEqualTo("💪")
+    }
+
+    @Test
+    fun `normalizeEmoji is idempotent`() {
+        val raw = "❤️"
+        val once = EmojiTag.normalizeEmoji(raw)
+        val twice = EmojiTag.normalizeEmoji(once)
+        assertThat(twice).isEqualTo(once)
+    }
+
+    @Test
+    fun `normalizeEmoji preserves ZWJ but strips VS in complex sequences`() {
+        // 🧑‍💻 = U+1F9D1 U+200D U+1F4BB (no VS — should be unchanged)
+        val devEmoji = "\uD83E\uDDD1\u200D\uD83D\uDCBB"
+        assertThat(EmojiTag.normalizeEmoji(devEmoji)).isEqualTo(devEmoji)
+    }
+
+    @Test
+    fun `fromEmoji normalizes variation selectors`() {
+        val tag = EmojiTag.fromEmoji("❤️")
+        assertThat(tag.emoji).isEqualTo("❤")
+        assertThat(tag.name).isEqualTo("❤")
+    }
+
+    @Test
+    fun `fromEmoji normalizes ZWJ sequence with variation selectors`() {
+        // 🏃‍♂️ = U+1F3C3 U+200D U+2642 U+FE0F
+        val running = "\uD83C\uDFC3\u200D\u2642\uFE0F"
+        val tag = EmojiTag.fromEmoji(running)
+        val expected = "\uD83C\uDFC3\u200D\u2642"
+        assertThat(tag.emoji).isEqualTo(expected)
     }
 }

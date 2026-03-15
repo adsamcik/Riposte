@@ -13,6 +13,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
@@ -597,6 +598,20 @@ class SearchDelegateTest {
             assertThat(state.results.first().meme.id).isEqualTo(3L)
             assertThat(state.totalResultCount).isEqualTo(1)
             scope.cancel()
+        }
+
+    // endregion
+
+    // region Cache Invalidation Tests
+
+    @Test
+    fun `invalidateSearchCaches delegates to searchUseCases`() =
+        runTest(mainDispatcherRule.testDispatcher) {
+            every { searchUseCases.invalidateSearchCaches() } returns Unit
+
+            delegate.invalidateSearchCaches()
+
+            verify { searchUseCases.invalidateSearchCaches() }
         }
 
     // endregion

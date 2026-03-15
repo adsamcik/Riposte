@@ -58,6 +58,7 @@ class EmbeddingManager
         companion object {
             private const val BYTES_PER_FLOAT = 4
             private const val HASH_BYTE_LENGTH = 16
+            private const val EXPECTED_TYPE_COUNT = 5
         }
         /**
          * Initializes the embedding model and resumes any incomplete indexing.
@@ -82,7 +83,17 @@ class EmbeddingManager
                     Timber.w(e, "Embedding model warm-up failed (non-fatal)")
                 }
 
-                // 2. Resume incomplete indexing (runs after warm-up completes)
+                // 2. Purge NaN-corrupted embeddings from prior GPU inference failures
+                try {
+                    purgeCorruptedEmbeddings()
+                } catch (
+                    @Suppress("TooGenericExceptionCaught")
+                    e: Exception,
+                ) {
+                    Timber.w(e, "Failed to check for corrupted embeddings")
+                }
+
+                // 3. Resume incomplete indexing (runs after warm-up completes)
                 try {
                     checkAndHandleModelUpgrade()
 
@@ -196,6 +207,10 @@ class EmbeddingManager
             val validCount = memeEmbeddingDao.countValidEmbeddings()
             val pendingCount = memeEmbeddingDao.countMemesWithoutEmbeddings()
             val regenerationCount = memeEmbeddingDao.countEmbeddingsNeedingRegeneration()
+            val incompleteCount = memeEmbeddingDao.countMemesWithIncompleteEmbeddings(
+                expectedTypeCount = EXPECTED_TYPE_COUNT,
+                currentVersion = versionManager.currentModelVersion,
+            )
 
             val rawError = embeddingGenerator.initializationError
 
@@ -203,6 +218,7 @@ class EmbeddingManager
                 validEmbeddingCount = validCount,
                 pendingEmbeddingCount = pendingCount,
                 regenerationNeededCount = regenerationCount,
+                incompleteEmbeddingCount = incompleteCount,
                 currentModelVersion = versionManager.currentModelVersion,
                 embeddingsByVersion = memeEmbeddingDao
                     .getEmbeddingCountByModelVersion()
@@ -262,6 +278,40 @@ class EmbeddingManager
         }
 
         /**
+         * Samples stored embeddings and checks for NaN/Inf values caused by
+         * GPU inference failures. If any corrupted embeddings are found, all
+         * embeddings are deleted since they were likely all generated with the
+         * same broken GPU accelerator.
+         */
+        private suspend fun purgeCorruptedEmbeddings() {
+            val samples = memeEmbeddingDao.sampleEmbeddingBlobs()
+            if (samples.isEmpty()) return
+
+            val hasCorrupted = samples.any { blob -> isCorruptedBlob(blob) }
+            if (!hasCorrupted) return
+
+            val totalCount = memeEmbeddingDao.countValidEmbeddings()
+            Timber.w(
+                "Detected NaN-corrupted embeddings (GPU inference failure) — " +
+                    "deleting all %d embeddings for regeneration",
+                totalCount,
+            )
+            memeEmbeddingDao.deleteAllEmbeddings()
+        }
+
+        private fun isCorruptedBlob(blob: ByteArray): Boolean {
+            if (blob.size < BYTES_PER_FLOAT) return true
+            val buffer = ByteBuffer.wrap(blob).order(ByteOrder.LITTLE_ENDIAN).asFloatBuffer()
+            var allZero = true
+            for (i in 0 until buffer.remaining()) {
+                val v = buffer.get()
+                if (!v.isFinite()) return true
+                if (v != 0f) allZero = false
+            }
+            return allZero
+        }
+
+        /**
          * Check for model upgrades and schedule regeneration if needed.
          */
         suspend fun checkAndHandleModelUpgrade() {
@@ -272,21 +322,18 @@ class EmbeddingManager
 
             if (datastoreUpgraded || outdatedCount > 0) {
                 Timber.i(
-                    "Model upgrade detected: datastore=%b, outdated=%d",
+                    "Model upgrade detected: datastore=%b, outdated=%d — deleting incompatible embeddings",
                     datastoreUpgraded,
                     outdatedCount,
                 )
-                // Mark all embeddings with old version for regeneration
-                memeEmbeddingDao.markOutdatedForRegeneration(currentVersion)
+                // Delete all embeddings from old model versions
+                memeEmbeddingDao.deleteOutdatedEmbeddings(currentVersion)
 
                 // Update stored version
                 versionManager.updateToCurrentVersion()
 
-                // Schedule regeneration
-                EmbeddingGenerationWorker.enqueueRegeneration(
-                    context,
-                    currentVersion,
-                )
+                // Schedule fresh generation for memes that lost their embeddings
+                EmbeddingGenerationWorker.enqueue(context)
             }
         }
 
@@ -333,6 +380,7 @@ data class EmbeddingStatistics(
     val validEmbeddingCount: Int,
     val pendingEmbeddingCount: Int,
     val regenerationNeededCount: Int,
+    val incompleteEmbeddingCount: Int = 0,
     val currentModelVersion: String,
     val embeddingsByVersion: Map<String, Int>,
     val modelError: String? = null,

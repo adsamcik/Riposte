@@ -111,4 +111,10 @@ interface SearchRepository {
      * @return Flow of recently viewed memes wrapped as search results.
      */
     fun getRecentMemes(): Flow<List<SearchResult>>
+
+    /**
+     * Invalidate cached search data (e.g., embedding candidate caches).
+     * Call when embeddings are regenerated or underlying data changes.
+     */
+    fun invalidateSearchCaches()
 }

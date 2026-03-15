@@ -56,6 +56,7 @@
 
     <!-- Status Messages -->
     <string name="import_status_staging">Bilder werden vorbereitet…</string>
+    <string name="import_status_staging_progress">Bild %1$d von %2$d wird vorbereitet…</string>
     <string name="import_status_zip_extract_errors">%d Datei(en) konnten nicht aus dem Bundle extrahiert werden</string>
 
     <!-- Duplicate Detection Dialog -->

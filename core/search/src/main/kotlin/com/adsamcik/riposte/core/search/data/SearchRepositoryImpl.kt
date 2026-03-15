@@ -191,6 +191,10 @@ class SearchRepositoryImpl
             )
         }
 
+        override fun invalidateSearchCaches() {
+            searchOrchestrator.invalidateCaches()
+        }
+
         override fun getEmojiCounts(): Flow<List<Pair<String, Int>>> {
             return emojiTagDao.getEmojisOrderedByUsage().map { stats ->
                 stats.map { it.emoji to it.totalUsage }
@@ -253,7 +257,7 @@ class SearchRepositoryImpl
 
         companion object {
             private const val FAVORITE_BOOST_THRESHOLD = 0.5f
-            private const val BASE_MATCH_SCORE = 0.45f
+            private const val BASE_MATCH_SCORE = 0.5f
             private const val TITLE_MATCH_BONUS = 0.3f
             private const val DESCRIPTION_MATCH_BONUS = 0.15f
             private const val EMOJI_MATCH_BONUS = 0.1f

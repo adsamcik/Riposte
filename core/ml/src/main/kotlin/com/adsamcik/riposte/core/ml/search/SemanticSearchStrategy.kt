@@ -3,6 +3,7 @@ package com.adsamcik.riposte.core.ml.search
 import com.adsamcik.riposte.core.database.dao.MemeEmbeddingDao
 import com.adsamcik.riposte.core.database.mapper.MemeMapper
 import com.adsamcik.riposte.core.ml.DeviceTierDetector
+import com.adsamcik.riposte.core.ml.EmbeddingGenerator
 import com.adsamcik.riposte.core.ml.EmbeddingUtils
 import com.adsamcik.riposte.core.ml.MemeWithEmbeddings
 import com.adsamcik.riposte.core.ml.RustVectorIndex
@@ -30,6 +31,7 @@ class SemanticSearchStrategy @Inject constructor(
     private val semanticSearchEngine: SemanticSearchEngine,
     private val memeEmbeddingDao: MemeEmbeddingDao,
     private val deviceTierDetector: DeviceTierDetector,
+    private val embeddingGenerator: EmbeddingGenerator,
 ) : SearchStrategy {
 
     override val name = "semantic"
@@ -41,6 +43,9 @@ class SemanticSearchStrategy @Inject constructor(
     /** Whether we've attempted to build the ANN index. */
     private var indexBuildAttempted = false
 
+    /** Cached decoded candidates to avoid re-querying Room on every search. */
+    private var cachedCandidates: List<MemeWithEmbeddings>? = null
+
     override fun isAvailable(): Boolean = true
 
     override suspend fun search(query: String, limit: Int): List<SearchResult> {
@@ -49,19 +54,13 @@ class SemanticSearchStrategy @Inject constructor(
             return emptyList()
         }
 
-        val memesWithEmbeddings = memeEmbeddingDao.getMemesWithEmbeddings()
-        if (memesWithEmbeddings.isEmpty()) {
-            Timber.d("No embeddings found in database")
-            return emptyList()
-        }
-
-        val candidates = buildCandidates(memesWithEmbeddings)
+        val candidates = getCachedOrLoadCandidates()
         if (candidates.isEmpty()) {
-            Timber.d("No valid candidates after decoding embeddings")
+            Timber.d("No valid candidates")
             return emptyList()
         }
 
-        Timber.d("Semantic search: %d candidates from %d DB rows", candidates.size, memesWithEmbeddings.size)
+        Timber.d("Semantic search: %d candidates", candidates.size)
 
         // Try ANN two-stage retrieval, fall back to brute-force
         val results = tryAnnSearch(query, candidates, limit)
@@ -95,16 +94,9 @@ class SemanticSearchStrategy @Inject constructor(
 
         if (index.size() == 0) return null
 
-        // Generate query embedding and truncate to 256d for ANN
+        // Generate query embedding and truncate to ANN dimension
         val queryEmbedding = try {
-            semanticSearchEngine.let {
-                // Use the engine's embedding generator via a brute-force search with empty list
-                // to trigger query embedding generation, then retrieve it
-                // Actually, we need the raw query embedding. Use the engine's public API.
-                // The engine caches query embeddings internally.
-                // We'll do a brute-force search on the ANN-narrowed candidates.
-                null
-            }
+            embeddingGenerator.generateFromQuery(query)
         } catch (
             @Suppress("TooGenericExceptionCaught")
             e: Exception,
@@ -113,15 +105,67 @@ class SemanticSearchStrategy @Inject constructor(
             return null
         }
 
-        // Since we can't easily extract the raw query embedding from the engine,
-        // use the ANN index to narrow candidates, then rerank with the engine.
-        // To use the ANN index we need the raw query embedding. Let's extract it
-        // by calling the embedding generator directly through the search engine.
-        // For now, use the brute-force engine on narrowed candidates.
+        val truncatedQuery = EmbeddingUtils.truncateEmbedding(
+            queryEmbedding,
+            profile.annIndexDimension,
+        )
 
-        // Actually, the simplest correct approach: let the SemanticSearchEngine
-        // handle the full pipeline, but only pass ANN-narrowed candidates.
-        return null // TODO: Wire up when we can access raw query embeddings
+        // ANN first-pass: get top-K candidate IDs
+        val (annKeys, _) = try {
+            index.search(truncatedQuery, profile.annFirstPassK)
+        } catch (
+            @Suppress("TooGenericExceptionCaught")
+            e: Exception,
+        ) {
+            Timber.w(e, "ANN search failed, falling back to brute-force")
+            return null
+        }
+
+        if (annKeys.isEmpty()) return null
+
+        // Map ANN result keys back to meme IDs
+        val annMemeIds = annKeys.toSet()
+
+        // Filter full candidates to ANN-selected subset, then rerank with full embeddings
+        val narrowedCandidates = allCandidates.filter { candidate ->
+            val key = candidate.meme.id.hashCode().toLong() and KEY_MASK
+            key in annMemeIds
+        }
+
+        Timber.d(
+            "ANN search: %d/%d candidates selected, reranking with full embeddings",
+            narrowedCandidates.size,
+            allCandidates.size,
+        )
+
+        // Rerank the narrowed set with full-dimensional multi-vector similarity
+        return semanticSearchEngine.findSimilarMultiVector(
+            query = query,
+            candidates = narrowedCandidates,
+            limit = limit,
+        )
+    }
+
+    /** Invalidate cached candidates when embeddings change. */
+    fun invalidateCandidateCache() {
+        cachedCandidates = null
+        annIndex = null
+        indexBuildAttempted = false
+    }
+
+    override fun invalidateCache() {
+        invalidateCandidateCache()
+    }
+
+    private suspend fun getCachedOrLoadCandidates(): List<MemeWithEmbeddings> {
+        cachedCandidates?.let { return it }
+
+        val memesWithEmbeddings = memeEmbeddingDao.getMemesWithEmbeddings()
+        if (memesWithEmbeddings.isEmpty()) return emptyList()
+
+        val built = buildCandidates(memesWithEmbeddings)
+        cachedCandidates = built
+        return built
     }
 
     /**
@@ -199,7 +243,8 @@ class SemanticSearchStrategy @Inject constructor(
             val embeddingsByType = memeRows
                 .filter { it.embedding != null && it.embeddingType != null }
                 .mapNotNull { row ->
-                    val decoded = decodeEmbedding(row.embedding!!)
+                    val embedding = row.embedding ?: return@mapNotNull null
+                    val decoded = decodeEmbedding(embedding)
                     if (decoded.size < 2) {
                         Timber.w("Skipping embedding with invalid dimensions: %d", decoded.size)
                         return@mapNotNull null

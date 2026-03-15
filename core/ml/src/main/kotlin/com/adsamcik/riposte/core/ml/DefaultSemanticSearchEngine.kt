@@ -65,8 +65,12 @@ class DefaultSemanticSearchEngine
                 val queryEmbedding =
                     try {
                         getCachedQueryEmbedding(query)
+                            ?: persistentCache.get(query)?.also {
+                                putCachedQueryEmbedding(query, it)
+                            }
                             ?: embeddingGenerator.generateFromQuery(query).also {
                                 putCachedQueryEmbedding(query, it)
+                                persistentCache.put(query, it)
                             }
                     } catch (
                         @Suppress("TooGenericExceptionCaught") // ML libraries throw unpredictable exceptions
@@ -104,8 +108,12 @@ class DefaultSemanticSearchEngine
                 val queryEmbedding =
                     try {
                         getCachedQueryEmbedding(query)
+                            ?: persistentCache.get(query)?.also {
+                                putCachedQueryEmbedding(query, it)
+                            }
                             ?: embeddingGenerator.generateFromQuery(query).also {
                                 putCachedQueryEmbedding(query, it)
+                                persistentCache.put(query, it)
                             }
                     } catch (
                         @Suppress("TooGenericExceptionCaught") // ML libraries throw unpredictable exceptions
@@ -130,11 +138,15 @@ class DefaultSemanticSearchEngine
                         )
                     }
 
-                val topScores = scored.sortedByDescending { it.relevanceScore }.take(5)
-                Timber.d(
-                    "Top 5 similarities: %s",
-                    topScores.joinToString { "%.4f".format(it.relevanceScore) },
-                )
+                val topScores = scored.sortedByDescending { it.relevanceScore }
+                if (Timber.treeCount > 0) {
+                    Timber.d(
+                        "Top 5 scores: %s",
+                        topScores.take(5).joinToString {
+                            "${it.meme.title?.take(15)}=%.4f".format(it.relevanceScore)
+                        },
+                    )
+                }
 
                 applyDynamicThreshold(scored, limit, maxOf(threshold, ABSOLUTE_SIMILARITY_FLOOR))
             }
@@ -145,16 +157,17 @@ class DefaultSemanticSearchEngine
         ): Float = EmbeddingUtils.cosineSimilarity(embedding1, embedding2)
 
         /**
-         * Compute weighted similarity across embedding types.
-         * Uses type-specific weights: INTENT > CONTENT > EMOJI > others.
-         * Falls back gracefully when types are missing.
+         * Compute similarity using only signal-bearing slots (intent, content).
+         * Emoji and differentiator embeddings are too generic to discriminate.
          */
         private fun computeWeightedSimilarity(
             queryEmbedding: FloatArray,
             candidate: MemeWithEmbeddings,
         ): Float {
             val sims = candidate.embeddings
-                .filter { (_, vec) -> vec.size == queryEmbedding.size }
+                .filter { (type, vec) ->
+                    vec.size == queryEmbedding.size && type in SCORING_SLOTS
+                }
                 .map { (type, vec) ->
                     val weight = EMBEDDING_WEIGHTS[type] ?: DEFAULT_EMBEDDING_WEIGHT
                     val sim = cosineSimilarity(queryEmbedding, vec)
@@ -202,8 +215,12 @@ class DefaultSemanticSearchEngine
                 findGapCutoff(scores) ?: scores.last()
             }
 
-            // Effective cutoff is the stricter of dynamic and absolute floor
-            val effectiveCutoff = maxOf(zCutoff, absoluteFloor)
+            // Relative cutoff: only keep results within TOP_SCORE_RATIO of the best score
+            val topScore = scores.first()
+            val relativeCutoff = topScore * TOP_SCORE_RATIO
+
+            // Effective cutoff is the strictest of all thresholds
+            val effectiveCutoff = maxOf(zCutoff, absoluteFloor, relativeCutoff)
 
             val filtered = sorted.filter { it.relevanceScore >= effectiveCutoff }
 
@@ -221,8 +238,9 @@ class DefaultSemanticSearchEngine
             }
 
             Timber.d(
-                "Dynamic threshold: mean=%.4f, stddev=%.4f, zCutoff=%.4f, floor=%.4f, %d/%d kept",
-                mean, stddev, zCutoff, absoluteFloor, result.size, sorted.size,
+                "Dynamic threshold: mean=%.4f, stddev=%.4f, zCutoff=%.4f, " +
+                    "relativeCutoff=%.4f, floor=%.4f, %d/%d kept",
+                mean, stddev, zCutoff, relativeCutoff, absoluteFloor, result.size, sorted.size,
             )
 
             return result.take(limit)
@@ -278,7 +296,7 @@ class DefaultSemanticSearchEngine
             const val MAX_CACHE_ENTRIES = 50
 
             /** Minimum results to always return (prevents empty results). */
-            const val MIN_RESULTS = 3
+            const val MIN_RESULTS = 2
 
             /** Z-score cutoff: results must be this many stddevs above mean. */
             const val Z_CUTOFF = 0.5f
@@ -290,17 +308,24 @@ class DefaultSemanticSearchEngine
             const val GAP_MULTIPLIER = 2.0f
 
             /** Hard minimum cosine similarity — results below this are never returned. */
-            const val ABSOLUTE_SIMILARITY_FLOOR = 0.25f
+            const val ABSOLUTE_SIMILARITY_FLOOR = 0.10f
+
+            /** Results must score at least this fraction of the top score. */
+            const val TOP_SCORE_RATIO = 0.88f
 
             /** Default weight for unknown embedding types. */
             const val DEFAULT_EMBEDDING_WEIGHT = 0.5f
 
             /** Weights per embedding type for weighted fusion. */
             val EMBEDDING_WEIGHTS = mapOf(
-                "content" to 0.35f,
-                "intent" to 0.45f,
-                "emoji" to 0.15f,
-                "differentiator" to 0.05f,
+                "content" to 0.25f,
+                "intent" to 0.35f,
+                "emotion" to 0.30f,
+                "emoji" to 0.08f,
+                "differentiator" to 0.02f,
             )
+
+            /** Only these embedding slots are used for query→meme scoring. */
+            val SCORING_SLOTS = setOf("intent", "content", "emotion", "emoji")
         }
     }

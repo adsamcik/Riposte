@@ -8,7 +8,7 @@ namespace RiposteCli.Models;
 public sealed class AnalysisResult
 {
     [JsonPropertyName("emojis")]
-    public required List<string> Emojis { get; init; }
+    public List<string>? Emojis { get; init; }
 
     [JsonPropertyName("title")]
     public string? Title { get; init; }
@@ -27,4 +27,7 @@ public sealed class AnalysisResult
 
     [JsonPropertyName("localizations")]
     public Dictionary<string, LocalizedContent>? Localizations { get; init; }
+
+    [JsonPropertyName("emotions")]
+    public EmotionMetadata? Emotions { get; init; }
 }

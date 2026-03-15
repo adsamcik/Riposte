@@ -219,6 +219,12 @@ private fun EmbeddingSearchSettings(uiState: SettingsUiState) {
                         },
                         modifier = Modifier.padding(end = 16.dp),
                     )
+                    Spacer(Modifier.size(4.dp))
+                    Text(
+                        text = stringResource(R.string.settings_search_index_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
         },

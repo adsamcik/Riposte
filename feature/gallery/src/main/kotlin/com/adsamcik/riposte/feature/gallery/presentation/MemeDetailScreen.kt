@@ -49,7 +49,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -73,6 +72,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -196,10 +196,7 @@ private fun MemeDetailScreenContent(
     val onRequestBack = {
         when {
             uiState.isEditMode && uiState.hasUnsavedChanges -> showDiscardDialog = true
-            uiState.isEditMode -> {
-                onIntent(MemeDetailIntent.DiscardChanges)
-                onNavigateBack()
-            }
+            uiState.isEditMode -> onIntent(MemeDetailIntent.DiscardChanges)
             else -> onNavigateBack()
         }
     }
@@ -226,7 +223,6 @@ private fun MemeDetailScreenContent(
         onConfirmDiscard = {
             showDiscardDialog = false
             onIntent(MemeDetailIntent.DiscardChanges)
-            onNavigateBack()
         },
         onIntent = onIntent,
     )
@@ -320,7 +316,10 @@ private fun MemeDetailDialogs(
             },
             dismissButton = {
                 TextButton(onClick = { onIntent(MemeDetailIntent.DismissDeleteDialog) }) {
-                    Text(stringResource(R.string.gallery_button_cancel))
+                    Text(
+                        stringResource(R.string.gallery_button_cancel),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             },
         )
@@ -358,7 +357,12 @@ private fun MemeDetailContent(
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
         sheetPeekHeight = adaptivePeekHeight,
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost = {
+            SnackbarHost(
+                snackbarHostState,
+                modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars),
+            )
+        },
         sheetDragHandle =
             if (zoomState.isZoomed) {
                 { /* empty — suppress drag handle when zoomed */ }
@@ -373,7 +377,7 @@ private fun MemeDetailContent(
                 modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars),
             )
         },
-        containerColor = Color.Black,
+        containerColor = MaterialTheme.colorScheme.scrim,
         sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
         sheetShape = MaterialTheme.shapes.extraLarge,
     ) { paddingValues ->
@@ -407,6 +411,7 @@ private fun BoxScope.MemeDetailBackButton(
                 .align(Alignment.TopStart)
                 .windowInsetsPadding(WindowInsets.statusBars)
                 .padding(8.dp)
+                .shadow(4.dp, CircleShape)
                 .background(
                     color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
                     shape = CircleShape,
@@ -539,19 +544,27 @@ private fun MemeActionButtonsRow(
             onToggleEdit = { onIntent(MemeDetailIntent.ToggleEditMode) },
         )
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            FilledIconButton(
+            IconButton(
                 onClick = { onIntent(MemeDetailIntent.Share) },
-                modifier = Modifier.size(56.dp),
                 enabled = !uiState.isSharing,
+                modifier = Modifier
+                    .background(
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        shape = CircleShape,
+                    ),
             ) {
                 if (uiState.isSharing) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
-                        color = MaterialTheme.colorScheme.onPrimary,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
                         strokeWidth = 2.dp,
                     )
                 } else {
-                    Icon(Icons.Default.Share, contentDescription = stringResource(R.string.gallery_cd_share))
+                    Icon(
+                        Icons.Default.Share,
+                        contentDescription = stringResource(R.string.gallery_cd_share),
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    )
                 }
             }
             Text(
@@ -757,7 +770,10 @@ private fun MemeEditSaveButtons(
         horizontalArrangement = Arrangement.End,
     ) {
         TextButton(onClick = { onIntent(MemeDetailIntent.DiscardChanges) }) {
-            Text(stringResource(R.string.gallery_button_discard))
+            Text(
+                stringResource(R.string.gallery_button_discard),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
         Spacer(Modifier.width(8.dp))
         FilledTonalButton(
@@ -815,6 +831,7 @@ private fun MemeViewModeContent(
                 EmojiChip(
                     emojiTag = tag,
                     onClick = { onIntent(MemeDetailIntent.SearchByEmoji(tag.emoji)) },
+                    isTagMode = true,
                 )
             }
         }
@@ -1017,7 +1034,7 @@ private fun ZoomableImage(
             model = filePath,
             contentDescription = contentDescription,
             contentScale = ContentScale.Fit,
-            alignment = Alignment.TopCenter,
+            alignment = Alignment.Center,
             onState = { imageState = it },
             modifier = Modifier.fillMaxSize(),
         )

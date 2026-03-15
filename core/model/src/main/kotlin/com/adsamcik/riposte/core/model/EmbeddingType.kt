@@ -39,6 +39,14 @@ enum class EmbeddingType(
      * Acts as a tiebreaker when content/intent embeddings are clustered.
      */
     DIFFERENTIATOR("differentiator"),
+
+    /**
+     * Emotion embedding: captures HOW this meme makes you FEEL and WHEN to use it.
+     * Built from: primary/secondary emotions + sentiment + meme usage context phrases.
+     * Enables mood-based queries like "funny", "sad", "Monday morning mood".
+     * Added in schema v1.4.
+     */
+    EMOTION("emotion"),
     ;
 
     companion object {

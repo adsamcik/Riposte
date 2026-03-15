@@ -55,7 +55,7 @@ class EmbeddingManagerTest {
         appLifecycleTracker = mockk()
         isInBackgroundFlow = MutableStateFlow(false)
 
-        every { versionManager.currentModelVersion } returns "mediapipe_use:1.0.0"
+        every { versionManager.currentModelVersion } returns "embeddinggemma:1.3.0"
         every { embeddingGenerator.initializationError } returns null
         every { appLifecycleTracker.isInBackground } returns isInBackgroundFlow
 
@@ -75,7 +75,7 @@ class EmbeddingManagerTest {
             // Given
             val memeId = 1L
             val searchText = "funny cat meme"
-            val embedding = FloatArray(512) { it.toFloat() / 512f }
+            val embedding = FloatArray(768) { it.toFloat() / 768f }
 
             coEvery { embeddingGenerator.generateFromText(searchText) } returns embedding
             coEvery { memeEmbeddingDao.insertEmbedding(any()) } returns 1L
@@ -91,8 +91,8 @@ class EmbeddingManagerTest {
 
             val savedEntity = entitySlot.captured
             assertThat(savedEntity.memeId).isEqualTo(memeId)
-            assertThat(savedEntity.dimension).isEqualTo(512)
-            assertThat(savedEntity.modelVersion).isEqualTo("mediapipe_use:1.0.0")
+            assertThat(savedEntity.dimension).isEqualTo(768)
+            assertThat(savedEntity.modelVersion).isEqualTo("embeddinggemma:1.3.0")
             assertThat(savedEntity.needsRegeneration).isFalse()
         }
 
@@ -102,7 +102,7 @@ class EmbeddingManagerTest {
             // Given
             val memeId = 1L
             val searchText = "blank meme"
-            val zeroEmbedding = FloatArray(512) { 0f }
+            val zeroEmbedding = FloatArray(768) { 0f }
 
             coEvery { embeddingGenerator.generateFromText(searchText) } returns zeroEmbedding
 
@@ -198,7 +198,7 @@ class EmbeddingManagerTest {
             coEvery { memeEmbeddingDao.getEmbeddingCountByModelVersion() } returns
                 listOf(
                     com.adsamcik.riposte.core.database.dao.EmbeddingVersionCount(
-                        "mediapipe_use:1.0.0",
+                        "embeddinggemma:1.3.0",
                         100,
                     ),
                 )
@@ -212,11 +212,11 @@ class EmbeddingManagerTest {
             assertThat(stats.regenerationNeededCount).isEqualTo(5)
             assertThat(stats.totalPendingWork).isEqualTo(25)
             assertThat(stats.isFullyIndexed).isFalse()
-            assertThat(stats.embeddingsByVersion).containsEntry("mediapipe_use:1.0.0", 100)
+            assertThat(stats.embeddingsByVersion).containsEntry("embeddinggemma:1.3.0", 100)
         }
 
     @Test
-    fun `checkAndHandleModelUpgrade marks old embeddings for regeneration`() =
+    fun `checkAndHandleModelUpgrade deletes outdated embeddings on datastore upgrade`() =
         runTest {
             // Given
             coEvery { versionManager.hasModelBeenUpgraded() } returns true
@@ -226,12 +226,28 @@ class EmbeddingManagerTest {
             embeddingManager.checkAndHandleModelUpgrade()
 
             // Then
-            coVerify { memeEmbeddingDao.markOutdatedForRegeneration("mediapipe_use:1.0.0") }
+            coVerify { memeEmbeddingDao.deleteOutdatedEmbeddings("embeddinggemma:1.3.0") }
             coVerify { versionManager.updateToCurrentVersion() }
         }
 
     @Test
-    fun `checkAndHandleModelUpgrade does nothing when no upgrade`() =
+    fun `checkAndHandleModelUpgrade deletes when DB has stale embeddings even if datastore is current`() =
+        runTest {
+            // Given — datastore says no upgrade, but DB has outdated rows
+            coEvery { versionManager.hasModelBeenUpgraded() } returns false
+            coEvery { memeEmbeddingDao.countOutdatedEmbeddings("embeddinggemma:1.3.0") } returns 15
+            coEvery { versionManager.updateToCurrentVersion() } returns Unit
+
+            // When
+            embeddingManager.checkAndHandleModelUpgrade()
+
+            // Then — still deletes because DB has stale embeddings
+            coVerify { memeEmbeddingDao.deleteOutdatedEmbeddings("embeddinggemma:1.3.0") }
+            coVerify { versionManager.updateToCurrentVersion() }
+        }
+
+    @Test
+    fun `checkAndHandleModelUpgrade does nothing when no upgrade and no stale embeddings`() =
         runTest {
             // Given
             coEvery { versionManager.hasModelBeenUpgraded() } returns false
@@ -240,8 +256,25 @@ class EmbeddingManagerTest {
             embeddingManager.checkAndHandleModelUpgrade()
 
             // Then
-            coVerify(exactly = 0) { memeEmbeddingDao.markOutdatedForRegeneration(any()) }
+            coVerify(exactly = 0) { memeEmbeddingDao.deleteOutdatedEmbeddings(any()) }
             coVerify(exactly = 0) { versionManager.updateToCurrentVersion() }
+        }
+
+    @Test
+    fun `checkAndHandleModelUpgrade updates version after deleting outdated embeddings`() =
+        runTest {
+            // Given
+            coEvery { versionManager.hasModelBeenUpgraded() } returns true
+            coEvery { versionManager.updateToCurrentVersion() } returns Unit
+
+            // When
+            embeddingManager.checkAndHandleModelUpgrade()
+
+            // Then — version is persisted so upgrade is not re-triggered
+            coVerify(ordering = io.mockk.Ordering.ORDERED) {
+                memeEmbeddingDao.deleteOutdatedEmbeddings(any())
+                versionManager.updateToCurrentVersion()
+            }
         }
 
     // region No-Fallback Regression Tests
@@ -518,6 +551,41 @@ class EmbeddingManagerTest {
         }
 
     @Test
+    fun `warmUpAndResumeIndexing called twice does not duplicate observers`() =
+        runTest {
+            // Given
+            coEvery { embeddingGenerator.initialize() } returns Unit
+            coEvery { versionManager.clearInitializationFailure() } returns Unit
+            coEvery { versionManager.hasModelBeenUpgraded() } returns false
+            coEvery { memeEmbeddingDao.countValidEmbeddings() } returns 10
+            coEvery { memeEmbeddingDao.countMemesWithoutEmbeddings() } returns 5
+            coEvery { memeEmbeddingDao.countEmbeddingsNeedingRegeneration() } returns 0
+            coEvery { memeEmbeddingDao.getEmbeddingCountByModelVersion() } returns emptyList()
+
+            val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler) + SupervisorJob())
+            try {
+                // When — call warmUpAndResumeIndexing twice
+                embeddingManager.warmUpAndResumeIndexing(scope)
+                advanceUntilIdle()
+                embeddingManager.warmUpAndResumeIndexing(scope)
+                advanceUntilIdle()
+
+                // Both startup invocations check stats = 2 calls so far
+                // Simulate a single foreground return
+                isInBackgroundFlow.value = true
+                advanceUntilIdle()
+                isInBackgroundFlow.value = false
+                advanceUntilIdle()
+
+                // Then — 2 startup checks + 1 foreground check = 3 total
+                // If observers were duplicated, we'd see 4 (2 startup + 2 foreground)
+                coVerify(exactly = 3) { memeEmbeddingDao.countMemesWithoutEmbeddings() }
+            } finally {
+                scope.cancel()
+            }
+        }
+
+    @Test
     fun `warmUpAndResumeIndexing handles statistics exception on foreground return gracefully`() =
         runTest {
             // Given
@@ -553,6 +621,81 @@ class EmbeddingManagerTest {
                 advanceUntilIdle()
 
                 coVerify(atLeast = 1) { memeEmbeddingDao.countMemesWithoutEmbeddings() }
+            } finally {
+                scope.cancel()
+            }
+        }
+
+    // endregion
+
+    // region Incomplete Embedding Regression Tests
+
+    @Test
+    fun `getStatistics includes incompleteEmbeddingCount`() =
+        runTest {
+            // Given
+            coEvery { memeEmbeddingDao.countValidEmbeddings() } returns 50
+            coEvery { memeEmbeddingDao.countMemesWithoutEmbeddings() } returns 0
+            coEvery { memeEmbeddingDao.countEmbeddingsNeedingRegeneration() } returns 0
+            coEvery { memeEmbeddingDao.countMemesWithIncompleteEmbeddings(any(), any()) } returns 7
+            coEvery { memeEmbeddingDao.getEmbeddingCountByModelVersion() } returns emptyList()
+
+            // When
+            val stats = embeddingManager.getStatistics()
+
+            // Then
+            assertThat(stats.incompleteEmbeddingCount).isEqualTo(7)
+        }
+
+    @Test
+    fun `isFullyIndexed is true when only incomplete-but-attempted memes remain`() =
+        runTest {
+            // Given — no pending, no regeneration, but some incomplete
+            coEvery { memeEmbeddingDao.countValidEmbeddings() } returns 50
+            coEvery { memeEmbeddingDao.countMemesWithoutEmbeddings() } returns 0
+            coEvery { memeEmbeddingDao.countEmbeddingsNeedingRegeneration() } returns 0
+            coEvery { memeEmbeddingDao.countMemesWithIncompleteEmbeddings(any(), any()) } returns 5
+            coEvery { memeEmbeddingDao.getEmbeddingCountByModelVersion() } returns emptyList()
+
+            // When
+            val stats = embeddingManager.getStatistics()
+
+            // Then — isFullyIndexed only looks at pending + regeneration, not incomplete
+            assertThat(stats.isFullyIndexed).isTrue()
+            assertThat(stats.incompleteEmbeddingCount).isEqualTo(5)
+        }
+
+    @Test
+    fun `foreground resume does not schedule when only attempted-incomplete memes exist`() =
+        runTest {
+            // Given — fully indexed (pending=0, regen=0), but incomplete > 0
+            coEvery { embeddingGenerator.initialize() } returns Unit
+            coEvery { versionManager.clearInitializationFailure() } returns Unit
+            coEvery { versionManager.hasModelBeenUpgraded() } returns false
+            coEvery { memeEmbeddingDao.countValidEmbeddings() } returns 50
+            coEvery { memeEmbeddingDao.countMemesWithoutEmbeddings() } returns 0
+            coEvery { memeEmbeddingDao.countEmbeddingsNeedingRegeneration() } returns 0
+            coEvery { memeEmbeddingDao.countMemesWithIncompleteEmbeddings(any(), any()) } returns 5
+            coEvery { memeEmbeddingDao.getEmbeddingCountByModelVersion() } returns emptyList()
+
+            val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler) + SupervisorJob())
+            try {
+                // When — start monitoring then simulate foreground return
+                embeddingManager.warmUpAndResumeIndexing(scope)
+                advanceUntilIdle()
+
+                isInBackgroundFlow.value = true
+                advanceUntilIdle()
+                isInBackgroundFlow.value = false
+                advanceUntilIdle()
+
+                // Then — stats are checked but no scheduling happens because isFullyIndexed == true
+                // countMemesWithoutEmbeddings is called (as part of getStatistics)
+                // but since pending=0 and regen=0, scheduleBackgroundGeneration is NOT invoked.
+                // We verify by checking that countMemesWithoutEmbeddings returns 0 throughout
+                // (if scheduling happened, WorkManager would enqueue work — but with 0 pending
+                //  the important thing is the decision path doesn't trigger scheduling)
+                coVerify(atLeast = 2) { memeEmbeddingDao.countMemesWithoutEmbeddings() }
             } finally {
                 scope.cancel()
             }

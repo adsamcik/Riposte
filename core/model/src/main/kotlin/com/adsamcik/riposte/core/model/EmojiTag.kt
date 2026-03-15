@@ -27,12 +27,31 @@ data class EmojiTag(
 ) {
     companion object {
         /**
+         * Unicode variation selectors (U+FE00–U+FE0F) that must be stripped so that
+         * the stored emoji bytes match the search-query bytes produced by
+         * [com.adsamcik.riposte.core.database.util.FtsQuerySanitizer].
+         */
+        private val VARIATION_SELECTORS_REGEX = Regex("[\uFE00-\uFE0F]")
+
+        /**
+         * Strips variation selectors from an emoji string so that FTS4 tokens
+         * are identical to the sanitized search terms.
+         *
+         * Example: `🏋️‍♂️` (U+1F3CB U+FE0F U+200D U+2642 U+FE0F)
+         *        → `🏋‍♂`  (U+1F3CB U+200D U+2642)
+         */
+        fun normalizeEmoji(emoji: String): String =
+            emoji.replace(VARIATION_SELECTORS_REGEX, "")
+
+        /**
          * Creates an EmojiTag from just an emoji character.
+         * Variation selectors are stripped for FTS consistency.
          */
         fun fromEmoji(emoji: String): EmojiTag {
+            val normalized = normalizeEmoji(emoji)
             return EmojiTag(
-                emoji = emoji,
-                name = emoji,
+                emoji = normalized,
+                name = normalized,
             )
         }
     }

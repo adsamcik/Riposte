@@ -3,6 +3,7 @@ package com.adsamcik.riposte.core.ml.search
 import com.adsamcik.riposte.core.database.dao.MemeEmbeddingDao
 import com.adsamcik.riposte.core.database.entity.MemeWithEmbeddingData
 import com.adsamcik.riposte.core.ml.DeviceTierDetector
+import com.adsamcik.riposte.core.ml.EmbeddingGenerator
 import com.adsamcik.riposte.core.ml.MemeWithEmbeddings
 import com.adsamcik.riposte.core.ml.SemanticSearchEngine
 import com.adsamcik.riposte.core.model.MatchType
@@ -32,12 +33,20 @@ class SemanticSearchStrategyTest {
     @MockK
     private lateinit var deviceTierDetector: DeviceTierDetector
 
+    @MockK
+    private lateinit var embeddingGenerator: EmbeddingGenerator
+
     private lateinit var strategy: SemanticSearchStrategy
 
     @Before
     fun setUp() {
         MockKAnnotations.init(this, relaxed = true)
-        strategy = SemanticSearchStrategy(semanticSearchEngine, memeEmbeddingDao, deviceTierDetector)
+        strategy = SemanticSearchStrategy(
+            semanticSearchEngine,
+            memeEmbeddingDao,
+            deviceTierDetector,
+            embeddingGenerator,
+        )
     }
 
     @After
@@ -373,6 +382,48 @@ class SemanticSearchStrategyTest {
         assertThat(meme.description).isEqualTo("A very funny cat meme")
         assertThat(meme.textContent).isEqualTo("when you see it")
         assertThat(meme.emojiTags).hasSize(2)
+    }
+
+    // endregion
+
+    // region Cache invalidation
+
+    @Test
+    fun `invalidateCache clears cached candidates`() = runTest {
+        val embeddingData = createEmbeddingData(memeId = 1L, floats = floatArrayOf(1f, 2f, 3f))
+        coEvery { semanticSearchEngine.isReady() } returns true
+        coEvery { memeEmbeddingDao.getMemesWithEmbeddings() } returns listOf(embeddingData)
+        coEvery {
+            semanticSearchEngine.findSimilarMultiVector(any(), any(), any(), any())
+        } returns emptyList()
+
+        // First search populates cache
+        strategy.search("cat", 10)
+        coVerify(exactly = 1) { memeEmbeddingDao.getMemesWithEmbeddings() }
+
+        // Invalidate cache
+        strategy.invalidateCache()
+
+        // Second search should re-query the DAO
+        strategy.search("dog", 10)
+        coVerify(exactly = 2) { memeEmbeddingDao.getMemesWithEmbeddings() }
+    }
+
+    @Test
+    fun `search uses cached candidates on second call without invalidation`() = runTest {
+        val embeddingData = createEmbeddingData(memeId = 1L, floats = floatArrayOf(1f, 2f, 3f))
+        coEvery { semanticSearchEngine.isReady() } returns true
+        coEvery { memeEmbeddingDao.getMemesWithEmbeddings() } returns listOf(embeddingData)
+        coEvery {
+            semanticSearchEngine.findSimilarMultiVector(any(), any(), any(), any())
+        } returns emptyList()
+
+        // Two searches without invalidation
+        strategy.search("cat", 10)
+        strategy.search("dog", 10)
+
+        // DAO should only be queried once — second search uses cache
+        coVerify(exactly = 1) { memeEmbeddingDao.getMemesWithEmbeddings() }
     }
 
     // endregion

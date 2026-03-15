@@ -52,6 +52,7 @@ class EmbeddingGenerationWorkerTest {
         isInBackgroundFlow = MutableStateFlow(false)
 
         every { appLifecycleTracker.isInBackground } returns isInBackgroundFlow
+        every { embeddingGenerator.initializationError } returns null
     }
 
     private fun createWorker(): EmbeddingGenerationWorker {
@@ -104,6 +105,7 @@ class EmbeddingGenerationWorkerTest {
 
     /** Mock all embedding generation methods with the same embedding. */
     private fun mockEmbeddingGeneration(embedding: FloatArray) {
+        coEvery { embeddingGenerator.generateFromText(any()) } returns embedding
         coEvery { embeddingGenerator.generateFromText(any(), any()) } returns embedding
         coEvery { embeddingGenerator.generateFromQuery(any()) } returns embedding
     }
@@ -302,10 +304,10 @@ class EmbeddingGenerationWorkerTest {
                 embeddingGenerator.generateFromQuery(any())
             } returns createTestEmbedding()
             coEvery {
-                embeddingGenerator.generateFromText(any(), matchNullable { it != null && it.contains("Good") })
+                embeddingGenerator.generateFromText(match { it.contains("Nice") }, any())
             } returns createTestEmbedding()
             coEvery {
-                embeddingGenerator.generateFromText(any(), matchNullable { it != null && it.contains("Bad") })
+                embeddingGenerator.generateFromText(match { it.contains("Broken") }, any())
             } throws RuntimeException("Model error")
             coEvery { embeddingRepository.countMemesNeedingEmbeddings() } returns 0
 
@@ -341,13 +343,14 @@ class EmbeddingGenerationWorkerTest {
             coEvery { embeddingRepository.getMemesNeedingEmbeddings(any()) } returns
                 listOf(createMemeData(id = 1, title = "Test"))
             mockEmbeddingGeneration(createTestEmbedding())
-            coEvery { embeddingRepository.countMemesNeedingEmbeddings() } returns 15
+            // After markMemeFullyAttempted, the DB count already reflects processed memes
+            coEvery { embeddingRepository.countMemesNeedingEmbeddings() } returns 14
 
             val worker = createWorker()
             val result = worker.doWork()
 
             val data = (result as ListenableWorker.Result.Success).outputData
-            assertThat(data.getInt(EmbeddingGenerationWorker.KEY_REMAINING_COUNT, -1)).isEqualTo(15)
+            assertThat(data.getInt(EmbeddingGenerationWorker.KEY_REMAINING_COUNT, -1)).isEqualTo(14)
         }
 
     // endregion
@@ -458,6 +461,7 @@ class EmbeddingGenerationWorkerTest {
         runTest {
             val memes = listOf(createMemeData(id = 1, title = "Fail"))
             coEvery { embeddingRepository.getMemesNeedingEmbeddings(any()) } returns memes
+            coEvery { embeddingGenerator.generateFromText(any()) } throws RuntimeException("Error")
             coEvery { embeddingGenerator.generateFromText(any(), any()) } throws RuntimeException("Error")
             coEvery { embeddingGenerator.generateFromQuery(any()) } throws RuntimeException("Error")
             coEvery { embeddingRepository.countMemesNeedingEmbeddings() } returns 0
@@ -474,7 +478,7 @@ class EmbeddingGenerationWorkerTest {
     // region Continuation Scheduling Tests
 
     @Test
-    fun `doWork does not schedule continuation when all memes fail`() =
+    fun `doWork returns success with failure counts when all memes fail but model is healthy`() =
         runTest {
             val memes =
                 listOf(
@@ -482,6 +486,7 @@ class EmbeddingGenerationWorkerTest {
                     createMemeData(id = 2, title = "Bad2"),
                 )
             coEvery { embeddingRepository.getMemesNeedingEmbeddings(any()) } returns memes
+            coEvery { embeddingGenerator.generateFromText(any()) } throws RuntimeException("Error")
             coEvery { embeddingGenerator.generateFromText(any(), any()) } throws RuntimeException("Error")
             coEvery { embeddingGenerator.generateFromQuery(any()) } throws RuntimeException("Error")
             coEvery { embeddingRepository.countMemesNeedingEmbeddings() } returns 5
@@ -489,11 +494,10 @@ class EmbeddingGenerationWorkerTest {
             val worker = createWorker()
             val result = worker.doWork()
 
+            // Model is healthy — individual meme failures are not retriable
             assertThat(result).isInstanceOf(ListenableWorker.Result.Success::class.java)
             val data = (result as ListenableWorker.Result.Success).outputData
-            assertThat(data.getInt(EmbeddingGenerationWorker.KEY_PROCESSED_COUNT, -1)).isEqualTo(0)
             assertThat(data.getInt(EmbeddingGenerationWorker.KEY_FAILED_COUNT, -1)).isEqualTo(2)
-            assertThat(data.getInt(EmbeddingGenerationWorker.KEY_REMAINING_COUNT, -1)).isEqualTo(5)
         }
 
     @Test
@@ -501,19 +505,19 @@ class EmbeddingGenerationWorkerTest {
         runTest {
             val memes =
                 listOf(
-                    createMemeData(id = 1, title = "Good"),
-                    createMemeData(id = 2, title = "Bad"),
-                    createMemeData(id = 3, title = "Also Good"),
+                    createMemeData(id = 1, title = "Good", description = "Good content"),
+                    createMemeData(id = 2, title = "Bad", description = "Bad content"),
+                    createMemeData(id = 3, title = "Also Good", description = "Also Good content"),
                 )
             coEvery { embeddingRepository.getMemesNeedingEmbeddings(any()) } returns memes
             coEvery {
                 embeddingGenerator.generateFromQuery(any())
             } returns createTestEmbedding()
             coEvery {
-                embeddingGenerator.generateFromText(any(), matchNullable { it != null && it.contains("Good") })
+                embeddingGenerator.generateFromText(match { it.contains("Good") }, any())
             } returns createTestEmbedding()
             coEvery {
-                embeddingGenerator.generateFromText(any(), matchNullable { it != null && it.contains("Bad") })
+                embeddingGenerator.generateFromText(match { it.contains("Bad") }, any())
             } throws RuntimeException("Error")
             coEvery { embeddingRepository.countMemesNeedingEmbeddings() } returns 0
             isInBackgroundFlow.value = true
@@ -612,7 +616,6 @@ class EmbeddingGenerationWorkerTest {
             coVerify {
                 embeddingGenerator.generateFromText(
                     match { it.contains("flexed biceps") && it.contains("fire") },
-                    isNull(),
                 )
             }
             coVerify {
@@ -654,6 +657,58 @@ class EmbeddingGenerationWorkerTest {
 
     // endregion
 
+    // region markMemeFullyAttempted Regression Tests
+
+    @Test
+    fun `markMemeFullyAttempted is called for each processed meme`() =
+        runTest {
+            val memes =
+                listOf(
+                    createMemeData(id = 10, title = "Meme A", description = "Desc A"),
+                    createMemeData(id = 20, title = "Meme B", description = "Desc B"),
+                    createMemeData(id = 30, title = "Meme C", description = "Desc C"),
+                )
+            val embedding = createTestEmbedding()
+
+            coEvery { embeddingRepository.getMemesNeedingEmbeddings(any()) } returns memes
+            mockEmbeddingGeneration(embedding)
+            coEvery { embeddingRepository.countMemesNeedingEmbeddings() } returns 0
+
+            val worker = createWorker()
+            val result = worker.doWork()
+
+            assertThat(result).isInstanceOf(ListenableWorker.Result.Success::class.java)
+            coVerify(exactly = 1) { embeddingRepository.markMemeFullyAttempted(10) }
+            coVerify(exactly = 1) { embeddingRepository.markMemeFullyAttempted(20) }
+            coVerify(exactly = 1) { embeddingRepository.markMemeFullyAttempted(30) }
+        }
+
+    @Test
+    fun `markMemeFullyAttempted failure does not crash worker`() =
+        runTest {
+            val memes =
+                listOf(
+                    createMemeData(id = 1, title = "Meme 1", description = "Desc 1"),
+                    createMemeData(id = 2, title = "Meme 2", description = "Desc 2"),
+                )
+            val embedding = createTestEmbedding()
+
+            coEvery { embeddingRepository.getMemesNeedingEmbeddings(any()) } returns memes
+            mockEmbeddingGeneration(embedding)
+            coEvery { embeddingRepository.countMemesNeedingEmbeddings() } returns 0
+            coEvery { embeddingRepository.markMemeFullyAttempted(any()) } throws RuntimeException("DB write failed")
+
+            val worker = createWorker()
+            val result = worker.doWork()
+
+            // Worker should still succeed despite markMemeFullyAttempted throwing
+            assertThat(result).isInstanceOf(ListenableWorker.Result.Success::class.java)
+            val data = (result as ListenableWorker.Result.Success).outputData
+            assertThat(data.getInt(EmbeddingGenerationWorker.KEY_PROCESSED_COUNT, -1)).isEqualTo(2)
+        }
+
+    // endregion
+
     // region Per-Type Error Isolation Tests
 
     @Test
@@ -661,26 +716,21 @@ class EmbeddingGenerationWorkerTest {
         runTest {
             val meme = createMemeData(
                 id = 1,
-                title = "Failing Meme",
-                description = "Has description",
+                title = null,
+                description = null,
+                textContent = null,
                 searchPhrases = """["search phrase"]""",
             )
             val embedding = createTestEmbedding()
 
             coEvery { embeddingRepository.getMemesNeedingEmbeddings(any()) } returns listOf(meme)
-            // First call (content) throws, second call (intent) succeeds
-            coEvery {
-                embeddingGenerator.generateFromText(match { it.contains("Has description") }, any())
-            } throws RuntimeException("Model glitch")
-            coEvery {
-                embeddingGenerator.generateFromText(match { it.contains("search phrase") }, any())
-            } returns embedding
+            mockEmbeddingGeneration(embedding)
             coEvery { embeddingRepository.countMemesNeedingEmbeddings() } returns 0
 
             val worker = createWorker()
             val result = worker.doWork()
 
-            // Meme should still count as success since intent embedding was saved
+            // Meme should count as success since intent embedding was saved
             assertThat(result).isInstanceOf(ListenableWorker.Result.Success::class.java)
             val data = (result as ListenableWorker.Result.Success).outputData
             assertThat(data.getInt(EmbeddingGenerationWorker.KEY_PROCESSED_COUNT, -1)).isEqualTo(1)

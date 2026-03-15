@@ -20,7 +20,7 @@ interface SemanticSearchEngine {
         query: String,
         candidates: List<MemeWithEmbedding>,
         limit: Int = 20,
-        threshold: Float = 0.3f,
+        threshold: Float = 0.15f,
     ): List<SearchResult>
 
     /**
@@ -37,7 +37,7 @@ interface SemanticSearchEngine {
         query: String,
         candidates: List<MemeWithEmbeddings>,
         limit: Int = 20,
-        threshold: Float = 0.3f,
+        threshold: Float = 0.15f,
     ): List<SearchResult>
 
     /**

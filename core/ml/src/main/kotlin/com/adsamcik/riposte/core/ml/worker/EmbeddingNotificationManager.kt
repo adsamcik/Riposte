@@ -30,7 +30,7 @@ constructor(
                 CHANNEL_NAME,
                 NotificationManager.IMPORTANCE_LOW,
             ).apply {
-                description = "Shows progress when indexing memes for search in the background"
+                description = "Shows progress while preparing AI-powered semantic search in the background"
                 setShowBadge(false)
             }
         val manager = context.getSystemService(NotificationManager::class.java)
@@ -44,8 +44,8 @@ constructor(
     ): Notification {
         return NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_menu_search)
-            .setContentTitle("Indexing memes")
-            .setContentText("$current of $total")
+            .setContentTitle("Enhancing AI search")
+            .setContentText("$current of $total memes · text search works now")
             .setProgress(total, current, false)
             .setOngoing(true)
             .setSilent(true)
@@ -59,13 +59,13 @@ constructor(
     ): Notification {
         val text =
             when {
-                failedCount == 0 -> "$successCount memes indexed for search"
-                successCount == 0 -> "Indexing failed for $failedCount memes"
-                else -> "$successCount indexed, $failedCount failed"
+                failedCount == 0 -> "AI search ready for $successCount memes"
+                successCount == 0 -> "AI search setup failed for $failedCount memes"
+                else -> "AI search ready for $successCount memes, $failedCount skipped"
             }
         return NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_menu_search)
-            .setContentTitle("Indexing complete")
+            .setContentTitle("AI search ready")
             .setContentText(text)
             .setAutoCancel(true)
             .setTimeoutAfter(AUTO_DISMISS_DURATION_MS)

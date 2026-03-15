@@ -355,6 +355,89 @@ val MIGRATION_7_8 =
                 "CREATE INDEX IF NOT EXISTS `index_query_embedding_cache_accessedAt` " +
                     "ON `query_embedding_cache` (`accessedAt`)",
             )
+            // Add emotions column for mood-based semantic search (schema v1.4)
+            db.execSQL("ALTER TABLE memes ADD COLUMN `emotionsJson` TEXT DEFAULT NULL")
+
+            // Recreate FTS table with emotionsJson column
+            db.execSQL("DROP TRIGGER IF EXISTS room_fts_content_sync_memes_fts_BEFORE_UPDATE")
+            db.execSQL("DROP TRIGGER IF EXISTS room_fts_content_sync_memes_fts_BEFORE_DELETE")
+            db.execSQL("DROP TRIGGER IF EXISTS room_fts_content_sync_memes_fts_AFTER_UPDATE")
+            db.execSQL("DROP TRIGGER IF EXISTS room_fts_content_sync_memes_fts_AFTER_INSERT")
+            db.execSQL("DROP TABLE IF EXISTS memes_fts")
+            db.execSQL(
+                """CREATE VIRTUAL TABLE IF NOT EXISTS `memes_fts` USING FTS4(
+                    `fileName` TEXT NOT NULL,
+                    `emojiTagsJson` TEXT NOT NULL,
+                    `title` TEXT,
+                    `description` TEXT,
+                    `textContent` TEXT,
+                    `searchPhrasesJson` TEXT,
+                    `basedOn` TEXT,
+                    `emotionsJson` TEXT,
+                    content=`memes`
+                )""",
+            )
+            db.execSQL(
+                """CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_memes_fts_BEFORE_UPDATE
+                    BEFORE UPDATE ON `memes`
+                    BEGIN DELETE FROM `memes_fts` WHERE `docid`=OLD.`rowid`; END""",
+            )
+            db.execSQL(
+                """CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_memes_fts_BEFORE_DELETE
+                    BEFORE DELETE ON `memes`
+                    BEGIN DELETE FROM `memes_fts` WHERE `docid`=OLD.`rowid`; END""",
+            )
+            db.execSQL(
+                """CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_memes_fts_AFTER_UPDATE
+                    AFTER UPDATE ON `memes`
+                    BEGIN INSERT INTO `memes_fts`(`docid`, `fileName`,
+                    `emojiTagsJson`, `title`, `description`, `textContent`,
+                    `searchPhrasesJson`, `basedOn`, `emotionsJson`)
+                    VALUES (NEW.`rowid`, NEW.`fileName`,
+                    NEW.`emojiTagsJson`, NEW.`title`, NEW.`description`,
+                    NEW.`textContent`, NEW.`searchPhrasesJson`,
+                    NEW.`basedOn`, NEW.`emotionsJson`); END""",
+            )
+            db.execSQL(
+                """CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_memes_fts_AFTER_INSERT
+                    AFTER INSERT ON `memes`
+                    BEGIN INSERT INTO `memes_fts`(`docid`, `fileName`,
+                    `emojiTagsJson`, `title`, `description`, `textContent`,
+                    `searchPhrasesJson`, `basedOn`, `emotionsJson`)
+                    VALUES (NEW.`rowid`, NEW.`fileName`,
+                    NEW.`emojiTagsJson`, NEW.`title`, NEW.`description`,
+                    NEW.`textContent`, NEW.`searchPhrasesJson`,
+                    NEW.`basedOn`, NEW.`emotionsJson`); END""",
+            )
+            // Rebuild FTS index to populate from existing meme data
+            db.execSQL("INSERT INTO memes_fts(memes_fts) VALUES('rebuild')")
+        }
+    }
+
+/**
+ * Migration from version 8 to 9:
+ * - Normalizes emoji variation selectors (U+FE0F) in emojiTagsJson and emoji_tags.
+ *   The FtsQuerySanitizer strips VS from search queries, so stored data must also
+ *   be stripped for FTS MATCH to work.
+ * - Rebuilds FTS index after data normalization.
+ */
+val MIGRATION_8_9 =
+    object : Migration(8, 9) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            // 1. Strip variation selector U+FE0F (char 65039) from emojiTagsJson
+            db.execSQL(
+                "UPDATE memes SET emojiTagsJson = REPLACE(emojiTagsJson, char(65039), '') " +
+                    "WHERE emojiTagsJson LIKE '%' || char(65039) || '%'",
+            )
+
+            // 2. Strip variation selector U+FE0F from emoji_tags.emoji column
+            db.execSQL(
+                "UPDATE emoji_tags SET emoji = REPLACE(emoji, char(65039), '') " +
+                    "WHERE emoji LIKE '%' || char(65039) || '%'",
+            )
+
+            // 3. Rebuild FTS index to reflect normalized data
+            db.execSQL("INSERT INTO memes_fts(memes_fts) VALUES('rebuild')")
         }
     }
 
@@ -363,4 +446,4 @@ val MIGRATION_7_8 =
  * to ensure the full chain is registered and validated.
  */
 val ALL_MIGRATIONS =
-    arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
+    arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)

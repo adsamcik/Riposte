@@ -127,9 +127,10 @@ class GalleryRepositoryImpl
                         if (meme.emojiTags.isNotEmpty()) {
                             val tagEntities =
                                 meme.emojiTags.map { tag ->
+                                    val normalized = com.adsamcik.riposte.core.model.EmojiTag.normalizeEmoji(tag.emoji)
                                     EmojiTagEntity(
                                         memeId = meme.id,
-                                        emoji = tag.emoji,
+                                        emoji = normalized,
                                         emojiName = tag.name,
                                     )
                                 }

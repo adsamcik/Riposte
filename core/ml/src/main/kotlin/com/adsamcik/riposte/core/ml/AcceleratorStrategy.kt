@@ -79,7 +79,8 @@ class AcceleratorStrategy @Inject constructor() {
         try {
             System.loadLibrary("OpenCL")
             true
-        } catch (_: UnsatisfiedLinkError) {
+        } catch (e: UnsatisfiedLinkError) {
+            Timber.d(e, "OpenCL not available on this device")
             false
         }
 

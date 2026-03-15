@@ -90,11 +90,13 @@ object MemeMapper {
 
     /**
      * Converts an EmojiTag domain model to an EmojiTagEntity.
+     * Normalizes variation selectors for FTS consistency.
      */
     fun EmojiTag.toEntity(memeId: Long): EmojiTagEntity {
+        val normalized = EmojiTag.normalizeEmoji(emoji)
         return EmojiTagEntity(
             memeId = memeId,
-            emoji = emoji,
+            emoji = normalized,
             emojiName = name,
         )
     }
@@ -120,9 +122,10 @@ object MemeMapper {
 
     /**
      * Serializes emoji tags to JSON string.
+     * Normalizes variation selectors for FTS consistency.
      */
     private fun serializeEmojiTags(emojiTags: List<EmojiTag>): String {
-        return json.encodeToString(emojiTags.map { it.emoji })
+        return json.encodeToString(emojiTags.map { EmojiTag.normalizeEmoji(it.emoji) })
     }
 
     /**

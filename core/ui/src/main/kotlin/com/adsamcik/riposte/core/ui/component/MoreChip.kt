@@ -67,6 +67,7 @@ fun MoreChip(
     ) {
         Box(
             contentAlignment = Alignment.Center,
+            modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp),
         ) {
             Text(
                 text = "+$count",

@@ -207,9 +207,9 @@ public class RateLimiterExtendedTests
         await rl.WaitIfNeededAsync();
         sw.Stop();
 
-        // After failure the delay should be noticeably longer than min
-        // But we keep the test fast by using small delays
-        Assert.True(sw.ElapsedMilliseconds >= 0); // Just verify it completes
+        // After failure, delay property should exceed the base minDelay
+        Assert.True(rl.CurrentDelay > 0.01,
+            $"Delay after failure ({rl.CurrentDelay}) should exceed minDelay (0.01)");
     }
 
     #endregion

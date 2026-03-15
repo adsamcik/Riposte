@@ -11,9 +11,11 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -123,7 +125,12 @@ fun DuplicateDetectionScreen(
                 },
             )
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost = {
+            SnackbarHost(
+                snackbarHostState,
+                modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars),
+            )
+        },
         contentWindowInsets = WindowInsets.safeDrawing,
     ) { paddingValues ->
         LazyColumn(
@@ -166,7 +173,7 @@ fun DuplicateDetectionScreen(
             // Duplicate groups
             items(
                 items = uiState.duplicateGroups,
-                key = { it.duplicateId },
+                key = { "duplicate_${it.duplicateId}" },
             ) { group ->
                 DuplicateGroupCard(
                     group = group,
@@ -203,6 +210,12 @@ private fun SensitivitySection(
             Text(
                 text = stringResource(R.string.duplicate_detection_sensitivity),
                 style = MaterialTheme.typography.titleSmall,
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = stringResource(R.string.duplicate_detection_sensitivity_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(modifier = Modifier.height(8.dp))
             Slider(

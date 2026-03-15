@@ -130,21 +130,35 @@ interface MemeEmbeddingDao {
     /**
      * Mark an embedding as needing regeneration.
      */
-    @Query("UPDATE meme_embeddings SET needsRegeneration = 1 WHERE memeId = :memeId")
+    @Query("UPDATE meme_embeddings SET needsRegeneration = 1, indexingAttempts = 0, lastAttemptAt = NULL WHERE memeId = :memeId")
     suspend fun markForRegeneration(memeId: Long)
 
     /**
-     * Mark all embeddings with a specific model version for regeneration.
-     * Used when the model is upgraded.
+     * Delete all embeddings with a different model version than the current one.
+     * Used when the model is upgraded to clean up incompatible embeddings.
      */
-    @Query("UPDATE meme_embeddings SET needsRegeneration = 1 WHERE modelVersion != :currentVersion")
-    suspend fun markOutdatedForRegeneration(currentVersion: String)
+    @Query("DELETE FROM meme_embeddings WHERE modelVersion != :currentVersion")
+    suspend fun deleteOutdatedEmbeddings(currentVersion: String)
 
     /**
      * Mark all embeddings for regeneration.
      */
-    @Query("UPDATE meme_embeddings SET needsRegeneration = 1")
+    @Query("UPDATE meme_embeddings SET needsRegeneration = 1, indexingAttempts = 0, lastAttemptAt = NULL")
     suspend fun markAllForRegeneration()
+
+    /**
+     * Increment the indexing attempt counter for all embeddings of a meme.
+     * Used to mark memes that have been fully attempted — prevents the "incomplete"
+     * query from endlessly rediscovering memes with legitimately fewer types.
+     */
+    @Query(
+        """
+        UPDATE meme_embeddings 
+        SET indexingAttempts = indexingAttempts + 1, lastAttemptAt = :timestamp 
+        WHERE memeId = :memeId
+    """,
+    )
+    suspend fun incrementIndexingAttempts(memeId: Long, timestamp: Long = System.currentTimeMillis())
 
     // ============ Delete Operations ============
 
@@ -204,6 +218,7 @@ interface MemeEmbeddingDao {
         WHERE e.needsRegeneration = 0 AND e.modelVersion = :currentVersion
         GROUP BY m.id
         HAVING COUNT(DISTINCT e.embeddingType) < :expectedTypeCount
+            AND MAX(e.indexingAttempts) = 0
         LIMIT :limit
     """,
     )
@@ -224,10 +239,40 @@ interface MemeEmbeddingDao {
             WHERE e.needsRegeneration = 0 AND e.modelVersion = :currentVersion
             GROUP BY m.id
             HAVING COUNT(DISTINCT e.embeddingType) < :expectedTypeCount
+                AND MAX(e.indexingAttempts) = 0
         )
     """,
     )
     suspend fun countMemesWithIncompleteEmbeddings(
+        expectedTypeCount: Int,
+        currentVersion: String,
+    ): Int
+
+    /**
+     * Count distinct memes needing any form of embedding work using a single SQL query.
+     * Combines: no embeddings, needs regeneration, and incomplete type coverage
+     * (excluding memes that have already been fully attempted).
+     */
+    @Query(
+        """
+        SELECT COUNT(*) FROM (
+            SELECT m.id FROM memes m
+            LEFT JOIN meme_embeddings e ON m.id = e.memeId
+            WHERE e.id IS NULL
+            UNION
+            SELECT DISTINCT memeId FROM meme_embeddings
+            WHERE needsRegeneration = 1
+            UNION
+            SELECT m.id FROM memes m
+            INNER JOIN meme_embeddings e ON m.id = e.memeId
+            WHERE e.needsRegeneration = 0 AND e.modelVersion = :currentVersion
+            GROUP BY m.id
+            HAVING COUNT(DISTINCT e.embeddingType) < :expectedTypeCount
+                AND MAX(e.indexingAttempts) = 0
+        )
+    """,
+    )
+    suspend fun countAllMemesNeedingEmbeddings(
         expectedTypeCount: Int,
         currentVersion: String,
     ): Int
@@ -245,10 +290,18 @@ interface MemeEmbeddingDao {
     suspend fun countMemesWithoutEmbeddings(): Int
 
     /**
-     * Get total count of embeddings needing regeneration.
+     * Get total count of embedding rows needing regeneration.
+     * Used for statistics display.
      */
     @Query("SELECT COUNT(*) FROM meme_embeddings WHERE needsRegeneration = 1")
     suspend fun countEmbeddingsNeedingRegeneration(): Int
+
+    /**
+     * Get total count of distinct memes needing regeneration.
+     * Used for worker progress tracking (counts memes, not rows).
+     */
+    @Query("SELECT COUNT(DISTINCT memeId) FROM meme_embeddings WHERE needsRegeneration = 1")
+    suspend fun countMemesNeedingRegeneration(): Int
 
     /**
      * Get count of distinct memes with valid embeddings.
@@ -308,4 +361,11 @@ interface MemeEmbeddingDao {
      */
     @Query("SELECT COUNT(*) FROM meme_embeddings WHERE modelVersion != :currentVersion AND needsRegeneration = 0")
     suspend fun countOutdatedEmbeddings(currentVersion: String): Int
+
+    /**
+     * Returns a small sample of embedding BLOBs for integrity validation.
+     * Used to detect NaN-corrupted embeddings from GPU inference failures.
+     */
+    @Query("SELECT embedding FROM meme_embeddings WHERE needsRegeneration = 0 LIMIT :limit")
+    suspend fun sampleEmbeddingBlobs(limit: Int = 5): List<ByteArray>
 }

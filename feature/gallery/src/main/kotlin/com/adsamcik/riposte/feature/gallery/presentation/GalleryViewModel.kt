@@ -11,8 +11,6 @@ import com.adsamcik.riposte.core.common.share.ShareMemeUseCase
 import com.adsamcik.riposte.core.common.suggestion.GetSuggestionsUseCase
 import com.adsamcik.riposte.core.common.suggestion.SuggestionContext
 import com.adsamcik.riposte.core.common.suggestion.Surface
-import com.adsamcik.riposte.core.database.dao.ImportRequestDao
-import com.adsamcik.riposte.core.database.entity.ImportRequestEntity
 import com.adsamcik.riposte.core.datastore.PreferencesDataStore
 import com.adsamcik.riposte.core.events.EmbeddingsReady
 import com.adsamcik.riposte.core.events.EventBus
@@ -22,6 +20,7 @@ import com.adsamcik.riposte.core.model.Meme
 import com.adsamcik.riposte.feature.gallery.R
 import com.adsamcik.riposte.feature.gallery.domain.repository.GalleryRepository
 import com.adsamcik.riposte.feature.gallery.domain.usecase.GalleryViewModelUseCases
+import com.adsamcik.riposte.feature.gallery.domain.usecase.RecoverStaleImportsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
@@ -35,6 +34,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -57,7 +57,7 @@ class GalleryViewModel
         @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
         private val preferencesDataStore: PreferencesDataStore,
         private val eventBus: EventBus,
-        private val importRequestDao: ImportRequestDao, // TODO: Extract to use case — Clean Architecture violation (H9)
+        private val recoverStaleImportsUseCase: RecoverStaleImportsUseCase,
         val searchDelegate: SearchDelegate,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(GalleryUiState())
@@ -65,9 +65,17 @@ class GalleryViewModel
 
         /**
          * Paged memes flow for the "All" filter.
+         * During import, sorts by newest-first so new memes appear at the top
+         * without disrupting scroll position. Reverts to emoji sort when idle.
          */
         val pagedMemes: Flow<PagingData<Meme>> =
-            galleryRepository.getPagedMemes("emoji")
+            _uiState
+                .map { it.importStatus is ImportWorkStatus.InProgress }
+                .distinctUntilChanged()
+                .flatMapLatest { isImporting ->
+                    val sortBy = if (isImporting) "recent" else "emoji"
+                    galleryRepository.getPagedMemes(sortBy)
+                }
                 .cachedIn(viewModelScope)
 
         private val _effects = Channel<GalleryEffect>(Channel.BUFFERED)
@@ -81,6 +89,18 @@ class GalleryViewModel
 
         /** Job for the delayed deletion, canceled when user triggers undo. */
         private var deleteJob: Job? = null
+
+        /** Job for delayed import progress → Idle transition (debounce). */
+        private var importIdleJob: Job? = null
+
+        /** Timestamp when import progress banner was first shown. */
+        private var importProgressShownAt = 0L
+
+        /** Job for delayed embedding progress → Idle transition (debounce). */
+        private var embeddingIdleJob: Job? = null
+
+        /** Timestamp when embedding progress banner was first shown. */
+        private var embeddingProgressShownAt = 0L
 
         init {
             loadPreferences()
@@ -106,6 +126,7 @@ class GalleryViewModel
                 is GalleryIntent.EnterSelectionMode -> enterSelectionMode()
                 is GalleryIntent.ClearSelection -> clearSelection()
                 is GalleryIntent.SelectAll -> selectAll()
+                is GalleryIntent.DeselectAll -> deselectAll()
                 is GalleryIntent.ToggleFavorite -> toggleFavorite(intent.memeId)
                 is GalleryIntent.DeleteSelected -> deleteSelected()
                 is GalleryIntent.ConfirmDelete -> confirmDelete()
@@ -124,6 +145,7 @@ class GalleryViewModel
                 is GalleryIntent.DeleteRecentSearch,
                 is GalleryIntent.ClearRecentSearches,
                 is GalleryIntent.ClearSearch,
+                is GalleryIntent.SubmitSearch,
                 -> searchDelegate.onIntent(intent, viewModelScope)
             }
         }
@@ -199,8 +221,12 @@ class GalleryViewModel
                             val workInfo = workInfos.firstOrNull()
                             when (workInfo?.state) {
                                 androidx.work.WorkInfo.State.RUNNING -> {
+                                    importIdleJob?.cancel()
                                     val completed = workInfo.progress.getInt("completed", 0)
                                     val total = workInfo.progress.getInt("total", 0)
+                                    if (_uiState.value.importStatus is ImportWorkStatus.Idle) {
+                                        importProgressShownAt = System.currentTimeMillis()
+                                    }
                                     _uiState.update {
                                         it.copy(
                                             importStatus = if (total > 0) {
@@ -212,38 +238,61 @@ class GalleryViewModel
                                     }
                                 }
                                 androidx.work.WorkInfo.State.SUCCEEDED -> {
+                                    importIdleJob?.cancel()
                                     val completed = workInfo.outputData.getInt("completed", 0)
                                     val failed = workInfo.outputData.getInt("failed", 0)
-                                    _uiState.update {
-                                        it.copy(
-                                            importStatus = ImportWorkStatus.Idle,
-                                            notification = GalleryNotification.ImportComplete(completed, failed),
-                                        )
+                                    debouncedImportIdle {
+                                        _uiState.update {
+                                            it.copy(
+                                                importStatus = ImportWorkStatus.Idle,
+                                                notification = GalleryNotification.ImportComplete(completed, failed),
+                                            )
+                                        }
+                                        // Prune finished work so notification doesn't reappear on next startup
+                                        wm.pruneWork()
+                                        delay(NOTIFICATION_AUTO_DISMISS_MS)
+                                        dismissNotification()
                                     }
-                                    // Prune finished work so notification doesn't reappear on next startup
-                                    wm.pruneWork()
-                                    delay(NOTIFICATION_AUTO_DISMISS_MS)
-                                    dismissNotification()
                                 }
                                 androidx.work.WorkInfo.State.FAILED -> {
-                                    _uiState.update {
-                                        it.copy(
-                                            importStatus = ImportWorkStatus.Idle,
-                                            notification = GalleryNotification.ImportFailed(),
-                                        )
+                                    importIdleJob?.cancel()
+                                    debouncedImportIdle {
+                                        _uiState.update {
+                                            it.copy(
+                                                importStatus = ImportWorkStatus.Idle,
+                                                notification = GalleryNotification.ImportFailed(),
+                                            )
+                                        }
+                                        wm.pruneWork()
+                                        delay(NOTIFICATION_AUTO_DISMISS_MS)
+                                        dismissNotification()
                                     }
-                                    wm.pruneWork()
-                                    delay(NOTIFICATION_AUTO_DISMISS_MS)
-                                    dismissNotification()
                                 }
                                 else -> {
-                                    _uiState.update { it.copy(importStatus = ImportWorkStatus.Idle) }
+                                    debouncedImportIdle {
+                                        _uiState.update { it.copy(importStatus = ImportWorkStatus.Idle) }
+                                    }
                                 }
                             }
                         }
-                } catch (_: IllegalStateException) {
-                    Timber.d("WorkManager not available, skipping import work observation")
+                } catch (e: IllegalStateException) {
+                    Timber.d(e, "WorkManager not available, skipping import work observation")
                 }
+            }
+        }
+
+        /**
+         * Debounce the import progress → Idle transition.
+         * Ensures the banner stays visible for at least [PROGRESS_MIN_DISPLAY_MS]
+         * and absorbs rapid state flickers with [PROGRESS_IDLE_DEBOUNCE_MS].
+         */
+        private fun debouncedImportIdle(block: suspend () -> Unit) {
+            importIdleJob?.cancel()
+            importIdleJob = viewModelScope.launch {
+                val shownFor = System.currentTimeMillis() - importProgressShownAt
+                val remaining = (PROGRESS_MIN_DISPLAY_MS - shownFor).coerceAtLeast(PROGRESS_IDLE_DEBOUNCE_MS)
+                delay(remaining)
+                block()
             }
         }
 
@@ -259,9 +308,13 @@ class GalleryViewModel
                             val workInfo = workInfos.firstOrNull()
                             when (workInfo?.state) {
                                 androidx.work.WorkInfo.State.RUNNING -> {
+                                    embeddingIdleJob?.cancel()
                                     val processed = workInfo.progress.getInt("processed_count", 0)
                                     val remaining = workInfo.progress.getInt("remaining_count", 0)
                                     if (processed + remaining > 0) {
+                                        if (_uiState.value.embeddingStatus is EmbeddingWorkStatus.Idle) {
+                                            embeddingProgressShownAt = System.currentTimeMillis()
+                                        }
                                         _uiState.update {
                                             it.copy(
                                                 embeddingStatus = EmbeddingWorkStatus.InProgress(
@@ -273,33 +326,56 @@ class GalleryViewModel
                                     }
                                 }
                                 androidx.work.WorkInfo.State.ENQUEUED -> {
+                                    embeddingIdleJob?.cancel()
+                                    if (_uiState.value.embeddingStatus is EmbeddingWorkStatus.Idle) {
+                                        embeddingProgressShownAt = System.currentTimeMillis()
+                                    }
                                     // Work is queued but not running yet — show indeterminate
                                     _uiState.update {
                                         it.copy(embeddingStatus = EmbeddingWorkStatus.InProgress(0, 0))
                                     }
                                 }
                                 androidx.work.WorkInfo.State.SUCCEEDED -> {
+                                    embeddingIdleJob?.cancel()
                                     val processedCount = workInfo.outputData.getInt("processed_count", 0)
-                                    _uiState.update {
-                                        it.copy(embeddingStatus = EmbeddingWorkStatus.Idle)
-                                    }
-                                    if (processedCount > 0) {
+                                    debouncedEmbeddingIdle {
                                         _uiState.update {
-                                            it.copy(notification = GalleryNotification.IndexingComplete(processedCount))
+                                            it.copy(embeddingStatus = EmbeddingWorkStatus.Idle)
                                         }
-                                        wm.pruneWork()
-                                        delay(NOTIFICATION_AUTO_DISMISS_MS)
-                                        dismissNotification()
+                                        if (processedCount > 0) {
+                                            _uiState.update {
+                                                it.copy(notification = GalleryNotification.IndexingComplete(processedCount))
+                                            }
+                                            wm.pruneWork()
+                                            delay(NOTIFICATION_AUTO_DISMISS_MS)
+                                            dismissNotification()
+                                        }
                                     }
                                 }
                                 else -> {
-                                    _uiState.update { it.copy(embeddingStatus = EmbeddingWorkStatus.Idle) }
+                                    debouncedEmbeddingIdle {
+                                        _uiState.update { it.copy(embeddingStatus = EmbeddingWorkStatus.Idle) }
+                                    }
                                 }
                             }
                         }
-                } catch (_: IllegalStateException) {
-                    Timber.d("WorkManager not available, skipping embedding work observation")
+                } catch (e: IllegalStateException) {
+                    Timber.d(e, "WorkManager not available, skipping embedding work observation")
                 }
+            }
+        }
+
+        /**
+         * Debounce the embedding progress → Idle transition.
+         * Same logic as [debouncedImportIdle] but for the embedding progress banner.
+         */
+        private fun debouncedEmbeddingIdle(block: suspend () -> Unit) {
+            embeddingIdleJob?.cancel()
+            embeddingIdleJob = viewModelScope.launch {
+                val shownFor = System.currentTimeMillis() - embeddingProgressShownAt
+                val remaining = (PROGRESS_MIN_DISPLAY_MS - shownFor).coerceAtLeast(PROGRESS_IDLE_DEBOUNCE_MS)
+                delay(remaining)
+                block()
             }
         }
 
@@ -313,8 +389,11 @@ class GalleryViewModel
                     eventBus.on<MemeShared>(),
                     eventBus.on<MemeImported>(),
                     eventBus.on<EmbeddingsReady>(),
-                ).collect {
+                ).collect { event ->
                     refreshSuggestions()
+                    if (event is EmbeddingsReady) {
+                        searchDelegate.invalidateSearchCaches()
+                    }
                 }
             }
         }
@@ -327,47 +406,15 @@ class GalleryViewModel
         private fun recoverStaleImports() {
             viewModelScope.launch {
                 try {
-                    val staleThreshold = System.currentTimeMillis() - STALE_IMPORT_THRESHOLD_MS
-                    val staleRequests = importRequestDao.getStaleRequests(staleThreshold)
-                    if (staleRequests.isEmpty()) return@launch
-
-                    val wm = androidx.work.WorkManager.getInstance(context)
-                    val workInfos = wm.getWorkInfosForUniqueWork(
-                        com.adsamcik.riposte.core.common.AppConstants.IMPORT_WORK_NAME,
-                    ).get()
-                    val hasActiveWork = workInfos.any { !it.state.isFinished }
-
-                    if (hasActiveWork) {
-                        Timber.d("Import work still active, skipping stale recovery")
-                        return@launch
-                    }
-
-                    for (request in staleRequests) {
-                        Timber.w(
-                            "Marking stale import %s as failed (%d completed, %d failed of %d)",
-                            request.id,
-                            request.completedCount,
-                            request.failedCount,
-                            request.imageCount,
-                        )
-                        importRequestDao.updateRequestProgress(
-                            id = request.id,
-                            status = if (request.completedCount > 0) {
-                                ImportRequestEntity.STATUS_COMPLETED
-                            } else {
-                                ImportRequestEntity.STATUS_FAILED
-                            },
-                            completed = request.completedCount,
-                            failed = request.failedCount,
-                            updatedAt = System.currentTimeMillis(),
-                        )
+                    val recovered = recoverStaleImportsUseCase(STALE_IMPORT_THRESHOLD_MS)
+                    for (entry in recovered) {
                         _uiState.update {
                             it.copy(
                                 notification = GalleryNotification.ImportFailed(
                                     context.getString(
                                         R.string.gallery_import_stalled,
-                                        request.completedCount,
-                                        request.imageCount,
+                                        entry.completedCount,
+                                        entry.imageCount,
                                     ),
                                 ),
                             )
@@ -493,6 +540,7 @@ class GalleryViewModel
             if (_uiState.value.isSelectionMode) {
                 toggleSelection(memeId)
             } else {
+                _uiState.update { it.copy(isSearchFocused = false) }
                 viewModelScope.launch {
                     _effects.send(GalleryEffect.NavigateToMeme(memeId))
                 }
@@ -524,8 +572,12 @@ class GalleryViewModel
         }
 
         private fun enterSelectionMode() {
+            searchDelegate.onIntent(GalleryIntent.ClearSearch, viewModelScope)
             _uiState.update {
-                it.copy(isSelectionMode = true)
+                it.copy(
+                    isSelectionMode = true,
+                    isSearchFocused = false,
+                )
             }
         }
 
@@ -554,6 +606,12 @@ class GalleryViewModel
                         isSelectionMode = true,
                     )
                 }
+            }
+        }
+
+        private fun deselectAll() {
+            _uiState.update { state ->
+                state.copy(selectedMemeIds = emptySet())
             }
         }
 
@@ -714,5 +772,11 @@ class GalleryViewModel
 
             /** Imports stuck in IN_PROGRESS for longer than this are considered stale. */
             private const val STALE_IMPORT_THRESHOLD_MS = 30L * 60 * 1000
+
+            /** Minimum time a progress banner stays visible once shown. */
+            private const val PROGRESS_MIN_DISPLAY_MS = 2_000L
+
+            /** Minimum delay before hiding a progress banner on state change. */
+            private const val PROGRESS_IDLE_DEBOUNCE_MS = 500L
         }
     }

@@ -9,7 +9,7 @@ public class RateLimiterTests
     {
         var rl = new RateLimiter();
         Assert.Equal(0, rl.ConsecutiveFailures);
-        Assert.Equal(1.0, rl.CurrentDelay);
+        Assert.Equal(0.1, rl.CurrentDelay);
         Assert.False(rl.ShouldGiveUp());
     }
 
@@ -21,7 +21,7 @@ public class RateLimiterTests
         rl.RecordFailure(); // increases delay
         var delayAfterFailure = rl.CurrentDelay;
         rl.RecordSuccess();
-        Assert.True(rl.CurrentDelay < delayAfterFailure || rl.CurrentDelay == 1.0);
+        Assert.True(rl.CurrentDelay < delayAfterFailure || rl.CurrentDelay == 0.1);
         Assert.Equal(0, rl.ConsecutiveFailures);
     }
 
@@ -30,7 +30,7 @@ public class RateLimiterTests
     {
         var rl = new RateLimiter();
         var wait = rl.RecordFailure();
-        Assert.True(wait >= rl.CurrentDelay || wait >= 1.0);
+        Assert.True(wait >= rl.CurrentDelay || wait >= 0.1);
         Assert.Equal(1, rl.ConsecutiveFailures);
     }
 

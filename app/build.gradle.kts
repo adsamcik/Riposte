@@ -19,8 +19,8 @@ android {
         applicationId = "com.adsamcik.riposte"
         minSdk = 31
         targetSdk = 36
-        versionCode = 7
-        versionName = "0.3.4"
+        versionCode = 10
+        versionName = "0.4.2"
 
         testInstrumentationRunner = "com.adsamcik.riposte.core.testing.HiltTestRunner"
 
@@ -88,7 +88,8 @@ android {
             )
         }
 
-        // Google Play: no local models — delivered via AI Packs
+        // Google Play: models delivered via AI Packs (assetPacks) in AAB builds.
+        // For APK sideload testing, use the 'standard' flavor instead.
         getByName("googleplay") {
             assets.setSrcDirs(listOf("src/main/assets"))
         }
