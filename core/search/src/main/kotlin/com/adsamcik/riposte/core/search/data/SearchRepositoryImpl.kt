@@ -191,6 +191,10 @@ class SearchRepositoryImpl
             )
         }
 
+        override fun invalidateSearchCaches() {
+            searchOrchestrator.invalidateCaches()
+        }
+
         override fun getEmojiCounts(): Flow<List<Pair<String, Int>>> {
             return emojiTagDao.getEmojisOrderedByUsage().map { stats ->
                 stats.map { it.emoji to it.totalUsage }

@@ -246,6 +246,14 @@ class SearchDelegate
             }
         }
 
+        /**
+         * Invalidate cached search data (e.g., embedding candidate caches).
+         * Call when new embeddings are generated.
+         */
+        fun invalidateSearchCaches() {
+            searchUseCases.invalidateSearchCaches()
+        }
+
         companion object {
             private const val SEARCH_DEBOUNCE_MS = 200L
                 private val INTERNAL_QUERY_REGEX= Regex("^(is|type):", RegexOption.IGNORE_CASE)

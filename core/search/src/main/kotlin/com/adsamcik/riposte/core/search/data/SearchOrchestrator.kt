@@ -145,6 +145,16 @@ class SearchOrchestrator @Inject constructor(
         return boost.coerceAtMost(MAX_USAGE_BOOST)
     }
 
+    /**
+     * Invalidate caches across all registered search strategies.
+     * Call when underlying data changes (e.g., new embeddings generated).
+     */
+    fun invalidateCaches() {
+        for (strategy in strategies) {
+            strategy.invalidateCache()
+        }
+    }
+
     companion object {
         private const val DEFAULT_LIMIT = 20
 

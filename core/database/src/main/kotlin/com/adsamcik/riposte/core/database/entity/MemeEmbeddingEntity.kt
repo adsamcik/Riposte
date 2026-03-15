@@ -134,7 +134,11 @@ data class MemeEmbeddingEntity(
     companion object {
         /**
          * Current model version string.
-         * Update this when the embedding model changes.
+         *
+         * IMPORTANT: Must be kept in sync with
+         * [com.adsamcik.riposte.core.ml.EmbeddingModelVersionManager.CURRENT_VERSION] in core/ml.
+         * Cannot reference it directly due to module dependency direction
+         * (core/database cannot depend on core/ml).
          */
         const val CURRENT_MODEL_VERSION = "embeddinggemma:1.3.0"
 

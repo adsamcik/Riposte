@@ -38,4 +38,12 @@ interface SearchStrategy {
      * @return List of [SearchResult] sorted by relevance (best first).
      */
     suspend fun search(query: String, limit: Int): List<SearchResult>
+
+    /**
+     * Invalidate any cached data held by this strategy.
+     *
+     * Called when underlying data changes (e.g., new embeddings generated).
+     * Default implementation is a no-op for strategies that don't cache.
+     */
+    fun invalidateCache() {}
 }

@@ -389,8 +389,11 @@ class GalleryViewModel
                     eventBus.on<MemeShared>(),
                     eventBus.on<MemeImported>(),
                     eventBus.on<EmbeddingsReady>(),
-                ).collect {
+                ).collect { event ->
                     refreshSuggestions()
+                    if (event is EmbeddingsReady) {
+                        searchDelegate.invalidateSearchCaches()
+                    }
                 }
             }
         }

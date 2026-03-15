@@ -170,6 +170,14 @@ class SearchUseCases
         }
 
         /**
+         * Invalidate cached search data (e.g., embedding candidate caches).
+         * Call when embeddings are regenerated or underlying data changes.
+         */
+        fun invalidateSearchCaches() {
+            repository.invalidateSearchCaches()
+        }
+
+        /**
          * Get all memes for the suggestion engine.
          */
         fun getAllMemes(): Flow<List<Meme>> {

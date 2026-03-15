@@ -153,6 +153,10 @@ class SemanticSearchStrategy @Inject constructor(
         indexBuildAttempted = false
     }
 
+    override fun invalidateCache() {
+        invalidateCandidateCache()
+    }
+
     private suspend fun getCachedOrLoadCandidates(): List<MemeWithEmbeddings> {
         cachedCandidates?.let { return it }
 
