@@ -511,4 +511,54 @@ class GalleryViewModelShareAndMiscTest {
         }
 
     // endregion
+
+    // region EmbeddingsReady Cache Invalidation Tests
+
+    @Test
+    fun `EmbeddingsReady event triggers search cache invalidation`() =
+        runTest {
+            val eventBus = com.adsamcik.riposte.core.events.EventBus()
+            val useCases =
+                GalleryViewModelUseCases(
+                    getMemes = getMemesUseCase,
+                    getPagedMemes = getPagedMemesUseCase,
+                    getFavorites = getFavoritesUseCase,
+                    getMemesByEmoji = getMemesByEmojiUseCase,
+                    getMemeById = getMemeByIdUseCase,
+                    deleteMemes = deleteMemesUseCase,
+                    toggleFavorite = toggleFavoriteUseCase,
+                    getAllMemeIds = getAllMemeIdsUseCase,
+                    getAllEmojisWithCounts = getAllEmojisWithCountsUseCase,
+                    getAllEmojisWithTagCounts = getAllEmojisWithTagCountsUseCase,
+                    getLibraryStats = getLibraryStatsUseCase,
+                )
+            viewModel = GalleryViewModel(
+                context = context,
+                useCases = useCases,
+                getSuggestionsUseCase = getSuggestionsUseCase,
+                shareMemeUseCase = shareMemeUseCase,
+                galleryRepository = galleryRepository,
+                defaultDispatcher = mainDispatcherRule.testDispatcher,
+                preferencesDataStore = preferencesDataStore,
+                eventBus = eventBus,
+                recoverStaleImportsUseCase = recoverStaleImportsUseCase,
+                searchDelegate = searchDelegate,
+            )
+            advanceUntilIdle()
+
+            // Emit EmbeddingsReady event
+            eventBus.emit(
+                com.adsamcik.riposte.core.events.EmbeddingsReady(
+                    processedCount = 5,
+                    failedCount = 0,
+                    remainingCount = 0,
+                ),
+            )
+            advanceUntilIdle()
+
+            // Verify search cache invalidation was triggered
+            verify { searchDelegate.invalidateSearchCaches() }
+        }
+
+    // endregion
 }
