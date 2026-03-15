@@ -58,6 +58,7 @@ class EmbeddingManager
         companion object {
             private const val BYTES_PER_FLOAT = 4
             private const val HASH_BYTE_LENGTH = 16
+            private const val EXPECTED_TYPE_COUNT = 5
         }
         /**
          * Initializes the embedding model and resumes any incomplete indexing.
@@ -206,6 +207,10 @@ class EmbeddingManager
             val validCount = memeEmbeddingDao.countValidEmbeddings()
             val pendingCount = memeEmbeddingDao.countMemesWithoutEmbeddings()
             val regenerationCount = memeEmbeddingDao.countEmbeddingsNeedingRegeneration()
+            val incompleteCount = memeEmbeddingDao.countMemesWithIncompleteEmbeddings(
+                expectedTypeCount = EXPECTED_TYPE_COUNT,
+                currentVersion = versionManager.currentModelVersion,
+            )
 
             val rawError = embeddingGenerator.initializationError
 
@@ -213,6 +218,7 @@ class EmbeddingManager
                 validEmbeddingCount = validCount,
                 pendingEmbeddingCount = pendingCount,
                 regenerationNeededCount = regenerationCount,
+                incompleteEmbeddingCount = incompleteCount,
                 currentModelVersion = versionManager.currentModelVersion,
                 embeddingsByVersion = memeEmbeddingDao
                     .getEmbeddingCountByModelVersion()
@@ -374,6 +380,7 @@ data class EmbeddingStatistics(
     val validEmbeddingCount: Int,
     val pendingEmbeddingCount: Int,
     val regenerationNeededCount: Int,
+    val incompleteEmbeddingCount: Int = 0,
     val currentModelVersion: String,
     val embeddingsByVersion: Map<String, Int>,
     val modelError: String? = null,

@@ -96,6 +96,15 @@ class EmbeddingGenerationWorker
                         totalSuccess += successCount
                         totalFailure += failureCount
 
+                        // Persist attempt count so future runs skip legitimately-incomplete memes
+                        for (meme in pendingMemes) {
+                            try {
+                                embeddingRepository.markMemeFullyAttempted(meme.id)
+                            } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
+                                Timber.d(e, "Failed to mark meme %d as attempted", meme.id)
+                            }
+                        }
+
                         // If the entire batch failed, the model is likely broken — stop looping
                         if (successCount == 0 && failureCount > 0) {
                             val postRunModelError = embeddingGenerator.initializationError
@@ -113,11 +122,9 @@ class EmbeddingGenerationWorker
                         kotlinx.coroutines.delay(INTER_BATCH_DELAY_MS)
                     }
 
-                    // Subtract memes we already processed from the remaining count.
-                    // "Incomplete" memes (fewer than 5 types due to missing metadata)
-                    // are legitimately done — they just can't produce all types.
-                    val rawRemaining = embeddingRepository.countMemesNeedingEmbeddings()
-                    val remainingCount = (rawRemaining - processedMemeIds.size).coerceAtLeast(0)
+                    // Count remaining work — the DB now excludes already-attempted memes
+                    // via indexingAttempts, so no in-memory adjustment needed.
+                    val remainingCount = embeddingRepository.countMemesNeedingEmbeddings()
                     val elapsed = System.currentTimeMillis() - startTime
 
                     Timber.i(
@@ -478,7 +485,12 @@ class EmbeddingGenerationWorker
         companion object {
             const val WORK_NAME = "embedding_generation_work"
             const val MAX_RETRY_COUNT = 3
-            const val CURRENT_MODEL_VERSION = "embeddinggemma:1.3.0"
+
+            /**
+             * Current model version — delegates to the single source of truth in
+             * [com.adsamcik.riposte.core.ml.EmbeddingModelVersionManager].
+             */
+            val CURRENT_MODEL_VERSION = com.adsamcik.riposte.core.ml.EmbeddingModelVersionManager.CURRENT_VERSION
             private const val PERCENTAGE_MULTIPLIER = 100
             private const val BYTES_PER_FLOAT = 4
             private const val HASH_BYTE_LENGTH = 16
@@ -591,4 +603,11 @@ interface EmbeddingWorkRepository {
      * Delete embeddings with outdated model version.
      */
     suspend fun deleteOutdatedEmbeddings(currentVersion: String)
+
+    /**
+     * Mark a meme as having been fully attempted for embedding generation.
+     * Persists the attempt count so future worker runs skip memes
+     * that legitimately produce fewer than all embedding types.
+     */
+    suspend fun markMemeFullyAttempted(memeId: Long)
 }

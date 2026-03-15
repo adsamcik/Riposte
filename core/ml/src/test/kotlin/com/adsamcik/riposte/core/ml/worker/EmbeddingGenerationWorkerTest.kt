@@ -343,7 +343,8 @@ class EmbeddingGenerationWorkerTest {
             coEvery { embeddingRepository.getMemesNeedingEmbeddings(any()) } returns
                 listOf(createMemeData(id = 1, title = "Test"))
             mockEmbeddingGeneration(createTestEmbedding())
-            coEvery { embeddingRepository.countMemesNeedingEmbeddings() } returns 15
+            // After markMemeFullyAttempted, the DB count already reflects processed memes
+            coEvery { embeddingRepository.countMemesNeedingEmbeddings() } returns 14
 
             val worker = createWorker()
             val result = worker.doWork()

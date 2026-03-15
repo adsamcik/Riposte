@@ -3,6 +3,7 @@ package com.adsamcik.riposte.core.ml.worker
 import com.adsamcik.riposte.core.database.dao.MemeDao
 import com.adsamcik.riposte.core.database.dao.MemeEmbeddingDao
 import com.adsamcik.riposte.core.database.entity.MemeEmbeddingEntity
+import com.adsamcik.riposte.core.ml.EmbeddingModelVersionManager
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -32,7 +33,7 @@ class DefaultEmbeddingWorkRepository
             // Get memes with incomplete type coverage (partial failures)
             val memesIncomplete = memeEmbeddingDao.getMemeIdsWithIncompleteEmbeddings(
                 expectedTypeCount = EXPECTED_EMBEDDING_TYPES,
-                currentVersion = EmbeddingGenerationWorker.CURRENT_MODEL_VERSION,
+                currentVersion = EmbeddingModelVersionManager.CURRENT_VERSION,
                 limit = third,
             )
 
@@ -82,20 +83,18 @@ class DefaultEmbeddingWorkRepository
         }
 
         override suspend fun countMemesNeedingEmbeddings(): Int {
-            // Count distinct memes across all three sources to avoid double-counting.
-            // A meme can appear in multiple sources (e.g., no embeddings AND incomplete).
-            val withoutEmbeddings = memeEmbeddingDao.getMemeIdsWithoutEmbeddings(Int.MAX_VALUE).toSet()
-            val needingRegen = memeEmbeddingDao.getMemeIdsNeedingRegeneration(Int.MAX_VALUE).toSet()
-            val incomplete = memeEmbeddingDao.getMemeIdsWithIncompleteEmbeddings(
+            return memeEmbeddingDao.countAllMemesNeedingEmbeddings(
                 expectedTypeCount = EXPECTED_EMBEDDING_TYPES,
-                currentVersion = EmbeddingGenerationWorker.CURRENT_MODEL_VERSION,
-                limit = Int.MAX_VALUE,
-            ).toSet()
-            return (withoutEmbeddings + needingRegen + incomplete).size
+                currentVersion = EmbeddingModelVersionManager.CURRENT_VERSION,
+            )
         }
 
         override suspend fun deleteOutdatedEmbeddings(currentVersion: String) {
             memeEmbeddingDao.deleteOutdatedEmbeddings(currentVersion)
+        }
+
+        override suspend fun markMemeFullyAttempted(memeId: Long) {
+            memeEmbeddingDao.incrementIndexingAttempts(memeId)
         }
 
         companion object {
