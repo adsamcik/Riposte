@@ -67,6 +67,7 @@ class PromptFormattingTest {
         isInBackgroundFlow = MutableStateFlow(false)
 
         every { appLifecycleTracker.isInBackground } returns isInBackgroundFlow
+        every { embeddingGenerator.initializationError } returns null
     }
 
     // region Document Prompt Formatting

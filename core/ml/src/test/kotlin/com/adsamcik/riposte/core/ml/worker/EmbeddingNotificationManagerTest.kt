@@ -38,7 +38,7 @@ class EmbeddingNotificationManagerTest {
         assertThat(channel).isNotNull()
         assertThat(channel!!.importance).isEqualTo(NotificationManager.IMPORTANCE_LOW)
         assertThat(channel.description)
-            .isEqualTo("Shows progress when indexing memes for search in the background")
+            .isEqualTo("Shows progress while preparing AI-powered semantic search in the background")
         assertThat(channel.canShowBadge()).isFalse()
     }
 
@@ -60,8 +60,8 @@ class EmbeddingNotificationManagerTest {
         val notification = manager.buildProgressNotification(current = 5, total = 20)
 
         val extras = notification.extras
-        assertThat(extras.getString("android.title")).isEqualTo("Indexing memes")
-        assertThat(extras.getString("android.text")).isEqualTo("5 of 20")
+        assertThat(extras.getString("android.title")).isEqualTo("Enhancing AI search")
+        assertThat(extras.getString("android.text")).isEqualTo("5 of 20 memes · text search works now")
         assertThat(extras.getInt("android.progress")).isEqualTo(5)
         assertThat(extras.getInt("android.progressMax")).isEqualTo(20)
         assertThat(extras.getBoolean("android.progressIndeterminate")).isFalse()
@@ -84,8 +84,8 @@ class EmbeddingNotificationManagerTest {
         val notification = manager.buildCompleteNotification(successCount = 10, failedCount = 0)
 
         val extras = notification.extras
-        assertThat(extras.getString("android.title")).isEqualTo("Indexing complete")
-        assertThat(extras.getString("android.text")).isEqualTo("10 memes indexed for search")
+        assertThat(extras.getString("android.title")).isEqualTo("AI search ready")
+        assertThat(extras.getString("android.text")).isEqualTo("AI search ready for 10 memes")
     }
 
     @Test
@@ -93,8 +93,8 @@ class EmbeddingNotificationManagerTest {
         val notification = manager.buildCompleteNotification(successCount = 0, failedCount = 5)
 
         val extras = notification.extras
-        assertThat(extras.getString("android.title")).isEqualTo("Indexing complete")
-        assertThat(extras.getString("android.text")).isEqualTo("Indexing failed for 5 memes")
+        assertThat(extras.getString("android.title")).isEqualTo("AI search ready")
+        assertThat(extras.getString("android.text")).isEqualTo("AI search setup failed for 5 memes")
     }
 
     @Test
@@ -102,7 +102,7 @@ class EmbeddingNotificationManagerTest {
         val notification = manager.buildCompleteNotification(successCount = 8, failedCount = 2)
 
         val extras = notification.extras
-        assertThat(extras.getString("android.text")).isEqualTo("8 indexed, 2 failed")
+        assertThat(extras.getString("android.text")).isEqualTo("AI search ready for 8 memes, 2 skipped")
     }
 
     @Test
@@ -128,7 +128,7 @@ class EmbeddingNotificationManagerTest {
 
         val posted = shadowNotificationManager.allNotifications
         assertThat(posted).isNotEmpty()
-        val match = posted.find { it.extras.getString("android.title") == "Indexing complete" }
+        val match = posted.find { it.extras.getString("android.title") == "AI search ready" }
         assertThat(match).isNotNull()
     }
 
@@ -142,7 +142,7 @@ class EmbeddingNotificationManagerTest {
         manager.showCompleteNotification(successCount = 3, failedCount = 0)
 
         val posted = shadowNotificationManager.allNotifications
-        val match = posted.find { it.extras.getString("android.title") == "Indexing complete" }
+        val match = posted.find { it.extras.getString("android.title") == "AI search ready" }
         assertThat(match).isNull()
     }
 
