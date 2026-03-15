@@ -657,6 +657,58 @@ class EmbeddingGenerationWorkerTest {
 
     // endregion
 
+    // region markMemeFullyAttempted Regression Tests
+
+    @Test
+    fun `markMemeFullyAttempted is called for each processed meme`() =
+        runTest {
+            val memes =
+                listOf(
+                    createMemeData(id = 10, title = "Meme A", description = "Desc A"),
+                    createMemeData(id = 20, title = "Meme B", description = "Desc B"),
+                    createMemeData(id = 30, title = "Meme C", description = "Desc C"),
+                )
+            val embedding = createTestEmbedding()
+
+            coEvery { embeddingRepository.getMemesNeedingEmbeddings(any()) } returns memes
+            mockEmbeddingGeneration(embedding)
+            coEvery { embeddingRepository.countMemesNeedingEmbeddings() } returns 0
+
+            val worker = createWorker()
+            val result = worker.doWork()
+
+            assertThat(result).isInstanceOf(ListenableWorker.Result.Success::class.java)
+            coVerify(exactly = 1) { embeddingRepository.markMemeFullyAttempted(10) }
+            coVerify(exactly = 1) { embeddingRepository.markMemeFullyAttempted(20) }
+            coVerify(exactly = 1) { embeddingRepository.markMemeFullyAttempted(30) }
+        }
+
+    @Test
+    fun `markMemeFullyAttempted failure does not crash worker`() =
+        runTest {
+            val memes =
+                listOf(
+                    createMemeData(id = 1, title = "Meme 1", description = "Desc 1"),
+                    createMemeData(id = 2, title = "Meme 2", description = "Desc 2"),
+                )
+            val embedding = createTestEmbedding()
+
+            coEvery { embeddingRepository.getMemesNeedingEmbeddings(any()) } returns memes
+            mockEmbeddingGeneration(embedding)
+            coEvery { embeddingRepository.countMemesNeedingEmbeddings() } returns 0
+            coEvery { embeddingRepository.markMemeFullyAttempted(any()) } throws RuntimeException("DB write failed")
+
+            val worker = createWorker()
+            val result = worker.doWork()
+
+            // Worker should still succeed despite markMemeFullyAttempted throwing
+            assertThat(result).isInstanceOf(ListenableWorker.Result.Success::class.java)
+            val data = (result as ListenableWorker.Result.Success).outputData
+            assertThat(data.getInt(EmbeddingGenerationWorker.KEY_PROCESSED_COUNT, -1)).isEqualTo(2)
+        }
+
+    // endregion
+
     // region Per-Type Error Isolation Tests
 
     @Test
