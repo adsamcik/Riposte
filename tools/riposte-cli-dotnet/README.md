@@ -64,7 +64,7 @@ meme-cli annotate ./my-memes --zip patch
 # Preview what would be processed without making changes
 meme-cli annotate ./my-memes --dry-run
 
-# Find and remove duplicates
+# Find and remove exact duplicates (default)
 meme-cli dedupe ./my-memes --dry-run
 ```
 
@@ -91,13 +91,13 @@ Annotate images with AI-generated metadata.
 
 ### `meme-cli dedupe <folder>`
 
-Find and remove duplicate images.
+Find and remove duplicate images. By default, this only removes exact duplicates.
 
 | Option | Description |
 |--------|-------------|
 | `--output, -o` | Directory where sidecar files are stored |
-| `--similarity-threshold` | Max Hamming distance (default: `10`) |
-| `--no-near` | Only remove exact duplicates |
+| `--similarity-threshold` | Max Hamming distance when `--include-near` is used (default: `10`) |
+| `--include-near` | Also remove near duplicates |
 | `--dry-run` | Preview without deleting |
 | `--yes, -y` | Skip confirmation prompt |
 | `--verbose, -v` | Detailed output |

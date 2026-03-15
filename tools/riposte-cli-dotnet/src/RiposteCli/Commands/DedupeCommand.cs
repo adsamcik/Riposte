@@ -10,15 +10,20 @@ public static class DedupeCommand
     {
         var folderArg = new Argument<DirectoryInfo>("folder") { Description = "Path to a directory containing images to deduplicate" };
         var outputOpt = new Option<DirectoryInfo?>("--output", "-o") { Description = "Directory where sidecar files are stored" };
-        var thresholdOpt = new Option<int>("--similarity-threshold") { Description = "Max Hamming distance for near-duplicate detection (0-256)", DefaultValueFactory = _ => 10 };
-        var noNearOpt = new Option<bool>("--no-near") { Description = "Only remove exact duplicates" };
+        var thresholdOpt = new Option<int>("--similarity-threshold") { Description = "Max Hamming distance for near-duplicate detection when --include-near is used (0-256)", DefaultValueFactory = _ => 10 };
+        var includeNearOpt = new Option<bool>("--include-near") { Description = "Also remove near duplicates" };
+        var noNearOpt = new Option<bool>("--no-near")
+        {
+            Description = "Deprecated alias. Exact-only cleanup is now the default.",
+            Hidden = true,
+        };
         var dryRunOpt = new Option<bool>("--dry-run") { Description = "Show duplicates without deleting anything" };
         var yesOpt = new Option<bool>("--yes", "-y") { Description = "Skip confirmation prompt" };
         var verboseOpt = new Option<bool>("--verbose", "-v") { Description = "Show detailed output" };
 
         var command = new Command("dedupe", "Find and remove duplicate images in a folder")
         {
-            folderArg, outputOpt, thresholdOpt, noNearOpt, dryRunOpt, yesOpt, verboseOpt,
+            folderArg, outputOpt, thresholdOpt, includeNearOpt, noNearOpt, dryRunOpt, yesOpt, verboseOpt,
         };
 
         command.SetAction((parseResult) =>
@@ -26,11 +31,12 @@ public static class DedupeCommand
             var folder = parseResult.GetValue(folderArg)!;
             var output = parseResult.GetValue(outputOpt);
             var threshold = parseResult.GetValue(thresholdOpt);
-            var noNear = parseResult.GetValue(noNearOpt);
+            var includeNear = parseResult.GetValue(includeNearOpt);
+            var legacyNoNear = parseResult.GetResult(noNearOpt) is not null;
             var dryRun = parseResult.GetValue(dryRunOpt);
             var yes = parseResult.GetValue(yesOpt);
             var verbose = parseResult.GetValue(verboseOpt);
-            Execute(folder, output, threshold, noNear, dryRun, yes, verbose);
+            Execute(folder, output, threshold, includeNear, dryRun, yes, verbose, legacyNoNear);
         });
 
         return command;
@@ -38,10 +44,13 @@ public static class DedupeCommand
 
     private static void Execute(
         DirectoryInfo folder, DirectoryInfo? output, int threshold,
-        bool noNear, bool dryRun, bool yes, bool verbose)
+        bool includeNear, bool dryRun, bool yes, bool verbose, bool legacyNoNear)
     {
         var outputDir = output?.FullName ?? folder.FullName;
-        var detectNear = !noNear;
+        var detectNear = includeNear;
+
+        if (legacyNoNear)
+            AnsiConsole.MarkupLine("[dim]Note: --no-near is no longer needed — exact-only cleanup is now the default[/]");
 
         var images = SidecarService.GetImagesInFolder(folder.FullName);
         if (images.Count == 0)

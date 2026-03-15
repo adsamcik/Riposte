@@ -35,7 +35,7 @@ public sealed class DedupeCommandTests
 
         Assert.Contains("--output", optionNames);
         Assert.Contains("--similarity-threshold", optionNames);
-        Assert.Contains("--no-near", optionNames);
+        Assert.Contains("--include-near", optionNames);
         Assert.Contains("--dry-run", optionNames);
         Assert.Contains("--yes", optionNames);
         Assert.Contains("--verbose", optionNames);
@@ -52,7 +52,17 @@ public sealed class DedupeCommandTests
     }
 
     [Fact]
-    public void DedupeCommand_ParseThresholdNoNearVerbose_NoErrors()
+    public void DedupeCommand_ParseThresholdIncludeNearVerbose_NoErrors()
+    {
+        var root = new RootCommand("test") { DedupeCommand.Create() };
+
+        var parseResult = root.Parse("dedupe . --similarity-threshold 5 --include-near --verbose");
+ 
+        Assert.Empty(parseResult.Errors);
+    }
+
+    [Fact]
+    public void DedupeCommand_ParseLegacyNoNear_NoErrors()
     {
         var root = new RootCommand("test") { DedupeCommand.Create() };
 

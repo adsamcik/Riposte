@@ -118,7 +118,7 @@ public class CommandInvocationTests
         var cmd = DedupeCommand.Create();
         var root = new RootCommand("test") { cmd };
 
-        var result = root.Parse("dedupe . --dry-run --yes --verbose --no-near --similarity-threshold 5");
+        var result = root.Parse("dedupe . --dry-run --yes --verbose --include-near --similarity-threshold 5");
         Assert.Empty(result.Errors);
     }
 
