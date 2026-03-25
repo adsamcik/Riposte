@@ -472,6 +472,15 @@ public static class AnnotateCommand
                                             $"\n[yellow]Server error. Waiting {waitTime:F1}s... (attempt {attempt + 1}/5)[/]");
                                         await Task.Delay(TimeSpan.FromSeconds(waitTime));
                                     }
+                                    catch (ContentRefusedException)
+                                    {
+                                        AnsiConsole.MarkupLineInterpolated(
+                                            $"  [yellow]⚠[/] {Path.GetFileName(imagePath)}: [yellow]Skipped — model refused (content policy)[/] [dim]({sw.Elapsed.TotalSeconds:F1}s)[/]");
+                                        task.Increment(1);
+                                        lock (errors)
+                                            errors.Add((imagePath, "Skipped — model refused to analyze (content policy)"));
+                                        return;
+                                    }
                                     catch (CopilotAnalysisException ex)
                                     {
                                         AnsiConsole.MarkupLineInterpolated(

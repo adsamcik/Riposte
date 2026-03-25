@@ -251,6 +251,13 @@ public sealed class CopilotService
     {
         content = content.Trim();
 
+        // Detect model refusal before attempting JSON parse
+        if (IsModelRefusal(content))
+        {
+            throw new ContentRefusedException(
+                $"Model refused to analyze image (content policy). Response: {content[..Math.Min(200, content.Length)]}");
+        }
+
         if (content.StartsWith("```json"))
             content = content[7..];
         if (content.StartsWith("```"))
@@ -277,6 +284,29 @@ public sealed class CopilotService
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// Detect model refusal responses (content policy / safety filter).
+    /// These are plain-text responses that start with refusal phrases instead of JSON.
+    /// </summary>
+    internal static bool IsModelRefusal(string content)
+    {
+        if (content.Length == 0 || content[0] == '{' || content[0] == '[')
+            return false;
+
+        var lower = content.ToLowerInvariant();
+        return lower.StartsWith("i'm sorry") ||
+               lower.StartsWith("i cannot") ||
+               lower.StartsWith("i can't") ||
+               lower.StartsWith("sorry,") ||
+               lower.Contains("cannot assist with that") ||
+               lower.Contains("can't assist with that") ||
+               lower.Contains("content policy") ||
+               lower.Contains("i'm unable to") ||
+               lower.Contains("i am unable to") ||
+               lower.Contains("i'm not able to") ||
+               lower.Contains("against my guidelines");
     }
 
     private static void ClassifyAndThrow(Exception ex, RateLimiter? rateLimiter)
@@ -326,3 +356,5 @@ public class ServerErrorException(string message, int? statusCode = null)
 {
     public int? StatusCode { get; } = statusCode;
 }
+
+public class ContentRefusedException(string message) : CopilotAnalysisException(message);

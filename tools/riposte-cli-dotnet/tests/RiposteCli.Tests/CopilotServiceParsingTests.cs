@@ -300,4 +300,39 @@ public class CopilotServiceParsingTests
     }
 
     #endregion
+
+    #region IsModelRefusal — Refusal Detection
+
+    [Theory]
+    [InlineData("I'm sorry, but I cannot assist with that request.")]
+    [InlineData("I cannot analyze this image as it may contain inappropriate content.")]
+    [InlineData("I can't assist with that request.")]
+    [InlineData("Sorry, I'm unable to process this image.")]
+    [InlineData("I'm unable to analyze this image due to content policy restrictions.")]
+    [InlineData("I am unable to process this request.")]
+    [InlineData("I'm not able to help with this image.")]
+    [InlineData("This request is against my guidelines.")]
+    public void IsModelRefusal_DetectsRefusalPhrases(string content)
+    {
+        Assert.True(CopilotService.IsModelRefusal(content));
+    }
+
+    [Theory]
+    [InlineData("""{"emojis": ["😂"]}""")]
+    [InlineData("```json\n{\"emojis\": [\"😂\"]}```")]
+    [InlineData("")]
+    [InlineData("[\"array\"]")]
+    public void IsModelRefusal_DoesNotFalsePositiveOnValidContent(string content)
+    {
+        Assert.False(CopilotService.IsModelRefusal(content));
+    }
+
+    [Fact]
+    public void ParseResponseContent_RefusalResponse_ThrowsContentRefusedException()
+    {
+        var refusal = "I'm sorry, but I cannot assist with that request.";
+        Assert.Throws<ContentRefusedException>(() => CopilotService.ParseResponseContent(refusal));
+    }
+
+    #endregion
 }
