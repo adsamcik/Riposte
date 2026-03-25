@@ -94,10 +94,8 @@ public sealed class CopilotService
             finally
             {
                 var sessionId = session.SessionId;
-                await session.DisposeAsync();
-                // Remove session from Copilot history to avoid polluting the user's session list
-                try { await client.DeleteSessionAsync(sessionId); }
-                catch { /* best-effort cleanup */ }
+                try { await session.DisposeAsync(); } catch { /* best-effort */ }
+                try { await client.DeleteSessionAsync(sessionId); } catch { /* best-effort */ }
             }
         }
         catch (FileNotFoundException)
@@ -108,7 +106,7 @@ public sealed class CopilotService
         finally
         {
             if (ownsClient)
-                await client.DisposeAsync();
+                try { await client.DisposeAsync(); } catch { /* best-effort */ }
         }
     }
 
@@ -192,9 +190,8 @@ public sealed class CopilotService
             finally
             {
                 var sessionId = session.SessionId;
-                await session.DisposeAsync();
-                try { await client.DeleteSessionAsync(sessionId); }
-                catch { /* best-effort cleanup */ }
+                try { await session.DisposeAsync(); } catch { /* best-effort */ }
+                try { await client.DeleteSessionAsync(sessionId); } catch { /* best-effort */ }
             }
         }
         catch (FileNotFoundException)
@@ -205,7 +202,7 @@ public sealed class CopilotService
         finally
         {
             if (ownsClient)
-                await client.DisposeAsync();
+                try { await client.DisposeAsync(); } catch { /* best-effort */ }
         }
     }
 

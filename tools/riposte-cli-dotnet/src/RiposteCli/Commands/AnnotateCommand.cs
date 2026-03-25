@@ -520,7 +520,7 @@ public static class AnnotateCommand
                             }
                         });
 
-                        await Task.WhenAll(tasks);
+                        await Task.WhenAll(tasks.ToList());
                     });
             }
             catch (Exception ex)
@@ -536,7 +536,15 @@ public static class AnnotateCommand
             }
             finally
             {
-                await client.DisposeAsync();
+                try
+                {
+                    await client.DisposeAsync();
+                }
+                catch (Exception disposeEx)
+                {
+                    AnsiConsole.MarkupLineInterpolated(
+                        $"\n{Ts()}[yellow]Warning: error during cleanup: {Markup.Escape(disposeEx.Message)}[/]");
+                }
             }
 
             // Summary
