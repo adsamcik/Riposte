@@ -474,12 +474,18 @@ public static class AnnotateCommand
                                     }
                                     catch (ContentRefusedException)
                                     {
-                                        AnsiConsole.MarkupLineInterpolated(
-                                            $"  [yellow]⚠[/] {Path.GetFileName(imagePath)}: [yellow]Skipped — model refused (content policy)[/] [dim]({sw.Elapsed.TotalSeconds:F1}s)[/]");
-                                        task.Increment(1);
-                                        lock (errors)
-                                            errors.Add((imagePath, "Skipped — model refused to analyze (content policy)"));
-                                        return;
+                                        if (attempt + 1 >= 5)
+                                        {
+                                            AnsiConsole.MarkupLineInterpolated(
+                                                $"  [yellow]⚠[/] {Path.GetFileName(imagePath)}: [yellow]Skipped — model refused after {attempt + 1} attempts (content policy)[/] [dim]({sw.Elapsed.TotalSeconds:F1}s)[/]");
+                                            task.Increment(1);
+                                            lock (errors)
+                                                errors.Add((imagePath, "Skipped — model refused to analyze (content policy)"));
+                                            return;
+                                        }
+                                        AnsiConsole.MarkupLine(
+                                            $"\n[yellow]Model refused {Path.GetFileName(imagePath)} — retrying (attempt {attempt + 1}/5)[/]");
+                                        await Task.Delay(TimeSpan.FromSeconds(2 * (attempt + 1)));
                                     }
                                     catch (CopilotAnalysisException ex)
                                     {
