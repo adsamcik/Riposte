@@ -417,7 +417,7 @@ public static class AnnotateCommand
                                                 return;
                                             }
 
-                                            metadata = SidecarMerger.Merge(existing, result, plan.AffectedGroups);
+                                            metadata = SidecarMerger.Merge(existing, result, plan.AffectedGroups, currentSchemaVersion);
                                             sidecarPath = SidecarService.WriteSidecar(imagePath, metadata, outputDir);
 
                                             lock (manifestLock)
@@ -560,7 +560,7 @@ public static class AnnotateCommand
                     var existing = SidecarMerger.LoadSidecar(plan.ImagePath, outputDir);
                     if (existing is null) continue;
 
-                    var cleaned = SidecarMerger.StripRemovedGroups(existing, currentPromptHashes);
+                    var cleaned = SidecarMerger.StripRemovedGroups(existing, currentPromptHashes, currentSchemaVersion);
                     if (!ReferenceEquals(cleaned, existing))
                     {
                         SidecarService.WriteSidecar(plan.ImagePath, cleaned, outputDir);

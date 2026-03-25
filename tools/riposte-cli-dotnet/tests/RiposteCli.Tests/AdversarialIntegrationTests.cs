@@ -452,9 +452,9 @@ public sealed class AdversarialIntegrationTests : IDisposable
         var plan = RebuildPlanner.PlanForImage(
             image, manifest, _workspace.PromptHashes, DefaultModel, "1.5", _workspace.OutputDir);
 
-        // Schema version mismatch is not directly checked by planner (it checks field hashes),
-        // but this validates the entry stays Skip when schema matches
-        Assert.Equal(RebuildScope.Skip, plan.Scope);
+        // Schema version mismatch is now detected by planner and triggers a full rebuild
+        Assert.Equal(RebuildScope.Full, plan.Scope);
+        Assert.Contains("schema version changed", plan.Reason);
     }
 
     private static string? JsonPropertyRaw(string json, string property)

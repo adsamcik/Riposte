@@ -276,6 +276,29 @@ public sealed class PlannerScenarioTests : IDisposable
         AssertPlanCounts(run2Plans, skip: 0, full: 3, partial: 0);
     }
 
+    [Fact]
+    public void Lifecycle_SchemaVersionBump_AllFullOnSecondRun()
+    {
+        const string oldSchema = "1.3";
+        const string newSchema = "1.4";
+
+        CreateImages(5);
+        var promptHashes = PromptHasher.ComputeAll(["en"]);
+        var run1Manifest = ManifestService.Load(_outputDir);
+        var run1Plans = RebuildPlanner.Plan(
+            SidecarService.GetImagesInFolder(_imagesDir), run1Manifest, promptHashes, MiniModel, oldSchema, _outputDir);
+        AssertPlanCounts(run1Plans, skip: 0, full: 5, partial: 0);
+        RecordPlannedBuilds(run1Plans, run1Manifest, promptHashes, MiniModel, schemaVersion: oldSchema);
+        ManifestService.Save(_outputDir, run1Manifest);
+
+        // Re-run with new schema version — all images should be rebuilt
+        var run2Manifest = ManifestService.Load(_outputDir);
+        var run2Plans = RebuildPlanner.Plan(
+            SidecarService.GetImagesInFolder(_imagesDir), run2Manifest, promptHashes, MiniModel, newSchema, _outputDir);
+        AssertPlanCounts(run2Plans, skip: 0, full: 5, partial: 0);
+        Assert.All(run2Plans, p => Assert.Contains("schema version changed", p.Reason));
+    }
+
     private void CreateImages(int count, int startIndex = 1)
     {
         for (var i = 0; i < count; i++)
@@ -292,7 +315,8 @@ public sealed class PlannerScenarioTests : IDisposable
         BuildManifest manifest,
         Dictionary<string, string> promptHashes,
         string model,
-        string? optimizationFingerprint = null)
+        string? optimizationFingerprint = null,
+        string schemaVersion = SchemaVersion)
     {
         foreach (var plan in plans.Where(p => p.Scope is RebuildScope.Full or RebuildScope.Partial))
         {
@@ -306,7 +330,7 @@ public sealed class PlannerScenarioTests : IDisposable
                 fileName,
                 contentHash,
                 model,
-                SchemaVersion,
+                schemaVersion,
                 promptHashes,
                 optimizationFingerprint);
             ManifestService.RecordBundleOptimized(manifest, fileName);

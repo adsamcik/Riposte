@@ -43,7 +43,8 @@ public static class SidecarMerger
     public static SidecarMetadata Merge(
         SidecarMetadata existing,
         AnalysisResult partial,
-        IReadOnlyList<string> affectedGroups)
+        IReadOnlyList<string> affectedGroups,
+        string? currentSchemaVersion = null)
     {
         var emojis = existing.Emojis;
         var title = existing.Title;
@@ -95,7 +96,7 @@ public static class SidecarMerger
 
         return new SidecarMetadata
         {
-            SchemaVersion = existing.SchemaVersion,
+            SchemaVersion = currentSchemaVersion ?? existing.SchemaVersion,
             Emojis = emojis,
             CreatedAt = existing.CreatedAt,
             Title = title,
@@ -116,7 +117,8 @@ public static class SidecarMerger
     /// </summary>
     public static SidecarMetadata StripRemovedGroups(
         SidecarMetadata existing,
-        Dictionary<string, string> currentPromptHashes)
+        Dictionary<string, string> currentPromptHashes,
+        string? currentSchemaVersion = null)
     {
         var changed = false;
 
@@ -162,7 +164,7 @@ public static class SidecarMerger
 
         return new SidecarMetadata
         {
-            SchemaVersion = existing.SchemaVersion,
+            SchemaVersion = currentSchemaVersion ?? existing.SchemaVersion,
             Emojis = emojis,
             CreatedAt = existing.CreatedAt,
             Title = title,

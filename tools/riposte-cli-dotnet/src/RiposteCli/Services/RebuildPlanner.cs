@@ -151,6 +151,18 @@ public static class RebuildPlanner
             };
         }
 
+        // Schema version changed → full build (legacy sidecar upgrade)
+        if (entry.SchemaVersion != currentSchemaVersion)
+        {
+            return new ImageRebuildPlan
+            {
+                ImagePath = imagePath,
+                Scope = RebuildScope.Full,
+                NeedsReoptimization = needsReopt,
+                Reason = $"schema version changed ({entry.SchemaVersion} → {currentSchemaVersion})",
+            };
+        }
+
         // Compare field-level prompt hashes
         var staleGroups = new List<string>();
         var reasons = new List<string>();

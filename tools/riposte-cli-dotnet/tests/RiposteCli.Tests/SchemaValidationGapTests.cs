@@ -143,14 +143,14 @@ public sealed class SchemaValidationGapTests : IDisposable
     }
 
     // ═══════════════════════════════════════════════════════════════
-    // GAP 2: RebuildPlanner ignores schemaVersion — dead parameter
+    // GAP 2 (FIXED): RebuildPlanner now checks schemaVersion
     // ═══════════════════════════════════════════════════════════════
-    // PlanForImage accepts currentSchemaVersion but never compares it
-    // to entry.SchemaVersion. A schema bump without prompt changes
-    // won't trigger a rebuild.
+    // PlanForImage compares currentSchemaVersion to entry.SchemaVersion.
+    // A schema bump without prompt changes now correctly triggers a
+    // full rebuild to upgrade legacy sidecars.
 
     [Fact]
-    public void PlanForImage_SchemaVersionChange_DoesNotTriggerRebuild()
+    public void PlanForImage_SchemaVersionChange_TriggersFullRebuild()
     {
         var imagePath = CreateTestImage("schema.png");
         WriteSidecar("schema.png", CreateFullExisting());
@@ -178,9 +178,9 @@ public sealed class SchemaValidationGapTests : IDisposable
         var plan = RebuildPlanner.PlanForImage(
             imagePath, manifest, hashes, TestModel, "1.5", _outputDir);
 
-        // Documents the current behavior: schema version alone doesn't trigger rebuild.
-        // This is a known limitation — schema changes must accompany prompt changes.
-        Assert.Equal(RebuildScope.Skip, plan.Scope);
+        // Schema version change now correctly triggers a full rebuild.
+        Assert.Equal(RebuildScope.Full, plan.Scope);
+        Assert.Contains("schema version changed", plan.Reason);
     }
 
     // ═══════════════════════════════════════════════════════════════
