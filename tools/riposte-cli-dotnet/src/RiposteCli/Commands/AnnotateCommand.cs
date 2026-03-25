@@ -11,6 +11,9 @@ namespace RiposteCli.Commands;
 
 public static class AnnotateCommand
 {
+    /// <summary>Returns a dim HH:mm:ss timestamp prefix for log output.</summary>
+    private static string Ts() => $"[dim]{DateTime.Now:HH:mm:ss}[/] ";
+
     public static Command Create()
     {
         var folderArg = new Argument<DirectoryInfo>("folder") { Description = "Path to a directory containing images to annotate" };
@@ -178,7 +181,7 @@ public static class AnnotateCommand
         var imagesToOptimize = needsOptimization.Count > 0 ? needsOptimization : workPlans.Select(p => p.ImagePath).ToList();
         if (imagesToOptimize.Count > 0 && !dryRun)
         {
-            AnsiConsole.MarkupLine("[dim]Downscaling images for API (max 1200px, Lanczos3)...[/]");
+            AnsiConsole.MarkupLine($"{Ts()}[dim]Downscaling images for API (max 1200px, Lanczos3)...[/]");
             var optimizeCount = 0;
             apiOptimizedMap = ImageOptimizer.OptimizeBatchForApi(imagesToOptimize, outputDir, concurrency: concurrency,
                 onComplete: (orig, opt) =>
@@ -191,7 +194,7 @@ public static class AnnotateCommand
                     }
                 });
             var resized = apiOptimizedMap.Count(kv => kv.Key != kv.Value);
-            AnsiConsole.MarkupLine($"[green]✓ Prepared {apiOptimizedMap.Count} image(s) ({resized} downscaled)[/]");
+            AnsiConsole.MarkupLine($"{Ts()}[green]✓ Prepared {apiOptimizedMap.Count} image(s) ({resized} downscaled)[/]");
 
             // Update manifest for skip+reopt images (no API call, just optimization tracking)
             var skipReoptPlans = plans.Where(p => p.Scope == RebuildScope.Skip && p.NeedsReoptimization).ToList();
@@ -210,9 +213,9 @@ public static class AnnotateCommand
         Dictionary<string, string>? bundleOptimizedMap = null;
         if (zipMode == ZipMode.Full && !dryRun)
         {
-            AnsiConsole.MarkupLine($"[dim]Converting {allImages.Count} image(s) to WebP for ZIP bundle...[/]");
+            AnsiConsole.MarkupLine($"{Ts()}[dim]Converting {allImages.Count} image(s) to WebP for ZIP bundle...[/]");
             bundleOptimizedMap = ImageOptimizer.OptimizeBatchForBundle(allImages, outputDir, concurrency: concurrency);
-            AnsiConsole.MarkupLine($"[green]✓ Converted {bundleOptimizedMap.Count} image(s) to WebP[/]");
+            AnsiConsole.MarkupLine($"{Ts()}[green]✓ Converted {bundleOptimizedMap.Count} image(s) to WebP[/]");
         }
 
         // Show mode and counts
@@ -410,7 +413,7 @@ public static class AnnotateCommand
                                             {
                                                 // Sidecar disappeared between planning and execution — skip and report
                                                 AnsiConsole.MarkupLineInterpolated(
-                                                    $"  [red]✗[/] {Path.GetFileName(imagePath)}: sidecar disappeared during partial rebuild, re-run to do full rebuild [dim]({sw.Elapsed.TotalSeconds:F1}s)[/]");
+                                                    $"{Ts()}  [red]✗[/] {Path.GetFileName(imagePath)}: sidecar disappeared during partial rebuild, re-run to do full rebuild [dim]({sw.Elapsed.TotalSeconds:F1}s)[/]");
                                                 task.Increment(1);
                                                 lock (errors)
                                                     errors.Add((imagePath, "Sidecar disappeared during partial rebuild"));
@@ -430,7 +433,7 @@ public static class AnnotateCommand
                                         var scopeLabel = plan.Scope == RebuildScope.Full ? "" : $" [dim]partial:{string.Join(",", plan.AffectedGroups)}[/]";
                                         var emojis = string.Join(" ", metadata.Emojis);
                                         AnsiConsole.MarkupLine(
-                                            $"  [green]✓[/] {Markup.Escape(Path.GetFileName(imagePath))} → {Markup.Escape(emojis)}{scopeLabel} [dim]({sw.Elapsed.TotalSeconds:F1}s)[/]");
+                                            $"{Ts()}  [green]✓[/] {Markup.Escape(Path.GetFileName(imagePath))} → {Markup.Escape(emojis)}{scopeLabel} [dim]({sw.Elapsed.TotalSeconds:F1}s)[/]");
                                         task.Increment(1);
 
                                         lock (processed)
@@ -439,7 +442,7 @@ public static class AnnotateCommand
                                     }
                                     catch (CopilotNotAuthenticatedException ex)
                                     {
-                                        AnsiConsole.MarkupLineInterpolated($"\n[red]Error: {ex.Message}[/]");
+                                        AnsiConsole.MarkupLineInterpolated($"\n{Ts()}[red]Error: {ex.Message}[/]");
                                         task.Increment(1);
                                         lock (errors)
                                             errors.Add((imagePath, $"Auth error: {ex.Message}"));
@@ -456,7 +459,7 @@ public static class AnnotateCommand
                                             return;
                                         }
                                         AnsiConsole.MarkupLine(
-                                            $"\n[yellow]Rate limit hit — paused {waitTime:F1}s (attempt {attempt + 1}/5, concurrency → {limiter.CurrentConcurrency})[/]");
+                                            $"\n{Ts()}[yellow]Rate limit hit — paused {waitTime:F1}s (attempt {attempt + 1}/5, concurrency → {limiter.CurrentConcurrency})[/]");
                                     }
                                     catch (ServerErrorException ex)
                                     {
@@ -469,7 +472,7 @@ public static class AnnotateCommand
                                             return;
                                         }
                                         AnsiConsole.MarkupLine(
-                                            $"\n[yellow]Server error. Waiting {waitTime:F1}s... (attempt {attempt + 1}/5)[/]");
+                                            $"\n{Ts()}[yellow]Server error. Waiting {waitTime:F1}s... (attempt {attempt + 1}/5)[/]");
                                         await Task.Delay(TimeSpan.FromSeconds(waitTime));
                                     }
                                     catch (ContentRefusedException)
@@ -477,20 +480,20 @@ public static class AnnotateCommand
                                         if (attempt + 1 >= 5)
                                         {
                                             AnsiConsole.MarkupLineInterpolated(
-                                                $"  [yellow]⚠[/] {Path.GetFileName(imagePath)}: [yellow]Skipped — model refused after {attempt + 1} attempts (content policy)[/] [dim]({sw.Elapsed.TotalSeconds:F1}s)[/]");
+                                                $"{Ts()}  [yellow]⚠[/] {Path.GetFileName(imagePath)}: [yellow]Skipped — model refused after {attempt + 1} attempts (content policy)[/] [dim]({sw.Elapsed.TotalSeconds:F1}s)[/]");
                                             task.Increment(1);
                                             lock (errors)
                                                 errors.Add((imagePath, "Skipped — model refused to analyze (content policy)"));
                                             return;
                                         }
                                         AnsiConsole.MarkupLine(
-                                            $"\n[yellow]Model refused {Path.GetFileName(imagePath)} — retrying (attempt {attempt + 1}/5)[/]");
+                                            $"\n{Ts()}[yellow]Model refused {Path.GetFileName(imagePath)} — retrying (attempt {attempt + 1}/5)[/]");
                                         await Task.Delay(TimeSpan.FromSeconds(2 * (attempt + 1)));
                                     }
                                     catch (CopilotAnalysisException ex)
                                     {
                                         AnsiConsole.MarkupLineInterpolated(
-                                            $"  [red]✗[/] {Path.GetFileName(imagePath)}: {ex.Message} [dim]({sw.Elapsed.TotalSeconds:F1}s)[/]");
+                                            $"{Ts()}  [red]✗[/] {Path.GetFileName(imagePath)}: {ex.Message} [dim]({sw.Elapsed.TotalSeconds:F1}s)[/]");
                                         task.Increment(1);
                                         lock (errors)
                                             errors.Add((imagePath, ex.Message));
@@ -499,7 +502,7 @@ public static class AnnotateCommand
                                     catch (Exception ex)
                                     {
                                         AnsiConsole.MarkupLineInterpolated(
-                                            $"  [red]✗[/] {Markup.Escape(Path.GetFileName(imagePath))}: Unexpected {ex.GetType().Name}: {Markup.Escape(ex.Message)} [dim]({sw.Elapsed.TotalSeconds:F1}s)[/]");
+                                            $"{Ts()}  [red]✗[/] {Markup.Escape(Path.GetFileName(imagePath))}: Unexpected {ex.GetType().Name}: {Markup.Escape(ex.Message)} [dim]({sw.Elapsed.TotalSeconds:F1}s)[/]");
                                         task.Increment(1);
                                         lock (errors)
                                             errors.Add((imagePath, $"{ex.GetType().Name}: {ex.Message}"));
@@ -522,7 +525,7 @@ public static class AnnotateCommand
             }
             catch (Exception ex)
             {
-                AnsiConsole.MarkupLineInterpolated($"\n[red]Fatal error during annotation: {ex.GetType().Name}: {Markup.Escape(ex.Message)}[/]");
+                AnsiConsole.MarkupLineInterpolated($"\n{Ts()}[red]Fatal error during annotation: {ex.GetType().Name}: {Markup.Escape(ex.Message)}[/]");
                 if (ex is AggregateException agg)
                 {
                     foreach (var inner in agg.Flatten().InnerExceptions)
@@ -539,10 +542,10 @@ public static class AnnotateCommand
             // Summary
             AnsiConsole.WriteLine();
             if (processed.Count > 0)
-                AnsiConsole.MarkupLine($"[green]✓ Successfully annotated {processed.Count} image(s)[/]");
+                AnsiConsole.MarkupLine($"{Ts()}[green]✓ Successfully annotated {processed.Count} image(s)[/]");
             if (errors.Count > 0)
             {
-                AnsiConsole.MarkupLine($"[red]✗ Failed to annotate {errors.Count} image(s):[/]");
+                AnsiConsole.MarkupLine($"{Ts()}[red]✗ Failed to annotate {errors.Count} image(s):[/]");
                 foreach (var (img, err) in errors.Take(20))
                     AnsiConsole.MarkupLineInterpolated($"  [red]•[/] {Markup.Escape(Path.GetFileName(img))}: {Markup.Escape(err)}");
                 if (errors.Count > 20)
@@ -618,7 +621,7 @@ public static class AnnotateCommand
                 ManifestService.Save(outputDir, buildManifest);
 
                 var modeLabel = zipMode == ZipMode.Patch ? "patch " : "";
-                AnsiConsole.MarkupLineInterpolated($"\n[bold blue]📦 Created {modeLabel}bundle: {result.ZipPath}[/]");
+                AnsiConsole.MarkupLineInterpolated($"\n{Ts()}[bold blue]📦 Created {modeLabel}bundle: {result.ZipPath}[/]");
                 AnsiConsole.MarkupLine($"[dim]{result.ImageCount} image(s) bundled. Transfer to your Android device and open with Riposte[/]");
             }
             else
