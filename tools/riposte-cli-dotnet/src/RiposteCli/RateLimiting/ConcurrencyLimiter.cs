@@ -113,13 +113,13 @@ public sealed class ConcurrencyLimiter
             {
                 waitTime = Math.Max(0, _pauseUntil - now);
             }
+
+            _isPaused = true;
         }
         finally
         {
             _lockObj.Release();
         }
-
-        _isPaused = true;
         await Task.Delay(TimeSpan.FromSeconds(waitTime));
 
         await _lockObj.WaitAsync();

@@ -88,7 +88,10 @@ public static class AuthCommand
                 return (false, "Failed to start Copilot CLI");
 
             if (!process.WaitForExit(10_000))
+            {
+                try { process.Kill(entireProcessTree: true); } catch { /* best-effort */ }
                 return (false, "CLI timed out");
+            }
 
             if (process.ExitCode == 0)
             {

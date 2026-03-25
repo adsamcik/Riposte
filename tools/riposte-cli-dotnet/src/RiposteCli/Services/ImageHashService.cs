@@ -90,6 +90,7 @@ public static class ImageHashService
     {
         Directory.CreateDirectory(directory);
         var manifestPath = Path.Combine(directory, HashManifestFilename);
+        var tempPath = manifestPath + $".{Guid.NewGuid():N}.tmp";
         var raw = new Dictionary<string, object>();
         foreach (var (key, entry) in manifest)
         {
@@ -101,7 +102,16 @@ public static class ImageHashService
             WriteIndented = true,
             DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
         });
-        File.WriteAllText(manifestPath, json);
+        try
+        {
+            File.WriteAllText(tempPath, json);
+            File.Move(tempPath, manifestPath, overwrite: true);
+        }
+        catch
+        {
+            try { File.Delete(tempPath); } catch { /* best-effort cleanup */ }
+            throw;
+        }
     }
 
     /// <summary>

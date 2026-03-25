@@ -65,8 +65,15 @@ public static class OutputPaths
             var dest = Path.Combine(outputDir, SidecarDir, name);
             if (!File.Exists(dest))
             {
-                File.Move(file, dest);
-                migrated++;
+                try
+                {
+                    File.Move(file, dest);
+                    migrated++;
+                }
+                catch (IOException)
+                {
+                    // Skip locked/inaccessible files — will be migrated on next run
+                }
             }
         }
 
@@ -80,8 +87,15 @@ public static class OutputPaths
             var dest = Path.Combine(outputDir, OptimizedDir, name);
             if (!File.Exists(dest))
             {
-                File.Move(file, dest);
-                migrated++;
+                try
+                {
+                    File.Move(file, dest);
+                    migrated++;
+                }
+                catch (IOException)
+                {
+                    // Skip locked/inaccessible files
+                }
             }
         }
 
@@ -113,8 +127,15 @@ public static class OutputPaths
             var dest = Path.Combine(outputDir, BundleDir, name);
             if (!File.Exists(dest))
             {
-                File.Move(file, dest);
-                migrated++;
+                try
+                {
+                    File.Move(file, dest);
+                    migrated++;
+                }
+                catch (IOException)
+                {
+                    // Skip locked/inaccessible files
+                }
             }
         }
 

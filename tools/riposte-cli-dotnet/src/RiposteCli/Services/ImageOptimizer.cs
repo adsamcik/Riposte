@@ -114,12 +114,19 @@ public static class ImageOptimizer
 
         Parallel.ForEach(imagePaths, new ParallelOptions { MaxDegreeOfParallelism = concurrency }, imagePath =>
         {
-            var optimized = OptimizeForBundleCore(imagePath, bundleDir, uniqueNames[imagePath], maxDimension, quality);
-            lock (lockObj)
+            try
             {
-                result[imagePath] = optimized;
+                var optimized = OptimizeForBundleCore(imagePath, bundleDir, uniqueNames[imagePath], maxDimension, quality);
+                lock (lockObj)
+                {
+                    result[imagePath] = optimized;
+                }
+                onComplete?.Invoke(imagePath, optimized);
             }
-            onComplete?.Invoke(imagePath, optimized);
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Warning: failed to optimize {Path.GetFileName(imagePath)} for bundle: {ex.Message}");
+            }
         });
 
         return result;
@@ -153,12 +160,19 @@ public static class ImageOptimizer
 
         Parallel.ForEach(imagePaths, new ParallelOptions { MaxDegreeOfParallelism = concurrency }, imagePath =>
         {
-            var optimized = optimizeFunc(imagePath, outputDir, maxDimension, quality);
-            lock (lockObj)
+            try
             {
-                result[imagePath] = optimized;
+                var optimized = optimizeFunc(imagePath, outputDir, maxDimension, quality);
+                lock (lockObj)
+                {
+                    result[imagePath] = optimized;
+                }
+                onComplete?.Invoke(imagePath, optimized);
             }
-            onComplete?.Invoke(imagePath, optimized);
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Warning: failed to optimize {Path.GetFileName(imagePath)}: {ex.Message}");
+            }
         });
 
         return result;

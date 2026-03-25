@@ -182,9 +182,17 @@ public static class SidecarService
         Directory.CreateDirectory(sidecarDir);
         var sidecarPath = Path.Combine(sidecarDir, Path.GetFileName(imagePath) + ".json");
         var json = JsonSerializer.Serialize(metadata, JsonOptions);
-        var tempPath = sidecarPath + ".tmp";
-        File.WriteAllText(tempPath, json);
-        File.Move(tempPath, sidecarPath, overwrite: true);
+        var tempPath = sidecarPath + $".{Guid.NewGuid():N}.tmp";
+        try
+        {
+            File.WriteAllText(tempPath, json);
+            File.Move(tempPath, sidecarPath, overwrite: true);
+        }
+        catch
+        {
+            try { File.Delete(tempPath); } catch { /* best-effort cleanup */ }
+            throw;
+        }
         return sidecarPath;
     }
 

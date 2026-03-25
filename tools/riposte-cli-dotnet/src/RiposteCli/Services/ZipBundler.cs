@@ -54,8 +54,7 @@ public static class ZipBundler
 
         var zipSuffix = mode == ZipMode.Patch ? ".patch.meme.zip" : ".meme.zip";
         var zipPath = Path.Combine(folder.Parent.FullName, $"{folder.Name}{zipSuffix}");
-        if (File.Exists(zipPath))
-            File.Delete(zipPath);
+        var tempZipPath = zipPath + $".{Guid.NewGuid():N}.tmp";
 
         var imagesToBundle = SelectImagesForBundle(mode, allImages, outputDir, plans, processed, manifest);
 
@@ -89,47 +88,58 @@ public static class ZipBundler
 
         var bundled = new List<string>();
 
-        using (var zip = ZipFile.Open(zipPath, ZipArchiveMode.Create))
+        try
         {
-            var usedEntryNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-            foreach (var imagePath in imagesToBundle)
+            using (var zip = ZipFile.Open(tempZipPath, ZipArchiveMode.Create))
             {
-                var sidecarPath = SidecarService.ResolveSidecarPath(imagePath, outputDir);
-                if (sidecarPath is null)
-                    continue;
+                var usedEntryNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-                var bundlePath = bundleOptimizedMap.TryGetValue(imagePath, out var optPath)
-                    ? optPath : imagePath;
-                var bundleImageName = Path.GetFileName(bundlePath);
-                var bundleSidecarName = bundleImageName + ".json";
-
-                if (!usedEntryNames.Add(bundleImageName))
+                foreach (var imagePath in imagesToBundle)
                 {
+                    var sidecarPath = SidecarService.ResolveSidecarPath(imagePath, outputDir);
+                    if (sidecarPath is null)
+                        continue;
+
+                    var bundlePath = bundleOptimizedMap.TryGetValue(imagePath, out var optPath)
+                        ? optPath : imagePath;
+                    var bundleImageName = Path.GetFileName(bundlePath);
+                    var bundleSidecarName = bundleImageName + ".json";
+
+                    if (!usedEntryNames.Add(bundleImageName))
+                    {
+                        if (verbose)
+                            AnsiConsole.MarkupLineInterpolated($"  [yellow]Skipped duplicate ZIP entry: {bundleImageName}[/]");
+                        continue;
+                    }
+
+                    zip.CreateEntryFromFile(bundlePath, bundleImageName);
+
+                    if (bundleSidecarName != Path.GetFileName(sidecarPath))
+                    {
+                        var entry = zip.CreateEntry(bundleSidecarName);
+                        using var entryStream = entry.Open();
+                        using var sidecarStream = File.OpenRead(sidecarPath);
+                        sidecarStream.CopyTo(entryStream);
+                    }
+                    else
+                    {
+                        zip.CreateEntryFromFile(sidecarPath, bundleSidecarName);
+                    }
+
+                    bundled.Add(imagePath);
+
                     if (verbose)
-                        AnsiConsole.MarkupLineInterpolated($"  [yellow]Skipped duplicate ZIP entry: {bundleImageName}[/]");
-                    continue;
+                        AnsiConsole.MarkupLineInterpolated($"  [dim]Bundled: {Path.GetFileName(imagePath)}[/]");
                 }
-
-                zip.CreateEntryFromFile(bundlePath, bundleImageName);
-
-                if (bundleSidecarName != Path.GetFileName(sidecarPath))
-                {
-                    var entry = zip.CreateEntry(bundleSidecarName);
-                    using var entryStream = entry.Open();
-                    using var sidecarStream = File.OpenRead(sidecarPath);
-                    sidecarStream.CopyTo(entryStream);
-                }
-                else
-                {
-                    zip.CreateEntryFromFile(sidecarPath, bundleSidecarName);
-                }
-
-                bundled.Add(imagePath);
-
-                if (verbose)
-                    AnsiConsole.MarkupLineInterpolated($"  [dim]Bundled: {Path.GetFileName(imagePath)}[/]");
             }
+
+            // Atomic replace: only swap after successful build
+            File.Move(tempZipPath, zipPath, overwrite: true);
+        }
+        catch
+        {
+            try { File.Delete(tempZipPath); } catch { /* best-effort cleanup */ }
+            throw;
         }
 
         return new ZipBundleResult

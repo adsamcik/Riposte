@@ -59,10 +59,18 @@ public static class ManifestService
     public static void Save(string outputDir, BuildManifest manifest)
     {
         var path = Path.Combine(outputDir, BuildManifest.FileName);
-        var tempPath = path + ".tmp";
+        var tempPath = path + $".{Guid.NewGuid():N}.tmp";
         var json = JsonSerializer.Serialize(manifest, JsonOptions);
-        File.WriteAllText(tempPath, json);
-        File.Move(tempPath, path, overwrite: true);
+        try
+        {
+            File.WriteAllText(tempPath, json);
+            File.Move(tempPath, path, overwrite: true);
+        }
+        catch
+        {
+            try { File.Delete(tempPath); } catch { /* best-effort cleanup */ }
+            throw;
+        }
     }
 
     /// <summary>

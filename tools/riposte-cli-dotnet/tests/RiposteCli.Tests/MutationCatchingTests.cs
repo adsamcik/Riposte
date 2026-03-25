@@ -289,11 +289,9 @@ public sealed class MutationCatchingTests : IDisposable
     }
 
     [Fact]
-    public void ManifestService_SaveMustConsumeStaleTempFileFromInterruptedPreviousWrite()
+    public void ManifestService_SaveMustUseAtomicTempFileWrite()
     {
         var manifestPath = Path.Combine(_outputDir, BuildManifest.FileName);
-        var tempPath = manifestPath + ".tmp";
-        File.WriteAllText(tempPath, "stale temp from crash");
 
         ManifestService.Save(_outputDir, new BuildManifest
         {
@@ -303,7 +301,9 @@ public sealed class MutationCatchingTests : IDisposable
 
         // Catches mutation replacing atomic temp+move flow with direct non-atomic write.
         Assert.True(File.Exists(manifestPath));
-        Assert.False(File.Exists(tempPath));
+        // Unique temp files should be cleaned up — no .tmp orphans
+        var tmpFiles = Directory.GetFiles(_outputDir, "*.tmp");
+        Assert.Empty(tmpFiles);
     }
 
     [Fact]

@@ -75,7 +75,19 @@ public static class RebuildPlanner
 
         foreach (var imagePath in imagePaths)
         {
-            plans.Add(PlanForImage(imagePath, manifest, currentPromptHashes, currentModel, currentSchemaVersion, outputDir, currentOptFingerprint));
+            try
+            {
+                plans.Add(PlanForImage(imagePath, manifest, currentPromptHashes, currentModel, currentSchemaVersion, outputDir, currentOptFingerprint));
+            }
+            catch (IOException ex)
+            {
+                plans.Add(new ImageRebuildPlan
+                {
+                    ImagePath = imagePath,
+                    Scope = RebuildScope.Skip,
+                    Reason = $"I/O error during planning: {ex.Message}",
+                });
+            }
         }
 
         return plans;
