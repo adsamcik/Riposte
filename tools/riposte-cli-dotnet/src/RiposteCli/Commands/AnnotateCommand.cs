@@ -340,6 +340,15 @@ public static class AnnotateCommand
             var client = new CopilotClient(new CopilotClientOptions());
             var manifestLock = new object();
 
+            // Set global manifest properties upfront so incremental saves include them
+            buildManifest = buildManifest with
+            {
+                Model = model,
+                SchemaVersion = currentSchemaVersion,
+                PromptHashes = currentPromptHashes,
+                Optimization = optimizationConfig,
+            };
+
             try
             {
                 await client.StartAsync();
@@ -402,8 +411,11 @@ public static class AnnotateCommand
                                             sidecarPath = SidecarService.WriteSidecar(imagePath, metadata, outputDir);
 
                                             lock (manifestLock)
+                                            {
                                                 ManifestService.RecordImageBuild(buildManifest, Path.GetFileName(imagePath),
                                                     contentHash, model, currentSchemaVersion, currentPromptHashes, optimizationConfig.Fingerprint());
+                                                ManifestService.Save(outputDir, buildManifest);
+                                            }
                                         }
                                         else
                                         {
@@ -424,8 +436,11 @@ public static class AnnotateCommand
                                             sidecarPath = SidecarService.WriteSidecar(imagePath, metadata, outputDir);
 
                                             lock (manifestLock)
+                                            {
                                                 ManifestService.RecordPartialBuild(buildManifest, Path.GetFileName(imagePath),
                                                     contentHash, model, currentSchemaVersion, plan.AffectedGroups, currentPromptHashes, optimizationConfig.Fingerprint());
+                                                ManifestService.Save(outputDir, buildManifest);
+                                            }
                                         }
 
                                         await limiter.RecordSuccessAsync();
@@ -536,6 +551,10 @@ public static class AnnotateCommand
             }
             finally
             {
+                // Persist manifest progress even if processing was interrupted
+                try { ManifestService.Save(outputDir, buildManifest); }
+                catch { /* best-effort — don't mask the original exception */ }
+
                 try
                 {
                     await client.DisposeAsync();
