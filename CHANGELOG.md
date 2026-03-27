@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.3] - 2026-03-27
+
+### Changed
+
+- Upgraded AGP from 9.1.0-rc01 to 9.1.0
+
+### Fixed
+
+- Embedding pipeline: stop re-processing memes with legitimately fewer embedding types on every foreground resume (attempt tracking with persistent counter)
+- Semantic search: invalidate candidate cache when new embeddings are generated, so fresh memes appear in results immediately
+- Embedding statistics: use single SQL UNION query for accurate meme count instead of memory-heavy approach
+
+### Improved
+
+- Expanded test suite: 14 regression tests for embedding pipeline attempt tracking, search cache invalidation pipeline tests, ML test alignment
+
+### CLI
+
+- **Incremental manifest saves** — build manifest saved after each image instead of only at end, preventing data loss on interruption
+- **Model refusal handling** — detect content policy refusals with clear warning message; retry up to 5 times with linear backoff for spurious false positives
+- **Global crash reporting** — error harnesses for TaskScheduler, AppDomain, and ProcessExit ensure crashes always produce output
+- **Timestamps** — all per-image processing lines include HH:mm:ss prefix for log correlation
+- **Dedupe default change** — exact-only duplicate cleanup is now the default; near-duplicate cleanup opt-in via `--include-near`
+- **Legacy schema detection** — sidecars with outdated schema version now trigger rebuild automatically
+- Atomic ZIP bundle creation via temp file + rename (preserves previous bundle on failure)
+- ConcurrentBag replaces manual locking for processed/error collections
+- Async SemaphoreSlim replaces blocking lock for manifest I/O
+- CancellationToken threaded through entire pipeline for graceful Ctrl+C
+- Per-image error handling in batch optimization (one corrupt image no longer aborts the batch)
+- Fixed DisposeAsync masking original exceptions in error paths
+- Fixed concurrent temp file collisions with GUID-based filenames
+- Pipeline refactored from 550-line method into focused sub-methods
+
 ## [0.4.2] - 2026-03-07
 
 ### Fixed
@@ -366,7 +399,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Adaptive rate limiting with exponential backoff
 - Schema v1.1 with localization support
 
-[Unreleased]: https://github.com/adsamcik/riposte/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/adsamcik/riposte/compare/v0.4.3...HEAD
+[0.4.3]: https://github.com/adsamcik/riposte/compare/v0.4.2...v0.4.3
+[0.4.2]: https://github.com/adsamcik/riposte/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/adsamcik/riposte/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/adsamcik/riposte/compare/v0.3.4...v0.4.0
 [0.3.4]: https://github.com/adsamcik/riposte/compare/v0.3.3...v0.3.4
