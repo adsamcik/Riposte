@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.CommandLine;
 using System.IO.Compression;
 using System.Diagnostics;
@@ -65,7 +66,7 @@ public static class AnnotateCommand
             var concurrency = Math.Clamp(parseResult.GetValue(concurrencyOpt), 1, 50);
 
             await ExecuteAsync(folder, zipMode, output, model, languages, force,
-                continueMissing, addNew, noDedup, threshold, dryRun, verbose, concurrency);
+                continueMissing, addNew, noDedup, threshold, dryRun, verbose, concurrency, cancellationToken);
         });
 
         return command;
@@ -85,7 +86,8 @@ public static class AnnotateCommand
     private static async Task ExecuteAsync(
         DirectoryInfo folder, ZipMode? zipMode, DirectoryInfo? output, string model,
         string languages, bool force, bool continueMissing, bool addNew,
-        bool noDedup, int threshold, bool dryRun, bool verbose, int concurrency)
+        bool noDedup, int threshold, bool dryRun, bool verbose, int concurrency,
+        CancellationToken cancellationToken = default)
     {
         var languageList = languages.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .ToList();
@@ -207,6 +209,9 @@ public static class AnnotateCommand
                     entry.HasApiOptimized = true;
                 }
             }
+
+            if (skipReoptPlans.Count > 0)
+                ManifestService.Save(outputDir, buildManifest);
         }
 
         // Optimize images to WebP for ZIP bundling (full: all images, patch: deferred to bundler)
@@ -330,331 +335,405 @@ public static class AnnotateCommand
         }
 
         // --- Execute rebuilds ---
-        var processed = new List<(string Image, string Sidecar)>();
-        var errors = new List<(string Image, string Error)>();
-
-        if (workPlans.Count > 0)
-        {
-            var rateLimiter = new RateLimiter();
-            var limiter = new ConcurrencyLimiter(maxConcurrency: concurrency, rateLimiter: rateLimiter);
-            var client = new CopilotClient(new CopilotClientOptions());
-            var manifestLock = new object();
-
-            // Set global manifest properties upfront so incremental saves include them
-            buildManifest = buildManifest with
-            {
-                Model = model,
-                SchemaVersion = currentSchemaVersion,
-                PromptHashes = currentPromptHashes,
-                Optimization = optimizationConfig,
-            };
-
-            try
-            {
-                await client.StartAsync();
-
-                await AnsiConsole.Progress()
-                    .AutoClear(false)
-                    .Columns(
-                        new SpinnerColumn(),
-                        new TaskDescriptionColumn(),
-                        new ProgressBarColumn(),
-                        new PercentageColumn(),
-                        new ElapsedTimeColumn(),
-                        new RemainingTimeColumn())
-                    .StartAsync(async ctx =>
-                    {
-                        var task = ctx.AddTask($"Annotating ({concurrency} workers)...", maxValue: workPlans.Count);
-
-                        var semaphore = new SemaphoreSlim(concurrency);
-                        var tasks = workPlans.Select(async plan =>
-                        {
-                            await semaphore.WaitAsync();
-                            try
-                            {
-                                var imagePath = plan.ImagePath;
-                                var analysisPath = apiOptimizedMap is not null && apiOptimizedMap.TryGetValue(imagePath, out var optPath)
-                                    ? optPath : imagePath;
-                                var sw = Stopwatch.StartNew();
-
-                                for (var attempt = 0; attempt < 5; attempt++)
-                                {
-                                    try
-                                    {
-                                        await limiter.AcquireAsync();
-                                        AnalysisResult result;
-                                        try
-                                        {
-                                            if (plan.Scope == RebuildScope.Full)
-                                            {
-                                                result = await CopilotService.AnalyzeImageAsync(
-                                                    analysisPath, model, verbose, languageList, client, rateLimiter);
-                                            }
-                                            else
-                                            {
-                                                result = await CopilotService.AnalyzePartialAsync(
-                                                    analysisPath, plan.AffectedGroups, model, verbose, languageList, client, rateLimiter);
-                                            }
-                                        }
-                                        finally
-                                        {
-                                            await limiter.ReleaseAsync();
-                                        }
-
-                                        var contentHash = ImageHashService.GetContentHash(imagePath);
-                                        SidecarMetadata metadata;
-                                        string sidecarPath;
-
-                                        if (plan.Scope == RebuildScope.Full)
-                                        {
-                                            metadata = SidecarService.CreateMetadata(result, primaryLanguage, contentHash);
-                                            sidecarPath = SidecarService.WriteSidecar(imagePath, metadata, outputDir);
-
-                                            lock (manifestLock)
-                                            {
-                                                ManifestService.RecordImageBuild(buildManifest, Path.GetFileName(imagePath),
-                                                    contentHash, model, currentSchemaVersion, currentPromptHashes, optimizationConfig.Fingerprint());
-                                                ManifestService.Save(outputDir, buildManifest);
-                                            }
-                                        }
-                                        else
-                                        {
-                                            // Partial: merge into existing sidecar
-                                            var existing = SidecarMerger.LoadSidecar(imagePath, outputDir);
-                                            if (existing is null)
-                                            {
-                                                // Sidecar disappeared between planning and execution — skip and report
-                                                AnsiConsole.MarkupLineInterpolated(
-                                                    $"{Ts()}  [red]✗[/] {Path.GetFileName(imagePath)}: sidecar disappeared during partial rebuild, re-run to do full rebuild [dim]({sw.Elapsed.TotalSeconds:F1}s)[/]");
-                                                task.Increment(1);
-                                                lock (errors)
-                                                    errors.Add((imagePath, "Sidecar disappeared during partial rebuild"));
-                                                return;
-                                            }
-
-                                            metadata = SidecarMerger.Merge(existing, result, plan.AffectedGroups, currentSchemaVersion);
-                                            sidecarPath = SidecarService.WriteSidecar(imagePath, metadata, outputDir);
-
-                                            lock (manifestLock)
-                                            {
-                                                ManifestService.RecordPartialBuild(buildManifest, Path.GetFileName(imagePath),
-                                                    contentHash, model, currentSchemaVersion, plan.AffectedGroups, currentPromptHashes, optimizationConfig.Fingerprint());
-                                                ManifestService.Save(outputDir, buildManifest);
-                                            }
-                                        }
-
-                                        await limiter.RecordSuccessAsync();
-
-                                        var scopeLabel = plan.Scope == RebuildScope.Full ? "" : $" [dim]partial:{string.Join(",", plan.AffectedGroups)}[/]";
-                                        var emojis = string.Join(" ", metadata.Emojis);
-                                        AnsiConsole.MarkupLine(
-                                            $"{Ts()}  [green]✓[/] {Markup.Escape(Path.GetFileName(imagePath))} → {Markup.Escape(emojis)}{scopeLabel} [dim]({sw.Elapsed.TotalSeconds:F1}s)[/]");
-                                        task.Increment(1);
-
-                                        lock (processed)
-                                            processed.Add((imagePath, sidecarPath));
-                                        return;
-                                    }
-                                    catch (CopilotNotAuthenticatedException ex)
-                                    {
-                                        AnsiConsole.MarkupLineInterpolated($"\n{Ts()}[red]Error: {ex.Message}[/]");
-                                        task.Increment(1);
-                                        lock (errors)
-                                            errors.Add((imagePath, $"Auth error: {ex.Message}"));
-                                        return;
-                                    }
-                                    catch (RateLimitException ex)
-                                    {
-                                        var waitTime = await limiter.RecordRateLimitAsync(ex.RetryAfter);
-                                        if (attempt + 1 >= 5)
-                                        {
-                                            task.Increment(1);
-                                            lock (errors)
-                                                errors.Add((imagePath, ex.Message));
-                                            return;
-                                        }
-                                        AnsiConsole.MarkupLine(
-                                            $"\n{Ts()}[yellow]Rate limit hit — paused {waitTime:F1}s (attempt {attempt + 1}/5, concurrency → {limiter.CurrentConcurrency})[/]");
-                                    }
-                                    catch (ServerErrorException ex)
-                                    {
-                                        var waitTime = await limiter.RecordServerErrorAsync();
-                                        if (attempt + 1 >= 5)
-                                        {
-                                            task.Increment(1);
-                                            lock (errors)
-                                                errors.Add((imagePath, ex.Message));
-                                            return;
-                                        }
-                                        AnsiConsole.MarkupLine(
-                                            $"\n{Ts()}[yellow]Server error. Waiting {waitTime:F1}s... (attempt {attempt + 1}/5)[/]");
-                                        await Task.Delay(TimeSpan.FromSeconds(waitTime));
-                                    }
-                                    catch (ContentRefusedException)
-                                    {
-                                        if (attempt + 1 >= 5)
-                                        {
-                                            AnsiConsole.MarkupLineInterpolated(
-                                                $"{Ts()}  [yellow]⚠[/] {Path.GetFileName(imagePath)}: [yellow]Skipped — model refused after {attempt + 1} attempts (content policy)[/] [dim]({sw.Elapsed.TotalSeconds:F1}s)[/]");
-                                            task.Increment(1);
-                                            lock (errors)
-                                                errors.Add((imagePath, "Skipped — model refused to analyze (content policy)"));
-                                            return;
-                                        }
-                                        AnsiConsole.MarkupLine(
-                                            $"\n{Ts()}[yellow]Model refused {Path.GetFileName(imagePath)} — retrying (attempt {attempt + 1}/5)[/]");
-                                        await Task.Delay(TimeSpan.FromSeconds(2 * (attempt + 1)));
-                                    }
-                                    catch (CopilotAnalysisException ex)
-                                    {
-                                        AnsiConsole.MarkupLineInterpolated(
-                                            $"{Ts()}  [red]✗[/] {Path.GetFileName(imagePath)}: {ex.Message} [dim]({sw.Elapsed.TotalSeconds:F1}s)[/]");
-                                        task.Increment(1);
-                                        lock (errors)
-                                            errors.Add((imagePath, ex.Message));
-                                        return;
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        AnsiConsole.MarkupLineInterpolated(
-                                            $"{Ts()}  [red]✗[/] {Markup.Escape(Path.GetFileName(imagePath))}: Unexpected {ex.GetType().Name}: {Markup.Escape(ex.Message)} [dim]({sw.Elapsed.TotalSeconds:F1}s)[/]");
-                                        task.Increment(1);
-                                        lock (errors)
-                                            errors.Add((imagePath, $"{ex.GetType().Name}: {ex.Message}"));
-                                        return;
-                                    }
-                                }
-
-                                task.Increment(1);
-                                lock (errors)
-                                    errors.Add((imagePath, "Exhausted all retries"));
-                            }
-                            finally
-                            {
-                                semaphore.Release();
-                            }
-                        });
-
-                        await Task.WhenAll(tasks.ToList());
-                    });
-            }
-            catch (Exception ex)
-            {
-                AnsiConsole.MarkupLineInterpolated($"\n{Ts()}[red]Fatal error during annotation: {ex.GetType().Name}: {Markup.Escape(ex.Message)}[/]");
-                if (ex is AggregateException agg)
-                {
-                    foreach (var inner in agg.Flatten().InnerExceptions)
-                        AnsiConsole.MarkupLineInterpolated($"  [red]• {inner.GetType().Name}: {Markup.Escape(inner.Message)}[/]");
-                }
-                AnsiConsole.MarkupLine($"[dim]{Markup.Escape(ex.StackTrace ?? "")}[/]");
-                throw;
-            }
-            finally
-            {
-                // Persist manifest progress even if processing was interrupted
-                try { ManifestService.Save(outputDir, buildManifest); }
-                catch { /* best-effort — don't mask the original exception */ }
-
-                try
-                {
-                    await client.DisposeAsync();
-                }
-                catch (Exception disposeEx)
-                {
-                    AnsiConsole.MarkupLineInterpolated(
-                        $"\n{Ts()}[yellow]Warning: error during cleanup: {Markup.Escape(disposeEx.Message)}[/]");
-                }
-            }
-
-            // Summary
-            AnsiConsole.WriteLine();
-            if (processed.Count > 0)
-                AnsiConsole.MarkupLine($"{Ts()}[green]✓ Successfully annotated {processed.Count} image(s)[/]");
-            if (errors.Count > 0)
-            {
-                AnsiConsole.MarkupLine($"{Ts()}[red]✗ Failed to annotate {errors.Count} image(s):[/]");
-                foreach (var (img, err) in errors.Take(20))
-                    AnsiConsole.MarkupLineInterpolated($"  [red]•[/] {Markup.Escape(Path.GetFileName(img))}: {Markup.Escape(err)}");
-                if (errors.Count > 20)
-                    AnsiConsole.MarkupLine($"  [dim]... and {errors.Count - 20} more[/]");
-            }
-        }
+        var (processed, errors) = await RunAnnotationLoopAsync(
+            workPlans, apiOptimizedMap, buildManifest, outputDir, model, primaryLanguage,
+            currentSchemaVersion, currentPromptHashes, optimizationConfig, languageList,
+            verbose, concurrency, cancellationToken);
 
         // Always update manifest global state (even if no work plans ran)
         if (!dryRun)
         {
-            buildManifest = buildManifest with
-            {
-                Model = model,
-                SchemaVersion = currentSchemaVersion,
-                PromptHashes = currentPromptHashes,
-                Optimization = optimizationConfig,
-            };
+            buildManifest.Model = model;
+            buildManifest.SchemaVersion = currentSchemaVersion;
+            buildManifest.PromptHashes = currentPromptHashes;
+            buildManifest.Optimization = optimizationConfig;
             ManifestService.Save(outputDir, buildManifest);
         }
 
-        // Strip removed field groups from sidecars (applies to all plans, including skipped)
+        // Strip removed field groups from sidecars
         if (!dryRun)
+            StripRemovedFields(plans, buildManifest, outputDir, currentPromptHashes, currentSchemaVersion);
+
+        // Create ZIP bundle
+        if (zipMode is not null)
+            CreateZipBundle(zipMode.Value, folder, outputDir, allImages, plans, processed.ToList(),
+                bundleOptimizedMap, buildManifest, verbose);
+    }
+
+    /// <summary>
+    /// Execute the annotation loop: process each work plan through the Copilot API,
+    /// save sidecars, and update the manifest incrementally.
+    /// </summary>
+    private static async Task<(ConcurrentBag<(string Image, string Sidecar)> Processed, ConcurrentBag<(string Image, string Error)> Errors)>
+        RunAnnotationLoopAsync(
+            List<ImageRebuildPlan> workPlans,
+            Dictionary<string, string>? apiOptimizedMap,
+            BuildManifest buildManifest,
+            string outputDir,
+            string model,
+            string primaryLanguage,
+            string currentSchemaVersion,
+            Dictionary<string, string> currentPromptHashes,
+            OptimizationConfig optimizationConfig,
+            List<string> languageList,
+            bool verbose,
+            int concurrency,
+            CancellationToken cancellationToken)
+    {
+        var processed = new ConcurrentBag<(string Image, string Sidecar)>();
+        var errors = new ConcurrentBag<(string Image, string Error)>();
+
+        if (workPlans.Count == 0)
+            return (processed, errors);
+
+        var rateLimiter = new RateLimiter();
+        var limiter = new ConcurrencyLimiter(maxConcurrency: concurrency, rateLimiter: rateLimiter);
+        var client = new CopilotClient(new CopilotClientOptions());
+        var manifestMutex = new SemaphoreSlim(1, 1);
+
+        // Set global manifest properties upfront so incremental saves include them
+        buildManifest.Model = model;
+        buildManifest.SchemaVersion = currentSchemaVersion;
+        buildManifest.PromptHashes = currentPromptHashes;
+        buildManifest.Optimization = optimizationConfig;
+
+        try
         {
-            var toStrip = plans.Where(p => p.NeedsStripping).ToList();
-            if (toStrip.Count > 0)
-            {
-                var stripped = 0;
-                foreach (var plan in toStrip)
+            await client.StartAsync();
+
+            await AnsiConsole.Progress()
+                .AutoClear(false)
+                .Columns(
+                    new SpinnerColumn(),
+                    new TaskDescriptionColumn(),
+                    new ProgressBarColumn(),
+                    new PercentageColumn(),
+                    new ElapsedTimeColumn(),
+                    new RemainingTimeColumn())
+                .StartAsync(async ctx =>
                 {
-                    var existing = SidecarMerger.LoadSidecar(plan.ImagePath, outputDir);
-                    if (existing is null) continue;
+                    var task = ctx.AddTask($"Annotating ({concurrency} workers)...", maxValue: workPlans.Count);
 
-                    var cleaned = SidecarMerger.StripRemovedGroups(existing, currentPromptHashes, currentSchemaVersion);
-                    if (!ReferenceEquals(cleaned, existing))
+                    var semaphore = new SemaphoreSlim(concurrency);
+                    var tasks = workPlans.Select(async plan =>
                     {
-                        SidecarService.WriteSidecar(plan.ImagePath, cleaned, outputDir);
-                        stripped++;
-
-                        // Also remove the stale field hashes from the manifest
-                        var fileName = Path.GetFileName(plan.ImagePath);
-                        if (buildManifest.Images.TryGetValue(fileName, out var entry))
+                        await semaphore.WaitAsync(cancellationToken);
+                        try
                         {
-                            foreach (var removed in plan.RemovedGroups)
-                                entry.FieldHashes.Remove(removed);
+                            await ProcessSingleImageAsync(
+                                plan, apiOptimizedMap, buildManifest, outputDir, model, primaryLanguage,
+                                currentSchemaVersion, currentPromptHashes, optimizationConfig, languageList,
+                                verbose, client, rateLimiter, limiter, manifestMutex,
+                                processed, errors, task, cancellationToken);
                         }
+                        finally
+                        {
+                            semaphore.Release();
+                        }
+                    });
+
+                    await Task.WhenAll(tasks.ToList());
+                });
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLineInterpolated($"\n{Ts()}[red]Fatal error during annotation: {ex.GetType().Name}: {Markup.Escape(ex.Message)}[/]");
+            if (ex is AggregateException agg)
+            {
+                foreach (var inner in agg.Flatten().InnerExceptions)
+                    AnsiConsole.MarkupLineInterpolated($"  [red]• {inner.GetType().Name}: {Markup.Escape(inner.Message)}[/]");
+            }
+            AnsiConsole.MarkupLine($"[dim]{Markup.Escape(ex.StackTrace ?? "")}[/]");
+            throw;
+        }
+        finally
+        {
+            // Persist manifest progress even if processing was interrupted
+            try { ManifestService.Save(outputDir, buildManifest); }
+            catch { /* best-effort — don't mask the original exception */ }
+
+            try
+            {
+                await client.DisposeAsync();
+            }
+            catch (Exception disposeEx)
+            {
+                AnsiConsole.MarkupLineInterpolated(
+                    $"\n{Ts()}[yellow]Warning: error during cleanup: {Markup.Escape(disposeEx.Message)}[/]");
+            }
+        }
+
+        // Summary
+        AnsiConsole.WriteLine();
+        if (processed.Count > 0)
+            AnsiConsole.MarkupLine($"{Ts()}[green]✓ Successfully annotated {processed.Count} image(s)[/]");
+        if (errors.Count > 0)
+        {
+            AnsiConsole.MarkupLine($"{Ts()}[red]✗ Failed to annotate {errors.Count} image(s):[/]");
+            foreach (var (img, err) in errors.Take(20))
+                AnsiConsole.MarkupLineInterpolated($"  [red]•[/] {Markup.Escape(Path.GetFileName(img))}: {Markup.Escape(err)}");
+            if (errors.Count > 20)
+                AnsiConsole.MarkupLine($"  [dim]... and {errors.Count - 20} more[/]");
+        }
+
+        return (processed, errors);
+    }
+
+    /// <summary>
+    /// Process a single image: analyze via Copilot, write sidecar, update manifest.
+    /// Retries up to 5 times on transient errors.
+    /// </summary>
+    private static async Task ProcessSingleImageAsync(
+        ImageRebuildPlan plan,
+        Dictionary<string, string>? apiOptimizedMap,
+        BuildManifest buildManifest,
+        string outputDir,
+        string model,
+        string primaryLanguage,
+        string currentSchemaVersion,
+        Dictionary<string, string> currentPromptHashes,
+        OptimizationConfig optimizationConfig,
+        List<string> languageList,
+        bool verbose,
+        CopilotClient client,
+        RateLimiter rateLimiter,
+        ConcurrencyLimiter limiter,
+        SemaphoreSlim manifestMutex,
+        ConcurrentBag<(string Image, string Sidecar)> processed,
+        ConcurrentBag<(string Image, string Error)> errors,
+        ProgressTask task,
+        CancellationToken cancellationToken)
+    {
+        var imagePath = plan.ImagePath;
+        var analysisPath = apiOptimizedMap is not null && apiOptimizedMap.TryGetValue(imagePath, out var optPath)
+            ? optPath : imagePath;
+        var sw = Stopwatch.StartNew();
+
+        for (var attempt = 0; attempt < 5; attempt++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            try
+            {
+                await limiter.AcquireAsync(cancellationToken);
+                AnalysisResult result;
+                try
+                {
+                    if (plan.Scope == RebuildScope.Full)
+                    {
+                        result = await CopilotService.AnalyzeImageAsync(
+                            analysisPath, model, verbose, languageList, client, rateLimiter);
+                    }
+                    else
+                    {
+                        result = await CopilotService.AnalyzePartialAsync(
+                            analysisPath, plan.AffectedGroups, model, verbose, languageList, client, rateLimiter);
                     }
                 }
-
-                if (stripped > 0)
+                finally
                 {
-                    ManifestService.Save(outputDir, buildManifest);
-                    AnsiConsole.MarkupLine($"[dim]Stripped removed fields from {stripped} sidecar(s)[/]");
+                    await limiter.ReleaseAsync();
+                }
+
+                var contentHash = ImageHashService.GetContentHash(imagePath);
+                SidecarMetadata metadata;
+                string sidecarPath;
+
+                if (plan.Scope == RebuildScope.Full)
+                {
+                    metadata = SidecarService.CreateMetadata(result, primaryLanguage, contentHash);
+                    sidecarPath = SidecarService.WriteSidecar(imagePath, metadata, outputDir);
+
+                    await manifestMutex.WaitAsync(cancellationToken);
+                    try
+                    {
+                        ManifestService.RecordImageBuild(buildManifest, Path.GetFileName(imagePath),
+                            contentHash, model, currentSchemaVersion, currentPromptHashes, optimizationConfig.Fingerprint());
+                        ManifestService.Save(outputDir, buildManifest);
+                    }
+                    finally { manifestMutex.Release(); }
+                }
+                else
+                {
+                    // Partial: merge into existing sidecar
+                    var existing = SidecarMerger.LoadSidecar(imagePath, outputDir);
+                    if (existing is null)
+                    {
+                        AnsiConsole.MarkupLineInterpolated(
+                            $"{Ts()}  [red]✗[/] {Path.GetFileName(imagePath)}: sidecar disappeared during partial rebuild, re-run to do full rebuild [dim]({sw.Elapsed.TotalSeconds:F1}s)[/]");
+                        task.Increment(1);
+                        errors.Add((imagePath, "Sidecar disappeared during partial rebuild"));
+                        return;
+                    }
+
+                    metadata = SidecarMerger.Merge(existing, result, plan.AffectedGroups, currentSchemaVersion);
+                    sidecarPath = SidecarService.WriteSidecar(imagePath, metadata, outputDir);
+
+                    await manifestMutex.WaitAsync(cancellationToken);
+                    try
+                    {
+                        ManifestService.RecordPartialBuild(buildManifest, Path.GetFileName(imagePath),
+                            contentHash, model, currentSchemaVersion, plan.AffectedGroups, currentPromptHashes, optimizationConfig.Fingerprint());
+                        ManifestService.Save(outputDir, buildManifest);
+                    }
+                    finally { manifestMutex.Release(); }
+                }
+
+                await limiter.RecordSuccessAsync();
+
+                var scopeLabel = plan.Scope == RebuildScope.Full ? "" : $" [dim]partial:{string.Join(",", plan.AffectedGroups)}[/]";
+                var emojis = string.Join(" ", metadata.Emojis);
+                AnsiConsole.MarkupLine(
+                    $"{Ts()}  [green]✓[/] {Markup.Escape(Path.GetFileName(imagePath))} → {Markup.Escape(emojis)}{scopeLabel} [dim]({sw.Elapsed.TotalSeconds:F1}s)[/]");
+                task.Increment(1);
+
+                processed.Add((imagePath, sidecarPath));
+                return;
+            }
+            catch (OperationCanceledException) { throw; }
+            catch (CopilotNotAuthenticatedException ex)
+            {
+                AnsiConsole.MarkupLineInterpolated($"\n{Ts()}[red]Error: {ex.Message}[/]");
+                task.Increment(1);
+                errors.Add((imagePath, $"Auth error: {ex.Message}"));
+                return;
+            }
+            catch (RateLimitException ex)
+            {
+                var waitTime = await limiter.RecordRateLimitAsync(ex.RetryAfter);
+                if (attempt + 1 >= 5)
+                {
+                    task.Increment(1);
+                    errors.Add((imagePath, ex.Message));
+                    return;
+                }
+                AnsiConsole.MarkupLine(
+                    $"\n{Ts()}[yellow]Rate limit hit — paused {waitTime:F1}s (attempt {attempt + 1}/5, concurrency → {limiter.CurrentConcurrency})[/]");
+            }
+            catch (ServerErrorException ex)
+            {
+                var waitTime = await limiter.RecordServerErrorAsync();
+                if (attempt + 1 >= 5)
+                {
+                    task.Increment(1);
+                    errors.Add((imagePath, ex.Message));
+                    return;
+                }
+                AnsiConsole.MarkupLine(
+                    $"\n{Ts()}[yellow]Server error. Waiting {waitTime:F1}s... (attempt {attempt + 1}/5)[/]");
+                await Task.Delay(TimeSpan.FromSeconds(waitTime), cancellationToken);
+            }
+            catch (ContentRefusedException)
+            {
+                if (attempt + 1 >= 5)
+                {
+                    AnsiConsole.MarkupLineInterpolated(
+                        $"{Ts()}  [yellow]⚠[/] {Path.GetFileName(imagePath)}: [yellow]Skipped — model refused after {attempt + 1} attempts (content policy)[/] [dim]({sw.Elapsed.TotalSeconds:F1}s)[/]");
+                    task.Increment(1);
+                    errors.Add((imagePath, "Skipped — model refused to analyze (content policy)"));
+                    return;
+                }
+                AnsiConsole.MarkupLine(
+                    $"\n{Ts()}[yellow]Model refused {Path.GetFileName(imagePath)} — retrying (attempt {attempt + 1}/5)[/]");
+                await Task.Delay(TimeSpan.FromSeconds(2 * (attempt + 1)), cancellationToken);
+            }
+            catch (CopilotAnalysisException ex)
+            {
+                AnsiConsole.MarkupLineInterpolated(
+                    $"{Ts()}  [red]✗[/] {Path.GetFileName(imagePath)}: {ex.Message} [dim]({sw.Elapsed.TotalSeconds:F1}s)[/]");
+                task.Increment(1);
+                errors.Add((imagePath, ex.Message));
+                return;
+            }
+            catch (Exception ex)
+            {
+                AnsiConsole.MarkupLineInterpolated(
+                    $"{Ts()}  [red]✗[/] {Markup.Escape(Path.GetFileName(imagePath))}: Unexpected {ex.GetType().Name}: {Markup.Escape(ex.Message)} [dim]({sw.Elapsed.TotalSeconds:F1}s)[/]");
+                task.Increment(1);
+                errors.Add((imagePath, $"{ex.GetType().Name}: {ex.Message}"));
+                return;
+            }
+        }
+
+        task.Increment(1);
+        errors.Add((imagePath, "Exhausted all retries"));
+    }
+
+    /// <summary>
+    /// Strip field groups that are no longer in the current prompt configuration
+    /// from existing sidecars, and update the manifest accordingly.
+    /// </summary>
+    private static void StripRemovedFields(
+        List<ImageRebuildPlan> plans,
+        BuildManifest buildManifest,
+        string outputDir,
+        Dictionary<string, string> currentPromptHashes,
+        string currentSchemaVersion)
+    {
+        var toStrip = plans.Where(p => p.NeedsStripping).ToList();
+        if (toStrip.Count == 0) return;
+
+        var stripped = 0;
+        foreach (var plan in toStrip)
+        {
+            var existing = SidecarMerger.LoadSidecar(plan.ImagePath, outputDir);
+            if (existing is null) continue;
+
+            var cleaned = SidecarMerger.StripRemovedGroups(existing, currentPromptHashes, currentSchemaVersion);
+            if (!ReferenceEquals(cleaned, existing))
+            {
+                SidecarService.WriteSidecar(plan.ImagePath, cleaned, outputDir);
+                stripped++;
+
+                var fileName = Path.GetFileName(plan.ImagePath);
+                if (buildManifest.Images.TryGetValue(fileName, out var entry))
+                {
+                    foreach (var removed in plan.RemovedGroups)
+                        entry.FieldHashes.Remove(removed);
                 }
             }
         }
 
-        // Create ZIP bundle
-        if (zipMode is not null)
+        if (stripped > 0)
         {
-            var result = ZipBundler.CreateBundle(
-                zipMode.Value, folder, outputDir, allImages, plans, processed,
-                bundleOptimizedMap, buildManifest, verbose);
+            ManifestService.Save(outputDir, buildManifest);
+            AnsiConsole.MarkupLine($"[dim]Stripped removed fields from {stripped} sidecar(s)[/]");
+        }
+    }
 
-            if (result.ImageCount > 0)
-            {
-                // Record bundled images and update manifest
-                ZipBundler.RecordBundledImages(buildManifest, result.BundledImagePaths);
-                buildManifest = buildManifest with
-                {
-                    LastFullBundleAt = zipMode == ZipMode.Full ? DateTimeOffset.UtcNow.ToString("o") : buildManifest.LastFullBundleAt,
-                    LastPatchBundleAt = zipMode == ZipMode.Patch ? DateTimeOffset.UtcNow.ToString("o") : buildManifest.LastPatchBundleAt,
-                };
-                ManifestService.Save(outputDir, buildManifest);
+    /// <summary>
+    /// Create a ZIP bundle (.meme.zip) from processed images and their sidecars.
+    /// </summary>
+    private static void CreateZipBundle(
+        ZipMode zipMode,
+        DirectoryInfo folder,
+        string outputDir,
+        List<string> allImages,
+        List<ImageRebuildPlan> plans,
+        IReadOnlyList<(string Image, string Sidecar)> processedList,
+        Dictionary<string, string>? bundleOptimizedMap,
+        BuildManifest buildManifest,
+        bool verbose)
+    {
+        var result = ZipBundler.CreateBundle(
+            zipMode, folder, outputDir, allImages, plans, processedList,
+            bundleOptimizedMap, buildManifest, verbose);
 
-                var modeLabel = zipMode == ZipMode.Patch ? "patch " : "";
-                AnsiConsole.MarkupLineInterpolated($"\n{Ts()}[bold blue]📦 Created {modeLabel}bundle: {result.ZipPath}[/]");
-                AnsiConsole.MarkupLine($"[dim]{result.ImageCount} image(s) bundled. Transfer to your Android device and open with Riposte[/]");
-            }
-            else
-            {
-                AnsiConsole.MarkupLine("\n[yellow]No images with sidecars to bundle.[/]");
-            }
+        if (result.ImageCount > 0)
+        {
+            ZipBundler.RecordBundledImages(buildManifest, result.BundledImagePaths);
+            if (zipMode == ZipMode.Full)
+                buildManifest.LastFullBundleAt = DateTimeOffset.UtcNow.ToString("o");
+            if (zipMode == ZipMode.Patch)
+                buildManifest.LastPatchBundleAt = DateTimeOffset.UtcNow.ToString("o");
+            ManifestService.Save(outputDir, buildManifest);
+
+            var modeLabel = zipMode == ZipMode.Patch ? "patch " : "";
+            AnsiConsole.MarkupLineInterpolated($"\n{Ts()}[bold blue]📦 Created {modeLabel}bundle: {result.ZipPath}[/]");
+            AnsiConsole.MarkupLine($"[dim]{result.ImageCount} image(s) bundled. Transfer to your Android device and open with Riposte[/]");
+        }
+        else
+        {
+            AnsiConsole.MarkupLine("\n[yellow]No images with sidecars to bundle.[/]");
         }
     }
 }

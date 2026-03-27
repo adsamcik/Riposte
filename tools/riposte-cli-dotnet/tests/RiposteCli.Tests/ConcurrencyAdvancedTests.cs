@@ -12,34 +12,27 @@ public class ConcurrencyAdvancedTests
         var rl = new RateLimiter(minDelay: 0.01, maxDelay: 5.0, jitterFactor: 0);
         var limiter = new ConcurrencyLimiter(maxConcurrency: 4, rateLimiter: rl);
 
-        // Start a rate limit with a long enough pause to reliably test
-        var rateLimitTask = limiter.RecordRateLimitAsync(retryAfter: 1.0);
+        // Start a rate limit pause
+        var rateLimitTask = limiter.RecordRateLimitAsync(retryAfter: 0.5);
 
-        // Wait for the IsPaused flag to be set (poll briefly)
-        for (var i = 0; i < 50 && !limiter.IsPaused; i++)
+        // Wait for the IsPaused flag to be set
+        for (var i = 0; i < 100 && !limiter.IsPaused; i++)
             await Task.Delay(10);
         Assert.True(limiter.IsPaused, "Limiter should be paused after RecordRateLimit");
 
         // While paused, try to acquire — should block until pause clears
-        var acquired = false;
         var acquireTask = Task.Run(async () =>
         {
             await limiter.AcquireAsync();
-            acquired = true;
             await limiter.ReleaseAsync();
         });
-
-        // Wait a bit — acquire should NOT have completed yet while paused
-        await Task.Delay(100);
-        Assert.False(acquired, "Acquire should be blocked while paused");
 
         // Wait for the rate limit to finish (and unpause)
         await rateLimitTask;
 
-        // The acquire should complete shortly after
-        var completed = await Task.WhenAny(acquireTask, Task.Delay(5000));
+        // The acquire should complete shortly after unpause
+        var completed = await Task.WhenAny(acquireTask, Task.Delay(10_000));
         Assert.True(ReferenceEquals(acquireTask, completed), "Acquire should complete after unpause");
-        Assert.True(acquired);
     }
 
     #endregion

@@ -164,11 +164,9 @@ public sealed class SchemaRoundtripStressTests : IDisposable
     {
         var outputDir = Path.Combine(_tempDir, "manifest-timestamps");
         Directory.CreateDirectory(outputDir);
-        var manifest = CreateMaximalManifest(2) with
-        {
-            LastFullBundleAt = "2026-01-01T00:00:00Z",
-            LastPatchBundleAt = "2026-01-01T01:00:00Z",
-        };
+        var manifest = CreateMaximalManifest(2);
+        manifest.LastFullBundleAt = "2026-01-01T00:00:00Z";
+        manifest.LastPatchBundleAt = "2026-01-01T01:00:00Z";
 
         ManifestService.Save(outputDir, manifest);
         var loaded = ManifestService.Load(outputDir);
@@ -355,11 +353,9 @@ public sealed class SchemaRoundtripStressTests : IDisposable
     {
         var outputDir = Path.Combine(_tempDir, "idempotent-manifest");
         Directory.CreateDirectory(outputDir);
-        var manifest = CreateMaximalManifest(5) with
-        {
-            LastFullBundleAt = "2026-01-10T00:00:00Z",
-            LastPatchBundleAt = "2026-01-10T00:05:00Z",
-        };
+        var manifest = CreateMaximalManifest(5);
+        manifest.LastFullBundleAt = "2026-01-10T00:00:00Z";
+        manifest.LastPatchBundleAt = "2026-01-10T00:05:00Z";
 
         ManifestService.Save(outputDir, manifest);
         var firstPath = Path.Combine(outputDir, BuildManifest.FileName);

@@ -39,14 +39,17 @@ public sealed class ConcurrencyLimiter
         _restoreThreshold = restoreThreshold;
     }
 
-    public async Task AcquireAsync()
+    public async Task AcquireAsync(CancellationToken cancellationToken = default)
     {
         // Wait for pause to clear
         while (_isPaused)
-            await Task.Delay(10);
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            await Task.Delay(10, cancellationToken);
+        }
 
-        await _semaphore.WaitAsync();
-        await _lockObj.WaitAsync();
+        await _semaphore.WaitAsync(cancellationToken);
+        await _lockObj.WaitAsync(cancellationToken);
         try
         {
             _activeTasks++;

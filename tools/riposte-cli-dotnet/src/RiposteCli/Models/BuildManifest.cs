@@ -5,55 +5,58 @@ namespace RiposteCli.Models;
 /// <summary>
 /// Build manifest tracking prompt hashes and per-image build state.
 /// Stored as .meme-build-manifest.json alongside sidecars.
+/// <para>This is intentionally a mutable class. The <see cref="Images"/> dictionary
+/// is mutated in-place during concurrent annotation, and global properties
+/// (Model, SchemaVersion, etc.) are updated between pipeline stages.</para>
 /// </summary>
-public sealed record BuildManifest
+public sealed class BuildManifest
 {
     public const string FileName = ".meme-build-manifest.json";
     public const string CurrentManifestVersion = "1.0";
 
     [JsonPropertyName("manifestVersion")]
-    public string ManifestVersion { get; init; } = CurrentManifestVersion;
+    public string ManifestVersion { get; set; } = CurrentManifestVersion;
 
     [JsonPropertyName("schemaVersion")]
-    public string SchemaVersion { get; init; } = "1.4";
+    public string SchemaVersion { get; set; } = "1.4";
 
     [JsonPropertyName("model")]
-    public string Model { get; init; } = "gpt-5-mini";
+    public string Model { get; set; } = "gpt-5-mini";
 
     /// <summary>
     /// Current prompt hashes per field group.
     /// Keys: "core", "search", "cultural", "emotions", "localization:cs", etc.
     /// </summary>
     [JsonPropertyName("promptHashes")]
-    public Dictionary<string, string> PromptHashes { get; init; } = new();
+    public Dictionary<string, string> PromptHashes { get; set; } = new();
 
     /// <summary>
     /// Current image optimization/pipeline configuration.
     /// </summary>
     [JsonPropertyName("optimization")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public OptimizationConfig? Optimization { get; init; }
+    public OptimizationConfig? Optimization { get; set; }
 
     /// <summary>
     /// Per-image build state keyed by image filename.
     /// Uses case-insensitive comparison for Windows filesystem compatibility.
     /// </summary>
     [JsonPropertyName("images")]
-    public Dictionary<string, ImageManifestEntry> Images { get; init; } = new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<string, ImageManifestEntry> Images { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Timestamp of the last full bundle creation.
     /// </summary>
     [JsonPropertyName("lastFullBundleAt")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? LastFullBundleAt { get; init; }
+    public string? LastFullBundleAt { get; set; }
 
     /// <summary>
     /// Timestamp of the last patch bundle creation.
     /// </summary>
     [JsonPropertyName("lastPatchBundleAt")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? LastPatchBundleAt { get; init; }
+    public string? LastPatchBundleAt { get; set; }
 }
 
 /// <summary>

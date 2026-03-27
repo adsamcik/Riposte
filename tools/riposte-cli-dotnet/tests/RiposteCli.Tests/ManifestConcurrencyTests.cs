@@ -139,42 +139,40 @@ public sealed class ManifestConcurrencyTests : IDisposable
             original, "test.png", "hash1", "model", "1.4",
             new Dictionary<string, string> { ["core"] = "c1" });
 
-        // Simulate what AnnotateCommand does after the work loop
-        var updated = original with
-        {
-            Model = "new-model",
-            SchemaVersion = "2.0",
-            PromptHashes = new Dictionary<string, string> { ["core"] = "new-hash" },
-        };
+        // Simulate what AnnotateCommand does after the work loop —
+        // BuildManifest is now a mutable class, so mutate directly
+        original.Model = "new-model";
+        original.SchemaVersion = "2.0";
+        original.PromptHashes = new Dictionary<string, string> { ["core"] = "new-hash" };
 
-        // Images dict is the SAME reference — this is the shallow copy behavior
-        Assert.True(ReferenceEquals(original.Images, updated.Images),
-            "Record 'with' expression should share the same Images dictionary by reference");
+        // Images dict is the same instance — mutation is directly visible
+        Assert.Equal("new-model", original.Model);
 
-        // Mutation through one reference is visible through the other
+        // Mutation through the same reference is naturally visible
         ManifestService.RecordImageBuild(
-            updated, "another.png", "hash2", "model", "1.4",
+            original, "another.png", "hash2", "model", "1.4",
             new Dictionary<string, string> { ["core"] = "c2" });
 
         Assert.True(original.Images.ContainsKey("another.png"),
-            "Mutation via the 'with'-copy should be visible through the original's Images reference");
+            "Images added after property mutation should be visible");
         Assert.Equal(2, original.Images.Count);
     }
 
     [Fact]
-    public void WithExpression_ReplacedPropertiesAreIndependent()
+    public void DirectMutation_ReplacedPropertiesAreIndependent()
     {
         var original = new BuildManifest
         {
             PromptHashes = new Dictionary<string, string> { ["core"] = "v1" },
         };
 
-        var updated = original with
+        // Create a separate instance to verify independence
+        var updated = new BuildManifest
         {
             PromptHashes = new Dictionary<string, string> { ["core"] = "v2" },
         };
 
-        // PromptHashes was replaced, so they are independent
+        // PromptHashes are different instances, so they are independent
         Assert.False(ReferenceEquals(original.PromptHashes, updated.PromptHashes));
         Assert.Equal("v1", original.PromptHashes["core"]);
         Assert.Equal("v2", updated.PromptHashes["core"]);

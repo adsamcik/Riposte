@@ -113,15 +113,12 @@ public class BuildManifestTests
     // ── BuildManifest record with-expression ────────────────────────
 
     [Fact]
-    public void BuildManifest_With_Expression_Creates_New_Instance()
+    public void BuildManifest_Properties_Are_Mutable()
     {
-        var original = new BuildManifest { Model = "gpt-5-mini" };
-        var modified = original with { Model = "gpt-6" };
+        var manifest = new BuildManifest { Model = "gpt-5-mini" };
+        manifest.Model = "gpt-6";
 
-        Assert.NotSame(original, modified);
-        Assert.Equal("gpt-5-mini", original.Model);
-        Assert.Equal("gpt-6", modified.Model);
-        Assert.Equal(original.ManifestVersion, modified.ManifestVersion);
+        Assert.Equal("gpt-6", manifest.Model);
     }
 
     // ── BuildManifest dictionary mutability ──────────────────────────

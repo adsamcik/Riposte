@@ -43,15 +43,10 @@ public sealed class BundleTimestampTests : IDisposable
 
         // Simulate AnnotateCommand bundle block (lines 502-506)
         var zipMode = ZipMode.Full;
-        manifest = manifest with
-        {
-            LastFullBundleAt = zipMode == ZipMode.Full
-                ? DateTimeOffset.UtcNow.ToString("o")
-                : manifest.LastFullBundleAt,
-            LastPatchBundleAt = zipMode == ZipMode.Patch
-                ? DateTimeOffset.UtcNow.ToString("o")
-                : manifest.LastPatchBundleAt,
-        };
+        if (zipMode == ZipMode.Full)
+            manifest.LastFullBundleAt = DateTimeOffset.UtcNow.ToString("o");
+        if (zipMode == ZipMode.Patch)
+            manifest.LastPatchBundleAt = DateTimeOffset.UtcNow.ToString("o");
 
         Assert.NotNull(manifest.LastFullBundleAt);
         Assert.Equal(existingPatchTimestamp, manifest.LastPatchBundleAt);
@@ -66,15 +61,10 @@ public sealed class BundleTimestampTests : IDisposable
         };
 
         var zipMode = ZipMode.Full;
-        manifest = manifest with
-        {
-            LastFullBundleAt = zipMode == ZipMode.Full
-                ? DateTimeOffset.UtcNow.ToString("o")
-                : manifest.LastFullBundleAt,
-            LastPatchBundleAt = zipMode == ZipMode.Patch
-                ? DateTimeOffset.UtcNow.ToString("o")
-                : manifest.LastPatchBundleAt,
-        };
+        if (zipMode == ZipMode.Full)
+            manifest.LastFullBundleAt = DateTimeOffset.UtcNow.ToString("o");
+        if (zipMode == ZipMode.Patch)
+            manifest.LastPatchBundleAt = DateTimeOffset.UtcNow.ToString("o");
 
         Assert.NotNull(manifest.LastFullBundleAt);
         Assert.Null(manifest.LastPatchBundleAt);
@@ -92,15 +82,10 @@ public sealed class BundleTimestampTests : IDisposable
         };
 
         var zipMode = ZipMode.Patch;
-        manifest = manifest with
-        {
-            LastFullBundleAt = zipMode == ZipMode.Full
-                ? DateTimeOffset.UtcNow.ToString("o")
-                : manifest.LastFullBundleAt,
-            LastPatchBundleAt = zipMode == ZipMode.Patch
-                ? DateTimeOffset.UtcNow.ToString("o")
-                : manifest.LastPatchBundleAt,
-        };
+        if (zipMode == ZipMode.Full)
+            manifest.LastFullBundleAt = DateTimeOffset.UtcNow.ToString("o");
+        if (zipMode == ZipMode.Patch)
+            manifest.LastPatchBundleAt = DateTimeOffset.UtcNow.ToString("o");
 
         Assert.Equal(existingFullTimestamp, manifest.LastFullBundleAt);
         Assert.NotNull(manifest.LastPatchBundleAt);
@@ -115,15 +100,10 @@ public sealed class BundleTimestampTests : IDisposable
         };
 
         var zipMode = ZipMode.Patch;
-        manifest = manifest with
-        {
-            LastFullBundleAt = zipMode == ZipMode.Full
-                ? DateTimeOffset.UtcNow.ToString("o")
-                : manifest.LastFullBundleAt,
-            LastPatchBundleAt = zipMode == ZipMode.Patch
-                ? DateTimeOffset.UtcNow.ToString("o")
-                : manifest.LastPatchBundleAt,
-        };
+        if (zipMode == ZipMode.Full)
+            manifest.LastFullBundleAt = DateTimeOffset.UtcNow.ToString("o");
+        if (zipMode == ZipMode.Patch)
+            manifest.LastPatchBundleAt = DateTimeOffset.UtcNow.ToString("o");
 
         Assert.Null(manifest.LastFullBundleAt);
         Assert.NotNull(manifest.LastPatchBundleAt);
@@ -188,15 +168,13 @@ public sealed class BundleTimestampTests : IDisposable
         // Simulates AnnotateCommand's sequential saves (global, strip, bundle)
         var manifest = new BuildManifest();
 
-        // First save — global state update (line 452)
-        manifest = manifest with { Model = "gpt-5-mini", SchemaVersion = "1.4" };
+        // First save — global state update
+        manifest.Model = "gpt-5-mini";
+        manifest.SchemaVersion = "1.4";
         ManifestService.Save(_tempDir, manifest);
 
-        // Second save — bundle block (line 507)
-        manifest = manifest with
-        {
-            LastFullBundleAt = DateTimeOffset.UtcNow.ToString("o"),
-        };
+        // Second save — bundle block
+        manifest.LastFullBundleAt = DateTimeOffset.UtcNow.ToString("o");
         ManifestService.Save(_tempDir, manifest);
 
         var loaded = ManifestService.Load(_tempDir);
@@ -211,10 +189,7 @@ public sealed class BundleTimestampTests : IDisposable
     public void FullBundleTimestamp_IsValidIso8601()
     {
         var manifest = new BuildManifest();
-        manifest = manifest with
-        {
-            LastFullBundleAt = DateTimeOffset.UtcNow.ToString("o"),
-        };
+        manifest.LastFullBundleAt = DateTimeOffset.UtcNow.ToString("o");
 
         var parsed = DateTimeOffset.TryParse(manifest.LastFullBundleAt, out var dto);
         Assert.True(parsed, $"Failed to parse '{manifest.LastFullBundleAt}' as ISO 8601");
@@ -225,10 +200,7 @@ public sealed class BundleTimestampTests : IDisposable
     public void PatchBundleTimestamp_IsValidIso8601()
     {
         var manifest = new BuildManifest();
-        manifest = manifest with
-        {
-            LastPatchBundleAt = DateTimeOffset.UtcNow.ToString("o"),
-        };
+        manifest.LastPatchBundleAt = DateTimeOffset.UtcNow.ToString("o");
 
         var parsed = DateTimeOffset.TryParse(manifest.LastPatchBundleAt, out var dto);
         Assert.True(parsed, $"Failed to parse '{manifest.LastPatchBundleAt}' as ISO 8601");
@@ -315,28 +287,24 @@ public sealed class BundleTimestampTests : IDisposable
             GeneratedAt = "t",
         };
 
-        // Simulate the with-expression used in AnnotateCommand (line 502)
-        var updated = manifest with
-        {
-            LastFullBundleAt = DateTimeOffset.UtcNow.ToString("o"),
-        };
+        // Directly mutate — BuildManifest is now a mutable class, no copy needed
+        manifest.LastFullBundleAt = DateTimeOffset.UtcNow.ToString("o");
 
-        // The Images dictionary should be the same reference (shallow copy)
-        Assert.Same(manifest.Images, updated.Images);
-        Assert.Single(updated.Images);
-        Assert.Equal("abc", updated.Images["test.png"].ContentHash);
+        // Images dictionary is unchanged after mutation
+        Assert.NotNull(manifest.LastFullBundleAt);
+        Assert.Single(manifest.Images);
+        Assert.Equal("abc", manifest.Images["test.png"].ContentHash);
     }
 
     [Fact]
     public void WithExpression_MutationsToImages_VisibleInBothReferences()
     {
         var manifest = new BuildManifest();
-        var updated = manifest with
-        {
-            LastFullBundleAt = DateTimeOffset.UtcNow.ToString("o"),
-        };
 
-        // Mutate Images via the original reference
+        // Directly mutate — BuildManifest is now a mutable class
+        manifest.LastFullBundleAt = DateTimeOffset.UtcNow.ToString("o");
+
+        // Add an image and verify it's visible on the same instance
         manifest.Images["new.png"] = new ImageManifestEntry
         {
             ContentHash = "xyz",
@@ -344,8 +312,8 @@ public sealed class BundleTimestampTests : IDisposable
             GeneratedAt = "t",
         };
 
-        // Visible through the updated reference too (shared dictionary)
-        Assert.Single(updated.Images);
-        Assert.Equal("xyz", updated.Images["new.png"].ContentHash);
+        // Images are on the same instance — mutation is directly visible
+        Assert.Single(manifest.Images);
+        Assert.Equal("xyz", manifest.Images["new.png"].ContentHash);
     }
 }

@@ -49,7 +49,8 @@ public static class ManifestService
         foreach (var (key, value) in manifest.Images)
             ciImages.TryAdd(key, value);
 
-        return manifest with { Images = ciImages };
+        manifest.Images = ciImages;
+        return manifest;
     }
 
     /// <summary>
