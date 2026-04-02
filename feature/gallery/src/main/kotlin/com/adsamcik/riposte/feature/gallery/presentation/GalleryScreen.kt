@@ -96,6 +96,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
@@ -1102,7 +1104,18 @@ private fun FloatingSearchBar(
         topEmojis.isNotEmpty()
 
     Column(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .pointerInput(Unit) {
+                // Consume all touch events at Final pass so taps don't pass through
+                // to the grid below, while still allowing child buttons to handle them first
+                awaitPointerEventScope {
+                    while (true) {
+                        val event = awaitPointerEvent(PointerEventPass.Final)
+                        event.changes.forEach { it.consume() }
+                    }
+                }
+            },
     ) {
         Row(
             modifier =
@@ -1130,7 +1143,13 @@ private fun FloatingSearchBar(
             // Search bar
             com.adsamcik.riposte.core.ui.component.SearchBar(
                 query = uiState.searchState.query,
-                onQueryChange = { onIntent(GalleryIntent.UpdateSearchQuery(it)) },
+                onQueryChange = { query ->
+                    if (query.isEmpty()) {
+                        onIntent(GalleryIntent.ClearSearch)
+                    } else {
+                        onIntent(GalleryIntent.UpdateSearchQuery(query))
+                    }
+                },
                 onSearch = { onIntent(GalleryIntent.SubmitSearch) },
                 placeholder = stringResource(SearchR.string.search_placeholder),
                 onFocusChanged = { focused -> onIntent(GalleryIntent.SearchFieldFocusChanged(focused)) },
