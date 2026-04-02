@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
@@ -49,6 +50,7 @@ fun SearchBar(
     onFocusChanged: ((Boolean) -> Unit)? = null,
 ) {
     val focusRequester = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
     val defaultPlaceholder = stringResource(R.string.ui_search_placeholder)
 
     var textFieldValue by remember {
@@ -96,7 +98,16 @@ fun SearchBar(
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         },
-        trailingIcon = { SearchBarClearButton(query = query, onClear = { onQueryChange("") }) },
+        trailingIcon = {
+            SearchBarClearButton(
+                query = query,
+                onClear = {
+                    textFieldValue = TextFieldValue("")
+                    onQueryChange("")
+                    focusManager.clearFocus()
+                },
+            )
+        },
         singleLine = true,
         shape = RiposteShapes.SearchBar,
         colors =
