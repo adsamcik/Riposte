@@ -32,6 +32,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyRow
@@ -433,6 +434,7 @@ private fun GalleryScreenContent(
                     ) {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.semantics(mergeDescendants = true) {},
                         ) {
                             IconButton(onClick = { onIntent(GalleryIntent.ShareSelected) }) {
                                 Icon(
@@ -452,6 +454,7 @@ private fun GalleryScreenContent(
                         }
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.semantics(mergeDescendants = true) {},
                         ) {
                             IconButton(onClick = { onIntent(GalleryIntent.DeleteSelected) }) {
                                 Icon(
@@ -1162,6 +1165,7 @@ private fun FloatingSearchBar(
                     onClick = { onShowMenuChange(true) },
                     modifier =
                         Modifier
+                            .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
                             .background(
                                 color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = menuBgAlpha),
                                 shape = CircleShape,

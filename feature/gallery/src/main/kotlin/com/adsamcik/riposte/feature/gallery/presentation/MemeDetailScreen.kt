@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -411,6 +412,7 @@ private fun BoxScope.MemeDetailBackButton(
                 .align(Alignment.TopStart)
                 .windowInsetsPadding(WindowInsets.statusBars)
                 .padding(8.dp)
+                .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
                 .shadow(4.dp, CircleShape)
                 .background(
                     color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
@@ -543,11 +545,15 @@ private fun MemeActionButtonsRow(
             onCancelEdit = onCancelEdit,
             onToggleEdit = { onIntent(MemeDetailIntent.ToggleEditMode) },
         )
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.semantics(mergeDescendants = true) {},
+        ) {
             IconButton(
                 onClick = { onIntent(MemeDetailIntent.Share) },
                 enabled = !uiState.isSharing,
                 modifier = Modifier
+                    .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
                     .background(
                         color = MaterialTheme.colorScheme.primaryContainer,
                         shape = CircleShape,
@@ -579,10 +585,14 @@ private fun MemeActionButtonsRow(
             favoritedText = favoritedText,
             notFavoritedText = notFavoritedText,
         )
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.semantics(mergeDescendants = true) {},
+        ) {
             IconButton(
                 onClick = { onIntent(MemeDetailIntent.ShowDeleteDialog) },
                 modifier = Modifier
+                    .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
                     .background(
                         color = MaterialTheme.colorScheme.surfaceContainerHigh,
                         shape = CircleShape,
@@ -610,10 +620,14 @@ private fun EditActionButton(
     onCancelEdit: () -> Unit,
     onToggleEdit: () -> Unit,
 ) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.semantics(mergeDescendants = true) {},
+    ) {
         IconButton(
             onClick = { if (isEditMode) onCancelEdit() else onToggleEdit() },
             modifier = Modifier
+                .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
                 .background(
                     color = MaterialTheme.colorScheme.surfaceContainerHigh,
                     shape = CircleShape,
@@ -649,7 +663,10 @@ private fun FavoriteActionButton(
     favoritedText: String,
     notFavoritedText: String,
 ) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.semantics(mergeDescendants = true) {},
+    ) {
         val haptic = LocalHapticFeedback.current
         var animateTrigger by remember { mutableStateOf(0) }
         val animatedScale by animateFloatAsState(
@@ -670,6 +687,7 @@ private fun FavoriteActionButton(
             },
             modifier =
                 Modifier
+                    .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
                     .background(
                         color = MaterialTheme.colorScheme.surfaceContainerHigh,
                         shape = CircleShape,
@@ -855,7 +873,9 @@ private fun MemeViewModeContent(
             maxLines = if (descriptionExpanded) Int.MAX_VALUE else 2,
             overflow = TextOverflow.Ellipsis,
             onTextLayout = { result -> hasTextOverflow = result.hasVisualOverflow },
-            modifier = Modifier.clickable(role = Role.Button) { descriptionExpanded = !descriptionExpanded },
+            modifier = Modifier
+                .sizeIn(minHeight = 48.dp)
+                .clickable(role = Role.Button) { descriptionExpanded = !descriptionExpanded },
         )
         if (hasTextOverflow || descriptionExpanded) {
             Text(
@@ -867,6 +887,7 @@ private fun MemeViewModeContent(
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier
+                    .sizeIn(minHeight = 48.dp)
                     .clickable(role = Role.Button) { descriptionExpanded = !descriptionExpanded }
                     .padding(vertical = 12.dp),
             )
