@@ -1,11 +1,13 @@
 package com.adsamcik.riposte.feature.import_feature.data.worker
 
 import android.content.Context
+import android.content.pm.ServiceInfo
 import android.net.Uri
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.Data
 import androidx.work.ExistingWorkPolicy
+import androidx.work.ForegroundInfo
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
@@ -49,6 +51,16 @@ class ImportWorker
         private val notificationManager: ImportNotificationManager,
         private val eventBus: EventBus,
     ) : CoroutineWorker(appContext, params) {
+        override suspend fun getForegroundInfo(): ForegroundInfo {
+            notificationManager.createChannel()
+            val notification = notificationManager.buildProgressNotification(current = 0, total = 0)
+            return ForegroundInfo(
+                ImportNotificationManager.NOTIFICATION_ID,
+                notification,
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC,
+            )
+        }
+
         override suspend fun doWork(): Result {
             val requestId = inputData.getString(KEY_REQUEST_ID) ?: return Result.failure()
             val request = importRequestDao.getRequest(requestId) ?: return Result.failure()
