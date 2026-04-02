@@ -79,6 +79,7 @@ dependencies {
     testImplementation(libs.activity.compose)
     testImplementation(project(":core:testing"))
     testImplementation(libs.paging.testing)
+    testImplementation(libs.workmanager.testing)
     androidTestImplementation(libs.bundles.android.testing)
     androidTestImplementation(libs.paging.testing)
     androidTestImplementation(project(":core:testing"))
