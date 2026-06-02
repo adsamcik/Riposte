@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-06-02
+
+### Added
+
+- **Riposte as a system file source.** New `DocumentsProvider` exposes the meme library to the Android Storage Access Framework: tap "+" → Files in any app (Discord, Gmail, WhatsApp, etc.) and pick a meme directly from a Riposte folder. Browse by **All Memes**, **Favorites**, **Recently Used**, or **Emojis** (one subfolder per emoji that tags any meme, ordered by usage). Real downsized thumbnails via `BitmapFactory.inSampleSize`; Room-Flow-driven change notifications keep the picker in sync with imports / deletions / favorite toggles in real time.
+- `:testapps:share-receiver` — in-project debug-only Android app that pretends to be every kind of share receiver we want to integration-test against (well-behaved, Discord-style buggy, slow, paranoid, multi-process). Backed by a `ShareTelemetryProvider` ContentProvider so integration tests assert on outcomes via cross-process queries instead of scraping logcat. Auto-installed before `connectedAndroidTest`.
+
+### Fixed
+
+- **Discord (and other React-Native-based share targets) no longer crash on meme shares.** Discord's `ShareActivity` calls `Context.grantUriPermission` to forward URIs to its upload workers, which Android's grant model forbids for non-owner re-grants of transient `FileProvider` URIs (every share threw `SecurityException` after 1-2 attempts). Switched the share path from `FileProvider` to MediaStore (`Pictures/.riposte-share/` with `IS_PENDING` lifecycle and cleanup-on-next-share + on app start) so receivers authorise the URI via their own `READ_MEDIA_IMAGES` permission — the crash class becomes structurally impossible.
+- Floating toolbar in the gallery no longer taps through to underlying meme grid items.
+- Search clear (×) button now actually clears the text and refocuses the field.
+- All WorkManager workers implement `getForegroundInfo()` for Android 14+ foreground-service compliance.
+
+### Improved
+
+- All icon buttons in the gallery meet the 48dp minimum touch-target size required by WCAG.
+- Share intents now carry `FLAG_GRANT_READ_URI_PERMISSION | FLAG_GRANT_WRITE_URI_PERMISSION | FLAG_GRANT_PERSISTABLE_URI_PERMISSION` (was READ only) so well-behaved receivers can persist or forward URIs without manual workarounds.
+- Multi-share path refactored to go through `ShareRepository.prepareMultipleForSharing` with proper rollback if any meme fails to publish.
+
+### Tests
+
+- 18 new instrumentation tests against the new `:testapps:share-receiver` fixture:
+  - 9 covering the MediaStore share path: HappyPath, WriteRequired, Persistable, ArrayListOnly multi-share, late-read survival, plus the headline `mediaStore_share_to_DiscordStyleActivity_does_not_crash` regression marker and two counterfactual tests that prove the original FileProvider behaviour still reproduces the crash (so any future "let's go back to FileProvider" temptation fails red).
+  - 9 covering `DocumentsProvider`: root enumeration, folder structure, emoji subfolders, favorites filtering, search, document opening (byte equality), thumbnail downsizing.
+- Unit tests added for 4 use cases and 1 repository.
+
 ## [0.4.3] - 2026-03-27
 
 ### Changed

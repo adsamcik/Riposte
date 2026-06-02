@@ -422,11 +422,11 @@ class RiposteDocumentsProvider : NullSafeSearchDocumentsProvider() {
         signal: CancellationSignal?,
     ): AssetFileDescriptor? {
         if (!documentId.startsWith(MEME_PREFIX)) return null
-        val id = documentId.removePrefix(MEME_PREFIX).toLongOrNull() ?: return null
-        val meme = runBlocking { daoLazy.getMemeById(id) } ?: return null
-        val source = File(meme.filePath)
-        if (!source.exists()) return null
-
+        val source =
+            documentId.removePrefix(MEME_PREFIX).toLongOrNull()
+                ?.let { id -> runBlocking { daoLazy.getMemeById(id) } }
+                ?.let { meme -> File(meme.filePath).takeIf { it.exists() } }
+                ?: return null
         val thumbFile = generateThumbnail(source, sizeHint) ?: return null
         val pfd = ParcelFileDescriptor.open(thumbFile, ParcelFileDescriptor.MODE_READ_ONLY)
         return AssetFileDescriptor(pfd, 0, AssetFileDescriptor.UNKNOWN_LENGTH)

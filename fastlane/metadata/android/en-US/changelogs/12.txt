@@ -1,0 +1,10 @@
+✨ Riposte is now a file source in any app
+Tap + → Files in Discord, Gmail, WhatsApp etc. and pick a meme directly. Browse by All / Favorites / Recent / Emojis.
+
+🐛 Discord shares no longer crash
+Reworked the share pipeline so apps that delegate uploads to workers accept Riposte memes cleanly every time.
+
+♿ Icon buttons easier to tap (48dp minimum)
+🔍 Search clear (×) actually clears
+✋ Floating toolbar no longer taps through to memes
+🔧 Workers updated for Android 14 foreground rules
