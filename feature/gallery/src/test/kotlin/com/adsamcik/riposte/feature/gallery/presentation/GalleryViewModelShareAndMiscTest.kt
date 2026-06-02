@@ -70,6 +70,7 @@ class GalleryViewModelShareAndMiscTest {
     private lateinit var getLibraryStatsUseCase: GetLibraryStatsUseCase
     private val getSuggestionsUseCase: GetSuggestionsUseCase = GetSuggestionsUseCase()
     private lateinit var shareMemeUseCase: ShareMemeUseCase
+    private lateinit var shareRepository: com.adsamcik.riposte.core.common.share.ShareRepository
     private lateinit var galleryRepository: com.adsamcik.riposte.feature.gallery.domain.repository.GalleryRepository
     private lateinit var preferencesDataStore: PreferencesDataStore
     private lateinit var searchDelegate: SearchDelegate
@@ -119,6 +120,10 @@ class GalleryViewModelShareAndMiscTest {
         getLibraryStatsUseCase = mockk()
         shareMemeUseCase = mockk()
         coEvery { shareMemeUseCase(any()) } returns Result.success(Intent())
+        shareRepository = mockk(relaxed = true)
+        // Real Result instances — relaxed mockk can't construct Kotlin value classes
+        coEvery { shareRepository.prepareMultipleForSharing(any(), any()) } returns Result.success(emptyList())
+        every { shareRepository.createMultipleShareIntent(any(), any()) } returns Intent.createChooser(Intent(Intent.ACTION_SEND_MULTIPLE), null)
         galleryRepository = mockk(relaxed = true)
         every { galleryRepository.getPagedMemes(any()) } returns kotlinx.coroutines.flow.emptyFlow()
         every { galleryRepository.getPagedMemesByEmojis(any()) } returns kotlinx.coroutines.flow.emptyFlow()
@@ -169,6 +174,7 @@ class GalleryViewModelShareAndMiscTest {
             useCases = useCases,
             getSuggestionsUseCase = getSuggestionsUseCase,
             shareMemeUseCase = shareMemeUseCase,
+            shareRepository = shareRepository,
             galleryRepository = galleryRepository,
             defaultDispatcher = mainDispatcherRule.testDispatcher,
             preferencesDataStore = preferencesDataStore,
@@ -537,6 +543,7 @@ class GalleryViewModelShareAndMiscTest {
                 useCases = useCases,
                 getSuggestionsUseCase = getSuggestionsUseCase,
                 shareMemeUseCase = shareMemeUseCase,
+                shareRepository = shareRepository,
                 galleryRepository = galleryRepository,
                 defaultDispatcher = mainDispatcherRule.testDispatcher,
                 preferencesDataStore = preferencesDataStore,

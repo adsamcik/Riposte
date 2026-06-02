@@ -154,6 +154,7 @@ class GalleryViewModelInitAndLoadTest {
             useCases = useCases,
             getSuggestionsUseCase = getSuggestionsUseCase,
             shareMemeUseCase = shareMemeUseCase,
+            shareRepository = mockk(relaxed = true),
             galleryRepository = galleryRepository,
             defaultDispatcher = mainDispatcherRule.testDispatcher,
             preferencesDataStore = preferencesDataStore,

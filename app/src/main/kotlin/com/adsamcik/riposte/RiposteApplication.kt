@@ -5,6 +5,7 @@ import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import com.adsamcik.riposte.core.common.crash.CrashReportWriter
 import com.adsamcik.riposte.core.common.lifecycle.AppLifecycleTracker
+import com.adsamcik.riposte.core.common.share.ShareRepository
 import com.adsamcik.riposte.core.ml.EmbeddingManager
 import dagger.Lazy
 import dagger.hilt.android.HiltAndroidApp
@@ -34,6 +35,9 @@ class RiposteApplication : Application(), Configuration.Provider {
     @Inject
     lateinit var embeddingManager: Lazy<EmbeddingManager>
 
+    @Inject
+    lateinit var shareRepository: Lazy<ShareRepository>
+
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     override fun onCreate() {
@@ -48,6 +52,20 @@ class RiposteApplication : Application(), Configuration.Provider {
         // Launch heavy dependency construction off the main thread
         applicationScope.launch {
             embeddingManager.get().warmUpAndResumeIndexing(applicationScope)
+        }
+        // Clean up any transient MediaStore share entries left behind from a previous
+        // process. Anything still present is by definition stale — the receiving app
+        // has already consumed it (or we crashed before cleanup). Fire-and-forget.
+        applicationScope.launch {
+            @Suppress("TooGenericExceptionCaught")
+            try {
+                val removed = shareRepository.get().cleanupStaleShares()
+                if (removed > 0) {
+                    Timber.d("Cleaned up %d stale share entries on app start", removed)
+                }
+            } catch (e: Exception) {
+                Timber.w(e, "Stale share cleanup failed on app start")
+            }
         }
     }
 

@@ -8,6 +8,7 @@ import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.adsamcik.riposte.core.common.di.DefaultDispatcher
 import com.adsamcik.riposte.core.common.share.ShareMemeUseCase
+import com.adsamcik.riposte.core.common.share.ShareRepository
 import com.adsamcik.riposte.core.common.suggestion.GetSuggestionsUseCase
 import com.adsamcik.riposte.core.common.suggestion.SuggestionContext
 import com.adsamcik.riposte.core.common.suggestion.Surface
@@ -53,6 +54,7 @@ class GalleryViewModel
         private val useCases: GalleryViewModelUseCases,
         private val getSuggestionsUseCase: GetSuggestionsUseCase,
         private val shareMemeUseCase: ShareMemeUseCase,
+        private val shareRepository: ShareRepository,
         private val galleryRepository: GalleryRepository,
         @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
         private val preferencesDataStore: PreferencesDataStore,
@@ -701,7 +703,10 @@ class GalleryViewModel
                 return
             }
 
-            // Multiple memes: build ACTION_SEND_MULTIPLE intent with system chooser
+            // Multiple memes: use repository's MediaStore-backed batch share path
+            // (FileProvider-based sharing crashes Discord's ShareActivity on re-grant —
+            // MediaStore URIs are owned by the system MediaProvider so receivers can
+            // grant them via their own READ_MEDIA_IMAGES permission).
             viewModelScope.launch {
                 val memes =
                     selectedIds.mapNotNull { id ->
@@ -710,26 +715,21 @@ class GalleryViewModel
                     }
                 if (memes.isEmpty()) return@launch
 
-                val uris =
-                    ArrayList(
-                        memes.map { meme ->
-                            androidx.core.content.FileProvider.getUriForFile(
-                                context,
-                                "${context.packageName}.fileprovider",
-                                java.io.File(meme.filePath),
-                            )
-                        },
-                    )
-                val intent =
-                    Intent(Intent.ACTION_SEND_MULTIPLE).apply {
-                        type = "image/*"
-                        putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
-                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                val config = shareRepository.getDefaultShareConfig()
+                shareRepository.prepareMultipleForSharing(memes, config)
+                    .onSuccess { uris ->
+                        val intent = shareRepository.createMultipleShareIntent(uris, "image/*")
+                        clearSelection()
+                        _effects.send(GalleryEffect.LaunchShareIntent(intent))
                     }
-                clearSelection()
-                _effects.send(
-                    GalleryEffect.LaunchShareIntent(Intent.createChooser(intent, null)),
-                )
+                    .onFailure { error ->
+                        Timber.e(error, "Multi-share failed for %d memes", memes.size)
+                        _effects.send(
+                            GalleryEffect.ShowError(
+                                error.message ?: context.getString(R.string.gallery_error_default),
+                            ),
+                        )
+                    }
             }
         }
 
