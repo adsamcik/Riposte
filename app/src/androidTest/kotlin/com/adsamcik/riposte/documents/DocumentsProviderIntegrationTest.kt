@@ -1,10 +1,13 @@
 package com.adsamcik.riposte.documents
 
 import android.content.Context
+import android.graphics.BitmapFactory
 import android.provider.DocumentsContract
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.adsamcik.riposte.core.database.dao.EmojiTagDao
 import com.adsamcik.riposte.core.database.dao.MemeDao
+import com.adsamcik.riposte.core.database.entity.EmojiTagEntity
 import com.adsamcik.riposte.core.database.entity.MemeEntity
 import com.google.common.truth.Truth.assertThat
 import dagger.hilt.android.testing.HiltAndroidRule
@@ -42,6 +45,9 @@ class DocumentsProviderIntegrationTest {
     @Inject
     lateinit var memeDao: MemeDao
 
+    @Inject
+    lateinit var emojiTagDao: EmojiTagDao
+
     private val instrumentation get() = InstrumentationRegistry.getInstrumentation()
     private val targetContext: Context get() = instrumentation.targetContext
 
@@ -58,6 +64,11 @@ class DocumentsProviderIntegrationTest {
 
     @After
     fun tearDown() {
+        if (::emojiTagDao.isInitialized && seededIds.isNotEmpty()) {
+            runBlocking {
+                seededIds.forEach { emojiTagDao.deleteEmojiTagsForMeme(it) }
+            }
+        }
         if (::memeDao.isInitialized && seededIds.isNotEmpty()) {
             runBlocking { memeDao.deleteMemesByIds(seededIds.toList()) }
         }
@@ -79,7 +90,7 @@ class DocumentsProviderIntegrationTest {
     }
 
     @Test
-    fun queryChildDocuments_at_root_returns_three_top_level_folders() {
+    fun queryChildDocuments_at_root_returns_four_top_level_folders() {
         val childrenUri = DocumentsContract.buildChildDocumentsUri(authority, "root")
         val seenIds = mutableSetOf<String>()
         targetContext.contentResolver.query(childrenUri, null, null, null, null)?.use { cursor ->
@@ -90,7 +101,7 @@ class DocumentsProviderIntegrationTest {
                 seenIds.add(cursor.getString(idIdx))
             }
         }
-        assertThat(seenIds).containsExactly("all", "favorites", "recent")
+        assertThat(seenIds).containsExactly("all", "favorites", "recent", "emojis")
     }
 
     @Test
@@ -160,14 +171,102 @@ class DocumentsProviderIntegrationTest {
         assertThat(docIds).contains("meme:${match.id}")
     }
 
+    // region Emoji subfolders
+
+    @Test
+    fun queryChildDocuments_at_emojis_lists_one_folder_per_distinct_emoji_in_library() {
+        // Three memes: two tagged 😂, one tagged 🔥 — expect two emoji folders.
+        val meme1 = seedMeme(displayName = "joy_a.jpg")
+        val meme2 = seedMeme(displayName = "joy_b.jpg")
+        val meme3 = seedMeme(displayName = "fire.jpg")
+        seedEmojiTags(meme1.id, "😂" to "joy")
+        seedEmojiTags(meme2.id, "😂" to "joy")
+        seedEmojiTags(meme3.id, "🔥" to "fire")
+
+        val emojisUri = DocumentsContract.buildChildDocumentsUri(authority, "emojis")
+        val docIds = mutableListOf<String>()
+        targetContext.contentResolver.query(emojisUri, null, null, null, null)?.use { cursor ->
+            val idIdx = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DOCUMENT_ID)
+            val mimeIdx = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_MIME_TYPE)
+            while (cursor.moveToNext()) {
+                assertThat(cursor.getString(mimeIdx)).isEqualTo(DocumentsContract.Document.MIME_TYPE_DIR)
+                docIds.add(cursor.getString(idIdx))
+            }
+        }
+        assertThat(docIds).contains("emoji:😂")
+        assertThat(docIds).contains("emoji:🔥")
+    }
+
+    @Test
+    fun queryChildDocuments_inside_emoji_folder_returns_only_memes_with_that_emoji() {
+        val joy1 = seedMeme(displayName = "joy_a.jpg")
+        val joy2 = seedMeme(displayName = "joy_b.jpg")
+        val fire = seedMeme(displayName = "fire.jpg")
+        seedEmojiTags(joy1.id, "😂" to "joy")
+        seedEmojiTags(joy2.id, "😂" to "joy")
+        seedEmojiTags(fire.id, "🔥" to "fire")
+
+        val joyFolderUri = DocumentsContract.buildChildDocumentsUri(authority, "emoji:😂")
+        val docIds = mutableListOf<String>()
+        targetContext.contentResolver.query(joyFolderUri, null, null, null, null)?.use { cursor ->
+            val idIdx = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DOCUMENT_ID)
+            while (cursor.moveToNext()) {
+                docIds.add(cursor.getString(idIdx))
+            }
+        }
+        assertThat(docIds).containsExactly("meme:${joy1.id}", "meme:${joy2.id}")
+        assertThat(docIds).doesNotContain("meme:${fire.id}")
+    }
+
+    // endregion
+
+    // region Thumbnails
+
+    @Test
+    fun openDocumentThumbnail_returns_downsized_image_smaller_than_source() {
+        // Use a much larger image than the picker's typical thumbnail hint so
+        // downsizing has a chance to demonstrate itself. If thumbnailing were
+        // a no-op (returning the full image), the bitmap would come back at
+        // source dimensions — instead we expect it close to the hint.
+        val seeded = seedMeme(displayName = "big.jpg", widthPx = 1024, heightPx = 1024)
+
+        val docUri = DocumentsContract.buildDocumentUri(authority, "meme:${seeded.id}")
+        // ContentResolver.loadThumbnail is the system API the file picker uses;
+        // it packages the Size into ContentResolver.EXTRA_SIZE and routes to our
+        // openDocumentThumbnail override under the hood.
+        val thumbBitmap =
+            targetContext.contentResolver.loadThumbnail(
+                docUri,
+                android.util.Size(128, 128),
+                null,
+            )
+        try {
+            // Both dimensions must be <= the source — proving downsizing actually
+            // happened rather than returning the full image.
+            assertThat(thumbBitmap.width).isLessThan(seeded.width)
+            assertThat(thumbBitmap.height).isLessThan(seeded.height)
+            // And at least the minimum we clamp to, so picker icons aren't useless
+            // tiny smudges when a caller passes a very small hint.
+            assertThat(thumbBitmap.width).isAtLeast(64)
+        } finally {
+            thumbBitmap.recycle()
+        }
+    }
+
+    // endregion
+
+    // region Helpers
+
     private fun seedMeme(
         displayName: String,
         isFavorite: Boolean = false,
+        widthPx: Int = 1,
+        heightPx: Int = 1,
     ): MemeEntity = runBlocking {
         val file =
             File(targetContext.cacheDir, "doc_test_${System.nanoTime()}_$displayName").apply {
                 parentFile?.mkdirs()
-                writeBytes(TEST_IMAGE_BYTES)
+                writeBytes(syntheticJpegBytes(widthPx, heightPx))
             }
         seededFiles.add(file)
 
@@ -177,8 +276,8 @@ class DocumentsProviderIntegrationTest {
                 filePath = file.absolutePath,
                 fileName = displayName,
                 mimeType = "image/jpeg",
-                width = 1,
-                height = 1,
+                width = widthPx,
+                height = heightPx,
                 fileSizeBytes = file.length(),
                 importedAt = now,
                 emojiTagsJson = "[]",
@@ -189,6 +288,40 @@ class DocumentsProviderIntegrationTest {
         seededIds.add(id)
         entity.copy(id = id)
     }
+
+    private fun seedEmojiTags(
+        memeId: Long,
+        vararg emojis: Pair<String, String>,
+    ) = runBlocking {
+        emojiTagDao.insertEmojiTags(
+            emojis.map { (emoji, name) ->
+                EmojiTagEntity(memeId = memeId, emoji = emoji, emojiName = name)
+            },
+        )
+    }
+
+    /**
+     * Build a JPEG of the requested dimensions. For 1x1 we return a known-good
+     * micro-JPEG (smallest possible). For larger sizes we synthesise a real
+     * bitmap so the thumbnail decoder has actual pixels to downsize.
+     */
+    private fun syntheticJpegBytes(
+        width: Int = 1,
+        height: Int = 1,
+    ): ByteArray {
+        if (width <= 1 && height <= 1) return TEST_IMAGE_BYTES
+        val bmp = android.graphics.Bitmap.createBitmap(width, height, android.graphics.Bitmap.Config.ARGB_8888)
+        try {
+            bmp.eraseColor(android.graphics.Color.MAGENTA)
+            val out = java.io.ByteArrayOutputStream()
+            bmp.compress(android.graphics.Bitmap.CompressFormat.JPEG, 90, out)
+            return out.toByteArray()
+        } finally {
+            bmp.recycle()
+        }
+    }
+
+    // endregion
 
     private companion object {
         // Smallest valid JPEG header — sufficient for round-trip byte equality.
