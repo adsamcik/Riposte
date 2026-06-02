@@ -69,6 +69,30 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
+        <!--
+            DocumentsProvider that exposes the Riposte meme library to the
+            Android Storage Access Framework. When users tap "+" → "Files" in
+            any app (Discord, Gmail, etc.) they'll see "Riposte" as a source
+            and can browse + pick memes directly. The picker receives a
+            content://${applicationId}.documents/... URI it can read via its
+            own media permission — no Riposte-side grant chain involved.
+
+            Requires android.permission.MANAGE_DOCUMENTS to be granted to the
+            system so the Files app can enumerate roots; this is automatically
+            granted to apps declaring the DOCUMENTS_PROVIDER intent filter
+            (no runtime permission prompt for the user).
+        -->
+        <provider
+            android:name=".documents.RiposteDocumentsProvider"
+            android:authorities="${applicationId}.documents"
+            android:exported="true"
+            android:grantUriPermissions="true"
+            android:permission="android.permission.MANAGE_DOCUMENTS">
+            <intent-filter>
+                <action android:name="android.content.action.DOCUMENTS_PROVIDER" />
+            </intent-filter>
+        </provider>
+
         <!-- Disable default WorkManager initialization to use Hilt-based initialization -->
         <provider
             android:name="androidx.startup.InitializationProvider"
