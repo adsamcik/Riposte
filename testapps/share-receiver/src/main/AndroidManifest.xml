@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!--
+        Required so Activities that simulate apps with broad media access (like
+        Discord) can call grantUriPermission successfully on MediaStore URIs.
+    -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+
+    <!--
+        Some test scenarios need to query the foreground app to mimic real
+        share-target behavior. Cheap permission, no user prompt.
+    -->
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
+        tools:ignore="QueryAllPackagesPermission" />
+
+    <application
+        android:label="@string/app_name"
+        android:allowBackup="false"
+        android:icon="@android:drawable/ic_menu_share"
+        android:theme="@android:style/Theme.Material.Light.NoActionBar">
+
+        <!--
+            Telemetry provider — Riposte's integration tests query this to
+            assert what happened on the receiver side after each share. Exported
+            so the test process (different applicationId) can read it.
+        -->
+        <provider
+            android:name=".telemetry.ShareTelemetryProvider"
+            android:authorities="com.adsamcik.riposte.testreceiver.telemetry"
+            android:exported="true"
+            android:grantUriPermissions="false" />
+
+        <!-- ============================================================== -->
+        <!-- HAPPY PATH                                                     -->
+        <!-- ============================================================== -->
+
+        <!--
+            Baseline: read the URI bytes via ContentResolver, record outcome,
+            finish. The control case every other scenario is compared against.
+        -->
+        <activity
+            android:name=".activity.HappyPathActivity"
+            android:exported="true"
+            android:noHistory="true"
+            android:excludeFromRecents="true">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
+        </activity>
+
+        <!-- ============================================================== -->
+        <!-- KNOWN BUG PATTERNS                                             -->
+        <!-- ============================================================== -->
+
+        <!--
+            Discord-style: on receiving the share, immediately call
+            Context.grantUriPermission(target, uri, READ|WRITE) to forward to a
+            hypothetical worker. Throws SecurityException for non-MediaStore
+            URIs unless the caller has owner-level permission. The crash that
+            kicked off this whole effort.
+        -->
+        <activity
+            android:name=".activity.DiscordStyleActivity"
+            android:exported="true"
+            android:noHistory="true"
+            android:excludeFromRecents="true">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
+        </activity>
+
+        <!--
+            Discord's secondary bug: assumes EXTRA_STREAM is always an
+            ArrayList<Uri> (multi-share shape), even for single shares. Throws
+            BadTypeParcelableException when given a single Uri. Useful for
+            detecting whether we accidentally regress to ACTION_SEND with
+            non-ArrayList extras.
+        -->
+        <activity
+            android:name=".activity.ArrayListOnlyActivity"
+            android:exported="true"
+            android:noHistory="true"
+            android:excludeFromRecents="true">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
+        </activity>
+
+        <!--
+            Intermittent: first share succeeds, second share throws. Simulates
+            the "works once, crashes after" pattern users actually hit. State
+            persists across activity instances via SharedPreferences so the
+            second invocation reliably fails.
+        -->
+        <activity
+            android:name=".activity.CrashOnSecondShareActivity"
+            android:exported="true"
+            android:noHistory="true"
+            android:excludeFromRecents="true">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
+        </activity>
+
+        <!-- ============================================================== -->
+        <!-- EDGE-CASE PATTERNS                                             -->
+        <!-- ============================================================== -->
+
+        <!--
+            Tries to open the URI in WRITE mode and write a marker byte back to
+            it. Validates that our FLAG_GRANT_WRITE_URI_PERMISSION actually
+            grants what it claims, and that MediaStore URIs accept writes from
+            apps with READ_MEDIA_IMAGES.
+        -->
+        <activity
+            android:name=".activity.WriteRequiredActivity"
+            android:exported="true"
+            android:noHistory="true"
+            android:excludeFromRecents="true">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
+        </activity>
+
+        <!--
+            Calls takePersistableUriPermission() to validate our PERSISTABLE
+            flag. The grant should survive process restart (we don't actually
+            restart in the test, but the call succeeding proves the flag is set
+            and the URI provider supports persistable grants).
+        -->
+        <activity
+            android:name=".activity.PersistableActivity"
+            android:exported="true"
+            android:noHistory="true"
+            android:excludeFromRecents="true">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
+        </activity>
+
+        <!--
+            Acknowledges receipt immediately but defers the actual URI read by
+            ~5 seconds via Handler. Tests that our cleanup-on-next-share isn't
+            so aggressive that it kills in-flight reads. Real-world apps
+            (especially upload pipelines) often delay reads while uploading
+            other media first.
+        -->
+        <activity
+            android:name=".activity.LateReadActivity"
+            android:exported="true"
+            android:noHistory="true"
+            android:excludeFromRecents="true">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
+        </activity>
+
+        <!--
+            Forwards the URI to a service running in a separate :remote
+            process. The service tries to open the stream from a different
+            UID slot. Tests that grants survive IPC — important because real
+            apps often have upload workers in separate processes.
+        -->
+        <activity
+            android:name=".activity.MultiProcessActivity"
+            android:exported="true"
+            android:noHistory="true"
+            android:excludeFromRecents="true">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
+        </activity>
+
+        <!--
+            Handles ACTION_SEND_MULTIPLE properly — reads every URI in the
+            list, records bytes per URI. The well-behaved counterpart to
+            ArrayListOnlyActivity for the multi-share path.
+        -->
+        <activity
+            android:name=".activity.MultiShareActivity"
+            android:exported="true"
+            android:noHistory="true"
+            android:excludeFromRecents="true">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
+        </activity>
+
+        <!--
+            Background service used by LateReadActivity. Reads the URI on a
+            delay via coroutines + Handler. Foreground-service-typed because
+            Android 14+ requires it for any background work that survives the
+            calling activity.
+        -->
+        <service
+            android:name=".service.DelayedReadService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
+        <!--
+            Background service used by MultiProcessActivity. Runs in a
+            separate process to validate grant survival across IPC.
+        -->
+        <service
+            android:name=".service.RemoteWorkerService"
+            android:exported="false"
+            android:process=":remote" />
+
+    </application>
+
+    <!--
+        Foreground-service permission is needed by Android 14+ for the
+        DelayedReadService. dataSync type is appropriate for "I'm reading a
+        URI on behalf of a user-initiated share."
+    -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+
+</manifest>

@@ -43,3 +43,6 @@ include(":feature:settings")
 // AI Pack modules
 include(":aipacks:generic_embedding")
 include(":aipacks:soc_optimized")
+
+// Test fixture apps (debug-only; never shipped)
+include(":testapps:share-receiver")

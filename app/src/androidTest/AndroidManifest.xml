@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--
+        Android 11+ Package Visibility: apps must explicitly declare which
+        other packages they need to see. The :testapps:share-receiver fixture
+        app's ContentProvider is otherwise invisible to our instrumentation
+        test process even though it's exported.
+
+        Both the receiver's applicationId and its telemetry-provider
+        authority are listed — the provider entry is what actually lets
+        ContentResolver resolve queries against the fixture.
+
+        Test-only manifest: merged into the instrumentation APK only, never
+        into release/debug APKs shipped to users.
+    -->
+    <queries>
+        <package android:name="com.adsamcik.riposte.testreceiver" />
+        <provider android:authorities="com.adsamcik.riposte.testreceiver.telemetry" />
+    </queries>
+
+</manifest>

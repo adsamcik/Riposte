@@ -238,6 +238,16 @@ dependencies {
     kspAndroidTest(libs.hilt.compiler)
 }
 
+// Ensure the test-receiver fixture APK is installed on the device before any
+// connected instrumentation test runs. Without this, ShareIntegrationTest
+// can't fire intents at the receiver Activities.
+afterEvaluate {
+    tasks.matching { it.name.startsWith("connected") && it.name.endsWith("AndroidTest") }
+        .configureEach {
+            dependsOn(":testapps:share-receiver:installDebug")
+        }
+}
+
 // TODO: Re-enable when baseline profile plugin supports AGP 9
 // baselineProfile {
 //     automaticGenerationDuringBuild = false
