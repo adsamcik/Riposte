@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "com.adsamcik.riposte.core.ui"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         minSdk = 31

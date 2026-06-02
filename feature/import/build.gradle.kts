@@ -8,7 +8,7 @@ plugins {
 
 android {
     namespace = "com.adsamcik.riposte.feature.import_feature"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         minSdk = 31

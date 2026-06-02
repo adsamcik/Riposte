@@ -1,3 +1,0 @@
-[workspace]
-members = ["riposte-core", "riposte-jni"]
-resolver = "2"

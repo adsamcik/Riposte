@@ -28,7 +28,7 @@ Release signing reads `RELEASE_STORE_FILE`, `RELEASE_STORE_PASSWORD`, `RELEASE_K
 | DI | Hilt 2.58 |
 | Database | Room 2.8.4 with FTS4 full-text search |
 | Async | Coroutines 1.10.1 & Flow |
-| AI/ML | ML Kit (text recognition/labeling) + MediaPipe (embeddings) + LiteRT |
+| AI/ML | [Mindlayer SDK](https://github.com/adsamcik/Mindlayer) (on-device LLM service for embeddings + OCR via AIDL) |
 | Image Loading | Coil 3.3.0 |
 | Navigation | Type-safe Navigation Compose 2.9.6 |
 | Serialization | Kotlinx Serialization 1.8.0 |
@@ -37,8 +37,8 @@ Release signing reads `RELEASE_STORE_FILE`, `RELEASE_STORE_PASSWORD`, `RELEASE_K
 ## Build, Test & Lint Commands
 
 ```bash
-# Build (standard flavor recommended for development)
-./gradlew :app:assembleStandardDebug
+# Build the debug APK
+./gradlew :app:assembleDebug
 
 # Run all unit tests
 ./gradlew test
@@ -68,19 +68,22 @@ Release signing reads `RELEASE_STORE_FILE`, `RELEASE_STORE_PASSWORD`, `RELEASE_K
 ./gradlew verifyCoverage
 ```
 
-### Build Flavors
+### AI dependencies (Mindlayer SDK)
 
-The `embedding` product flavor dimension controls which on-device ML models are bundled:
+Riposte delegates all AI inference (semantic-search embeddings, OCR) to the
+[Mindlayer](https://github.com/adsamcik/Mindlayer) on-device LLM service via
+the Mindlayer SDK (`com.adsamcik.mindlayer:sdk`). The SDK is currently
+consumed from local Maven; build it from a Mindlayer checkout with:
 
-| Flavor | APK Size | Description |
-|--------|----------|-------------|
-| `lite` | ~177 MB | No embedding models, basic search only |
-| `standard` | ~350 MB | Generic model only — **recommended for dev** |
-| `qualcomm` | ~880 MB | Generic + Qualcomm-optimized |
-| `mediatek` | ~555 MB | Generic + MediaTek-optimized |
-| `full` | ~1.3 GB | All models — for testing |
+```bash
+./gradlew :shared:publishToMavenLocal :sdk:publishToMavenLocal
+```
 
-Flavor is part of the task name: `assembleStandardDebug`, `assembleLiteRelease`, etc.
+The Mindlayer service app must be installed and approved on the target
+device. When it isn't, AI features degrade gracefully (FTS + emoji search
+continue to work; semantic search and OCR are disabled). See
+`core/ml/MindlayerClient.kt` for the connection lifecycle and
+`MindlayerAvailability` for the availability state surface.
 
 ## Architecture
 
@@ -91,7 +94,7 @@ Clean Architecture + MVI, split across multi-module Gradle project (`app/`, `cor
 - **Feature → Core only.** Feature modules must NOT depend on other features.
 - **Core modules must NOT depend on features.**
 - `app` module wires everything together (includes all features + all core modules).
-- `aipacks/` contains AI Pack modules (`generic_embedding`, `soc_optimized`) delivered via install-time dynamic delivery for platform-specific ML models.
+- AI inference is **out of process** — `core/ml` only contains thin adapters (`MindlayerClient`, `MindlayerEmbeddingGenerator`, `MindlayerTextRecognizer`) that delegate to the Mindlayer service via the Mindlayer SDK. There are no bundled ML models or native libraries in the Riposte APK.
 
 ### MVI Per Screen
 
@@ -128,7 +131,7 @@ Gallery uses Paging3 for the "All" filter (1000+ memes). DAO returns `PagingSour
 
 ### Search
 
-Three search modes: FTS4 text search, emoji tag filtering, and semantic vector search (MediaPipe/EmbeddingGemma embeddings). Hybrid search implementation in `core/ml/SemanticSearchEngine.kt`.
+Three search modes: FTS4 text search, emoji tag filtering, and semantic vector search (Mindlayer SDK → on-device EmbeddingGemma-300M via the Mindlayer service). Hybrid search implementation in `core/ml/SemanticSearchEngine.kt`.
 
 ### WorkManager + Hilt
 

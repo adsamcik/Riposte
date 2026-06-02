@@ -13,12 +13,12 @@ plugins {
 
 android {
     namespace = "com.adsamcik.riposte"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.adsamcik.riposte"
         minSdk = 31
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 12
         versionName = "0.5.0"
 
@@ -34,78 +34,6 @@ android {
         generateLocaleConfig = true
         // Only include supported locales in APK
         localeFilters += setOf("en", "cs", "de", "es", "pt")
-    }
-
-    // Product flavors for embedding models
-    // Single dimension: controls which EmbeddingGemma models are included
-    // Always builds universal (all architectures) for maximum compatibility
-    flavorDimensions += "embedding"
-
-    productFlavors {
-        create("lite") {
-            dimension = "embedding"
-            isDefault = true
-        }
-
-        create("standard") {
-            dimension = "embedding"
-        }
-
-        create("sm8650") {
-            dimension = "embedding"
-            buildConfigField("boolean", "INCLUDE_EMBEDDINGGEMMA", "true")
-            buildConfigField("String", "INCLUDED_SOC_MODELS", "\"sm8650\"")
-        }
-
-        create("googleplay") {
-            dimension = "embedding"
-        }
-    }
-
-    // Configure source sets to include/exclude embedding models per flavor
-    sourceSets {
-        getByName("lite") {
-            assets.setSrcDirs(listOf("src/main/assets"))
-        }
-
-        // Standard: generic model only
-        getByName("standard") {
-            assets.setSrcDirs(
-                listOf(
-                    "src/main/assets",
-                    "src/main/assets_standard",
-                ),
-            )
-        }
-
-        // SM8650: Snapdragon 8 Gen 3 optimized model only (S24 Ultra, etc.)
-        getByName("sm8650") {
-            assets.setSrcDirs(
-                listOf(
-                    "src/main/assets",
-                    "src/main/assets_sm8650",
-                ),
-            )
-        }
-
-        // Google Play: models delivered via AI Packs (assetPacks) in AAB builds.
-        // For APK sideload testing, use the 'standard' flavor instead.
-        getByName("googleplay") {
-            assets.setSrcDirs(listOf("src/main/assets"))
-        }
-    }
-
-    // AI Packs for Google Play distribution (install-time delivery).
-    // Global setting — only affects AAB builds (googleplay flavor); ignored for APK builds.
-    assetPacks += listOf(":aipacks:generic_embedding", ":aipacks:soc_optimized")
-
-    // Device targeting for SoC-optimized AI Pack delivery
-    bundle {
-        deviceTargetingConfig = file("device_targeting_config.xml")
-        deviceGroup {
-            enableSplit = true
-            defaultGroup = "other"
-        }
     }
 
     // Release signing configuration
@@ -254,18 +182,3 @@ afterEvaluate {
 //     automaticGenerationDuringBuild = false
 //     dexLayoutOptimization = true
 // }
-
-// Sync SoC-specific model from aipacks into sm8650 flavor assets at build time.
-// This avoids duplicating the 181 MB tflite file in the repository.
-val syncSm8650Model by tasks.registering(Copy::class) {
-    from("${rootProject.projectDir}/aipacks/soc_optimized/src/main/assets/embedding_models#group_qualcomm_sm8650") {
-        include("*.tflite")
-    }
-    into("$projectDir/src/main/assets_sm8650/embedding_models")
-}
-
-afterEvaluate {
-    tasks
-        .matching { it.name.contains("Sm8650") && it.name.startsWith("merge") && it.name.contains("Assets") }
-        .configureEach { dependsOn(syncSm8650Model) }
-}

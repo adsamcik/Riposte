@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.adsamcik.riposte.feature.share"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         minSdk = 31

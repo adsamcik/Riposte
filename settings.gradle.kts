@@ -11,6 +11,8 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        // Local Maven for Mindlayer SDK (publish via `./gradlew :sdk:publishToMavenLocal` in Mindlayer repo)
+        mavenLocal()
     }
 }
 
@@ -39,10 +41,6 @@ include(":feature:gallery")
 include(":feature:import")
 include(":feature:share")
 include(":feature:settings")
-
-// AI Pack modules
-include(":aipacks:generic_embedding")
-include(":aipacks:soc_optimized")
 
 // Test fixture apps (debug-only; never shipped)
 include(":testapps:share-receiver")

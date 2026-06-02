@@ -34,11 +34,11 @@
 │                               Core Modules                                   │
 │  ┌────────────┐  ┌────────────┐  ┌────────────┐  ┌────────────┐            │
 │  │  database  │  │  datastore │  │     ml     │  │   model    │            │
-│  │   (Room)   │  │(DataStore) │  │ (ML Kit,   │  │  (Domain   │            │
-│  │            │  │            │  │  MediaPipe,│  │   Models)  │            │
-│  │ MemeDao    │  │Preferences │  │  LiteRT)   │  │            │            │
-│  │ SearchDao  │  │ DataStore  │  │            │  │ Meme       │            │
-│  │ EmbeddingDao│ │            │  │ Embeddings │  │ EmojiTag   │            │
+│  │   (Room)   │  │(DataStore) │  │ (Mindlayer │  │  (Domain   │            │
+│  │            │  │            │  │   SDK)     │  │   Models)  │            │
+│  │ MemeDao    │  │Preferences │  │            │  │            │            │
+│  │ SearchDao  │  │ DataStore  │  │ Embeddings │  │ Meme       │            │
+│  │ EmbeddingDao│ │            │  │  + OCR     │  │ EmojiTag   │            │
 │  └────────────┘  └────────────┘  └────────────┘  └────────────┘            │
 │  ┌────────────┐  ┌────────────┐                                             │
 │  │   common   │  │     ui     │                                             │
@@ -106,22 +106,26 @@ core:testing
 
 ### core:ml
 
-**Purpose**: On-device AI for text recognition, image labeling, and semantic embeddings
+**Purpose**: Adapter layer that delegates on-device AI (semantic embeddings, OCR) to the
+[Mindlayer](https://github.com/adsamcik/Mindlayer) service via the Mindlayer SDK.
 
 **Location**: `core/ml/src/main/kotlin/com/Riposte/core/ml/`
 
 **Key Files**:
 
+- `MindlayerClient.kt` - Owns the Mindlayer SDK connection + availability state
+- `MindlayerEmbeddingGenerator.kt` - `EmbeddingGenerator` impl delegating to Mindlayer
+- `MindlayerTextRecognizer.kt` - `TextRecognizer` impl delegating to Mindlayer OCR
 - `SemanticSearchEngine.kt` - Hybrid FTS + vector search interface
 - `DefaultSemanticSearchEngine.kt` - Implementation with cosine similarity
-- `MediaPipeEmbeddingGenerator.kt` - 512-dim embeddings via Universal Sentence Encoder
-- `MlKitTextRecognizer.kt` - OCR text extraction
 - `EmbeddingManager.kt` - Embedding lifecycle management
 - `EmbeddingModelVersionManager.kt` - Model version tracking for re-generation
 - `XmpMetadataHandler.kt` - Read/write XMP metadata in images
 - `worker/EmbeddingGenerationWorker.kt` - Background embedding generation
 
-**Dependencies**: ML Kit, MediaPipe Tasks, LiteRT
+**Dependencies**: Mindlayer SDK (`com.adsamcik.mindlayer:sdk`). No in-process ML
+runtime, no bundled models. The Mindlayer service app must be installed on the
+device for AI features to function; Riposte degrades gracefully when it isn't.
 
 ---
 
@@ -283,7 +287,7 @@ User types query → SearchViewModel.onIntent(UpdateQuery)
         │   └── Returns matching memes with FTS score
         │
         └── Semantic Search (SemanticSearchEngine.search) → 40% weight
-            ├── Generate query embedding (MediaPipeEmbeddingGenerator)
+            ├── Generate query embedding (MindlayerEmbeddingGenerator)
             ├── Load meme embeddings (MemeEmbeddingDao)
             ├── Compute cosine similarity
             └── Rank by similarity score
@@ -313,9 +317,7 @@ User taps share → ShareViewModel.onIntent(Share)
 
 | Service | Purpose | Module |
 | ------- | ------- | ------ |
-| ML Kit Text Recognition | OCR on meme images | core:ml |
-| ML Kit Image Labeling | Generate image labels for search | core:ml |
-| MediaPipe Text Embedder | Semantic embeddings (USE model) | core:ml |
+| Mindlayer SDK | Embeddings (EmbeddingGemma) + OCR (PaddleOCR), out-of-process | core:ml |
 | Android Share Sheet | Native sharing | feature:share |
 | WorkManager | Background embedding generation | core:ml |
 

@@ -23,7 +23,7 @@ A modern Android app for organizing, searching, and sharing memes with emoji-bas
 | DI | Hilt 2.59.1 |
 | Database | Room 2.8.4 + FTS4 |
 | Async | Coroutines 1.10.2 & Flow |
-| AI/ML | ML Kit + MediaPipe + LiteRT 2.1.1 (on-device) |
+| AI/ML | [Mindlayer SDK](https://github.com/adsamcik/Mindlayer) (on-device LLM service: embeddings + OCR) |
 | Image Loading | Coil 3.3.0 |
 | Serialization | Kotlinx Serialization 1.10.0 |
 | Build | Gradle 8.13.2, AGP 9.0.1, Version Catalogs |
@@ -37,7 +37,7 @@ riposte/
 │   ├── common/            # Shared utilities, navigation routes, extensions
 │   ├── database/          # Room database, DAOs, entities, migrations
 │   ├── datastore/         # DataStore preferences
-│   ├── ml/                # ML Kit, MediaPipe, semantic search, embeddings
+│   ├── ml/                # Mindlayer SDK integration, semantic search, embeddings
 │   ├── model/             # Domain models
 │   ├── search/            # Search logic (FTS + semantic hybrid)
 │   ├── testing/           # Test utilities, fakes, rules
@@ -47,7 +47,6 @@ riposte/
 │   ├── import/            # Image & ZIP bundle import
 │   ├── share/             # Sharing feature
 │   └── settings/          # App preferences, statistics, licenses
-├── aipacks/               # AI Pack modules for platform-specific ML models
 ├── tools/
 │   ├── riposte-cli-dotnet/  # .NET 8 CLI for batch AI annotation
 │   └── riposte-cli/         # Legacy Python CLI
@@ -68,34 +67,27 @@ riposte/
 # Clone the repository
 git clone https://github.com/adsamcik/riposte.git
 
-# Build (standard flavor recommended for development)
-./gradlew :app:assembleStandardDebug
+# Build the debug APK
+./gradlew :app:assembleDebug
 ```
 
-#### Build Flavors
+#### Mindlayer SDK dependency
 
-The `embedding` product flavor dimension controls which on-device ML models are bundled:
-
-| Flavor | Models | APK Size | Use Case |
-|--------|--------|----------|----------|
-| `lite` | None | ~177 MB | Minimal size, basic search |
-| `standard` | Generic only | ~350 MB | **Recommended** — works everywhere |
-| `qualcomm` | Generic + Qualcomm | ~880 MB | Optimized for Snapdragon |
-| `mediatek` | Generic + MediaTek | ~555 MB | Optimized for Dimensity |
-| `full` | All models | ~1.3 GB | Development/testing |
+Riposte's AI features (semantic search embeddings, OCR) delegate to the
+[Mindlayer](https://github.com/adsamcik/Mindlayer) on-device LLM service via
+the Mindlayer SDK. The SDK is consumed from local Maven; build it once with:
 
 ```bash
-# Recommended development build
-./gradlew :app:assembleStandardDebug
-
-# Smallest build
-./gradlew :app:assembleLiteDebug
-
-# Optimized for Qualcomm devices
-./gradlew :app:assembleQualcommRelease
+# In a Mindlayer checkout:
+./gradlew :shared:publishToMavenLocal :sdk:publishToMavenLocal
 ```
 
-See [BUILD_FLAVORS.md](docs/BUILD_FLAVORS.md) for complete details.
+The Mindlayer **service app** must also be installed and approved on the
+target device for AI features to work. When the service is unavailable
+(not installed, not yet approved, or its embedding pack is still
+downloading), Riposte degrades gracefully — text/emoji search continues
+to work; semantic search and OCR are disabled until the service is
+ready.
 
 ### Run
 
@@ -151,7 +143,7 @@ The app supports three search modes with inline emoji quick-filters:
 
 1. **Full-Text Search (FTS4)**: Fast text matching on titles, descriptions, and extracted text
 2. **Emoji Filtering**: Single-tap emoji chips for instant filtering
-3. **Semantic Search**: AI-powered similarity search using MediaPipe/EmbeddingGemma embeddings
+3. **Semantic Search**: AI-powered similarity search using on-device EmbeddingGemma embeddings delivered via the Mindlayer service
 
 Favorited memes are prioritized in search results. See [SEMANTIC_SEARCH.md](docs/SEMANTIC_SEARCH.md) for implementation details.
 
@@ -208,5 +200,5 @@ This project is licensed under the GNU General Public License v3.0 — see the [
 ## Acknowledgments
 
 - [Unicode Emoji](https://unicode.org/emoji/) for emoji data
-- [Google ML Kit](https://developers.google.com/ml-kit) for on-device AI
+- [Mindlayer](https://github.com/adsamcik/Mindlayer) for on-device LLM, embeddings, and OCR inference
 - [Material Design 3](https://m3.material.io/) for design guidelines

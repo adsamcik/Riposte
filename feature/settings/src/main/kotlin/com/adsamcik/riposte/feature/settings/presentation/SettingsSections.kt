@@ -24,7 +24,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.adsamcik.riposte.core.ml.EmbeddingGemmaGenerator
 import com.adsamcik.riposte.core.model.DarkMode
 import com.adsamcik.riposte.core.model.SearchMode
 import com.adsamcik.riposte.core.model.UserDensityPreference
@@ -257,10 +256,12 @@ private fun embeddingIndexSubtitle(embeddingState: EmbeddingSearchState): String
 
 @Composable
 private fun embeddingErrorMessage(modelError: String): String =
-    when (modelError) {
-        EmbeddingGemmaGenerator.ERROR_NOT_COMPATIBLE ->
+    when {
+        modelError.contains("unavailable", ignoreCase = true) ||
+            modelError.contains("not installed", ignoreCase = true) ->
             stringResource(R.string.settings_search_index_error_not_supported)
-        EmbeddingGemmaGenerator.ERROR_FILES_NOT_FOUND ->
+        modelError.contains("not advertise", ignoreCase = true) ||
+            modelError.contains("downloading", ignoreCase = true) ->
             stringResource(R.string.settings_search_index_error_not_included)
         else ->
             stringResource(R.string.settings_search_index_error_failed)

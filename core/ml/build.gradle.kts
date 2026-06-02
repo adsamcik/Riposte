@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.adsamcik.riposte.core.ml"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         minSdk = 31
@@ -36,11 +36,8 @@ dependencies {
     // DataStore for version tracking
     implementation(libs.datastore.preferences)
 
-    // ML Kit
-    implementation(libs.bundles.mlkit)
-
-    // LiteRT (for semantic embeddings - on-device AI runtime)
-    implementation(libs.litert.runtime)
+    // Mindlayer SDK — on-device LLM service client (embeddings + OCR + LLM)
+    implementation(libs.mindlayer.sdk)
 
     // Kotlinx Serialization
     implementation(libs.kotlinx.serialization.json)
