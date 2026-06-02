@@ -15,6 +15,15 @@ import com.adsamcik.riposte.testreceiver.telemetry.ShareOutcome
  * reported. MediaStore URIs work because READ_MEDIA_IMAGES satisfies the OS
  * check independently.
  *
+ * Critically, the forward target must be a DIFFERENT package from us (the
+ * receiver) AND from the URI's provider — Android short-circuits same-app
+ * grants ("you already have it") and provider-owner grants ("you ARE the
+ * owner"), so forwarding to ourselves or to Riposte would silently succeed
+ * and hide the bug. We forward to `com.android.shell` because it's always
+ * present on every Android device and has no special relationship to either
+ * Riposte's FileProvider or to MediaStore — exactly the cross-app forwarding
+ * scenario Discord's RN bridge exercises.
+ *
  * For this activity, "success" means the grant call returned without throwing.
  * It does NOT actually do anything with the grant — we don't need a real
  * worker, just to verify the OS accepts the re-grant.
@@ -23,11 +32,16 @@ class DiscordStyleActivity : BaseReceiverActivity() {
     override fun handleShare(uris: List<Uri>): ShareOutcome {
         val totalBytes = uris.sumOf { readUriBytes(it) }
 
-        // The crash-inducing call — forward the grant to a fake target package
-        // exactly like Discord forwards to its RN upload bridge.
+        // The crash-inducing call — forward the grant to a third-party
+        // package exactly like Discord forwards to its RN upload bridge
+        // / worker process. Using com.android.shell because:
+        //   - always installed (system app)
+        //   - distinct from us and from any Riposte build variant
+        //   - the system enforces full grant validation rather than
+        //     the "same app" / "same owner" fast paths
         uris.forEach { uri ->
             grantUriPermission(
-                FAKE_WORKER_PACKAGE,
+                FORWARD_TARGET_PACKAGE,
                 uri,
                 Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
             )
@@ -41,9 +55,6 @@ class DiscordStyleActivity : BaseReceiverActivity() {
     }
 
     private companion object {
-        // Any installed package would do; using ourselves means the test
-        // doesn't depend on a third app being present. The grant call still
-        // exercises the same OS code path.
-        const val FAKE_WORKER_PACKAGE = "com.adsamcik.riposte.testreceiver"
+        const val FORWARD_TARGET_PACKAGE = "com.android.shell"
     }
 }

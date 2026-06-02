@@ -3,6 +3,7 @@ package com.adsamcik.riposte.share
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Color
+import androidx.core.content.FileProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.adsamcik.riposte.core.common.share.ShareRepository
@@ -263,6 +264,114 @@ class ShareIntegrationTest {
         assertThat(delayedOutcome.activityName).isEqualTo("DelayedReadService")
     }
 
+    // region Counterfactual tests — prove the Discord bug still reproduces against FileProvider
+
+    /**
+     * The original Discord bug as users first reported it.
+     *
+     * Deliberately constructs a FileProvider URI (NOT going through
+     * ShareRepository, which now uses MediaStore) and sends it to the
+     * Discord-style receiver with only FLAG_GRANT_READ_URI_PERMISSION —
+     * the flag combination Riposte used before commit 33b2034b.
+     *
+     * The receiver's `grantUriPermission` call MUST throw SecurityException
+     * because Android's URI grant model forbids non-owners from re-granting
+     * a transient read-only grant. This is exactly the crash that kicked off
+     * the whole investigation.
+     *
+     * If this test ever turns GREEN (no exception), one of two things has
+     * happened:
+     *   1. Discord shipped a fix to their RN ShareActivity — we can in
+     *      theory re-evaluate FileProvider, or
+     *   2. Android relaxed the grant model — unlikely.
+     *
+     * Either way, investigate before changing anything. As long as this
+     * test stays RED in the "bug reproduces" sense (i.e., it captures the
+     * SecurityException successfully), the MediaStore fix is justified.
+     */
+    @Test
+    fun fileProvider_with_read_only_grant_reproduces_Discord_crash() = runBlocking {
+        val (uri, file) = writeAndExposeFileProviderUri("discord_repro_read_only")
+        try {
+            launchExplicitShareWithFlags(
+                uri = uri,
+                mimeType = "image/jpeg",
+                targetActivityFqcn = TestReceiver.Activities.DISCORD_STYLE,
+                flags = Intent.FLAG_GRANT_READ_URI_PERMISSION,
+            )
+
+            val outcome = receiverClient.awaitLatestFor("DiscordStyleActivity")
+            checkNotNull(outcome) {
+                "DiscordStyleActivity never recorded an outcome — did the receiver install?"
+            }
+
+            assertThat(outcome.exceptionClass).isEqualTo("java.lang.SecurityException")
+            assertThat(outcome.exceptionMessage).contains("does not have permission")
+            assertThat(outcome.exceptionMessage).contains("fileprovider")
+            assertThat(outcome.grantSucceeded).isFalse()
+        } finally {
+            file.delete()
+        }
+    }
+
+    /**
+     * Documents an interesting nuance: in a CLEAN test environment, a
+     * FileProvider URI with all three grant flags (READ + WRITE +
+     * PERSISTABLE) actually permits a non-owner to forward the grant via
+     * `Context.grantUriPermission` — the receiver succeeds, no exception.
+     *
+     * This was Riposte's "flag fix" attempt and on paper it should have
+     * worked. The kicker: REAL DISCORD STILL CRASHES with these exact flags
+     * (we verified against the Galaxy S24+ — see the SecurityException stack
+     * trace in commit 33b2034b's discussion). Discord's React Native bridge
+     * appears to wrap the activity context twice (two ContextWrapper frames
+     * in the production crash stack) and dispatch the grant from a thread
+     * or context where the activity-level grant isn't visible. That subtle
+     * wrapping/threading combination is what we can't faithfully model in
+     * a simple test receiver.
+     *
+     * So this test asserting "no exception" is the correct outcome for our
+     * simulation, BUT the inability to reproduce the real Discord failure
+     * in a simple receiver is itself why we needed MediaStore: any
+     * client-side flag fix only helps for "clean" receivers, while real
+     * production targets carry idiosyncratic wrapping that defeats grant
+     * forwarding regardless. MediaStore sidesteps the entire grant relay
+     * by handing the receiver a URI it can read via its own
+     * READ_MEDIA_IMAGES permission.
+     *
+     * If this test ever turns RED (exception captured), Android has
+     * tightened the grant model for WRITE+PERSISTABLE — investigate.
+     */
+    @Test
+    fun fileProvider_with_all_grant_flags_can_forward_in_simulation_but_not_real_Discord() =
+        runBlocking {
+            val (uri, file) = writeAndExposeFileProviderUri("discord_repro_all_flags")
+            try {
+                launchExplicitShareWithFlags(
+                    uri = uri,
+                    mimeType = "image/jpeg",
+                    targetActivityFqcn = TestReceiver.Activities.DISCORD_STYLE,
+                    flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
+                        Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION,
+                )
+
+                val outcome = receiverClient.awaitLatestFor("DiscordStyleActivity")
+                checkNotNull(outcome) { "DiscordStyleActivity never recorded an outcome" }
+
+                // Simulation succeeds — but see the doc comment above for why
+                // production Discord still fails despite these flags. The
+                // MediaStore fix is justified by that production observation,
+                // NOT by this in-simulation behavior.
+                assertThat(outcome.exceptionClass).isNull()
+                assertThat(outcome.grantSucceeded).isTrue()
+            } finally {
+                file.delete()
+            }
+        }
+
+    // endregion
+
     // region Helpers
 
     /** Fire an explicit single-URI share intent at the named receiver activity. */
@@ -271,17 +380,64 @@ class ShareIntegrationTest {
         mimeType: String,
         targetActivityFqcn: String,
     ) {
+        launchExplicitShareWithFlags(
+            uri = uri,
+            mimeType = mimeType,
+            targetActivityFqcn = targetActivityFqcn,
+            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
+                Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION,
+        )
+    }
+
+    /**
+     * Same as [launchExplicitShare] but with an explicit grant-flag set, so
+     * the counterfactual tests can model the historical Riposte behavior
+     * (read-only grant) without changing the rest of the production path.
+     */
+    private fun launchExplicitShareWithFlags(
+        uri: android.net.Uri,
+        mimeType: String,
+        targetActivityFqcn: String,
+        flags: Int,
+    ) {
         val intent =
             TestReceiver.explicitIntent(Intent.ACTION_SEND, targetActivityFqcn).apply {
                 type = mimeType
                 putExtra(Intent.EXTRA_STREAM, uri)
-                addFlags(
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION or
-                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
-                        Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION,
-                )
+                addFlags(flags)
             }
         instrumentation.context.startActivity(intent)
+    }
+
+    /**
+     * Write a synthetic image to Riposte's `cache/share_cache/` directory
+     * (one of the locations exposed by `file_paths.xml`) and return both the
+     * FileProvider content URI for it and the underlying File so the test
+     * can clean up. Used by the counterfactual tests that exercise the
+     * pre-MediaStore sharing path.
+     */
+    private fun writeAndExposeFileProviderUri(
+        nameStem: String,
+    ): Pair<android.net.Uri, File> {
+        val shareCacheDir = File(targetContext.cacheDir, "share_cache").apply { mkdirs() }
+        val file = File(shareCacheDir, "${nameStem}_${System.nanoTime()}.jpg")
+        file.outputStream().use { out ->
+            val bitmap = Bitmap.createBitmap(8, 8, Bitmap.Config.ARGB_8888)
+            try {
+                bitmap.eraseColor(Color.CYAN)
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 85, out)
+            } finally {
+                bitmap.recycle()
+            }
+        }
+        val uri =
+            FileProvider.getUriForFile(
+                targetContext,
+                "${targetContext.packageName}.fileprovider",
+                file,
+            )
+        return uri to file
     }
 
     /**
