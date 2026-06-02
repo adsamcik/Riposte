@@ -8,6 +8,7 @@ import kotlin.math.sqrt
  * Shared utility functions for embedding vectors.
  */
 object EmbeddingUtils {
+    private const val INT8_MAX_MAGNITUDE = 127f
     /**
      * Computes cosine similarity between two embedding vectors.
      *
@@ -100,7 +101,7 @@ object EmbeddingUtils {
         val bytes = ByteArray(embedding.size)
 
         for (i in embedding.indices) {
-            val quantized = (embedding[i] / scale * 127f).toInt().coerceIn(-128, 127)
+            val quantized = (embedding[i] / scale * INT8_MAX_MAGNITUDE).toInt().coerceIn(-128, 127)
             bytes[i] = quantized.toByte()
         }
 
@@ -117,7 +118,7 @@ object EmbeddingUtils {
     fun dequantizeFromInt8(bytes: ByteArray, scale: Float): FloatArray {
         val embedding = FloatArray(bytes.size)
         for (i in bytes.indices) {
-            embedding[i] = (bytes[i].toFloat() / 127f) * scale
+            embedding[i] = (bytes[i].toFloat() / INT8_MAX_MAGNITUDE) * scale
         }
         return embedding
     }

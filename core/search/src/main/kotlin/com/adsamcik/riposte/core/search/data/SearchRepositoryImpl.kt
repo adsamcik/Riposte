@@ -266,6 +266,5 @@ class SearchRepositoryImpl
             private const val MAX_SEARCH_SUGGESTIONS = 10
             private const val DESCRIPTION_SNIPPET_LENGTH = 50
             private const val PHRASE_CONTEXT_CHARS = 40
-            private const val DEFAULT_SEMANTIC_THRESHOLD = 0.3f
         }
     }

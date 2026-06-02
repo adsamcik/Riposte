@@ -16,16 +16,13 @@ import com.adsamcik.riposte.core.common.lifecycle.AppLifecycleTracker
 import com.adsamcik.riposte.core.events.EmbeddingsReady
 import com.adsamcik.riposte.core.events.EventBus
 import com.adsamcik.riposte.core.ml.EmbeddingGenerator
-import com.adsamcik.riposte.core.model.EmbeddingType
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
-import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
 
 /**
  * WorkManager worker for generating embeddings for memes in the background.
@@ -39,18 +36,29 @@ import java.util.concurrent.TimeUnit
  * - Progress reporting
  * - Model version tracking
  */
+class EmbeddingWorkerDependencies @Inject constructor(
+    val embeddingGenerator: EmbeddingGenerator,
+    val embeddingRepository: EmbeddingWorkRepository,
+    val appLifecycleTracker: AppLifecycleTracker,
+    val notificationManager: EmbeddingNotificationManager,
+    val eventBus: EventBus,
+)
+
 @HiltWorker
 class EmbeddingGenerationWorker
     @AssistedInject
     constructor(
         @Assisted private val context: Context,
         @Assisted params: WorkerParameters,
-        private val embeddingGenerator: EmbeddingGenerator,
-        private val embeddingRepository: EmbeddingWorkRepository,
-        private val appLifecycleTracker: AppLifecycleTracker,
-        private val notificationManager: EmbeddingNotificationManager,
-        private val eventBus: EventBus,
+        dependencies: EmbeddingWorkerDependencies,
     ) : CoroutineWorker(context, params) {
+        private val embeddingGenerator = dependencies.embeddingGenerator
+        private val embeddingRepository = dependencies.embeddingRepository
+        private val appLifecycleTracker = dependencies.appLifecycleTracker
+        private val notificationManager = dependencies.notificationManager
+        private val eventBus = dependencies.eventBus
+        private val slotGenerator = EmbeddingSlotGenerator(embeddingGenerator, embeddingRepository)
+
         override suspend fun getForegroundInfo(): ForegroundInfo {
             notificationManager.createChannel()
             val notification = notificationManager.buildProgressNotification(current = 0, total = 0)
@@ -66,122 +74,148 @@ class EmbeddingGenerationWorker
                 val startTime = System.currentTimeMillis()
                 Timber.i(
                     "Embedding generation starting (maxFetchSize=%d, attempt=%d)",
-                    BATCH_FETCH_SIZE, runAttemptCount + 1,
+                    BATCH_FETCH_SIZE,
+                    runAttemptCount + 1,
                 )
                 try {
                     notificationManager.createChannel()
-
-                    // Bail out early if the model is known to be broken — no point processing memes
                     val modelError = embeddingGenerator.initializationError
                     if (modelError != null) {
-                        Timber.w("Embedding model unavailable (%s), skipping work", modelError)
-                        return@withContext Result.failure(
-                            workDataOf(KEY_ERROR_MESSAGE to modelError),
-                        )
+                        modelUnavailableFailure(modelError)
+                    } else {
+                        finishEmbeddingWork(processPendingEmbeddings(), startTime)
                     }
-
-                    var totalSuccess = 0
-                    var totalFailure = 0
-                    val initialTotal = embeddingRepository.countMemesNeedingEmbeddings()
-
-                    // Track memes already processed in this run. Memes with missing
-                    // metadata legitimately produce fewer than EXPECTED_EMBEDDING_TYPES,
-                    // so the "incomplete" query would rediscover them endlessly.
-                    val processedMemeIds = mutableSetOf<Long>()
-
-                    // Process all pending memes in a continuous loop with yields for responsiveness.
-                    // WorkManager's 10-min execution limit is the natural boundary.
-                    while (true) {
-                        kotlinx.coroutines.yield() // Check for cancellation between batches
-
-                        val pendingMemes = embeddingRepository.getMemesNeedingEmbeddings(BATCH_FETCH_SIZE)
-                            .filter { it.id !in processedMemeIds }
-                        if (pendingMemes.isEmpty()) break
-
-                        processedMemeIds.addAll(pendingMemes.map { it.id })
-
-                        val (successCount, failureCount) = processAdaptiveBatch(
-                            pendingMemes,
-                            totalSuccess + totalFailure,
-                            initialTotal.coerceAtLeast(1),
-                        )
-                        totalSuccess += successCount
-                        totalFailure += failureCount
-
-                        // Persist attempt count so future runs skip legitimately-incomplete memes
-                        for (meme in pendingMemes) {
-                            try {
-                                embeddingRepository.markMemeFullyAttempted(meme.id)
-                            } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
-                                Timber.d(e, "Failed to mark meme %d as attempted", meme.id)
-                            }
-                        }
-
-                        // If the entire batch failed, the model is likely broken — stop looping
-                        if (successCount == 0 && failureCount > 0) {
-                            val postRunModelError = embeddingGenerator.initializationError
-                            if (postRunModelError != null) {
-                                Timber.w("Model error after batch: %s — giving up", postRunModelError)
-                                return@withContext Result.failure(
-                                    workDataOf(KEY_ERROR_MESSAGE to postRunModelError),
-                                )
-                            }
-                            Timber.w("Entire batch failed (%d items) — stopping", failureCount)
-                            break
-                        }
-
-                        // Brief pause between batches to reduce thermal/CPU pressure
-                        kotlinx.coroutines.delay(INTER_BATCH_DELAY_MS)
-                    }
-
-                    // Count remaining work — the DB now excludes already-attempted memes
-                    // via indexingAttempts, so no in-memory adjustment needed.
-                    val remainingCount = embeddingRepository.countMemesNeedingEmbeddings()
-                    val elapsed = System.currentTimeMillis() - startTime
-
-                    Timber.i(
-                        "Embedding generation done in %dms: %d ok, %d failed, %d remaining",
-                        elapsed, totalSuccess, totalFailure, remainingCount,
-                    )
-
-                    if (remainingCount == 0 && totalSuccess > 0 && appLifecycleTracker.isInBackground.value) {
-                        notificationManager.showCompleteNotification(totalSuccess, totalFailure)
-                    }
-
-                    eventBus.emit(
-                        EmbeddingsReady(
-                            processedCount = totalSuccess,
-                            failedCount = totalFailure,
-                            remainingCount = remainingCount,
-                        ),
-                    )
-
-                    val outputData =
-                        workDataOf(
-                            KEY_PROCESSED_COUNT to totalSuccess,
-                            KEY_FAILED_COUNT to totalFailure,
-                            KEY_REMAINING_COUNT to remainingCount,
-                        )
-                    Result.success(outputData)
                 } catch (
                     @Suppress("TooGenericExceptionCaught") // Worker must not crash - reports failure instead
                     e: Exception,
                 ) {
-                    val elapsed = System.currentTimeMillis() - startTime
-                    Timber.e(
-                        e,
-                        "Embedding generation failed after %dms (attempt %d/%d)",
-                        elapsed, runAttemptCount + 1, MAX_RETRY_COUNT,
+                    handleWorkerFailure(e, startTime)
+                }
+            }
+
+        private fun modelUnavailableFailure(modelError: String): Result {
+            Timber.w("Embedding model unavailable (%s), skipping work", modelError)
+            return Result.failure(workDataOf(KEY_ERROR_MESSAGE to modelError))
+        }
+
+        private data class EmbeddingWorkSummary(
+            val totalSuccess: Int,
+            val totalFailure: Int,
+            val remainingCount: Int,
+            val modelError: String?,
+        )
+
+        private suspend fun processPendingEmbeddings(): EmbeddingWorkSummary {
+            var totalSuccess = 0
+            var totalFailure = 0
+            val initialTotal = embeddingRepository.countMemesNeedingEmbeddings().coerceAtLeast(1)
+            val processedMemeIds = mutableSetOf<Long>()
+            var keepProcessing = true
+            var modelError: String? = null
+
+            while (keepProcessing) {
+                kotlinx.coroutines.yield()
+                val pendingMemes = embeddingRepository.getMemesNeedingEmbeddings(BATCH_FETCH_SIZE)
+                    .filter { it.id !in processedMemeIds }
+                keepProcessing = pendingMemes.isNotEmpty()
+
+                if (keepProcessing) {
+                    processedMemeIds.addAll(pendingMemes.map { it.id })
+                    val (successCount, failureCount) = processAdaptiveBatch(
+                        pendingMemes,
+                        totalSuccess + totalFailure,
+                        initialTotal,
                     )
-                    if (runAttemptCount < MAX_RETRY_COUNT) {
-                        Result.retry()
-                    } else {
-                        Result.failure(
-                            workDataOf(KEY_ERROR_MESSAGE to e.message),
-                        )
+                    totalSuccess += successCount
+                    totalFailure += failureCount
+                    markBatchAttempted(pendingMemes)
+                    val fullBatchFailed = successCount == 0 && failureCount > 0
+                    modelError = detectBatchStopReason(successCount, failureCount)
+                    keepProcessing = modelError == null && !fullBatchFailed && successCount + failureCount > 0
+                    if (keepProcessing) {
+                        kotlinx.coroutines.delay(INTER_BATCH_DELAY_MS)
                     }
                 }
             }
+
+            return EmbeddingWorkSummary(
+                totalSuccess = totalSuccess,
+                totalFailure = totalFailure,
+                remainingCount = embeddingRepository.countMemesNeedingEmbeddings(),
+                modelError = modelError,
+            )
+        }
+
+        private suspend fun markBatchAttempted(pendingMemes: List<MemeDataForEmbedding>) {
+            for (meme in pendingMemes) {
+                try {
+                    embeddingRepository.markMemeFullyAttempted(meme.id)
+                } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
+                    Timber.d(e, "Failed to mark meme %d as attempted", meme.id)
+                }
+            }
+        }
+
+        private fun detectBatchStopReason(successCount: Int, failureCount: Int): String? =
+            if (successCount == 0 && failureCount > 0) {
+                embeddingGenerator.initializationError.also { postRunModelError ->
+                    if (postRunModelError != null) {
+                        Timber.w("Model error after batch: %s — giving up", postRunModelError)
+                    } else {
+                        Timber.w("Entire batch failed (%d items) — stopping", failureCount)
+                    }
+                }
+            } else {
+                null
+            }
+
+        private suspend fun finishEmbeddingWork(
+            summary: EmbeddingWorkSummary,
+            startTime: Long,
+        ): Result {
+            summary.modelError?.let { return Result.failure(workDataOf(KEY_ERROR_MESSAGE to it)) }
+            val elapsed = System.currentTimeMillis() - startTime
+            Timber.i(
+                "Embedding generation done in %dms: %d ok, %d failed, %d remaining",
+                elapsed,
+                summary.totalSuccess,
+                summary.totalFailure,
+                summary.remainingCount,
+            )
+            if (summary.remainingCount == 0 && summary.totalSuccess > 0 && appLifecycleTracker.isInBackground.value) {
+                notificationManager.showCompleteNotification(summary.totalSuccess, summary.totalFailure)
+            }
+            eventBus.emit(
+                EmbeddingsReady(
+                    processedCount = summary.totalSuccess,
+                    failedCount = summary.totalFailure,
+                    remainingCount = summary.remainingCount,
+                ),
+            )
+            return Result.success(
+                workDataOf(
+                    KEY_PROCESSED_COUNT to summary.totalSuccess,
+                    KEY_FAILED_COUNT to summary.totalFailure,
+                    KEY_REMAINING_COUNT to summary.remainingCount,
+                ),
+            )
+        }
+
+        private fun handleWorkerFailure(e: Exception, startTime: Long): Result {
+            val elapsed = System.currentTimeMillis() - startTime
+            Timber.e(
+                e,
+                "Embedding generation failed after %dms (attempt %d/%d)",
+                elapsed,
+                runAttemptCount + 1,
+                MAX_RETRY_COUNT,
+            )
+            return if (runAttemptCount < MAX_RETRY_COUNT) {
+                Result.retry()
+            } else {
+                Result.failure(workDataOf(KEY_ERROR_MESSAGE to e.message))
+            }
+        }
 
         /**
          * Processes a batch of memes with adaptive sizing based on device speed.
@@ -227,95 +261,8 @@ class EmbeddingGenerationWorker
         }
 
         /** Generates embeddings for a single meme. Returns true on success. */
-        private suspend fun processOneEmbedding(memeData: MemeDataForEmbedding): Boolean {
-            return try {
-                var generatedAny = false
-
-                // Use two-arg generateFromText so EmbeddingGemma gets the structured "title: X | text: Y" prompt
-                val (title, body) = buildContentParts(memeData)
-                val contentText = if (title != null) "$title. $body" else body
-                if (contentText.isNotBlank()) {
-                    val embedding = embeddingGenerator.generateFromText(body, title)
-                    val sourceHash = generateHash(contentText)
-                    embeddingRepository.saveEmbedding(
-                        memeId = memeData.id,
-                        embedding = encodeEmbedding(embedding),
-                        dimension = embedding.size,
-                        modelVersion = CURRENT_MODEL_VERSION,
-                        sourceTextHash = sourceHash,
-                        embeddingType = EmbeddingType.CONTENT.key,
-                    )
-                    generatedAny = true
-                }
-
-                val intentText = buildIntentText(memeData)
-                if (intentText.isNotBlank()) {
-                    val embedding = embeddingGenerator.generateFromText(intentText)
-                    val sourceHash = generateHash(intentText)
-                    embeddingRepository.saveEmbedding(
-                        memeId = memeData.id,
-                        embedding = encodeEmbedding(embedding),
-                        dimension = embedding.size,
-                        modelVersion = CURRENT_MODEL_VERSION,
-                        sourceTextHash = sourceHash,
-                        embeddingType = EmbeddingType.INTENT.key,
-                    )
-                    generatedAny = true
-                }
-
-                val emojiText = buildEmojiText(memeData)
-                if (emojiText.isNotBlank()) {
-                    val embedding = embeddingGenerator.generateFromText(emojiText)
-                    val sourceHash = generateHash(emojiText)
-                    embeddingRepository.saveEmbedding(
-                        memeId = memeData.id,
-                        embedding = encodeEmbedding(embedding),
-                        dimension = embedding.size,
-                        modelVersion = CURRENT_MODEL_VERSION,
-                        sourceTextHash = sourceHash,
-                        embeddingType = EmbeddingType.EMOJI.key,
-                    )
-                    generatedAny = true
-                }
-
-                val differentiatorText = buildDifferentiatorText(memeData)
-                if (differentiatorText.isNotBlank()) {
-                    val embedding = embeddingGenerator.generateFromText(differentiatorText)
-                    val sourceHash = generateHash(differentiatorText)
-                    embeddingRepository.saveEmbedding(
-                        memeId = memeData.id,
-                        embedding = encodeEmbedding(embedding),
-                        dimension = embedding.size,
-                        modelVersion = CURRENT_MODEL_VERSION,
-                        sourceTextHash = sourceHash,
-                        embeddingType = EmbeddingType.DIFFERENTIATOR.key,
-                    )
-                    generatedAny = true
-                }
-
-                val emotionText = buildEmotionText(memeData)
-                if (emotionText.isNotBlank()) {
-                    val embedding = embeddingGenerator.generateFromText(emotionText)
-                    val sourceHash = generateHash(emotionText)
-                    embeddingRepository.saveEmbedding(
-                        memeId = memeData.id,
-                        embedding = encodeEmbedding(embedding),
-                        dimension = embedding.size,
-                        modelVersion = CURRENT_MODEL_VERSION,
-                        sourceTextHash = sourceHash,
-                        embeddingType = EmbeddingType.EMOTION.key,
-                    )
-                    generatedAny = true
-                }
-                generatedAny
-            } catch (
-                @Suppress("TooGenericExceptionCaught")
-                e: Exception,
-            ) {
-                Timber.w(e, "Failed to generate embedding for meme ${memeData.id}")
-                false
-            }
-        }
+        private suspend fun processOneEmbedding(memeData: MemeDataForEmbedding): Boolean =
+            slotGenerator.process(memeData)
 
         /** High-water mark ensures reported progress never regresses. */
         private var lastReportedProgress = 0
@@ -334,166 +281,6 @@ class EmbeddingGenerationWorker
             )
         }
 
-        /**
-         * Build title and content body for the content embedding slot.
-         * Returns a Pair of (title, body) where title may be null.
-         */
-        private fun buildContentText(memeData: MemeDataForEmbedding): String {
-            val body = buildString {
-                memeData.description?.let { append(it).append(". ") }
-                memeData.textContent?.let { append(it).append(". ") }
-            }.trim().trimEnd('.')
-            return body.ifBlank { memeData.title ?: "" }
-        }
-
-        private fun buildContentParts(memeData: MemeDataForEmbedding): Pair<String?, String> {
-            val body = buildString {
-                memeData.description?.let { append(it).append(". ") }
-                memeData.textContent?.let { append(it).append(". ") }
-            }.trim().trimEnd('.')
-            return Pair(memeData.title, body.ifBlank { memeData.title ?: "" })
-        }
-
-        /**
-         * Build text for intent embedding slot: searchPhrases.
-         */
-        private fun buildIntentText(memeData: MemeDataForEmbedding): String {
-            val jsonString = memeData.searchPhrases?.takeIf { it.isNotBlank() } ?: return ""
-            val phrases =
-                try {
-                    kotlinx.serialization.json.Json.decodeFromString<List<String>>(jsonString)
-                } catch (
-                    @Suppress("TooGenericExceptionCaught") // Worker must not crash - reports failure instead
-                    e: Exception,
-                ) {
-                    // Fallback: treat as comma-separated if not valid JSON
-                    Timber.d(e, "Failed to parse search phrases as JSON, falling back to comma-separated format")
-                    jsonString.split(",").map { it.trim() }
-                }
-            return phrases.joinToString(". ")
-        }
-
-        /**
-         * Build text representation of emoji tags for embedding.
-         * Converts raw emoji characters to their Unicode names for semantic meaning.
-         * e.g. ["💪", "🏋"] → "flexed biceps, weight lifter"
-         */
-        private fun buildEmojiText(memeData: MemeDataForEmbedding): String {
-            val jsonString = memeData.emojiTagsJson?.takeIf { it.isNotBlank() } ?: return ""
-            val emojis =
-                try {
-                    kotlinx.serialization.json.Json.decodeFromString<List<String>>(jsonString)
-                } catch (
-                    @Suppress("TooGenericExceptionCaught")
-                    e: Exception,
-                ) {
-                    Timber.d(e, "Failed to parse emoji tags JSON")
-                    return ""
-                }
-            return emojis
-                .map { resolveEmojiName(it) }
-                .filter { it.isNotBlank() }
-                .joinToString(", ")
-        }
-
-        /**
-         * Convert an emoji string to human-readable Unicode names.
-         * Iterates over codepoints, resolves each via [Character.getName],
-         * and filters out non-semantic joiners and modifiers.
-         *
-         * E.g. "💪" → "flexed biceps", "👨‍💻" → "man personal computer"
-         */
-        private fun resolveEmojiName(emoji: String): String {
-            val names = mutableListOf<String>()
-            var i = 0
-            while (i < emoji.length) {
-                val codePoint = Character.codePointAt(emoji, i)
-                i += Character.charCount(codePoint)
-
-                if (isNonSemanticCodepoint(codePoint)) continue
-
-                val name = Character.getName(codePoint)
-                if (name != null) {
-                    names.add(name.lowercase())
-                }
-            }
-            return names.joinToString(" ")
-        }
-
-        /**
-         * Returns true for codepoints that carry no semantic meaning
-         * (joiners, variation selectors, skin tone modifiers).
-         */
-        private fun isNonSemanticCodepoint(codePoint: Int): Boolean =
-            codePoint == ZWJ_CODEPOINT ||
-                codePoint == VARIATION_SELECTOR_16 ||
-                codePoint == VARIATION_SELECTOR_15 ||
-                codePoint in SKIN_TONE_MODIFIER_RANGE
-
-        /**
-         * Build differentiator text from unique aspects of the meme:
-         * OCR text, meme template source, and emoji combination.
-         */
-        private fun buildDifferentiatorText(memeData: MemeDataForEmbedding): String {
-            val parts = mutableListOf<String>()
-            memeData.basedOn?.takeIf { it.isNotBlank() }?.let {
-                parts.add("template: ${it.replace("_", " ")}")
-            }
-            memeData.textContent?.takeIf { it.isNotBlank() }?.let {
-                parts.add("text: $it")
-            }
-            val emojiText = buildEmojiText(memeData)
-            if (emojiText.isNotBlank()) {
-                parts.add("tags: $emojiText")
-            }
-            return parts.joinToString(" | ")
-        }
-
-        /**
-         * Build text for emotion embedding slot from structured emotion metadata.
-         * Combines primary emotion, secondary emotions, and meme usage context
-         * into a natural language text optimized for semantic matching.
-         */
-        private fun buildEmotionText(memeData: MemeDataForEmbedding): String {
-            val jsonString = memeData.emotionsJson?.takeIf { it.isNotBlank() } ?: return ""
-            return try {
-                val emotions = kotlinx.serialization.json.Json.decodeFromString<
-                    com.adsamcik.riposte.core.model.EmotionData,
-                >(jsonString)
-                val parts = mutableListOf<String>()
-                parts.add(emotions.primary)
-                if (emotions.secondary.isNotEmpty()) {
-                    parts.add(emotions.secondary.joinToString(", "))
-                }
-                parts.add("${emotions.sentiment} ${emotions.intensity}")
-                if (emotions.memeUsage.isNotEmpty()) {
-                    parts.addAll(emotions.memeUsage)
-                }
-                parts.joinToString(". ")
-            } catch (
-                @Suppress("TooGenericExceptionCaught")
-                e: Exception,
-            ) {
-                Timber.d(e, "Failed to parse emotions JSON")
-                ""
-            }
-        }
-
-        private fun encodeEmbedding(embedding: FloatArray): ByteArray {
-            val buffer =
-                ByteBuffer.allocate(embedding.size * BYTES_PER_FLOAT)
-                    .order(ByteOrder.LITTLE_ENDIAN)
-            embedding.forEach { buffer.putFloat(it) }
-            return buffer.array()
-        }
-
-        private fun generateHash(text: String): String {
-            val digest = MessageDigest.getInstance("SHA-256")
-            val hash = digest.digest(text.toByteArray(Charsets.UTF_8))
-            // Truncate to 32 chars (128 bits) to match EmbeddingManager.generateHash
-            return hash.take(HASH_BYTE_LENGTH).joinToString("") { "%02x".format(it) }
-        }
-
         companion object {
             const val WORK_NAME = "embedding_generation_work"
             const val MAX_RETRY_COUNT = 3
@@ -504,15 +291,7 @@ class EmbeddingGenerationWorker
              */
             val CURRENT_MODEL_VERSION = com.adsamcik.riposte.core.ml.EmbeddingModelVersionManager.CURRENT_VERSION
             private const val PERCENTAGE_MULTIPLIER = 100
-            private const val BYTES_PER_FLOAT = 4
-            private const val HASH_BYTE_LENGTH = 16
             private const val BACKOFF_SECONDS = 30L
-
-            // Unicode codepoints filtered during emoji name resolution
-            private const val ZWJ_CODEPOINT = 0x200D
-            private const val VARIATION_SELECTOR_16 = 0xFE0F
-            private const val VARIATION_SELECTOR_15 = 0xFE0E
-            private val SKIN_TONE_MODIFIER_RANGE = 0x1F3FB..0x1F3FF
 
             /** Fetch this many memes per inner batch; adaptive logic trims based on device speed. */
             private const val BATCH_FETCH_SIZE = 50

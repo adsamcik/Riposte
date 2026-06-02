@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.Flow
 /**
  * Repository interface for search operations.
  */
-interface SearchRepository {
+interface SearchRepository : RecentSearchRepository {
     /**
      * Combined search on memes (alias for searchByText).
      *
@@ -65,26 +65,6 @@ interface SearchRepository {
     suspend fun getSearchSuggestions(prefix: String): List<String>
 
     /**
-     * Get recent searches.
-     */
-    fun getRecentSearches(): Flow<List<String>>
-
-    /**
-     * Add a search to recent searches.
-     */
-    suspend fun addRecentSearch(query: String)
-
-    /**
-     * Delete a specific recent search.
-     */
-    suspend fun deleteRecentSearch(query: String)
-
-    /**
-     * Clear recent searches.
-     */
-    suspend fun clearRecentSearches()
-
-    /**
      * Get all unique emojis with their usage counts.
      *
      * @return Flow of emoji-count pairs sorted by frequency descending.
@@ -117,4 +97,29 @@ interface SearchRepository {
      * Call when embeddings are regenerated or underlying data changes.
      */
     fun invalidateSearchCaches()
+}
+
+/**
+ * Repository interface for recent search history operations.
+ */
+interface RecentSearchRepository {
+    /**
+     * Get recent searches.
+     */
+    fun getRecentSearches(): Flow<List<String>>
+
+    /**
+     * Add a search to recent searches.
+     */
+    suspend fun addRecentSearch(query: String)
+
+    /**
+     * Delete a specific recent search.
+     */
+    suspend fun deleteRecentSearch(query: String)
+
+    /**
+     * Clear recent searches.
+     */
+    suspend fun clearRecentSearches()
 }

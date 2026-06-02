@@ -9,6 +9,10 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.sqrt
 
+private const val TOP_SCORE_LOG_COUNT = 5
+private const val SCORE_LOG_TITLE_CHARS = 15
+private const val MIN_GAP_SCORE_COUNT = 3
+
 /**
  * Default implementation of semantic search using cosine similarity.
  */
@@ -141,9 +145,10 @@ class DefaultSemanticSearchEngine
                 val topScores = scored.sortedByDescending { it.relevanceScore }
                 if (Timber.treeCount > 0) {
                     Timber.d(
-                        "Top 5 scores: %s",
-                        topScores.take(5).joinToString {
-                            "${it.meme.title?.take(15)}=%.4f".format(it.relevanceScore)
+                        "Top %d scores: %s",
+                        TOP_SCORE_LOG_COUNT,
+                        topScores.take(TOP_SCORE_LOG_COUNT).joinToString {
+                            "${it.meme.title?.take(SCORE_LOG_TITLE_CHARS)}=%.4f".format(it.relevanceScore)
                         },
                     )
                 }
@@ -174,11 +179,14 @@ class DefaultSemanticSearchEngine
                     weight to sim
                 }
 
-            if (sims.isEmpty()) return 0f
-            if (sims.size == 1) return sims.first().second
-
-            val totalWeight = sims.sumOf { it.first.toDouble() }.toFloat()
-            return sims.sumOf { (w, s) -> (w * s).toDouble() }.toFloat() / totalWeight
+            return when (sims.size) {
+                0 -> 0f
+                1 -> sims.first().second
+                else -> {
+                    val totalWeight = sims.sumOf { it.first.toDouble() }.toFloat()
+                    sims.sumOf { (w, s) -> (w * s).toDouble() }.toFloat() / totalWeight
+                }
+            }
         }
 
         /**
@@ -251,7 +259,7 @@ class DefaultSemanticSearchEngine
          * Returns the score at which to cut, or null if no significant gap found.
          */
         private fun findGapCutoff(sortedScores: List<Float>): Float? {
-            if (sortedScores.size < 3) return null
+            if (sortedScores.size < MIN_GAP_SCORE_COUNT) return null
 
             val gaps = sortedScores.zipWithNext { a, b -> a - b }
             val meanGap = gaps.average().toFloat()

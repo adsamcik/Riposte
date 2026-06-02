@@ -335,84 +335,90 @@ val MIGRATION_6_7 =
 val MIGRATION_7_8 =
     object : Migration(7, 8) {
         override fun migrate(db: SupportSQLiteDatabase) {
-            db.execSQL(
-                """CREATE TABLE IF NOT EXISTS `query_embedding_cache` (
-                    `queryHash` TEXT NOT NULL,
-                    `query` TEXT NOT NULL,
-                    `modelVersion` TEXT NOT NULL,
-                    `embedding` BLOB NOT NULL,
-                    `dimension` INTEGER NOT NULL,
-                    `createdAt` INTEGER NOT NULL,
-                    `accessedAt` INTEGER NOT NULL,
-                    PRIMARY KEY(`queryHash`)
-                )""",
-            )
-            db.execSQL(
-                "CREATE INDEX IF NOT EXISTS `index_query_embedding_cache_modelVersion` " +
-                    "ON `query_embedding_cache` (`modelVersion`)",
-            )
-            db.execSQL(
-                "CREATE INDEX IF NOT EXISTS `index_query_embedding_cache_accessedAt` " +
-                    "ON `query_embedding_cache` (`accessedAt`)",
-            )
-            // Add emotions column for mood-based semantic search (schema v1.4)
+            db.createQueryEmbeddingCache()
             db.execSQL("ALTER TABLE memes ADD COLUMN `emotionsJson` TEXT DEFAULT NULL")
-
-            // Recreate FTS table with emotionsJson column
-            db.execSQL("DROP TRIGGER IF EXISTS room_fts_content_sync_memes_fts_BEFORE_UPDATE")
-            db.execSQL("DROP TRIGGER IF EXISTS room_fts_content_sync_memes_fts_BEFORE_DELETE")
-            db.execSQL("DROP TRIGGER IF EXISTS room_fts_content_sync_memes_fts_AFTER_UPDATE")
-            db.execSQL("DROP TRIGGER IF EXISTS room_fts_content_sync_memes_fts_AFTER_INSERT")
-            db.execSQL("DROP TABLE IF EXISTS memes_fts")
-            db.execSQL(
-                """CREATE VIRTUAL TABLE IF NOT EXISTS `memes_fts` USING FTS4(
-                    `fileName` TEXT NOT NULL,
-                    `emojiTagsJson` TEXT NOT NULL,
-                    `title` TEXT,
-                    `description` TEXT,
-                    `textContent` TEXT,
-                    `searchPhrasesJson` TEXT,
-                    `basedOn` TEXT,
-                    `emotionsJson` TEXT,
-                    content=`memes`
-                )""",
-            )
-            db.execSQL(
-                """CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_memes_fts_BEFORE_UPDATE
-                    BEFORE UPDATE ON `memes`
-                    BEGIN DELETE FROM `memes_fts` WHERE `docid`=OLD.`rowid`; END""",
-            )
-            db.execSQL(
-                """CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_memes_fts_BEFORE_DELETE
-                    BEFORE DELETE ON `memes`
-                    BEGIN DELETE FROM `memes_fts` WHERE `docid`=OLD.`rowid`; END""",
-            )
-            db.execSQL(
-                """CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_memes_fts_AFTER_UPDATE
-                    AFTER UPDATE ON `memes`
-                    BEGIN INSERT INTO `memes_fts`(`docid`, `fileName`,
-                    `emojiTagsJson`, `title`, `description`, `textContent`,
-                    `searchPhrasesJson`, `basedOn`, `emotionsJson`)
-                    VALUES (NEW.`rowid`, NEW.`fileName`,
-                    NEW.`emojiTagsJson`, NEW.`title`, NEW.`description`,
-                    NEW.`textContent`, NEW.`searchPhrasesJson`,
-                    NEW.`basedOn`, NEW.`emotionsJson`); END""",
-            )
-            db.execSQL(
-                """CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_memes_fts_AFTER_INSERT
-                    AFTER INSERT ON `memes`
-                    BEGIN INSERT INTO `memes_fts`(`docid`, `fileName`,
-                    `emojiTagsJson`, `title`, `description`, `textContent`,
-                    `searchPhrasesJson`, `basedOn`, `emotionsJson`)
-                    VALUES (NEW.`rowid`, NEW.`fileName`,
-                    NEW.`emojiTagsJson`, NEW.`title`, NEW.`description`,
-                    NEW.`textContent`, NEW.`searchPhrasesJson`,
-                    NEW.`basedOn`, NEW.`emotionsJson`); END""",
-            )
-            // Rebuild FTS index to populate from existing meme data
-            db.execSQL("INSERT INTO memes_fts(memes_fts) VALUES('rebuild')")
+            db.recreateMemeFtsWithEmotions()
         }
     }
+
+private fun SupportSQLiteDatabase.createQueryEmbeddingCache() {
+    execSQL(
+        """CREATE TABLE IF NOT EXISTS `query_embedding_cache` (
+            `queryHash` TEXT NOT NULL,
+            `query` TEXT NOT NULL,
+            `modelVersion` TEXT NOT NULL,
+            `embedding` BLOB NOT NULL,
+            `dimension` INTEGER NOT NULL,
+            `createdAt` INTEGER NOT NULL,
+            `accessedAt` INTEGER NOT NULL,
+            PRIMARY KEY(`queryHash`)
+        )""",
+    )
+    execSQL(
+        "CREATE INDEX IF NOT EXISTS `index_query_embedding_cache_modelVersion` " +
+            "ON `query_embedding_cache` (`modelVersion`)",
+    )
+    execSQL(
+        "CREATE INDEX IF NOT EXISTS `index_query_embedding_cache_accessedAt` " +
+            "ON `query_embedding_cache` (`accessedAt`)",
+    )
+}
+
+private fun SupportSQLiteDatabase.recreateMemeFtsWithEmotions() {
+    dropMemeFtsSyncTriggers()
+    execSQL("DROP TABLE IF EXISTS memes_fts")
+    execSQL(
+        """CREATE VIRTUAL TABLE IF NOT EXISTS `memes_fts` USING FTS4(
+            `fileName` TEXT NOT NULL,
+            `emojiTagsJson` TEXT NOT NULL,
+            `title` TEXT,
+            `description` TEXT,
+            `textContent` TEXT,
+            `searchPhrasesJson` TEXT,
+            `basedOn` TEXT,
+            `emotionsJson` TEXT,
+            content=`memes`
+        )""",
+    )
+    createMemeFtsSyncTriggers()
+    execSQL("INSERT INTO memes_fts(memes_fts) VALUES('rebuild')")
+}
+
+private fun SupportSQLiteDatabase.dropMemeFtsSyncTriggers() {
+    execSQL("DROP TRIGGER IF EXISTS room_fts_content_sync_memes_fts_BEFORE_UPDATE")
+    execSQL("DROP TRIGGER IF EXISTS room_fts_content_sync_memes_fts_BEFORE_DELETE")
+    execSQL("DROP TRIGGER IF EXISTS room_fts_content_sync_memes_fts_AFTER_UPDATE")
+    execSQL("DROP TRIGGER IF EXISTS room_fts_content_sync_memes_fts_AFTER_INSERT")
+}
+
+private fun SupportSQLiteDatabase.createMemeFtsSyncTriggers() {
+    execSQL(
+        """CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_memes_fts_BEFORE_UPDATE
+            BEFORE UPDATE ON `memes`
+            BEGIN DELETE FROM `memes_fts` WHERE `docid`=OLD.`rowid`; END""",
+    )
+    execSQL(
+        """CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_memes_fts_BEFORE_DELETE
+            BEFORE DELETE ON `memes`
+            BEGIN DELETE FROM `memes_fts` WHERE `docid`=OLD.`rowid`; END""",
+    )
+    createMemeFtsInsertTrigger("AFTER_UPDATE", "AFTER UPDATE")
+    createMemeFtsInsertTrigger("AFTER_INSERT", "AFTER INSERT")
+}
+
+private fun SupportSQLiteDatabase.createMemeFtsInsertTrigger(triggerSuffix: String, timing: String) {
+    execSQL(
+        """CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_memes_fts_$triggerSuffix
+            $timing ON `memes`
+            BEGIN INSERT INTO `memes_fts`(`docid`, `fileName`,
+            `emojiTagsJson`, `title`, `description`, `textContent`,
+            `searchPhrasesJson`, `basedOn`, `emotionsJson`)
+            VALUES (NEW.`rowid`, NEW.`fileName`,
+            NEW.`emojiTagsJson`, NEW.`title`, NEW.`description`,
+            NEW.`textContent`, NEW.`searchPhrasesJson`,
+            NEW.`basedOn`, NEW.`emotionsJson`); END""",
+    )
+}
 
 /**
  * Migration from version 8 to 9:
@@ -446,4 +452,13 @@ val MIGRATION_8_9 =
  * to ensure the full chain is registered and validated.
  */
 val ALL_MIGRATIONS =
-    arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
+    arrayOf(
+        MIGRATION_1_2,
+        MIGRATION_2_3,
+        MIGRATION_3_4,
+        MIGRATION_4_5,
+        MIGRATION_5_6,
+        MIGRATION_6_7,
+        MIGRATION_7_8,
+        MIGRATION_8_9,
+    )

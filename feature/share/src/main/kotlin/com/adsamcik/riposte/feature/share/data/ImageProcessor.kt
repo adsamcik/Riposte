@@ -37,88 +37,111 @@ class ImageProcessor
             config: ShareConfig,
             outputFile: File,
         ): ProcessResult {
-            // GIF: copy original to preserve animation when no resize/strip is needed
-            if (config.format == ImageFormat.GIF) {
-                val needsResize = config.maxWidth != null || config.maxHeight != null
-                if (!needsResize && !config.stripMetadata) {
-                    return try {
-                        File(sourcePath).copyTo(outputFile, overwrite = true)
-                        val boundsOpts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-                        BitmapFactory.decodeFile(sourcePath, boundsOpts)
-                        ProcessResult.Success(
-                            file = outputFile,
-                            width = boundsOpts.outWidth,
-                            height = boundsOpts.outHeight,
-                            fileSize = outputFile.length(),
-                        )
-                    } catch (e: IOException) {
-                        ProcessResult.Error("Failed to copy GIF: ${e.message}")
-                    }
-                } else {
-                    Timber.w("GIF requested but modification needed — will re-encode as PNG")
-                }
+            copyUnmodifiedGifIfPossible(sourcePath, config, outputFile)?.let { return it }
+            return processRasterImage(sourcePath, config, outputFile)
+        }
+
+        private fun copyUnmodifiedGifIfPossible(
+            sourcePath: String,
+            config: ShareConfig,
+            outputFile: File,
+        ): ProcessResult? {
+            if (config.format != ImageFormat.GIF) return null
+
+            val needsResize = config.maxWidth != null || config.maxHeight != null
+            return if (!needsResize && !config.stripMetadata) {
+                copyGif(sourcePath, outputFile)
+            } else {
+                Timber.w("GIF requested but modification needed — will re-encode as PNG")
+                null
+            }
+        }
+
+        private fun copyGif(sourcePath: String, outputFile: File): ProcessResult =
+            try {
+                File(sourcePath).copyTo(outputFile, overwrite = true)
+                val boundsOptions = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                BitmapFactory.decodeFile(sourcePath, boundsOptions)
+                ProcessResult.Success(
+                    file = outputFile,
+                    width = boundsOptions.outWidth,
+                    height = boundsOptions.outHeight,
+                    fileSize = outputFile.length(),
+                )
+            } catch (e: IOException) {
+                ProcessResult.Error("Failed to copy GIF: ${e.message}")
             }
 
-            // First pass: get dimensions only
+        private fun processRasterImage(
+            sourcePath: String,
+            config: ShareConfig,
+            outputFile: File,
+        ): ProcessResult {
             val boundsOptions = BitmapFactory.Options().apply { inJustDecodeBounds = true }
             BitmapFactory.decodeFile(sourcePath, boundsOptions)
 
-            val targetMaxWidth = config.maxWidth ?: boundsOptions.outWidth
-            val targetMaxHeight = config.maxHeight ?: boundsOptions.outHeight
-
-            // Calculate inSampleSize to avoid loading full-resolution image into memory
-            val decodeOptions = BitmapFactory.Options().apply {
-                inSampleSize = calculateInSampleSize(
-                    boundsOptions.outWidth, boundsOptions.outHeight,
-                    targetMaxWidth, targetMaxHeight,
-                )
-            }
-
-            val originalBitmap =
-                BitmapFactory.decodeFile(sourcePath, decodeOptions)
-                    ?: return ProcessResult.Error("Failed to load image")
-
-            // Resize if needed
+            val decodeOptions = createDecodeOptions(boundsOptions, config)
+            val originalBitmap = BitmapFactory.decodeFile(sourcePath, decodeOptions)
+                ?: return ProcessResult.Error("Failed to load image")
             val maxWidth = config.maxWidth ?: originalBitmap.width
             val maxHeight = config.maxHeight ?: originalBitmap.height
             val resizedBitmap = resizeBitmap(originalBitmap, maxWidth, maxHeight)
+            val dimensions = resizedBitmap.width to resizedBitmap.height
+            val success = saveBitmap(
+                bitmap = resizedBitmap,
+                file = outputFile,
+                format = config.format,
+                quality = config.quality,
+            )
 
-            // Save in target format with compression
-            val success =
-                saveBitmap(
-                    bitmap = resizedBitmap,
+            recycleProcessedBitmaps(originalBitmap, resizedBitmap)
+
+            return if (success) {
+                applyMetadataPolicy(sourcePath, config, outputFile)
+                ProcessResult.Success(
                     file = outputFile,
-                    format = config.format,
-                    quality = config.quality,
+                    width = dimensions.first,
+                    height = dimensions.second,
+                    fileSize = outputFile.length(),
                 )
+            } else {
+                ProcessResult.Error("Failed to save processed image")
+            }
+        }
 
-            // Save dimensions before recycling
-            val resultWidth = resizedBitmap.width
-            val resultHeight = resizedBitmap.height
+        private fun createDecodeOptions(
+            boundsOptions: BitmapFactory.Options,
+            config: ShareConfig,
+        ): BitmapFactory.Options =
+            BitmapFactory.Options().apply {
+                inSampleSize = calculateInSampleSize(
+                    boundsOptions.outWidth,
+                    boundsOptions.outHeight,
+                    config.maxWidth ?: boundsOptions.outWidth,
+                    config.maxHeight ?: boundsOptions.outHeight,
+                )
+            }
 
-            // Clean up intermediate bitmaps
+        private fun recycleProcessedBitmaps(
+            originalBitmap: Bitmap,
+            resizedBitmap: Bitmap,
+        ) {
             if (resizedBitmap != originalBitmap) {
                 originalBitmap.recycle()
             }
             resizedBitmap.recycle()
+        }
 
-            if (!success) {
-                return ProcessResult.Error("Failed to save processed image")
-            }
-
-            // Handle EXIF data
+        private fun applyMetadataPolicy(
+            sourcePath: String,
+            config: ShareConfig,
+            outputFile: File,
+        ) {
             if (config.stripMetadata) {
                 stripExifData(outputFile.absolutePath)
             } else if (sourcePath != outputFile.absolutePath) {
                 copyExifData(sourcePath, outputFile.absolutePath)
             }
-
-            return ProcessResult.Success(
-                file = outputFile,
-                width = resultWidth,
-                height = resultHeight,
-                fileSize = outputFile.length(),
-            )
         }
 
         /**

@@ -351,68 +351,14 @@ class ImportRepositoryImpl
         ): Result<Unit> =
             withContext(Dispatchers.IO) {
                 try {
-                    val existing =
-                        memeDao.getMemeById(memeId)
-                            ?: return@withContext Result.failure(Exception("Meme not found"))
-
+                    val existing = memeDao.getMemeById(memeId)
+                        ?: return@withContext Result.failure(Exception("Meme not found"))
                     val normalizedEmojis = metadata.emojis.map { EmojiTag.normalizeEmoji(it) }
 
-                    // Update entity fields
-                    val searchPhrasesJson =
-                        if (metadata.searchPhrases.isNotEmpty()) {
-                            kotlinx.serialization.json.Json.encodeToString(metadata.searchPhrases)
-                        } else {
-                            existing.searchPhrasesJson
-                        }
-                    val updated =
-                        existing.copy(
-                            emojiTagsJson = kotlinx.serialization.json.Json.encodeToString(normalizedEmojis),
-                            title = metadata.title ?: existing.title,
-                            description = metadata.description ?: existing.description,
-                            textContent = metadata.textContent ?: existing.textContent,
-                            searchPhrasesJson = searchPhrasesJson,
-                            basedOn = metadata.basedOn ?: existing.basedOn,
-                            primaryLanguage = metadata.primaryLanguage ?: existing.primaryLanguage,
-                            localizationsJson =
-                                metadata.localizations.takeIf { it.isNotEmpty() }?.let {
-                                    kotlinx.serialization.json.Json.encodeToString(it)
-                                } ?: existing.localizationsJson,
-                            emotionsJson =
-                                metadata.emotions?.let {
-                                    kotlinx.serialization.json.Json.encodeToString(it)
-                                } ?: existing.emotionsJson,
-                        )
-                    memeDao.updateMeme(updated)
-
-                    // Replace emoji tags
-                    emojiTagDao.deleteEmojiTagsForMeme(memeId)
-                    val emojiTagEntities =
-                        normalizedEmojis.map { emoji ->
-                            val emojiTag = EmojiTag.fromEmoji(emoji)
-                            EmojiTagEntity(
-                                memeId = memeId,
-                                emoji = emojiTag.emoji,
-                                emojiName = emojiTag.name,
-                            )
-                        }
-                    if (emojiTagEntities.isNotEmpty()) {
-                        emojiTagDao.insertEmojiTags(emojiTagEntities)
-                    }
-
-                    // Mark embeddings for regeneration in background
-                    mlServices.embeddingManager.markForRegeneration(memeId)
-                    mlServices.embeddingManager.scheduleBackgroundGeneration()
-
-                    // Update XMP metadata in image file
-                    val xmpMetadata =
-                        MemeMetadata(
-                            schemaVersion = AppConstants.METADATA_SCHEMA_VERSION,
-                            emojis = metadata.emojis,
-                            title = metadata.title,
-                            description = metadata.description,
-                            appVersion = AppConstants.APP_VERSION,
-                        )
-                    mlServices.xmpMetadataHandler.writeMetadata(existing.filePath, xmpMetadata)
+                    memeDao.updateMeme(buildUpdatedMeme(existing, metadata, normalizedEmojis))
+                    replaceEmojiTags(memeId, normalizedEmojis)
+                    scheduleEmbeddingRegeneration(memeId)
+                    writeUpdatedXmpMetadata(existing.filePath, metadata)
 
                     Result.success(Unit)
                 } catch (
@@ -422,6 +368,43 @@ class ImportRepositoryImpl
                     Result.failure(e)
                 }
             }
+
+        private suspend fun replaceEmojiTags(
+            memeId: Long,
+            normalizedEmojis: List<String>,
+        ) {
+            emojiTagDao.deleteEmojiTagsForMeme(memeId)
+            val emojiTagEntities = normalizedEmojis.map { emoji ->
+                val emojiTag = EmojiTag.fromEmoji(emoji)
+                EmojiTagEntity(
+                    memeId = memeId,
+                    emoji = emojiTag.emoji,
+                    emojiName = emojiTag.name,
+                )
+            }
+            if (emojiTagEntities.isNotEmpty()) {
+                emojiTagDao.insertEmojiTags(emojiTagEntities)
+            }
+        }
+
+        private suspend fun scheduleEmbeddingRegeneration(memeId: Long) {
+            mlServices.embeddingManager.markForRegeneration(memeId)
+            mlServices.embeddingManager.scheduleBackgroundGeneration()
+        }
+
+        private suspend fun writeUpdatedXmpMetadata(
+            filePath: String,
+            metadata: MemeMetadata,
+        ) {
+            val xmpMetadata = MemeMetadata(
+                schemaVersion = AppConstants.METADATA_SCHEMA_VERSION,
+                emojis = metadata.emojis,
+                title = metadata.title,
+                description = metadata.description,
+                appVersion = AppConstants.APP_VERSION,
+            )
+            mlServices.xmpMetadataHandler.writeMetadata(filePath, xmpMetadata)
+        }
 
         private data class ProcessedImage(
             val imageFile: File,
@@ -672,3 +655,35 @@ class ImportRepositoryImpl
             importRequestDao.insertItems(entities)
         }
     }
+
+private fun buildUpdatedMeme(
+    existing: MemeEntity,
+    metadata: MemeMetadata,
+    normalizedEmojis: List<String>,
+): MemeEntity =
+    existing.copy(
+        emojiTagsJson = kotlinx.serialization.json.Json.encodeToString(normalizedEmojis),
+        title = metadata.title ?: existing.title,
+        description = metadata.description ?: existing.description,
+        textContent = metadata.textContent ?: existing.textContent,
+        searchPhrasesJson = metadata.searchPhrasesJsonOrExisting(existing),
+        basedOn = metadata.basedOn ?: existing.basedOn,
+        primaryLanguage = metadata.primaryLanguage ?: existing.primaryLanguage,
+        localizationsJson = metadata.localizationsJsonOrExisting(existing),
+        emotionsJson = metadata.emotionsJsonOrExisting(existing),
+    )
+
+private fun MemeMetadata.searchPhrasesJsonOrExisting(existing: MemeEntity): String? =
+    if (searchPhrases.isNotEmpty()) {
+        kotlinx.serialization.json.Json.encodeToString(searchPhrases)
+    } else {
+        existing.searchPhrasesJson
+    }
+
+private fun MemeMetadata.localizationsJsonOrExisting(existing: MemeEntity): String? =
+    localizations.takeIf { it.isNotEmpty() }?.let {
+        kotlinx.serialization.json.Json.encodeToString(it)
+    } ?: existing.localizationsJson
+
+private fun MemeMetadata.emotionsJsonOrExisting(existing: MemeEntity): String? =
+    emotions?.let { kotlinx.serialization.json.Json.encodeToString(it) } ?: existing.emotionsJson

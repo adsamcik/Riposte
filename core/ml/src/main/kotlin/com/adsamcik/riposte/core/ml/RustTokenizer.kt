@@ -100,14 +100,12 @@ internal class RustTokenizer private constructor(
         /**
          * Parses a SentencePiece `.model` from raw bytes and creates a tokenizer.
          *
-         * @throws RuntimeException if parsing fails or native library unavailable.
+         * @throws IllegalStateException if parsing fails or native library unavailable.
          */
         fun parse(modelData: ByteArray): RustTokenizer {
             loadNativeLibrary()
             val handle = nativeParse(modelData)
-            if (handle == 0L) {
-                throw RuntimeException("Failed to parse SentencePiece model in Rust")
-            }
+            check(handle != 0L) { "Failed to parse SentencePiece model in Rust" }
             return RustTokenizer(handle)
         }
 

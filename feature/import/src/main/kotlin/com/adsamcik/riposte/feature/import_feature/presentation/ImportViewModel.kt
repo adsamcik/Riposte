@@ -8,7 +8,6 @@ import androidx.work.WorkManager
 import com.adsamcik.riposte.core.common.AppConstants
 import com.adsamcik.riposte.core.common.review.UserActionTracker
 import com.adsamcik.riposte.core.datastore.PreferencesDataStore
-import com.adsamcik.riposte.core.model.MemeMetadata
 import com.adsamcik.riposte.feature.import_feature.R
 import com.adsamcik.riposte.feature.import_feature.data.worker.ImportStagingManager
 import com.adsamcik.riposte.feature.import_feature.data.worker.ImportWorker
@@ -53,6 +52,13 @@ class ImportViewModel
         val effects = _effects.receiveAsFlow()
 
         private var importJob: Job? = null
+        private val duplicateCoordinator = ImportDuplicateCoordinator(
+            context = context,
+            useCases = useCases,
+            uiState = _uiState,
+            effects = _effects,
+            performImport = ::performImport,
+        )
 
         init {
             observeImportWork()
@@ -395,304 +401,116 @@ class ImportViewModel
         }
 
         private fun startImport() {
-            // Guard against duplicate imports atomically inside the update block
-            var wasAlreadyImporting = false
-            _uiState.update { state ->
-                if (state.isImporting) {
-                    wasAlreadyImporting = true
-                    state
-                } else {
-                    state.copy(
-                        isImporting = true,
-                        importProgress = -1f,
-                        statusMessage = context.getString(R.string.import_status_checking_duplicates),
-                    )
-                }
-            }
-            if (wasAlreadyImporting) return
-
-            importJob =
-                viewModelScope.launch {
-                    // Check for duplicates first
-                    val images = _uiState.value.selectedImages
-                    val duplicateIndices = mutableSetOf<Int>()
-                    val duplicateMemeIds = mutableMapOf<Int, Long>()
-                    val duplicatesWithChangedMetadata = mutableSetOf<Int>()
-
-                    images.forEachIndexed { index, image ->
-                        try {
-                            val existingMemeId = useCases.findDuplicateMemeId(image.uri)
-                            if (existingMemeId != null) {
-                                duplicateIndices.add(index)
-                                duplicateMemeIds[index] = existingMemeId
-                                // Check if the incoming image has metadata that differs
-                                if (image.emojis.isNotEmpty() || image.title != null || image.description != null) {
-                                    duplicatesWithChangedMetadata.add(index)
-                                }
-                            }
-                        } catch (
-                            @Suppress("TooGenericExceptionCaught") // Worker must not crash - reports failure instead
-                            e: Exception,
-                        ) {
-                            Timber.d(e, "Failed to check duplicate metadata, proceeding with import")
-                        }
-                    }
-
-                    if (duplicateIndices.isNotEmpty()) {
-                        Timber.d("Found %d duplicate images during import", duplicateIndices.size)
-                        _uiState.update {
-                            it.copy(
-                                isImporting = false,
-                                statusMessage = null,
-                                duplicateIndices = duplicateIndices,
-                                duplicateMemeIds = duplicateMemeIds,
-                                duplicatesWithChangedMetadata = duplicatesWithChangedMetadata,
-                                showDuplicateDialog = true,
-                            )
-                        }
-                        return@launch
-                    }
-
-                    performImport(images)
-                }
+            importJob = duplicateCoordinator.startImport(viewModelScope)
         }
 
         private fun importDuplicatesAnyway() {
-            _uiState.update {
-                it.copy(
-                    showDuplicateDialog = false,
-                    duplicateIndices = emptySet(),
-                    duplicatesWithChangedMetadata = emptySet(),
-                    duplicateMemeIds = emptyMap(),
-                )
-            }
-            val images = _uiState.value.selectedImages
-            importJob = viewModelScope.launch { performImport(images) }
+            importJob = duplicateCoordinator.importDuplicatesAnyway(viewModelScope)
         }
 
         private fun skipDuplicates() {
-            val dupes = _uiState.value.duplicateIndices
-            _uiState.update { state ->
-                state.copy(
-                    selectedImages = state.selectedImages.filterIndexed { index, _ -> index !in dupes },
-                    showDuplicateDialog = false,
-                    duplicateIndices = emptySet(),
-                    duplicatesWithChangedMetadata = emptySet(),
-                    duplicateMemeIds = emptyMap(),
-                )
-            }
-            val images = _uiState.value.selectedImages
-            if (images.isEmpty()) return
-            importJob = viewModelScope.launch { performImport(images) }
+            importJob = duplicateCoordinator.skipDuplicates(viewModelScope)
         }
 
-        @Suppress("LoopWithTooManyJumpStatements")
         private fun updateDuplicateMetadata() {
-            val state = _uiState.value
-            val dupes = state.duplicateIndices
-            val changedDupes = state.duplicatesWithChangedMetadata
-            val memeIds = state.duplicateMemeIds
-
-            _uiState.update {
-                it.copy(
-                    showDuplicateDialog = false,
-                    isImporting = true,
-                    importProgress = -1f,
-                    statusMessage = context.getString(R.string.import_status_updating_metadata),
-                )
-            }
-
-            importJob =
-                viewModelScope.launch {
-                    var updatedCount = 0
-
-                    // Update metadata for duplicates that have changes
-                    for (index in changedDupes) {
-                        val image = state.selectedImages.getOrNull(index) ?: continue
-                        val memeId = memeIds[index] ?: continue
-
-                        val metadata =
-                            MemeMetadata(
-                                emojis = image.emojis.map { it.emoji }.ifEmpty { listOf("😀") },
-                                title = image.title,
-                                description = image.description,
-                                textContent = image.extractedText,
-                                searchPhrases = image.searchPhrases,
-                                basedOn = image.basedOn,
-                                primaryLanguage = image.primaryLanguage,
-                                localizations = image.localizations,
-                            )
-
-                        val result = useCases.updateMemeMetadata(memeId, metadata)
-                        if (result.isSuccess) updatedCount++
-                    }
-
-                    if (updatedCount > 0) {
-                        _effects.send(
-                            ImportEffect.ShowSnackbar(
-                                context.getString(R.string.import_metadata_updated_count, updatedCount),
-                            ),
-                        )
-                    }
-
-                    // Remove all duplicates and import remaining non-duplicates
-                    _uiState.update { s ->
-                        s.copy(
-                            selectedImages = s.selectedImages.filterIndexed { index, _ -> index !in dupes },
-                            duplicateIndices = emptySet(),
-                            duplicatesWithChangedMetadata = emptySet(),
-                            duplicateMemeIds = emptyMap(),
-                            isImporting = false,
-                            statusMessage = null,
-                        )
-                    }
-
-                    val remainingImages = _uiState.value.selectedImages
-                    if (remainingImages.isNotEmpty()) {
-                        performImport(remainingImages)
-                    } else {
-                        _effects.send(ImportEffect.NavigateToGallery)
-                    }
-                }
+            importJob = duplicateCoordinator.updateDuplicateMetadata(viewModelScope)
         }
 
         private fun dismissDuplicateDialog() {
-            _uiState.update { it.copy(showDuplicateDialog = false) }
+            duplicateCoordinator.dismissDuplicateDialog()
         }
 
         private suspend fun performImport(images: List<ImportImage>) {
-            _uiState.update {
-                it.copy(
-                    isImporting = true,
-                    importProgress = 0f,
-                    totalImportCount = images.size,
-                    statusMessage = context.getString(R.string.import_status_staging),
-                )
-            }
-
+            showImportStagingStarted(images.size)
             try {
-                val requestId = UUID.randomUUID().toString()
-
-                // Stage images from content URIs to internal storage
-                val stagingInputs =
-                    images.mapIndexed { index, image ->
-                        ImportStagingManager.StagingInput(
-                            id = buildStagingFileId(requestId, index, image.fileName),
-                            uri = image.uri,
-                        )
-                    }
-                val stagingDir = importStagingManager.stageImages(stagingInputs) { completed, total ->
-                    _uiState.update {
-                        it.copy(
-                            importProgress = completed.toFloat() / total,
-                            statusMessage = context.getString(
-                                R.string.import_status_staging_progress,
-                                completed,
-                                total,
-                            ),
-                        )
-                    }
-                }
-
-                // Create import request items with full metadata
-                val items =
-                    images.mapIndexed { index, image ->
-                        buildImportRequestItem(requestId, index, image, stagingDir)
-                    }
-
-                // Persist import request via repository
-                importRepository.createImportRequest(requestId, images.size, stagingDir.absolutePath)
-                importRepository.createImportRequestItems(requestId, items)
-
-                // Enqueue the worker — gallery observes progress via WorkManager
-                ImportWorker.enqueue(context, requestId)
-
-                _uiState.update {
-                    it.copy(
-                        isImporting = false,
-                        importProgress = 0f,
-                        totalImportCount = it.selectedImages.size,
-                        statusMessage = null,
-                        selectedImages = emptyList(),
-                    )
-                }
-
-                // Navigate to gallery immediately — progress banner shows there
-                _effects.send(ImportEffect.NavigateToGallery)
+                val stagedImport = stageImportRequest(images)
+                importRepository.createImportRequest(
+                    stagedImport.requestId,
+                    images.size,
+                    stagedImport.stagingDir.absolutePath,
+                )
+                importRepository.createImportRequestItems(stagedImport.requestId, stagedImport.items)
+                ImportWorker.enqueue(context, stagedImport.requestId)
+                finishImportStaging()
             } catch (
                 @Suppress("TooGenericExceptionCaught") // Worker must not crash - reports failure instead
                 e: Exception,
             ) {
-                Timber.e(e, "Import failed for %d images", images.size)
-                _uiState.update {
-                    it.copy(isImporting = false, statusMessage = null)
-                }
-                _effects.send(
-                    ImportEffect.ShowError(
-                        e.message ?: context.getString(R.string.import_error_images_failed),
-                    ),
+                handleImportFailure(e, images.size)
+            }
+        }
+
+        private fun showImportStagingStarted(imageCount: Int) {
+            _uiState.update {
+                it.copy(
+                    isImporting = true,
+                    importProgress = 0f,
+                    totalImportCount = imageCount,
+                    statusMessage = context.getString(R.string.import_status_staging),
                 )
             }
         }
 
-        private fun buildImportRequestItem(
-            requestId: String,
-            index: Int,
-            image: ImportImage,
-            stagingDir: java.io.File,
-        ): ImportRequestItemData {
-            val stagedFileId = buildStagingFileId(requestId, index, image.fileName)
-            val emojiStrings = image.emojis.map { it.emoji }
-            val metadataJson =
-                if (emojiStrings.isNotEmpty()) {
-                    try {
-                        kotlinx.serialization.json.Json.encodeToString(
-                            MemeMetadata(
-                                emojis = emojiStrings,
-                                title = image.title,
-                                description = image.description,
-                                textContent = image.extractedText,
-                                searchPhrases = image.searchPhrases,
-                                basedOn = image.basedOn,
-                                primaryLanguage = image.primaryLanguage,
-                                localizations = image.localizations,
-                            ),
-                        )
-                    } catch (
-                        @Suppress("TooGenericExceptionCaught")
-                        // Serialization may fail unexpectedly
-                        e: Exception,
-                    ) {
-                        Timber.w(e, "Failed to serialize metadata during import")
-                        null
-                    }
-                } else {
-                    null
+        private suspend fun stageImportRequest(images: List<ImportImage>): StagedImportRequest {
+            val requestId = UUID.randomUUID().toString()
+            val stagingInputs = buildStagingInputs(requestId, images)
+            val stagingDir = importStagingManager.stageImages(stagingInputs) { completed, total ->
+                _uiState.update {
+                    it.copy(
+                        importProgress = completed.toFloat() / total,
+                        statusMessage = context.getString(
+                            R.string.import_status_staging_progress,
+                            completed,
+                            total,
+                        ),
+                    )
                 }
-            return ImportRequestItemData(
-                id = stagedFileId,
-                stagedFilePath = java.io.File(stagingDir, stagedFileId).absolutePath,
-                originalFileName = image.fileName,
-                emojis = image.emojis.joinToString(",") { it.emoji },
-                title = image.title,
-                description = image.description,
-                extractedText = image.extractedText,
-                metadataJson = metadataJson,
+            }
+            val items = images.mapIndexed { index, image ->
+                ImportRequestItemBuilder.build(requestId, index, image, stagingDir)
+            }
+            return StagedImportRequest(requestId, stagingDir, items)
+        }
+
+        private fun buildStagingInputs(
+            requestId: String,
+            images: List<ImportImage>,
+        ): List<ImportStagingManager.StagingInput> =
+            images.mapIndexed { index, image ->
+                ImportStagingManager.StagingInput(
+                    id = ImportRequestItemBuilder.buildStagingFileId(requestId, index, image.fileName),
+                    uri = image.uri,
+                )
+            }
+
+        private suspend fun finishImportStaging() {
+            _uiState.update {
+                it.copy(
+                    isImporting = false,
+                    importProgress = 0f,
+                    totalImportCount = it.selectedImages.size,
+                    statusMessage = null,
+                    selectedImages = emptyList(),
+                )
+            }
+            _effects.send(ImportEffect.NavigateToGallery)
+        }
+
+        private suspend fun handleImportFailure(error: Exception, imageCount: Int) {
+            Timber.e(error, "Import failed for %d images", imageCount)
+            _uiState.update { it.copy(isImporting = false, statusMessage = null) }
+            _effects.send(
+                ImportEffect.ShowError(
+                    error.message ?: context.getString(R.string.import_error_images_failed),
+                ),
             )
         }
 
-        private fun buildStagingFileId(
-            requestId: String,
-            index: Int,
-            originalFileName: String,
-        ): String {
-            val extension = originalFileName.substringAfterLast('.', "").takeIf { it.isNotBlank() }
-            return if (extension != null) {
-                "${requestId}_$index.$extension"
-            } else {
-                "${requestId}_$index"
-            }
-        }
+        private data class StagedImportRequest(
+            val requestId: String,
+            val stagingDir: java.io.File,
+            val items: List<ImportRequestItemData>,
+        )
 
         private fun cancelImport() {
             importJob?.cancel()

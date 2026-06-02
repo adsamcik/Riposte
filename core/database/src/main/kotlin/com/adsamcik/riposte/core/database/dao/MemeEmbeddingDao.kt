@@ -130,7 +130,15 @@ interface MemeEmbeddingDao {
     /**
      * Mark an embedding as needing regeneration.
      */
-    @Query("UPDATE meme_embeddings SET needsRegeneration = 1, indexingAttempts = 0, lastAttemptAt = NULL WHERE memeId = :memeId")
+    @Query(
+        """
+        UPDATE meme_embeddings
+        SET needsRegeneration = 1,
+            indexingAttempts = 0,
+            lastAttemptAt = NULL
+        WHERE memeId = :memeId
+        """,
+    )
     suspend fun markForRegeneration(memeId: Long)
 
     /**

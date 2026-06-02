@@ -10,6 +10,8 @@ import com.adsamcik.riposte.core.common.lifecycle.AppLifecycleTracker
 import com.adsamcik.riposte.core.events.EventBus
 import com.adsamcik.riposte.core.ml.worker.EmbeddingGenerationWorker
 import com.adsamcik.riposte.core.ml.worker.EmbeddingNotificationManager
+import com.adsamcik.riposte.core.ml.worker.EmbeddingSlotGenerator
+import com.adsamcik.riposte.core.ml.worker.EmbeddingWorkerDependencies
 import com.adsamcik.riposte.core.ml.worker.EmbeddingWorkRepository
 import com.adsamcik.riposte.core.ml.worker.MemeDataForEmbedding
 import com.google.common.truth.Truth.assertThat
@@ -37,8 +39,8 @@ import org.robolectric.annotation.Config
  *
  * @see EmbeddingGemmaGenerator.generateFromText — document prompt (lines 108-121)
  * @see EmbeddingGemmaGenerator.generateFromQuery — query prompt (lines 129-138)
- * @see EmbeddingGenerationWorker.buildContentParts — content body assembly
- * @see EmbeddingGenerationWorker.buildIntentText — intent text from search phrases
+ * @see EmbeddingSlotGenerator.buildContentParts — content body assembly
+ * @see EmbeddingSlotGenerator.buildIntentText — intent text from search phrases
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE)
@@ -183,7 +185,7 @@ class PromptFormattingTest {
 
     // region Worker Text Building — buildContentParts
     // Builds (title, body) from meme metadata for the document embedding slot.
-    // Source: EmbeddingGenerationWorker.buildContentParts
+    // Source: EmbeddingSlotGenerator.buildContentParts
 
     @Test
     fun `buildContentParts with title and description`() {
@@ -250,7 +252,7 @@ class PromptFormattingTest {
 
     // region Worker Text Building — buildIntentText
     // Builds text from search phrases for the intent embedding slot (query format).
-    // Source: EmbeddingGenerationWorker.buildIntentText
+    // Source: EmbeddingSlotGenerator.buildIntentText
 
     @Test
     fun `buildIntentText with search phrases`() {
@@ -386,27 +388,30 @@ class PromptFormattingTest {
      */
     @Suppress("UNCHECKED_CAST")
     private fun invokeBuildContentParts(memeData: MemeDataForEmbedding): Pair<String?, String> {
-        val worker = createWorker()
-        val method = EmbeddingGenerationWorker::class.java.getDeclaredMethod(
+        val slotGenerator = createSlotGenerator()
+        val method = EmbeddingSlotGenerator::class.java.getDeclaredMethod(
             "buildContentParts",
             MemeDataForEmbedding::class.java,
         )
         method.isAccessible = true
-        return method.invoke(worker, memeData) as Pair<String?, String>
+        return method.invoke(slotGenerator, memeData) as Pair<String?, String>
     }
 
     /**
      * Invokes the private `buildIntentText` method via reflection.
      */
     private fun invokeBuildIntentText(memeData: MemeDataForEmbedding): String {
-        val worker = createWorker()
-        val method = EmbeddingGenerationWorker::class.java.getDeclaredMethod(
+        val slotGenerator = createSlotGenerator()
+        val method = EmbeddingSlotGenerator::class.java.getDeclaredMethod(
             "buildIntentText",
             MemeDataForEmbedding::class.java,
         )
         method.isAccessible = true
-        return method.invoke(worker, memeData) as String
+        return method.invoke(slotGenerator, memeData) as String
     }
+
+    private fun createSlotGenerator(): EmbeddingSlotGenerator =
+        EmbeddingSlotGenerator(embeddingGenerator, embeddingRepository)
 
     private fun createWorker(): EmbeddingGenerationWorker {
         return TestListenableWorkerBuilder<EmbeddingGenerationWorker>(context)
@@ -423,11 +428,13 @@ class PromptFormattingTest {
             return EmbeddingGenerationWorker(
                 context = appContext,
                 params = workerParameters,
-                embeddingGenerator = embeddingGenerator,
-                embeddingRepository = embeddingRepository,
-                appLifecycleTracker = appLifecycleTracker,
-                notificationManager = notificationManager,
-                eventBus = EventBus(),
+                dependencies = EmbeddingWorkerDependencies(
+                    embeddingGenerator = embeddingGenerator,
+                    embeddingRepository = embeddingRepository,
+                    appLifecycleTracker = appLifecycleTracker,
+                    notificationManager = notificationManager,
+                    eventBus = EventBus(),
+                ),
             )
         }
     }

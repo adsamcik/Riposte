@@ -31,19 +31,29 @@ class RecoverStaleImportsUseCase
         suspend operator fun invoke(staleThresholdMs: Long): List<RecoveredImport> {
             val staleThreshold = System.currentTimeMillis() - staleThresholdMs
             val staleRequests = importRequestDao.getStaleRequests(staleThreshold)
-            if (staleRequests.isEmpty()) return emptyList()
+            val hasActiveWork = staleRequests.isNotEmpty() && hasActiveImportWork()
 
+            return when {
+                staleRequests.isEmpty() -> emptyList()
+                hasActiveWork -> {
+                    Timber.d("Import work still active, skipping stale recovery")
+                    emptyList()
+                }
+                else -> recoverRequests(staleRequests)
+            }
+        }
+
+        private suspend fun hasActiveImportWork(): Boolean {
             val workInfos = WorkManager.getInstance(context)
                 .getWorkInfosForUniqueWork(AppConstants.IMPORT_WORK_NAME)
                 .get()
-            val hasActiveWork = workInfos.any { !it.state.isFinished }
+            return workInfos.any { !it.state.isFinished }
+        }
 
-            if (hasActiveWork) {
-                Timber.d("Import work still active, skipping stale recovery")
-                return emptyList()
-            }
-
-            return staleRequests.map { request ->
+        private suspend fun recoverRequests(
+            staleRequests: List<ImportRequestEntity>,
+        ): List<RecoveredImport> =
+            staleRequests.map { request ->
                 Timber.w(
                     "Marking stale import %s as failed (%d completed, %d failed of %d)",
                     request.id,
@@ -67,5 +77,4 @@ class RecoverStaleImportsUseCase
                     imageCount = request.imageCount,
                 )
             }
-        }
     }

@@ -88,45 +88,59 @@ class SemanticSearchStrategy @Inject constructor(
         limit: Int,
     ): List<SearchResult>? {
         val profile = deviceTierDetector.resolveProfile()
-        if (!profile.useAnn) return null
+        return if (!profile.useAnn) {
+            null
+        } else {
+            val index = getOrBuildIndex(allCandidates)?.takeIf { it.size() > 0 }
+            val queryEmbedding = generateAnnQueryEmbedding(query)
+            val annKeys = if (index != null && queryEmbedding != null) {
+                val truncatedQuery = EmbeddingUtils.truncateEmbedding(
+                    queryEmbedding,
+                    profile.annIndexDimension,
+                )
+                searchAnnKeys(index, truncatedQuery, profile.annFirstPassK)
+            } else {
+                null
+            }
+            annKeys
+                ?.takeIf { it.isNotEmpty() }
+                ?.let { rerankAnnCandidates(query, allCandidates, it, limit) }
+        }
+    }
 
-        val index = getOrBuildIndex(allCandidates) ?: return null
-
-        if (index.size() == 0) return null
-
-        // Generate query embedding and truncate to ANN dimension
-        val queryEmbedding = try {
+    private suspend fun generateAnnQueryEmbedding(query: String): FloatArray? =
+        try {
             embeddingGenerator.generateFromQuery(query)
         } catch (
             @Suppress("TooGenericExceptionCaught")
             e: Exception,
         ) {
             Timber.w(e, "Failed to generate query embedding for ANN search")
-            return null
+            null
         }
 
-        val truncatedQuery = EmbeddingUtils.truncateEmbedding(
-            queryEmbedding,
-            profile.annIndexDimension,
-        )
-
-        // ANN first-pass: get top-K candidate IDs
-        val (annKeys, _) = try {
-            index.search(truncatedQuery, profile.annFirstPassK)
+    private fun searchAnnKeys(
+        index: RustVectorIndex,
+        truncatedQuery: FloatArray,
+        firstPassCount: Int,
+    ): LongArray? =
+        try {
+            index.search(truncatedQuery, firstPassCount).first
         } catch (
             @Suppress("TooGenericExceptionCaught")
             e: Exception,
         ) {
             Timber.w(e, "ANN search failed, falling back to brute-force")
-            return null
+            null
         }
 
-        if (annKeys.isEmpty()) return null
-
-        // Map ANN result keys back to meme IDs
+    private suspend fun rerankAnnCandidates(
+        query: String,
+        allCandidates: List<MemeWithEmbeddings>,
+        annKeys: LongArray,
+        limit: Int,
+    ): List<SearchResult> {
         val annMemeIds = annKeys.toSet()
-
-        // Filter full candidates to ANN-selected subset, then rerank with full embeddings
         val narrowedCandidates = allCandidates.filter { candidate ->
             val key = candidate.meme.id.hashCode().toLong() and KEY_MASK
             key in annMemeIds
@@ -138,7 +152,6 @@ class SemanticSearchStrategy @Inject constructor(
             allCandidates.size,
         )
 
-        // Rerank the narrowed set with full-dimensional multi-vector similarity
         return semanticSearchEngine.findSimilarMultiVector(
             query = query,
             candidates = narrowedCandidates,
@@ -157,50 +170,47 @@ class SemanticSearchStrategy @Inject constructor(
         invalidateCandidateCache()
     }
 
-    private suspend fun getCachedOrLoadCandidates(): List<MemeWithEmbeddings> {
-        cachedCandidates?.let { return it }
-
-        val memesWithEmbeddings = memeEmbeddingDao.getMemesWithEmbeddings()
-        if (memesWithEmbeddings.isEmpty()) return emptyList()
-
-        val built = buildCandidates(memesWithEmbeddings)
-        cachedCandidates = built
-        return built
-    }
+    private suspend fun getCachedOrLoadCandidates(): List<MemeWithEmbeddings> =
+        cachedCandidates ?: memeEmbeddingDao.getMemesWithEmbeddings()
+            .takeIf { it.isNotEmpty() }
+            ?.let { rows ->
+                buildCandidates(rows).also { cachedCandidates = it }
+            }
+            .orEmpty()
 
     /**
      * Gets or lazily builds the ANN index from current embeddings.
      */
-    @Suppress("TooGenericExceptionCaught")
     private fun getOrBuildIndex(
         candidates: List<MemeWithEmbeddings>,
-    ): RustVectorIndex? {
-        annIndex?.let { return it }
-        if (indexBuildAttempted) return null
-
-        indexBuildAttempted = true
-
-        if (!RustVectorIndex.isAvailable()) {
-            Timber.d("Rust native library not available, skipping ANN index")
-            return null
+    ): RustVectorIndex? =
+        annIndex ?: when {
+            indexBuildAttempted -> null
+            !RustVectorIndex.isAvailable() -> {
+                indexBuildAttempted = true
+                Timber.d("Rust native library not available, skipping ANN index")
+                null
+            }
+            else -> buildAnnIndex(candidates)
         }
 
+    @Suppress("TooGenericExceptionCaught")
+    private fun buildAnnIndex(candidates: List<MemeWithEmbeddings>): RustVectorIndex? {
+        indexBuildAttempted = true
         return try {
-            val profile = deviceTierDetector.resolveProfile()
-            val dimensions = profile.annIndexDimension
+            val dimensions = deviceTierDetector.resolveProfile().annIndexDimension
             val index = RustVectorIndex.create(dimensions)
             index.reserve(candidates.size)
 
             var added = 0
             for (candidate in candidates) {
-                // Use the "content" embedding slot for indexing
-                val fullEmbedding = candidate.embeddings["content"] ?: continue
-                if (fullEmbedding.size < dimensions) continue
-
-                val truncated = EmbeddingUtils.truncateEmbedding(fullEmbedding, dimensions)
-                val key = candidate.meme.id.hashCode().toLong() and KEY_MASK
-                index.add(key, truncated)
-                added++
+                val fullEmbedding = candidate.embeddings["content"]
+                if (fullEmbedding != null && fullEmbedding.size >= dimensions) {
+                    val truncated = EmbeddingUtils.truncateEmbedding(fullEmbedding, dimensions)
+                    val key = candidate.meme.id.hashCode().toLong() and KEY_MASK
+                    index.add(key, truncated)
+                    added++
+                }
             }
 
             Timber.i("Built ANN index: %d vectors at %dd", added, dimensions)

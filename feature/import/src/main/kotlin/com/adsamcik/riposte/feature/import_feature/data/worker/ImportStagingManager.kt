@@ -57,7 +57,9 @@ class ImportStagingManager
                         // Validate the staged file is non-empty
                         if (destFile.length() == 0L) {
                             destFile.delete()
-                            throw IOException("Staged file is empty (possible interrupted cloud download) for ${input.uri}")
+                            throw IOException(
+                                "Staged file is empty (possible interrupted cloud download) for ${input.uri}",
+                            )
                         }
                     } catch (e: IOException) {
                         // Clean up partial file on failure

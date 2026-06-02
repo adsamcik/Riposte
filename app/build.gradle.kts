@@ -242,7 +242,8 @@ dependencies {
 // connected instrumentation test runs. Without this, ShareIntegrationTest
 // can't fire intents at the receiver Activities.
 afterEvaluate {
-    tasks.matching { it.name.startsWith("connected") && it.name.endsWith("AndroidTest") }
+    tasks
+        .matching { it.name.startsWith("connected") && it.name.endsWith("AndroidTest") }
         .configureEach {
             dependsOn(":testapps:share-receiver:installDebug")
         }
@@ -260,10 +261,11 @@ val syncSm8650Model by tasks.registering(Copy::class) {
     from("${rootProject.projectDir}/aipacks/soc_optimized/src/main/assets/embedding_models#group_qualcomm_sm8650") {
         include("*.tflite")
     }
-    into("${projectDir}/src/main/assets_sm8650/embedding_models")
+    into("$projectDir/src/main/assets_sm8650/embedding_models")
 }
 
 afterEvaluate {
-    tasks.matching { it.name.contains("Sm8650") && it.name.startsWith("merge") && it.name.contains("Assets") }
+    tasks
+        .matching { it.name.contains("Sm8650") && it.name.startsWith("merge") && it.name.contains("Assets") }
         .configureEach { dependsOn(syncSm8650Model) }
 }

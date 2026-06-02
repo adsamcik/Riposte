@@ -108,7 +108,7 @@ class EmbeddingGemmaGenerator
         ): FloatArray =
             withContext(Dispatchers.Default) {
                 if (text.isBlank()) {
-                    return@withContext createZeroEmbedding()
+                    return@withContext createZeroEmbedding(embeddingDimension)
                 }
 
                 val titlePart = if (!title.isNullOrBlank()) title else "none"
@@ -126,7 +126,7 @@ class EmbeddingGemmaGenerator
         override suspend fun generateFromQuery(query: String): FloatArray =
             withContext(Dispatchers.Default) {
                 if (query.isBlank()) {
-                    return@withContext createZeroEmbedding()
+                    return@withContext createZeroEmbedding(embeddingDimension)
                 }
 
                 val formattedText = "task: search result | query: $query"
@@ -170,7 +170,7 @@ class EmbeddingGemmaGenerator
          * Called when GPU inference produces NaN/Inf values. Must be called while holding the mutex.
          */
         private fun fallbackToCpuAndRetry(text: String): FloatArray {
-            val modelPath = getModelPath()
+            val modelPath = context.getEmbeddingGemmaModelPath()
             compiledModel?.close()
             compiledModel = null
             cachedInputBuffers = null
@@ -179,8 +179,7 @@ class EmbeddingGemmaGenerator
             Timber.i("Re-initializing EmbeddingGemma with CPU after GPU NaN failure")
             initializeWithCpu(modelPath)
 
-            val model = compiledModel
-                ?: throw IllegalStateException("CPU fallback initialization failed")
+            val model = checkNotNull(compiledModel) { "CPU fallback initialization failed" }
             return runInference(model, text)
         }
 
@@ -191,7 +190,7 @@ class EmbeddingGemmaGenerator
 
                     if (labels.isEmpty()) {
                         Timber.d("No labels detected in image, returning zero embedding")
-                        return@withContext createZeroEmbedding()
+                        return@withContext createZeroEmbedding(embeddingDimension)
                     }
 
                     // Concatenate labels with spaces for embedding as a document
@@ -216,7 +215,7 @@ class EmbeddingGemmaGenerator
 
                     if (bitmap == null) {
                         Timber.w("Failed to decode bitmap from URI: $uri")
-                        return@withContext createZeroEmbedding()
+                        return@withContext createZeroEmbedding(embeddingDimension)
                     }
 
                     try {
@@ -288,41 +287,13 @@ class EmbeddingGemmaGenerator
             try {
                 copyModelsFromAssetsIfNeeded()
 
-                val modelPath = getModelPath()
-                val tokenizerPath = getTokenizerPath()
+                val modelPath = context.getEmbeddingGemmaModelPath()
+                val tokenizerPath = context.getEmbeddingGemmaTokenizerPath()
 
-                if (!File(modelPath).exists()) {
-                    Timber.e("EmbeddingGemma model not found at: $modelPath")
-                    Timber.i("Please download the model from HuggingFace: litert-community/embeddinggemma-300m")
-                    Timber.i("Or run: tools/download-embeddinggemma.ps1 -AllVariants")
-                    _initializationError = ERROR_FILES_NOT_FOUND
-                    return
-                }
-
-                if (!File(tokenizerPath).exists()) {
-                    Timber.e("SentencePiece tokenizer not found at: $tokenizerPath")
-                    _initializationError = ERROR_FILES_NOT_FOUND
-                    return
-                }
-
-                initializeTokenizer(tokenizerPath)
-
-                if (tokenizer == null && rustTokenizer == null) {
-                    // Both tokenizers failed to load — skip model initialization
-                    return
-                }
-
-                if (!tryInitializeWithGpu(modelPath)) {
-                    // Optimized/AOT model may contain DISPATCH_OP nodes requiring
-                    // vendor NPU delegates that aren't available. Fall back to
-                    // the generic model on CPU which never has custom ops.
-                    val genericPath = getGenericModelPath()
-                    if (genericPath != null && genericPath != modelPath) {
-                        Timber.i("Optimized model failed — falling back to generic model on CPU")
-                        initializeWithCpu(genericPath)
-                    } else if (acceleratorStrategy.getBestAccelerator() != Accelerator.CPU) {
-                        // Same model, but try CPU accelerator (no AOT conflict)
-                        initializeWithCpu(modelPath)
+                if (requiredModelFilesExist(modelPath, tokenizerPath)) {
+                    initializeTokenizer(tokenizerPath)
+                    if (tokenizer != null || rustTokenizer != null) {
+                        initializeModelRuntime(modelPath)
                     }
                 }
 
@@ -339,6 +310,38 @@ class EmbeddingGemmaGenerator
                 Timber.e(e, "EmbeddingGemma static initialization failed")
                 compiledModel = null
                 _initializationError = ERROR_FAILED_TO_LOAD
+            }
+        }
+
+        private fun requiredModelFilesExist(
+            modelPath: String,
+            tokenizerPath: String,
+        ): Boolean {
+            val modelExists = File(modelPath).exists()
+            val tokenizerExists = File(tokenizerPath).exists()
+            if (!modelExists) {
+                Timber.e("EmbeddingGemma model not found at: $modelPath")
+                Timber.i("Please download the model from HuggingFace: litert-community/embeddinggemma-300m")
+                Timber.i("Or run: tools/download-embeddinggemma.ps1 -AllVariants")
+            }
+            if (!tokenizerExists) {
+                Timber.e("SentencePiece tokenizer not found at: $tokenizerPath")
+            }
+            if (!modelExists || !tokenizerExists) {
+                _initializationError = ERROR_FILES_NOT_FOUND
+            }
+            return modelExists && tokenizerExists
+        }
+
+        private fun initializeModelRuntime(modelPath: String) {
+            if (!tryInitializeWithGpu(modelPath)) {
+                val genericPath = context.getGenericEmbeddingGemmaModelPath()
+                if (genericPath != null && genericPath != modelPath) {
+                    Timber.i("Optimized model failed — falling back to generic model on CPU")
+                    initializeWithCpu(genericPath)
+                } else if (acceleratorStrategy.getBestAccelerator() != Accelerator.CPU) {
+                    initializeWithCpu(modelPath)
+                }
             }
         }
 
@@ -573,13 +576,14 @@ class EmbeddingGemmaGenerator
                     }
                 }
                 // Atomic rename — prevents partial files if interrupted before this point
-                if (!tempFile.renameTo(targetFile)) {
+                val renamed = tempFile.renameTo(targetFile)
+                if (!renamed) {
                     tempFile.delete()
                     Timber.e("Failed to rename temp file to: $assetName")
-                    return false
+                } else {
+                    Timber.d("Copied asset: $assetName (${targetFile.length() / BYTES_PER_KB / BYTES_PER_KB} MB)")
                 }
-                Timber.d("Copied asset: $assetName (${targetFile.length() / BYTES_PER_KB / BYTES_PER_KB} MB)")
-                true
+                renamed
             } catch (
                 @Suppress("TooGenericExceptionCaught")
                 e: Exception,
@@ -589,47 +593,6 @@ class EmbeddingGemmaGenerator
                 File(targetDir, "$assetName.tmp").delete()
                 false
             }
-        }
-
-        /**
-         * Gets the path to the EmbeddingGemma model file.
-         * Tries platform-specific optimized model first, falls back to generic.
-         */
-        private fun getModelPath(): String {
-            val modelDir = File(context.filesDir, MODEL_DIRECTORY)
-            val bestModelFile = getBestModelFilename()
-            val optimizedPath = File(modelDir, bestModelFile)
-            val genericPath = File(modelDir, MODEL_FILENAME_GENERIC)
-
-            return when {
-                optimizedPath.exists() -> {
-                    Timber.d("Using optimized model: $bestModelFile")
-                    optimizedPath.absolutePath
-                }
-                genericPath.exists() -> {
-                    Timber.d("Using generic model (optimized not found)")
-                    genericPath.absolutePath
-                }
-                // Return expected path for error messaging
-                else -> optimizedPath.absolutePath
-            }
-        }
-
-        /**
-         * Gets the path to the generic model file, or null if it doesn't exist.
-         * Used as a fallback when SoC-specific AOT models fail due to missing NPU delegates.
-         */
-        private fun getGenericModelPath(): String? {
-            val genericFile = File(File(context.filesDir, MODEL_DIRECTORY), MODEL_FILENAME_GENERIC)
-            return if (genericFile.exists()) genericFile.absolutePath else null
-        }
-
-        /**
-         * Gets the path to the SentencePiece tokenizer file.
-         */
-        private fun getTokenizerPath(): String {
-            val modelDir = File(context.filesDir, MODEL_DIRECTORY)
-            return File(modelDir, TOKENIZER_FILENAME).absolutePath
         }
 
         /**
@@ -655,11 +618,6 @@ class EmbeddingGemmaGenerator
             }
         }
 
-        /**
-         * Creates a zero-filled embedding array for graceful degradation.
-         */
-        private fun createZeroEmbedding(): FloatArray = FloatArray(embeddingDimension)
-
         companion object {
 
             /** Directory where model files are stored. */
@@ -673,37 +631,6 @@ class EmbeddingGemmaGenerator
 
             /** BOS (beginning-of-sequence) token ID for EmbeddingGemma's SentencePiece vocabulary. */
             private const val BOS_TOKEN_ID = 2
-
-            /** Platform-specific model filenames for optimized performance. */
-            private val PLATFORM_MODELS =
-                mapOf(
-                    // Qualcomm Snapdragon
-                    // 8 Gen 2
-                    "sm8550" to
-                        "embeddinggemma-300M_seq512_mixed-precision.qualcomm.sm8550.tflite",
-                    // 8+ Gen 1 (use 8 Gen 2)
-                    "sm8475" to
-                        "embeddinggemma-300M_seq512_mixed-precision.qualcomm.sm8550.tflite",
-                    // 8 Gen 3
-                    "sm8650" to
-                        "embeddinggemma-300M_seq512_mixed-precision.qualcomm.sm8650.tflite",
-                    // 8 Gen 4 (Elite)
-                    "sm8750" to
-                        "embeddinggemma-300M_seq512_mixed-precision.qualcomm.sm8750.tflite",
-                    // 8 Gen 5
-                    "sm8850" to
-                        "embeddinggemma-300M_seq512_mixed-precision.qualcomm.sm8850.tflite",
-                    // MediaTek Dimensity
-                    // Dimensity 9300
-                    "mt6991" to
-                        "embeddinggemma-300M_seq512_mixed-precision.mediatek.mt6991.tflite",
-                    // Dimensity 9200 (use 9300)
-                    "mt6989" to
-                        "embeddinggemma-300M_seq512_mixed-precision.mediatek.mt6991.tflite",
-                    // Dimensity 9400
-                    "mt6993" to
-                        "embeddinggemma-300M_seq512_mixed-precision.mediatek.mt6993.tflite",
-                )
 
             /** SentencePiece tokenizer filename. */
             const val TOKENIZER_FILENAME = "sentencepiece.model"
@@ -740,37 +667,13 @@ class EmbeddingGemmaGenerator
              * all devices use the generic model with GPU/CPU acceleration.
              *
              * TODO: Re-enable SoC-specific model selection when vendor NPU delegates
-             *  are bundled and validated. See PLATFORM_MODELS map and device_targeting_config.xml.
-             *  The AOT models need matching delegate .so files on the device at runtime.
+             *  are bundled and validated. The AOT models need matching delegate .so files
+             *  on the device at runtime.
              */
             fun getBestModelFilename(): String {
                 val socModel = Build.SOC_MODEL.lowercase()
                 Timber.d("Detected SoC: $socModel (using generic model — AOT models disabled)")
                 return MODEL_FILENAME_GENERIC
             }
-
-            /**
-             * Computes cosine similarity between two embeddings.
-             * Delegates to [EmbeddingUtils.cosineSimilarity].
-             */
-            fun cosineSimilarity(
-                embedding1: FloatArray,
-                embedding2: FloatArray,
-            ): Float = EmbeddingUtils.cosineSimilarity(embedding1, embedding2)
-
-            /**
-             * Truncates an embedding to a smaller dimension using Matryoshka Representation Learning.
-             * Delegates to [EmbeddingUtils.truncateEmbedding].
-             */
-            fun truncateEmbedding(
-                embedding: FloatArray,
-                targetDimension: Int,
-            ): FloatArray = EmbeddingUtils.truncateEmbedding(embedding, targetDimension)
-
-            /**
-             * L2-normalizes an embedding vector, returning a new array.
-             * Delegates to [EmbeddingUtils.normalize].
-             */
-            fun normalize(embedding: FloatArray): FloatArray = EmbeddingUtils.normalize(embedding)
         }
     }

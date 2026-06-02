@@ -193,56 +193,54 @@ class SearchDelegate
 
                 try {
                     val results = searchUseCases.hybridSearch(normalizedQuery)
-                    val endTime = System.currentTimeMillis()
-                    val hasSemanticResults = results.any {
-                        it.matchType == MatchType.SEMANTIC || it.matchType == MatchType.HYBRID
-                    }
-
-                    _state.update {
-                        it.copy(
-                            results = results,
-                            totalResultCount = results.size,
-                            searchDurationMs = endTime - startTime,
-                            isSearching = false,
-                            hasSearched = true,
-                            isTextOnly = !hasSemanticResults,
-                        )
-                    }
-
+                    updateSearchSuccess(results, System.currentTimeMillis() - startTime)
                     searchUseCases.addRecentSearch(normalizedQuery)
                 } catch (e: UnsatisfiedLinkError) {
-                    Timber.e(e, "Native library not available for semantic search")
-                    _state.update {
-                        it.copy(
-                            isSearching = false,
-                            hasSearched = true,
-                            searchError = SearchError.NotSupported,
-                        )
-                    }
+                    handleSearchFailure(e, SearchError.NotSupported, "Native library not available for semantic search")
                 } catch (e: ExceptionInInitializerError) {
-                    Timber.e(e, "Embedding model initialization failed")
-                    _state.update {
-                        it.copy(
-                            isSearching = false,
-                            hasSearched = true,
-                            searchError = SearchError.IndexFailed,
-                        )
-                    }
+                    handleSearchFailure(e, SearchError.IndexFailed, "Embedding model initialization failed")
                 } catch (e: CancellationException) {
                     throw e
                 } catch (
                     @Suppress("TooGenericExceptionCaught") // Catches all to show error state
                     e: Exception,
                 ) {
-                    Timber.e(e, "Search failed")
-                    _state.update {
-                        it.copy(
-                            isSearching = false,
-                            hasSearched = true,
-                            searchError = SearchError.Generic(e.message ?: "Search failed"),
-                        )
-                    }
+                    handleSearchFailure(e, SearchError.Generic(e.message ?: "Search failed"), "Search failed")
                 }
+            }
+        }
+
+        private fun updateSearchSuccess(
+            results: List<com.adsamcik.riposte.core.model.SearchResult>,
+            durationMs: Long,
+        ) {
+            val hasSemanticResults = results.any {
+                it.matchType == MatchType.SEMANTIC || it.matchType == MatchType.HYBRID
+            }
+            _state.update {
+                it.copy(
+                    results = results,
+                    totalResultCount = results.size,
+                    searchDurationMs = durationMs,
+                    isSearching = false,
+                    hasSearched = true,
+                    isTextOnly = !hasSemanticResults,
+                )
+            }
+        }
+
+        private fun handleSearchFailure(
+            throwable: Throwable,
+            searchError: SearchError,
+            logMessage: String,
+        ) {
+            Timber.e(throwable, logMessage)
+            _state.update {
+                it.copy(
+                    isSearching = false,
+                    hasSearched = true,
+                    searchError = searchError,
+                )
             }
         }
 

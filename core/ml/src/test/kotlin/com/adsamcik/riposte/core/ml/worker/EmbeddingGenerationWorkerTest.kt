@@ -70,11 +70,13 @@ class EmbeddingGenerationWorkerTest {
             return EmbeddingGenerationWorker(
                 context = appContext,
                 params = workerParameters,
-                embeddingGenerator = embeddingGenerator,
-                embeddingRepository = embeddingRepository,
-                appLifecycleTracker = appLifecycleTracker,
-                notificationManager = notificationManager,
-                eventBus = com.adsamcik.riposte.core.events.EventBus(),
+                dependencies = EmbeddingWorkerDependencies(
+                    embeddingGenerator = embeddingGenerator,
+                    embeddingRepository = embeddingRepository,
+                    appLifecycleTracker = appLifecycleTracker,
+                    notificationManager = notificationManager,
+                    eventBus = com.adsamcik.riposte.core.events.EventBus(),
+                ),
             )
         }
     }

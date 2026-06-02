@@ -597,7 +597,11 @@ private fun ImportImageCard(
         Box(modifier = Modifier.fillMaxSize()) {
             AsyncImage(
                 model = image.uri,
-                contentDescription = stringResource(R.string.import_content_description_image_to_import_indexed, index + 1, totalCount),
+                contentDescription = stringResource(
+                    R.string.import_content_description_image_to_import_indexed,
+                    index + 1,
+                    totalCount,
+                ),
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize(),
             )

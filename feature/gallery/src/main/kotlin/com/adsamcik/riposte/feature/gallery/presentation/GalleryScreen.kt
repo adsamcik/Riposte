@@ -491,7 +491,12 @@ private fun GalleryScreenContent(
                     shape = RiposteShapes.FABDefault,
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
-                    icon = { Icon(Icons.Default.Add, contentDescription = stringResource(R.string.gallery_fab_import)) },
+                    icon = {
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = stringResource(R.string.gallery_fab_import),
+                        )
+                    },
                     text = { Text(stringResource(R.string.gallery_fab_import)) },
                 )
             }
@@ -550,17 +555,16 @@ private fun GalleryScreenContent(
                     }
                 var hasRenderedContent by rememberSaveable { mutableStateOf(false) }
 
+                val isBrowsing = uiState.screenMode != ScreenMode.Searching
+                val isEmptyPaged = isBrowsing && uiState.usePaging && pagedMemes != null && pagedMemes.itemCount == 0
                 val contentKey = when {
-                    uiState.screenMode != ScreenMode.Searching && uiState.isLoading -> "loading"
-                    uiState.screenMode != ScreenMode.Searching && uiState.error != null -> "error"
-                    uiState.screenMode != ScreenMode.Searching && uiState.isEmpty && !uiState.usePaging -> "empty"
-                    uiState.screenMode != ScreenMode.Searching && uiState.usePaging && pagedMemes != null &&
-                        pagedMemes.loadState.refresh is LoadState.Loading && pagedMemes.itemCount == 0 &&
+                    isBrowsing && uiState.isLoading -> "loading"
+                    isBrowsing && uiState.error != null -> "error"
+                    isBrowsing && uiState.isEmpty && !uiState.usePaging -> "empty"
+                    isEmptyPaged && pagedMemes.loadState.refresh is LoadState.Loading &&
                         !hasRenderedContent -> "paged-loading"
-                    uiState.screenMode != ScreenMode.Searching && uiState.usePaging && pagedMemes != null &&
-                        pagedMemes.loadState.refresh is LoadState.Error && pagedMemes.itemCount == 0 -> "paged-error"
-                    uiState.screenMode != ScreenMode.Searching && uiState.usePaging && pagedMemes != null &&
-                        pagedMemes.loadState.refresh is LoadState.NotLoading && pagedMemes.itemCount == 0 -> "paged-empty"
+                    isEmptyPaged && pagedMemes.loadState.refresh is LoadState.Error -> "paged-error"
+                    isEmptyPaged && pagedMemes.loadState.refresh is LoadState.NotLoading -> "paged-empty"
                     else -> "content"
                 }
                 LaunchedEffect(contentKey) {
@@ -796,23 +800,24 @@ private fun GalleryScreenContent(
                                 val seenPagedIds = mutableSetOf<Long>()
                                 for (index in 0 until pagedItemCount) {
                                     val peeked = pagedMemes.peek(index)
-                                    // Skip suggestions — they are already shown above
-                                    if (peeked != null && peeked.id in suggestionIds) continue
-                                    // Skip duplicates that Paging may produce during invalidation
-                                    if (peeked != null && !seenPagedIds.add(peeked.id)) continue
+                                    val shouldSkip = peeked?.let { meme ->
+                                        meme.id in suggestionIds || !seenPagedIds.add(meme.id)
+                                    } == true
 
-                                    item(
-                                        key = peeked?.let { "paged_${it.id}" } ?: "paged_loading_$index",
-                                    ) {
-                                        val meme = pagedMemes[index]
-                                        if (meme != null) {
-                                            val isSelected = meme.id in uiState.selectedMemeIds
-                                            MemeGridItem(
-                                                meme = meme,
-                                                isSelected = isSelected,
-                                                isSelectionMode = uiState.isSelectionMode,
-                                                onIntent = onIntent,
-                                            )
+                                    if (!shouldSkip) {
+                                        item(
+                                            key = peeked?.let { "paged_${it.id}" } ?: "paged_loading_$index",
+                                        ) {
+                                            val meme = pagedMemes[index]
+                                            if (meme != null) {
+                                                val isSelected = meme.id in uiState.selectedMemeIds
+                                                MemeGridItem(
+                                                    meme = meme,
+                                                    isSelected = isSelected,
+                                                    isSelectionMode = uiState.isSelectionMode,
+                                                    onIntent = onIntent,
+                                                )
+                                            }
                                         }
                                     }
                                 }

@@ -13,18 +13,30 @@ import timber.log.Timber
  * no NFKC normalization, no lowercasing.
  */
 internal class SentencePieceTokenizer private constructor(
-    private val vocab: HashMap<String, VocabEntry>,
-    private val bytePieceIds: IntArray,
-    private val maxPieceLength: Int,
-    private val unkId: Int,
-    private val unkScore: Float,
-    private val maxScore: Float,
-    private val hasByteFallback: Boolean,
+    config: TokenizerConfig,
 ) {
+    private val vocab = config.vocab
+    private val bytePieceIds = config.bytePieceIds
+    private val maxPieceLength = config.maxPieceLength
+    private val unkId = config.unkId
+    private val unkScore = config.unkScore
+    private val maxScore = config.maxScore
+    private val hasByteFallback = config.hasByteFallback
+
     /**
      * A vocabulary entry with token ID, log-probability score, and piece type.
      */
     data class VocabEntry(val id: Int, val score: Float, val type: Int)
+
+    private data class TokenizerConfig(
+        val vocab: HashMap<String, VocabEntry>,
+        val bytePieceIds: IntArray,
+        val maxPieceLength: Int,
+        val unkId: Int,
+        val unkScore: Float,
+        val maxScore: Float,
+        val hasByteFallback: Boolean,
+    )
 
     /**
      * Tokenizes text using Gemma-compatible preprocessing and Viterbi segmentation.
@@ -55,61 +67,75 @@ internal class SentencePieceTokenizer private constructor(
         val n = text.length
         if (n == 0) return emptyList()
 
-        val bestScore = FloatArray(n + 1) { Float.NEGATIVE_INFINITY }
-        val bestId = IntArray(n + 1) { -1 }
-        val bestStart = IntArray(n + 1) { -1 }
-        val bestIsUnk = BooleanArray(n + 1)
-        bestScore[0] = 0f
+        val state = ViterbiState(
+            bestScore = FloatArray(n + 1) { Float.NEGATIVE_INFINITY },
+            bestId = IntArray(n + 1) { -1 },
+            bestStart = IntArray(n + 1) { -1 },
+            bestIsUnk = BooleanArray(n + 1),
+        )
+        state.bestScore[0] = 0f
 
         for (i in 0 until n) {
-            if (bestScore[i] == Float.NEGATIVE_INFINITY) continue
-
-            val maxJ = minOf(i + maxPieceLength, n)
-            for (j in i + 1..maxJ) {
-                val substr = text.substring(i, j)
-                val entry = vocab[substr] ?: continue
-
-                // Skip CONTROL and UNUSED tokens — not for segmentation
-                if (entry.type == TYPE_CONTROL || entry.type == TYPE_UNUSED) continue
-
-                // USER_DEFINED tokens get boosted score to ensure selection
-                val effectiveScore =
-                    if (entry.type == TYPE_USER_DEFINED) {
-                        (j - i).toFloat() * maxScore - USER_DEFINED_SCORE_BIAS
-                    } else {
-                        entry.score
-                    }
-
-                val newScore = bestScore[i] + effectiveScore
-                if (newScore > bestScore[j]) {
-                    bestScore[j] = newScore
-                    bestId[j] = entry.id
-                    bestStart[j] = i
-                    bestIsUnk[j] = false
+            if (state.bestScore[i] != Float.NEGATIVE_INFINITY) {
+                val maxJ = minOf(i + maxPieceLength, n)
+                for (j in i + 1..maxJ) {
+                    state.updateBestMatch(text, i, j)
                 }
-            }
-
-            // Single-character UNK fallback — always competes for position i+1.
-            // unkScore is very negative so it loses to any real vocab match.
-            val unkCandidate = bestScore[i] + unkScore
-            if (unkCandidate > bestScore[i + 1]) {
-                bestScore[i + 1] = unkCandidate
-                bestId[i + 1] = unkId
-                bestStart[i + 1] = i
-                bestIsUnk[i + 1] = true
+                state.updateUnknownFallback(i)
             }
         }
 
-        // Backtrack to reconstruct segmentation
+        return applyByteFallback(text, state.toSegments(n))
+    }
+
+    private data class ViterbiState(
+        val bestScore: FloatArray,
+        val bestId: IntArray,
+        val bestStart: IntArray,
+        val bestIsUnk: BooleanArray,
+    )
+
+    private fun ViterbiState.updateBestMatch(
+        text: String,
+        start: Int,
+        end: Int,
+    ) {
+        val entry = vocab[text.substring(start, end)] ?: return
+        if (entry.type == TYPE_CONTROL || entry.type == TYPE_UNUSED) return
+
+        val effectiveScore = if (entry.type == TYPE_USER_DEFINED) {
+            (end - start).toFloat() * maxScore - USER_DEFINED_SCORE_BIAS
+        } else {
+            entry.score
+        }
+        val newScore = bestScore[start] + effectiveScore
+        if (newScore > bestScore[end]) {
+            bestScore[end] = newScore
+            bestId[end] = entry.id
+            bestStart[end] = start
+            bestIsUnk[end] = false
+        }
+    }
+
+    private fun ViterbiState.updateUnknownFallback(position: Int) {
+        val fallbackEnd = position + 1
+        val unkCandidate = bestScore[position] + unkScore
+        if (unkCandidate > bestScore[fallbackEnd]) {
+            bestScore[fallbackEnd] = unkCandidate
+            bestId[fallbackEnd] = unkId
+            bestStart[fallbackEnd] = position
+            bestIsUnk[fallbackEnd] = true
+        }
+    }
+
+    private fun ViterbiState.toSegments(textLength: Int): List<Segment> {
         val segments = mutableListOf<Segment>()
-        var pos = n
+        var pos = textLength
         while (pos > 0) {
             segments.add(0, Segment(bestStart[pos], pos, bestId[pos], bestIsUnk[pos]))
             pos = bestStart[pos]
         }
-
-        // Post-process: byte fallback for UNK segments
-        return applyByteFallback(text, segments)
+        return segments
     }
 
     /**
@@ -225,13 +251,15 @@ internal class SentencePieceTokenizer private constructor(
             )
 
             return SentencePieceTokenizer(
-                vocab = vocab,
-                bytePieceIds = bytePieceIds,
-                maxPieceLength = maxLen,
-                unkId = unkId,
-                unkScore = minScore - UNK_SCORE_OFFSET,
-                maxScore = if (maxScoreVal > Float.NEGATIVE_INFINITY) maxScoreVal else 0f,
-                hasByteFallback = hasByteFallback,
+                TokenizerConfig(
+                    vocab = vocab,
+                    bytePieceIds = bytePieceIds,
+                    maxPieceLength = maxLen,
+                    unkId = unkId,
+                    unkScore = minScore - UNK_SCORE_OFFSET,
+                    maxScore = if (maxScoreVal > Float.NEGATIVE_INFINITY) maxScoreVal else 0f,
+                    hasByteFallback = hasByteFallback,
+                ),
             )
         }
 

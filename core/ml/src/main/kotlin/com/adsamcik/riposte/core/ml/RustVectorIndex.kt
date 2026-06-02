@@ -118,9 +118,7 @@ internal class RustVectorIndex private constructor(
         fun create(dimensions: Int, useF16: Boolean = false): RustVectorIndex {
             RustTokenizer.loadNativeLibrary() // same .so
             val handle = nativeCreate(dimensions, useF16)
-            if (handle == 0L) {
-                throw RuntimeException("Failed to create vector index")
-            }
+            check(handle != 0L) { "Failed to create vector index" }
             return RustVectorIndex(handle, dimensions)
         }
 
