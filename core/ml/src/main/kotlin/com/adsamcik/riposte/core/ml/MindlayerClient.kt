@@ -155,12 +155,15 @@ class MindlayerClient
         companion object {
             /**
              * Initial connect deadline. The SDK does its own internal backoff
-             * on transient failures (e.g. `SERVICE_THROTTLED` with a 5s
-             * `cooldownEndsAt` hint), so this needs to be generous enough to
-             * absorb at least one such retry cycle. 60s gives the SDK 5-10
-             * retries before we surface a timeout.
+             * on transient failures, but with the post-PR-#147 watchdog (which
+             * no longer counts reinstalls/force-stops as crash deaths) and the
+             * bumped rate-limiter init tokens, false-positive `SERVICE_THROTTLED`
+             * responses are no longer expected during normal dev iteration.
+             * 15s is enough headroom for the genuine first-bind path
+             * (service cold-start + capability negotiation) without making
+             * "service truly unavailable" feel like a UI freeze.
              */
-            private val DEFAULT_CONNECT_TIMEOUT = 60.seconds
+            private val DEFAULT_CONNECT_TIMEOUT = 15.seconds
 
             /**
              * How long to short-circuit subsequent [awaitMindlayer] calls
