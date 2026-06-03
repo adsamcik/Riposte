@@ -6,6 +6,7 @@ import com.adsamcik.mindlayer.sdk.Capabilities
 import com.adsamcik.mindlayer.sdk.HistoryPolicy
 import com.adsamcik.mindlayer.sdk.Mindlayer
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -122,6 +123,12 @@ class MindlayerClient
                         caps.supportedFeatures.joinToString(),
                     )
                     MindlayerSession(mindlayer, caps)
+                } catch (e: CancellationException) {
+                    // Cooperative cancellation (e.g. caller scope was cancelled
+                    // while we were waiting on awaitConnected) must not trip the
+                    // failure cooldown — it's a control-flow signal, not a
+                    // service-availability problem.
+                    throw e
                 } catch (e: Exception) {
                     val reason = e.message ?: e.javaClass.simpleName
                     lastFailureMessage = reason
@@ -146,7 +153,14 @@ class MindlayerClient
         }
 
         companion object {
-            private val DEFAULT_CONNECT_TIMEOUT = 15.seconds
+            /**
+             * Initial connect deadline. The SDK does its own internal backoff
+             * on transient failures (e.g. `SERVICE_THROTTLED` with a 5s
+             * `cooldownEndsAt` hint), so this needs to be generous enough to
+             * absorb at least one such retry cycle. 60s gives the SDK 5-10
+             * retries before we surface a timeout.
+             */
+            private val DEFAULT_CONNECT_TIMEOUT = 60.seconds
 
             /**
              * How long to short-circuit subsequent [awaitMindlayer] calls

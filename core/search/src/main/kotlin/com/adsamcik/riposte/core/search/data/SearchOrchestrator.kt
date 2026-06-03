@@ -4,6 +4,7 @@ import com.adsamcik.riposte.core.model.MatchType
 import com.adsamcik.riposte.core.model.SearchMode
 import com.adsamcik.riposte.core.model.SearchResult
 import com.adsamcik.riposte.core.model.SearchStrategy
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import timber.log.Timber
@@ -57,6 +58,8 @@ class SearchOrchestrator @Inject constructor(
                     try {
                         // Fetch wider window so usage reranking can promote borderline candidates
                         strategy to strategy.search(query, limit * RERANK_WINDOW_MULTIPLIER)
+                    } catch (e: CancellationException) {
+                        throw e
                     } catch (
                         @Suppress("TooGenericExceptionCaught")
                         e: Exception,

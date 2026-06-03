@@ -7,6 +7,7 @@ import com.adsamcik.mindlayer.sdk.EmbeddingHandle
 import com.adsamcik.mindlayer.sdk.EmbeddingTask
 import com.adsamcik.mindlayer.sdk.MindlayerException
 import com.adsamcik.mindlayer.shared.MindlayerErrorCode
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -144,6 +145,8 @@ class MindlayerEmbeddingGenerator
                     _initializationError = null
                     session
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: MindlayerUnavailableException) {
                 _initializationError = "Mindlayer service unavailable: ${e.message}"
                 Timber.d("Mindlayer embedding bind failed: %s", e.message)
@@ -165,6 +168,11 @@ class MindlayerEmbeddingGenerator
             return try {
                 val handle = session.mindlayer.embed { text(text, task = task) }
                 (handle as EmbeddingHandle.Single).awaitVector()
+            } catch (e: CancellationException) {
+                // Cooperative cancellation (e.g. user typed a newer query and the
+                // previous embedding job was superseded) is normal control flow,
+                // not a failure — propagate without logging.
+                throw e
             } catch (e: MindlayerException) {
                 handleEmbeddingException(e)
                 throw e

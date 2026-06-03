@@ -7,6 +7,7 @@ import android.net.Uri
 import com.adsamcik.mindlayer.sdk.MindlayerException
 import com.adsamcik.mindlayer.sdk.OcrProfile
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -83,6 +84,8 @@ class MindlayerTextRecognizer
 
             return try {
                 block(session.mindlayer).takeIf { it.isNotBlank() }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: MindlayerException) {
                 Timber.w(e, "Mindlayer OCR call failed (code=%d)", e.code)
                 null

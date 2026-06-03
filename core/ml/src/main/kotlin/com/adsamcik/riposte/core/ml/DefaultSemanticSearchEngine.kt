@@ -2,6 +2,7 @@ package com.adsamcik.riposte.core.ml
 
 import com.adsamcik.riposte.core.model.MatchType
 import com.adsamcik.riposte.core.model.SearchResult
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -76,6 +77,8 @@ class DefaultSemanticSearchEngine
                                 putCachedQueryEmbedding(query, it)
                                 persistentCache.put(query, it)
                             }
+                    } catch (e: CancellationException) {
+                        throw e
                     } catch (
                         @Suppress("TooGenericExceptionCaught") // ML libraries throw unpredictable exceptions
                         e: Exception,
@@ -119,6 +122,8 @@ class DefaultSemanticSearchEngine
                                 putCachedQueryEmbedding(query, it)
                                 persistentCache.put(query, it)
                             }
+                    } catch (e: CancellationException) {
+                        throw e
                     } catch (
                         @Suppress("TooGenericExceptionCaught") // ML libraries throw unpredictable exceptions
                         e: Exception,
