@@ -8,8 +8,6 @@ import com.adsamcik.mindlayer.sdk.EmbeddingTask
 import com.adsamcik.mindlayer.sdk.MindlayerException
 import com.adsamcik.mindlayer.shared.MindlayerErrorCode
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import javax.inject.Inject
@@ -24,13 +22,23 @@ import javax.inject.Singleton
  * with the added benefits of shared model state across apps, thermal-aware
  * backend selection, and OOM-resilient client-side history.
  *
+ * # Caching
+ *
+ * Connection state and capability negotiation are owned by [MindlayerClient];
+ * this class is a thin call-site adapter that delegates per-call. That
+ * delegation is intentional: it means that if Mindlayer becomes available
+ * mid-session (e.g. the user just approved Riposte in the dashboard, or the
+ * embedding asset pack finished extracting), the very next embedding call
+ * succeeds without requiring a Riposte restart.
+ *
  * # Asymmetric prompts
  *
  * Mindlayer's [EmbeddingTask] selects the service-side prompt prefix
- * (Retrieval Document vs Retrieval Query), so the previous string-concatenation
- * `"title: ... | text: ..."` formatting is no longer needed — the service
- * handles it. Titles are folded into the document text upstream by
- * [com.adsamcik.riposte.core.ml.worker.EmbeddingSlotGenerator].
+ * (Retrieval Document vs Retrieval Query), so the previous client-side
+ * `"title: ... | text: ..."` / `"task: search result | query: ..."` formatting
+ * is no longer needed — the service handles it. Titles are folded into the
+ * document text upstream by [com.adsamcik.riposte.core.ml.worker.EmbeddingSlotGenerator]
+ * before reaching us.
  *
  * # Image embeddings (unsupported)
  *
@@ -53,10 +61,6 @@ class MindlayerEmbeddingGenerator
     constructor(
         private val mindlayerClient: MindlayerClient,
     ) : EmbeddingGenerator {
-        private val initMutex = Mutex()
-
-        @Volatile
-        private var cachedSession: MindlayerSession? = null
 
         @Volatile
         private var _initializationError: String? = null
@@ -97,54 +101,63 @@ class MindlayerEmbeddingGenerator
                     "description with the annotation pipeline and embed the text instead.",
             )
 
-        override suspend fun isReady(): Boolean = cachedSession?.supportsEmbeddings == true
+        /**
+         * Probe whether embeddings are currently usable. Returns the live
+         * capability state — does NOT re-attempt to bind, so it's safe to call
+         * cheaply from UI gating code.
+         */
+        override suspend fun isReady(): Boolean =
+            when (val state = mindlayerClient.availability.value) {
+                is MindlayerAvailability.Ready ->
+                    state.capabilities.supports(ServiceCapabilities.FEATURE_EMBEDDINGS)
+                else -> false
+            }
 
         override suspend fun initialize() {
-            ensureSession()
+            // Best-effort warm-up: try to bind so the first user-visible
+            // embedding call doesn't pay the connect latency. We deliberately
+            // swallow the failure here — initializationError is the reporting
+            // channel, and the real embedding call will retry on its own.
+            ensureReady()
         }
 
         override fun close() {
-            cachedSession = null
+            // No per-generator resources to release — Mindlayer connection is owned by MindlayerClient.
         }
 
         /**
-         * Ensure the Mindlayer session is bound and embeddings are advertised.
-         * Caches the typed [MindlayerSession] on success; on failure, populates
-         * [_initializationError] so callers can show a user-facing message.
+         * Try to bind to Mindlayer and confirm embeddings are advertised.
+         * Returns the session on success, null on failure (with
+         * [_initializationError] populated for UI surfacing).
          */
         @Suppress("TooGenericExceptionCaught")
-        private suspend fun ensureSession(): MindlayerSession? {
-            cachedSession?.let { return it }
-            return initMutex.withLock {
-                cachedSession?.let { return@withLock it }
-                try {
-                    val session = mindlayerClient.awaitMindlayer()
-                    if (!session.supportsEmbeddings) {
-                        _initializationError = "Mindlayer service does not advertise embeddings " +
-                            "(${ServiceCapabilities.FEATURE_EMBEDDINGS}). The embedding model " +
-                            "pack may still be downloading."
-                        Timber.w("Mindlayer connected but FEATURE_EMBEDDINGS not advertised")
-                        return@withLock null
-                    }
+        private suspend fun ensureReady(): MindlayerSession? {
+            return try {
+                val session = mindlayerClient.awaitMindlayer()
+                if (!session.supportsEmbeddings) {
+                    _initializationError = "Mindlayer service does not advertise embeddings " +
+                        "(${ServiceCapabilities.FEATURE_EMBEDDINGS}). The embedding model " +
+                        "pack may still be downloading."
+                    Timber.w("Mindlayer connected but FEATURE_EMBEDDINGS not advertised")
+                    null
+                } else {
                     _initializationError = null
-                    cachedSession = session
-                    Timber.i("Mindlayer embeddings ready")
                     session
-                } catch (e: MindlayerUnavailableException) {
-                    _initializationError = "Mindlayer service unavailable: ${e.message}"
-                    Timber.w(e, "Mindlayer embedding init failed")
-                    null
-                } catch (e: Exception) {
-                    _initializationError = "Embedding init failed: ${e.message ?: e.javaClass.simpleName}"
-                    Timber.w(e, "Unexpected error initializing Mindlayer embeddings")
-                    null
                 }
+            } catch (e: MindlayerUnavailableException) {
+                _initializationError = "Mindlayer service unavailable: ${e.message}"
+                Timber.d("Mindlayer embedding bind failed: %s", e.message)
+                null
+            } catch (e: Exception) {
+                _initializationError = "Embedding init failed: ${e.message ?: e.javaClass.simpleName}"
+                Timber.w(e, "Unexpected error binding to Mindlayer for embeddings")
+                null
             }
         }
 
         @Suppress("TooGenericExceptionCaught")
         private suspend fun runEmbedding(text: String, task: EmbeddingTask): FloatArray {
-            val session = ensureSession()
+            val session = ensureReady()
                 ?: throw IllegalStateException(
                     initializationError ?: "Mindlayer embeddings not initialized",
                 )
@@ -168,10 +181,8 @@ class MindlayerEmbeddingGenerator
                 MindlayerErrorCode.SERVICE_UNAVAILABLE,
                 MindlayerErrorCode.EMBEDDING_DISABLED,
                 MindlayerErrorCode.EMBEDDING_MODEL_UNAVAILABLE,
-                -> {
+                ->
                     _initializationError = "Mindlayer embedding feature is not available: ${e.message}"
-                    cachedSession = null
-                }
                 MindlayerErrorCode.SERVICE_THROTTLED,
                 MindlayerErrorCode.TRANSIENT_RESOURCE_EXHAUSTED,
                 -> Timber.w(e, "Mindlayer transiently unavailable; will retry on next call")
@@ -196,4 +207,3 @@ class MindlayerEmbeddingGenerator
             const val EMBEDDING_GEMMA_DIMENSION = 768
         }
     }
-

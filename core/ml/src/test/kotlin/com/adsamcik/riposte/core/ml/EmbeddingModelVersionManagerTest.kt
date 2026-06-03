@@ -24,8 +24,9 @@ class EmbeddingModelVersionManagerTest {
     // region currentModelVersion
 
     @Test
-    fun `currentModelVersion returns embeddinggemma version`() {
-        assertThat(versionManager.currentModelVersion).isEqualTo("embeddinggemma:1.3.0")
+    fun `currentModelVersion returns current embeddinggemma version`() {
+        assertThat(versionManager.currentModelVersion).isEqualTo(EmbeddingModelVersionManager.CURRENT_VERSION)
+        assertThat(versionManager.currentModelVersion).startsWith("embeddinggemma")
     }
 
     // endregion
@@ -45,8 +46,8 @@ class EmbeddingModelVersionManagerTest {
     fun `getModelInfo returns correct info for current model`() {
         val info = versionManager.getModelInfo()
 
-        assertThat(info.version).isEqualTo("embeddinggemma:1.3.0")
-        assertThat(info.name).isEqualTo("embeddinggemma")
+        assertThat(info.version).isEqualTo(EmbeddingModelVersionManager.CURRENT_VERSION)
+        assertThat(info.name).startsWith("embeddinggemma")
         assertThat(info.dimension).isEqualTo(768)
         assertThat(info.description).contains("EmbeddingGemma")
         assertThat(info.description).contains("768")
@@ -58,15 +59,26 @@ class EmbeddingModelVersionManagerTest {
 
     @Test
     fun `isVersionCompatible returns true for same model and major version`() {
-        assertThat(versionManager.isVersionCompatible("embeddinggemma:1.0.0")).isTrue()
-        assertThat(versionManager.isVersionCompatible("embeddinggemma:1.5.0")).isTrue()
-        assertThat(versionManager.isVersionCompatible("embeddinggemma:1.99.99")).isTrue()
+        // Build a same-model, different-minor version off CURRENT_VERSION so this
+        // test survives future version bumps without churn.
+        val modelName = EmbeddingModelVersionManager.CURRENT_VERSION.substringBefore(":")
+        val currentMajor = EmbeddingModelVersionManager.CURRENT_VERSION
+            .substringAfter(":")
+            .substringBefore(".")
+        assertThat(versionManager.isVersionCompatible("$modelName:$currentMajor.0.0")).isTrue()
+        assertThat(versionManager.isVersionCompatible("$modelName:$currentMajor.5.0")).isTrue()
+        assertThat(versionManager.isVersionCompatible("$modelName:$currentMajor.99.99")).isTrue()
     }
 
     @Test
     fun `isVersionCompatible returns false for different major version`() {
-        assertThat(versionManager.isVersionCompatible("embeddinggemma:2.0.0")).isFalse()
-        assertThat(versionManager.isVersionCompatible("embeddinggemma:0.1.0")).isFalse()
+        val modelName = EmbeddingModelVersionManager.CURRENT_VERSION.substringBefore(":")
+        val currentMajor = EmbeddingModelVersionManager.CURRENT_VERSION
+            .substringAfter(":")
+            .substringBefore(".")
+            .toInt()
+        assertThat(versionManager.isVersionCompatible("$modelName:${currentMajor + 1}.0.0")).isFalse()
+        assertThat(versionManager.isVersionCompatible("$modelName:0.1.0")).isFalse()
     }
 
     @Test
@@ -103,7 +115,8 @@ class EmbeddingModelVersionManagerTest {
         runTest {
             versionManager.updateToCurrentVersion()
 
-            assertThat(versionManager.getLastUsedVersion()).isEqualTo("embeddinggemma:1.3.0")
+            assertThat(versionManager.getLastUsedVersion())
+                .isEqualTo(EmbeddingModelVersionManager.CURRENT_VERSION)
         }
 
     @Test
@@ -121,7 +134,7 @@ class EmbeddingModelVersionManagerTest {
                 assertThat(awaitItem()).isNull()
 
                 versionManager.updateToCurrentVersion()
-                assertThat(awaitItem()).isEqualTo("embeddinggemma:1.3.0")
+                assertThat(awaitItem()).isEqualTo(EmbeddingModelVersionManager.CURRENT_VERSION)
 
                 cancelAndIgnoreRemainingEvents()
             }

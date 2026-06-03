@@ -140,7 +140,7 @@ data class MemeEmbeddingEntity(
          * Cannot reference it directly due to module dependency direction
          * (core/database cannot depend on core/ml).
          */
-        const val CURRENT_MODEL_VERSION = "embeddinggemma:1.3.0"
+        const val CURRENT_MODEL_VERSION = "embeddinggemma-mindlayer:1.4.0"
 
         /**
          * Default embedding dimension for the current model.

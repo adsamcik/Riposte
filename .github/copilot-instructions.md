@@ -219,6 +219,14 @@ When testing on the Android emulator and the app needs meme data:
 4. **After clearing app data** (e.g., for DB schema changes), re-import a bundle to repopulate the collection.
 5. **Navigation to Settings:** Gallery → ⋮ (More options) → Settings → scroll down to find feature-specific sections.
 
+### Device access discipline
+
+The Android emulator is a **shared resource** — multiple agents (and humans) may be using it concurrently.
+
+1. **Always claim the device before touching it.** Use the `android-emulator-mcp` tools, never raw `adb`, when interacting with the device (install, launch, force-stop, push files, logcat reads, taps, screenshots, anything). The `adb` CLI bypasses the MCP claim/release coordination and will conflict with other agents.
+2. **Use `android_claim_device`** (or `android_await_device` if it's busy) at the start of any device-touching workflow, then **release with `android_release_device`** when done. Refresh the claim by re-claiming if the workload takes longer than the expiry.
+3. **If you see "Device is claimed by agent 'X'"**, do NOT work around it with raw `adb`. Either wait (with `android_await_device`) or pick up the task elsewhere.
+
 ### Key Files
 
 | File | Purpose |

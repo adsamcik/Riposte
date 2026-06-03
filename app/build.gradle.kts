@@ -38,6 +38,19 @@ android {
 
     // Release signing configuration
     signingConfigs {
+        // Stable debug signing key shared with the Mindlayer service
+        // (com.adsamcik.mindlayer.service). Riposte's debug variant uses
+        // this so its signing cert matches Mindlayer's debug cert, which
+        // grants signature|knownSigner permission to BIND_ML_SERVICE
+        // automatically and lets Mindlayer's DebugAllowlistSeeder
+        // auto-approve Riposte without any UI dialog. See
+        // app/keystores/README.md for details.
+        getByName("debug") {
+            storeFile = file("keystores/knowncerts-owner.jks")
+            storePassword = "knowncertstest"
+            keyAlias = "knowncerts-owner"
+            keyPassword = "knowncertstest"
+        }
         create("release") {
             val keystorePropertiesFile = rootProject.file("local.properties")
             if (keystorePropertiesFile.exists()) {

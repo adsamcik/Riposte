@@ -145,9 +145,20 @@ class EmbeddingModelVersionManager
         companion object {
             /**
              * Current model version.
-             * UPDATE THIS when changing the embedding model.
+             *
+             * UPDATE THIS when the embedding model OR the way embeddings are
+             * produced changes (prompt format, tokenizer, runtime, etc.).
+             *
+             * History:
+             *  - `embeddinggemma:1.3.0` — in-process LiteRT + SentencePiece with
+             *    client-side `"title: X | text: Y"` / `"task: search result | query: Z"`
+             *    prompts.
+             *  - `embeddinggemma-mindlayer:1.4.0` — out-of-process via Mindlayer
+             *    SDK, server-side EmbeddingTask prompts. Wire-incompatible with
+             *    the 1.3.0 vectors, so the migration auto-invalidator deletes
+             *    pre-existing rows and the worker re-embeds.
              */
-            const val CURRENT_VERSION = "embeddinggemma:1.3.0"
+            const val CURRENT_VERSION = "embeddinggemma-mindlayer:1.4.0"
 
             private const val EMBEDDING_GEMMA_DIMENSION = 768
 

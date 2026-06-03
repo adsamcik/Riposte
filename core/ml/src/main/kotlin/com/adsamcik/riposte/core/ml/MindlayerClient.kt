@@ -20,20 +20,31 @@ import kotlin.time.Duration.Companion.seconds
 /**
  * Singleton owner of the Mindlayer SDK connection.
  *
- * Mindlayer runs as a separate on-device service app that exposes LLM, embedding,
- * and OCR capabilities over AIDL. This client wraps the SDK lifecycle and exposes
- * coarse availability state so feature code can degrade gracefully when the service
- * is not installed, not yet approved, or missing a required capability.
+ * Mindlayer runs as a separate on-device service app that exposes LLM,
+ * embedding, and OCR capabilities over AIDL. This client wraps the SDK
+ * lifecycle and exposes a coarse [availability] state so feature code can
+ * degrade gracefully when the service is not installed, not yet approved,
+ * or missing a required capability.
  *
  * # Lifecycle
  *
  * Construction triggers an asynchronous bind. Callers can:
  * - check [availability] for the current state (suitable for UI gating), or
- * - call [awaitMindlayer] to suspend until the binder is ready and receive a typed
- *   client plus the negotiated [Capabilities].
+ * - call [awaitMindlayer] to suspend until the binder is ready and receive a
+ *   typed client plus the negotiated [Capabilities].
  *
- * Bind failures are non-fatal: [availability] transitions to [MindlayerAvailability.Unavailable]
- * and the rest of the app continues to work without Mindlayer-backed features.
+ * Bind failures are non-fatal: [availability] transitions to
+ * [MindlayerAvailability.Unavailable] and the rest of the app continues to
+ * work without Mindlayer-backed features.
+ *
+ * # Failure cooldown
+ *
+ * After a bind failure, [awaitMindlayer] short-circuits subsequent calls
+ * with [MindlayerUnavailableException] for [FAILURE_COOLDOWN] without
+ * re-entering the SDK. Without this, every search / OCR / indexing call
+ * would block on a 15-second timeout while the service is missing, which
+ * users perceive as the app freezing. The cooldown is short enough that
+ * fresh installs / approvals are picked up promptly.
  */
 @Singleton
 class MindlayerClient
@@ -52,6 +63,14 @@ class MindlayerClient
         @Volatile
         private var cachedCapabilities: Capabilities? = null
 
+        /** Wall-clock ms at which the most recent failure's cooldown expires. 0 = no cooldown. */
+        @Volatile
+        private var failureCooldownEndsAt: Long = 0L
+
+        /** Cached failure message, surfaced via the short-circuit fast path. */
+        @Volatile
+        private var lastFailureMessage: String? = null
+
         private val _availability =
             MutableStateFlow<MindlayerAvailability>(MindlayerAvailability.Connecting)
 
@@ -59,20 +78,44 @@ class MindlayerClient
         val availability: StateFlow<MindlayerAvailability> = _availability.asStateFlow()
 
         /**
-         * Suspend until the Mindlayer service binder is ready, then return the live
-         * client plus its negotiated capabilities.
+         * Suspend until the Mindlayer service binder is ready, then return the
+         * live client plus its negotiated capabilities.
          *
-         * @throws MindlayerUnavailableException when the bind times out or fails. Callers
-         *   should catch this and fall back to non-Mindlayer code paths.
+         * @throws MindlayerUnavailableException when the bind times out or
+         *   fails, or when a recent failure is still inside the cooldown
+         *   window. Callers should catch this and fall back to non-Mindlayer
+         *   code paths.
          */
         @Suppress("TooGenericExceptionCaught")
         suspend fun awaitMindlayer(timeout: Duration = DEFAULT_CONNECT_TIMEOUT): MindlayerSession {
+            // Fast path: already connected.
             cachedCapabilities?.let { return MindlayerSession(mindlayer, it) }
+
+            // Fast path: in cooldown after a recent failure — short-circuit to
+            // avoid pinning the caller on the SDK's connect timeout. Callers
+            // can retry after the cooldown expires.
+            val now = System.currentTimeMillis()
+            if (now < failureCooldownEndsAt) {
+                throw MindlayerUnavailableException(
+                    "Mindlayer service is not available: ${lastFailureMessage ?: "previous bind failed"}",
+                )
+            }
+
             return initMutex.withLock {
+                // Re-check inside the lock — another waiter may have raced.
                 cachedCapabilities?.let { return@withLock MindlayerSession(mindlayer, it) }
+                val now2 = System.currentTimeMillis()
+                if (now2 < failureCooldownEndsAt) {
+                    throw MindlayerUnavailableException(
+                        "Mindlayer service is not available: ${lastFailureMessage ?: "previous bind failed"}",
+                    )
+                }
+
                 try {
                     val caps = mindlayer.awaitConnected(timeout)
                     cachedCapabilities = caps
+                    failureCooldownEndsAt = 0L
+                    lastFailureMessage = null
                     _availability.value = MindlayerAvailability.Ready(caps)
                     Timber.i(
                         "Mindlayer connected: features=%s",
@@ -80,10 +123,13 @@ class MindlayerClient
                     )
                     MindlayerSession(mindlayer, caps)
                 } catch (e: Exception) {
-                    _availability.value = MindlayerAvailability.Unavailable(reason = e.message ?: e.javaClass.simpleName)
-                    Timber.w(e, "Mindlayer bind failed — falling back to degraded mode")
+                    val reason = e.message ?: e.javaClass.simpleName
+                    lastFailureMessage = reason
+                    failureCooldownEndsAt = System.currentTimeMillis() + FAILURE_COOLDOWN.inWholeMilliseconds
+                    _availability.value = MindlayerAvailability.Unavailable(reason = reason)
+                    Timber.w(e, "Mindlayer bind failed — degraded mode for next %s", FAILURE_COOLDOWN)
                     throw MindlayerUnavailableException(
-                        "Mindlayer service is not available: ${e.message}",
+                        "Mindlayer service is not available: $reason",
                         cause = e,
                     )
                 }
@@ -94,11 +140,25 @@ class MindlayerClient
         fun disconnect() {
             mindlayer.disconnect()
             cachedCapabilities = null
+            failureCooldownEndsAt = 0L
+            lastFailureMessage = null
             _availability.value = MindlayerAvailability.Connecting
         }
 
         companion object {
             private val DEFAULT_CONNECT_TIMEOUT = 15.seconds
+
+            /**
+             * How long to short-circuit subsequent [awaitMindlayer] calls
+             * after a bind failure. Tuned to be:
+             *  - long enough that a single user gesture that fans out into
+             *    many embedding/OCR calls doesn't pay the SDK timeout per
+             *    call (avoiding a perceived freeze);
+             *  - short enough that a user who just installed / approved the
+             *    Mindlayer service sees AI features start working without
+             *    having to restart Riposte.
+             */
+            private val FAILURE_COOLDOWN = 30.seconds
         }
     }
 
@@ -129,8 +189,9 @@ sealed interface MindlayerAvailability {
 }
 
 /**
- * Thrown when Mindlayer is required but the service is unavailable (not installed,
- * not approved, bind timed out, etc.). Callers must catch and degrade gracefully.
+ * Thrown when Mindlayer is required but the service is unavailable (not
+ * installed, not approved, bind timed out, etc.). Callers must catch and
+ * degrade gracefully.
  */
 class MindlayerUnavailableException(
     message: String,
