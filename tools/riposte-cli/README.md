@@ -9,6 +9,7 @@ A command-line tool for annotating meme images using the GitHub Copilot SDK. Gen
 - 📝 **Text Extraction**: Extracts visible text from memes
 - � **Smart Deduplication**: SHA-256 + perceptual hashing to skip duplicate images
 - 🧹 **Duplicate Cleanup**: Automatically find and remove duplicate images
+- 🖼️ **WebP Optimization**: Create compressed WebP copies while preserving source files
 - ⚡ **Parallel Processing**: Concurrent API requests with adaptive backpressure
 - �📦 **ZIP Bundling**: Package images + metadata for easy import to the Android app
 - 🔐 **Native Auth**: Uses Copilot CLI authentication (no separate login required)
@@ -87,6 +88,9 @@ meme-cli annotate ./my-memes --output ./annotated
 
 # Use a specific model
 meme-cli annotate ./my-memes --model gpt-5-mini
+
+# Create optimized WebP copies before annotating
+meme-cli optimize ./my-memes
 ```
 
 ### 3. Import to Android App
@@ -208,6 +212,39 @@ meme-cli dedupe ./my-memes --no-near
 
 # Stricter near-duplicate threshold
 meme-cli dedupe ./my-memes --similarity-threshold 5
+```
+
+### `meme-cli optimize`
+
+Create optimized WebP copies without modifying source images. By default, files are
+written to a `webp` subdirectory. Matching sidecars are copied to the output directory
+and their `contentHash` values are updated for the converted images.
+
+```bash
+meme-cli optimize <folder> [OPTIONS]
+```
+
+Options:
+
+```text
+--output, -o PATH    Directory for optimized WebP files (default: FOLDER/webp)
+--quality N          Lossy WebP quality (0-100, default: 85)
+--lossless           Use lossless WebP compression
+--force, -f          Overwrite existing WebP outputs
+--verbose, -v        Show each converted file
+```
+
+Examples:
+
+```bash
+# Create compressed WebP copies in ./my-memes/webp
+meme-cli optimize ./my-memes
+
+# Use higher lossy quality and a dedicated output directory
+meme-cli optimize ./my-memes --quality 90 --output ./optimized-memes
+
+# Preserve every source pixel using lossless WebP
+meme-cli optimize ./my-memes --lossless
 ```
 
 ## Supported Image Formats
