@@ -1,8 +1,10 @@
 """Image annotation command using GitHub Copilot SDK."""
 
 import asyncio
+import hashlib
 import json
 import sys
+import tempfile
 import time
 import zipfile
 from datetime import datetime, timezone
@@ -22,6 +24,7 @@ from rich.progress import (
 )
 
 from riposte_cli import __version__
+from riposte_cli.commands.optimize import optimize_image_to_bytes
 from riposte_cli.copilot import (
     analyze_image_async,
     create_concurrency_limiter,
@@ -230,6 +233,83 @@ def write_sidecar(image_path: Path, metadata: dict, output_dir: Path | None = No
     return sidecar_path
 
 
+def _get_bundle_image_name(image_path: Path, used_names: set[str]) -> str:
+    """Create a collision-safe WebP filename for a bundle entry."""
+    name = f"{image_path.stem}.webp"
+    if name.casefold() in used_names:
+        name = f"{image_path.name}.webp"
+    suffix = 2
+    while name.casefold() in used_names:
+        name = f"{image_path.name}.{suffix}.webp"
+        suffix += 1
+    used_names.add(name.casefold())
+    return name
+
+
+def create_webp_bundle(
+    zip_path: Path,
+    images: list[Path],
+    sidecar_dir: Path,
+    *,
+    quality: int = 85,
+) -> int:
+    """Write an atomic WebP-only meme bundle and return its image count."""
+    temporary_file = tempfile.NamedTemporaryFile(
+        dir=zip_path.parent,
+        prefix=f".{zip_path.stem}-",
+        suffix=".zip",
+        delete=False,
+    )
+    temporary_path = Path(temporary_file.name)
+    temporary_file.close()
+    bundled = 0
+    used_names: set[str] = set()
+
+    try:
+        with zipfile.ZipFile(temporary_path, "w", zipfile.ZIP_DEFLATED) as bundle:
+            for image_path in images:
+                sidecar_path = sidecar_dir / f"{image_path.name}.json"
+                if not sidecar_path.exists():
+                    continue
+
+                try:
+                    with open(sidecar_path, encoding="utf-8") as sidecar_file:
+                        metadata = json.load(sidecar_file)
+                    if not isinstance(metadata, dict):
+                        raise ValueError("sidecar must contain a JSON object")
+                    optimized_image = optimize_image_to_bytes(
+                        image_path,
+                        quality=quality,
+                        lossless=False,
+                    )
+                except (OSError, ValueError, json.JSONDecodeError) as error:
+                    temporary_path.unlink(missing_ok=True)
+                    raise click.ClickException(
+                        f"Could not optimize {image_path.name} for the bundle: {error}"
+                    ) from error
+
+                bundle_name = _get_bundle_image_name(image_path, used_names)
+                metadata["contentHash"] = hashlib.sha256(optimized_image).hexdigest()
+                metadata_content = json.dumps(
+                    metadata,
+                    indent=2,
+                    ensure_ascii=False,
+                ).encode("utf-8")
+                bundle.writestr(bundle_name, optimized_image, compress_type=zipfile.ZIP_STORED)
+                bundle.writestr(
+                    f"{bundle_name}.json",
+                    metadata_content,
+                    compress_type=zipfile.ZIP_DEFLATED,
+                )
+                bundled += 1
+        temporary_path.replace(zip_path)
+    except OSError:
+        temporary_path.unlink(missing_ok=True)
+        raise
+
+    return bundled
+
+
 @click.command()
 @click.argument(
     "folder",
@@ -238,7 +318,7 @@ def write_sidecar(image_path: Path, metadata: dict, output_dir: Path | None = No
 @click.option(
     "--zip", "create_zip",
     is_flag=True,
-    help="Bundle images and sidecars into a .meme.zip file",
+    help="Bundle optimized WebP images and sidecars into a .meme.zip file",
 )
 @click.option(
     "--output", "-o",
@@ -674,18 +754,10 @@ def annotate(
                 "remaining images[/dim]"
             )
     
-    # Create ZIP bundle if requested — includes ALL images with sidecars
+    # Create a WebP-only ZIP bundle from every image with a sidecar.
     if create_zip:
         zip_path = folder.parent / f"{folder.name}.meme.zip"
-        bundled = 0
-        
-        with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
-            for image_path in all_images:
-                sidecar_path = output_dir / f"{image_path.name}.json"
-                if sidecar_path.exists():
-                    zf.writestr(image_path.name, image_path.read_bytes())
-                    zf.writestr(sidecar_path.name, sidecar_path.read_bytes())
-                    bundled += 1
+        bundled = create_webp_bundle(zip_path, all_images, output_dir)
         
         if bundled > 0:
             console.print(

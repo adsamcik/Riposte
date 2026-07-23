@@ -1,14 +1,15 @@
 """WebP image optimization command."""
 
+import io
 import json
 import tempfile
 from pathlib import Path
+from typing import BinaryIO
 
 import click
 from PIL import Image, ImageSequence
 from rich.console import Console
 
-from riposte_cli.commands.annotate import get_images_in_folder
 from riposte_cli.hashing import get_image_hash
 
 console = Console()
@@ -19,6 +20,46 @@ def _webp_mode(image: Image.Image) -> str:
     if "A" in image.getbands() or "transparency" in image.info:
         return "RGBA"
     return "RGB"
+
+
+def _save_as_webp(
+    image: Image.Image,
+    destination: Path | BinaryIO,
+    *,
+    quality: int,
+    lossless: bool,
+) -> None:
+    """Encode an open image as WebP while preserving animated frames."""
+    save_options = {
+        "format": "WEBP",
+        "quality": quality,
+        "method": 6,
+        "lossless": lossless,
+    }
+    if getattr(image, "is_animated", False):
+        frames = [frame.convert(_webp_mode(frame)) for frame in ImageSequence.Iterator(image)]
+        durations = [
+            frame.info.get("duration", image.info.get("duration", 0))
+            for frame in ImageSequence.Iterator(image)
+        ]
+        frames[0].save(
+            destination,
+            save_all=True,
+            append_images=frames[1:],
+            duration=durations,
+            loop=image.info.get("loop", 0),
+            **save_options,
+        )
+        return
+    image.convert(_webp_mode(image)).save(destination, **save_options)
+
+
+def optimize_image_to_bytes(source: Path, *, quality: int, lossless: bool) -> bytes:
+    """Encode an image as optimized WebP bytes without creating a file."""
+    destination = io.BytesIO()
+    with Image.open(source) as image:
+        _save_as_webp(image, destination, quality=quality, lossless=lossless)
+    return destination.getvalue()
 
 
 def convert_to_webp(
@@ -44,30 +85,9 @@ def convert_to_webp(
 
     try:
         with Image.open(source) as image:
-            save_options = {
-                "format": "WEBP",
-                "quality": quality,
-                "method": 6,
-                "lossless": lossless,
-            }
-            if getattr(image, "is_animated", False):
-                frames = [frame.convert(_webp_mode(frame)) for frame in ImageSequence.Iterator(image)]
-                durations = [
-                    frame.info.get("duration", image.info.get("duration", 0))
-                    for frame in ImageSequence.Iterator(image)
-                ]
-                frames[0].save(
-                    temporary_path,
-                    save_all=True,
-                    append_images=frames[1:],
-                    duration=durations,
-                    loop=image.info.get("loop", 0),
-                    **save_options,
-                )
-            else:
-                image.convert(_webp_mode(image)).save(temporary_path, **save_options)
+            _save_as_webp(image, temporary_path, quality=quality, lossless=lossless)
         temporary_path.replace(destination)
-    except Exception:
+    except (OSError, ValueError):
         temporary_path.unlink(missing_ok=True)
         raise
 
@@ -155,6 +175,8 @@ def optimize(
     Source images are never modified. Existing metadata sidecars are copied
     beside their optimized WebP image with an updated content hash.
     """
+    from riposte_cli.commands.annotate import get_images_in_folder
+
     images = get_images_in_folder(folder)
     if not images:
         console.print(f"[yellow]No supported images found in {folder}[/yellow]")
