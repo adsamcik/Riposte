@@ -13,6 +13,11 @@ from PIL import Image
 from riposte_cli.commands import annotate
 from riposte_cli.commands.annotate import BundleImage, create_optimized_bundle, select_bundle_image
 from riposte_cli.commands.optimize import convert_to_webp, optimize
+from riposte_cli.commands.signal_export import (
+    SIGNAL_STICKER_MAX_BYTES,
+    prepare_signal_sticker,
+    signal_export,
+)
 from riposte_cli.hashing import get_image_hash
 
 
@@ -206,3 +211,46 @@ def test_create_optimized_bundle_disambiguates_same_stem_images(
             "meme.png.webp.webp",
             "meme.png.webp.webp.json",
         ]
+
+
+def test_prepare_signal_sticker_preserves_transparency_on_512px_canvas(tmp_path: Path) -> None:
+    source = tmp_path / "source.png"
+    Image.new("RGBA", (800, 400), (20, 30, 40, 128)).save(source)
+
+    sticker = prepare_signal_sticker(source)
+
+    assert len(sticker) <= SIGNAL_STICKER_MAX_BYTES
+    with Image.open(io.BytesIO(sticker)) as prepared:
+        assert prepared.format == "WEBP"
+        assert prepared.size == (512, 512)
+        assert prepared.convert("RGBA").getpixel((0, 0))[3] == 0
+
+
+def test_signal_export_writes_stickers_and_emoji_manifest(tmp_path: Path) -> None:
+    image_dir = tmp_path / "memes"
+    image_dir.mkdir()
+    for index, emoji in enumerate(("😂", "👍", "🔥"), start=1):
+        image_path = image_dir / f"meme_{index}.png"
+        Image.new("RGBA", (24, 12), (index * 20, 30, 40, 128)).save(image_path)
+        image_path.with_name(f"{image_path.name}.json").write_text(
+            json.dumps({"emojis": [emoji]}),
+            encoding="utf-8",
+        )
+
+    result = CliRunner().invoke(
+        signal_export,
+        [str(image_dir), "--title", "My stickers", "--author", "Riposte"],
+    )
+
+    output_dir = image_dir / "signal-stickers"
+    assert result.exit_code == 0, result.output
+    assert sorted(path.name for path in output_dir.glob("*.webp")) == [
+        "sticker_001.webp",
+        "sticker_002.webp",
+        "sticker_003.webp",
+    ]
+    manifest = (output_dir / "stickers.yaml").read_text(encoding="utf-8")
+    assert 'title: "My stickers"' in manifest
+    assert 'chr: "😂"' in manifest
+    assert 'chr: "👍"' in manifest
+    assert 'chr: "🔥"' in manifest

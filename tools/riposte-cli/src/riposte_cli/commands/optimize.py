@@ -58,12 +58,17 @@ def _save_as_webp(
     image.convert(_webp_mode(image)).save(destination, **save_options)
 
 
+def encode_image_as_webp(image: Image.Image, *, quality: int, lossless: bool) -> bytes:
+    """Encode an already-prepared image as optimized WebP bytes."""
+    destination = io.BytesIO()
+    _save_as_webp(image, destination, quality=quality, lossless=lossless)
+    return destination.getvalue()
+
+
 def optimize_image_to_bytes(source: Path, *, quality: int, lossless: bool) -> bytes:
     """Encode an image as optimized WebP bytes without creating a file."""
-    destination = io.BytesIO()
     with Image.open(source) as image:
-        _save_as_webp(image, destination, quality=quality, lossless=lossless)
-    return destination.getvalue()
+        return encode_image_as_webp(image, quality=quality, lossless=lossless)
 
 
 def convert_to_webp(

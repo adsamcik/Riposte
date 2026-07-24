@@ -91,6 +91,9 @@ meme-cli annotate ./my-memes --model gpt-5-mini
 
 # Create optimized WebP copies before annotating
 meme-cli optimize ./my-memes
+
+# Prepare a Signal sticker pack for upload in Signal Desktop
+meme-cli signal-export ./my-memes --title "My stickers" --author "Me"
 ```
 
 ### 3. Import to Android App
@@ -252,6 +255,30 @@ meme-cli optimize ./my-memes --quality 90 --output ./optimized-memes
 # Preserve every source pixel using lossless WebP
 meme-cli optimize ./my-memes --lossless
 ```
+
+### `meme-cli signal-export`
+
+Prepare a static Signal sticker pack from annotated images. The exporter creates
+transparent 512 × 512 WebP stickers under Signal's 300 KB limit, preserves
+lossless output whenever possible, and writes `stickers.yaml` with the first
+emoji from each image sidecar.
+
+```bash
+meme-cli signal-export <folder> --title "Pack title" --author "Pack author" [OPTIONS]
+```
+
+Options:
+
+```text
+--title TEXT         Sticker pack title for the manifest (required)
+--author TEXT        Sticker pack author for the manifest (required)
+--output, -o PATH    Export directory (default: FOLDER/signal-stickers)
+```
+
+The command does **not** log into Signal or upload a pack. Open Signal Desktop,
+create or upload a sticker pack, select the generated WebP files, and use
+`stickers.yaml` as the emoji mapping reference. Signal credentials never enter
+this CLI.
 
 ## Supported Image Formats
 
