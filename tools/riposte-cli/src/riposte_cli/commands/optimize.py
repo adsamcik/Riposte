@@ -36,6 +36,10 @@ def _save_as_webp(
         "method": 6,
         "lossless": lossless,
     }
+    if icc_profile := image.info.get("icc_profile"):
+        save_options["icc_profile"] = icc_profile
+    if exif := image.info.get("exif"):
+        save_options["exif"] = exif
     if getattr(image, "is_animated", False):
         frames = [frame.convert(_webp_mode(frame)) for frame in ImageSequence.Iterator(image)]
         durations = [

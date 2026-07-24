@@ -3,13 +3,15 @@
 import hashlib
 import io
 import json
+import os
 import zipfile
 from pathlib import Path
 
 from click.testing import CliRunner
 from PIL import Image
 
-from riposte_cli.commands.annotate import create_webp_bundle
+from riposte_cli.commands import annotate
+from riposte_cli.commands.annotate import BundleImage, create_optimized_bundle, select_bundle_image
 from riposte_cli.commands.optimize import convert_to_webp, optimize
 from riposte_cli.hashing import get_image_hash
 
@@ -95,7 +97,7 @@ def test_optimize_rejects_output_that_overwrites_input(tmp_path: Path) -> None:
     assert "would overwrite an input image" in result.output
 
 
-def test_create_webp_bundle_optimizes_images_and_rehashes_sidecars(tmp_path: Path) -> None:
+def test_create_optimized_bundle_uses_lossless_webp_and_rehashes_sidecars(tmp_path: Path) -> None:
     source = tmp_path / "meme.png"
     original_content = Image.new("RGB", (16, 10), (10, 20, 30))
     original_content.save(source)
@@ -107,9 +109,10 @@ def test_create_webp_bundle_optimizes_images_and_rehashes_sidecars(tmp_path: Pat
     )
     bundle_path = tmp_path / "memes.meme.zip"
 
-    bundled = create_webp_bundle(bundle_path, [source], metadata_dir)
+    result = create_optimized_bundle(bundle_path, [source], metadata_dir)
 
-    assert bundled == 1
+    assert result.image_count == 1
+    assert result.optimized_archive_size < result.source_archive_size
     with zipfile.ZipFile(bundle_path) as bundle:
         assert bundle.namelist() == ["meme.webp", "meme.webp.json"]
         optimized_content = bundle.read("meme.webp")
@@ -120,7 +123,48 @@ def test_create_webp_bundle_optimizes_images_and_rehashes_sidecars(tmp_path: Pat
     assert metadata["contentHash"] == hashlib.sha256(optimized_content).hexdigest()
 
 
-def test_create_webp_bundle_disambiguates_same_stem_images(tmp_path: Path) -> None:
+def test_select_bundle_image_retains_source_without_material_savings(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    source = tmp_path / "meme.jpg"
+    source_content = os.urandom(1_000)
+    source.write_bytes(source_content)
+
+    def fake_optimize(_source: Path, *, quality: int, lossless: bool) -> bytes:
+        return os.urandom(1_100 if lossless else 960)
+
+    monkeypatch.setattr(annotate, "optimize_image_to_bytes", fake_optimize)
+
+    original, selected = select_bundle_image(source)
+
+    assert selected == original
+    assert selected.content == source_content
+    assert selected.suffix == ".jpg"
+
+
+def test_select_bundle_image_uses_visually_lossless_webp_for_material_savings(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    source = tmp_path / "meme.jpg"
+    source.write_bytes(os.urandom(1_000))
+
+    def fake_optimize(_source: Path, *, quality: int, lossless: bool) -> bytes:
+        return os.urandom(1_100 if lossless else 900)
+
+    monkeypatch.setattr(annotate, "optimize_image_to_bytes", fake_optimize)
+
+    _original, selected = select_bundle_image(source)
+
+    assert selected.suffix == ".webp"
+    assert len(selected.content) == 900
+
+
+def test_create_optimized_bundle_disambiguates_same_stem_images(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
     jpg = tmp_path / "meme.jpg"
     png = tmp_path / "meme.png"
     webp = tmp_path / "meme.png.webp"
@@ -134,7 +178,24 @@ def test_create_webp_bundle_disambiguates_same_stem_images(tmp_path: Path) -> No
         )
     bundle_path = tmp_path / "memes.meme.zip"
 
-    create_webp_bundle(bundle_path, [jpg, png, webp], tmp_path)
+    def fake_select(source: Path) -> tuple[BundleImage, BundleImage]:
+        original = BundleImage(
+            content=source.read_bytes(),
+            suffix=source.suffix,
+            compression_type=zipfile.ZIP_STORED,
+            archive_size=source.stat().st_size,
+        )
+        selected = BundleImage(
+            content=b"optimized",
+            suffix=".webp",
+            compression_type=zipfile.ZIP_STORED,
+            archive_size=len(b"optimized"),
+        )
+        return original, selected
+
+    monkeypatch.setattr(annotate, "select_bundle_image", fake_select)
+
+    create_optimized_bundle(bundle_path, [jpg, png, webp], tmp_path)
 
     with zipfile.ZipFile(bundle_path) as bundle:
         assert bundle.namelist() == [

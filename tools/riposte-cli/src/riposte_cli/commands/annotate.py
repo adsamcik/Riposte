@@ -7,6 +7,8 @@ import sys
 import tempfile
 import time
 import zipfile
+import zlib
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -45,6 +47,9 @@ from riposte_cli.hashing import (
 )
 
 console = Console()
+LOSSLESS_WEBP_QUALITY = 100
+VISUALLY_LOSSLESS_WEBP_QUALITY = 95
+MIN_LOSSY_WEBP_SAVINGS_RATIO = 0.05
 
 # Supported image formats
 SUPPORTED_EXTENSIONS = {
@@ -233,27 +238,102 @@ def write_sidecar(image_path: Path, metadata: dict, output_dir: Path | None = No
     return sidecar_path
 
 
-def _get_bundle_image_name(image_path: Path, used_names: set[str]) -> str:
-    """Create a collision-safe WebP filename for a bundle entry."""
-    name = f"{image_path.stem}.webp"
+@dataclass(frozen=True)
+class BundleImage:
+    """A selected image representation and its optimized ZIP storage details."""
+
+    content: bytes
+    suffix: str
+    compression_type: int
+    archive_size: int
+
+
+@dataclass(frozen=True)
+class BundleResult:
+    """Summary of image payload sizes written to a meme bundle."""
+
+    image_count: int
+    source_archive_size: int
+    optimized_archive_size: int
+
+
+def _get_zip_storage(content: bytes) -> tuple[int, int]:
+    """Choose the smaller ZIP storage mode for already-compressed media."""
+    compressor = zlib.compressobj(level=9, method=zlib.DEFLATED, wbits=-15)
+    compressed_content = compressor.compress(content) + compressor.flush()
+    if len(compressed_content) < len(content):
+        return zipfile.ZIP_DEFLATED, len(compressed_content)
+    return zipfile.ZIP_STORED, len(content)
+
+
+def _create_bundle_image(content: bytes, suffix: str) -> BundleImage:
+    """Describe the smallest ZIP representation of an image payload."""
+    compression_type, archive_size = _get_zip_storage(content)
+    return BundleImage(
+        content=content,
+        suffix=suffix,
+        compression_type=compression_type,
+        archive_size=archive_size,
+    )
+
+
+def select_bundle_image(image_path: Path) -> tuple[BundleImage, BundleImage]:
+    """Select the smallest fidelity-safe image encoding for a ZIP bundle.
+
+    Lossless WebP is selected whenever it is smaller. Quality-95 WebP is
+    selected only when it cuts the estimated archive size by at least 5%.
+    Otherwise the source encoding is retained.
+    """
+    source = _create_bundle_image(image_path.read_bytes(), image_path.suffix)
+    lossless_webp = _create_bundle_image(
+        optimize_image_to_bytes(
+            image_path,
+            quality=LOSSLESS_WEBP_QUALITY,
+            lossless=True,
+        ),
+        ".webp",
+    )
+    visually_lossless_webp = _create_bundle_image(
+        optimize_image_to_bytes(
+            image_path,
+            quality=VISUALLY_LOSSLESS_WEBP_QUALITY,
+            lossless=False,
+        ),
+        ".webp",
+    )
+    candidates = [source]
+    if lossless_webp.archive_size < source.archive_size:
+        candidates.append(lossless_webp)
+    if visually_lossless_webp.archive_size <= source.archive_size * (
+        1 - MIN_LOSSY_WEBP_SAVINGS_RATIO
+    ):
+        candidates.append(visually_lossless_webp)
+    return source, min(candidates, key=lambda candidate: candidate.archive_size)
+
+
+def _get_bundle_image_name(
+    image_path: Path,
+    suffix: str,
+    used_names: set[str],
+) -> str:
+    """Create a collision-safe filename for a bundle entry."""
+    name = f"{image_path.stem}{suffix}"
     if name.casefold() in used_names:
-        name = f"{image_path.name}.webp"
-    suffix = 2
+        name = f"{image_path.name}{suffix}"
+    duplicate_number = 2
     while name.casefold() in used_names:
-        name = f"{image_path.name}.{suffix}.webp"
-        suffix += 1
+        name = f"{image_path.name}.{duplicate_number}{suffix}"
+        duplicate_number += 1
     used_names.add(name.casefold())
     return name
 
 
-def create_webp_bundle(
+def create_optimized_bundle(
     zip_path: Path,
     images: list[Path],
     sidecar_dir: Path,
-    *,
-    quality: int = 85,
-) -> int:
-    """Write an atomic WebP-only meme bundle and return its image count."""
+) -> BundleResult:
+    """Write an atomic bundle using the smallest fidelity-safe image formats."""
     temporary_file = tempfile.NamedTemporaryFile(
         dir=zip_path.parent,
         prefix=f".{zip_path.stem}-",
@@ -263,10 +343,17 @@ def create_webp_bundle(
     temporary_path = Path(temporary_file.name)
     temporary_file.close()
     bundled = 0
+    source_archive_size = 0
+    optimized_archive_size = 0
     used_names: set[str] = set()
 
     try:
-        with zipfile.ZipFile(temporary_path, "w", zipfile.ZIP_DEFLATED) as bundle:
+        with zipfile.ZipFile(
+            temporary_path,
+            "w",
+            zipfile.ZIP_DEFLATED,
+            compresslevel=9,
+        ) as bundle:
             for image_path in images:
                 sidecar_path = sidecar_dir / f"{image_path.name}.json"
                 if not sidecar_path.exists():
@@ -277,37 +364,47 @@ def create_webp_bundle(
                         metadata = json.load(sidecar_file)
                     if not isinstance(metadata, dict):
                         raise ValueError("sidecar must contain a JSON object")
-                    optimized_image = optimize_image_to_bytes(
-                        image_path,
-                        quality=quality,
-                        lossless=False,
-                    )
+                    source_image, selected_image = select_bundle_image(image_path)
                 except (OSError, ValueError, json.JSONDecodeError) as error:
                     temporary_path.unlink(missing_ok=True)
                     raise click.ClickException(
                         f"Could not optimize {image_path.name} for the bundle: {error}"
                     ) from error
 
-                bundle_name = _get_bundle_image_name(image_path, used_names)
-                metadata["contentHash"] = hashlib.sha256(optimized_image).hexdigest()
+                bundle_name = _get_bundle_image_name(
+                    image_path,
+                    selected_image.suffix,
+                    used_names,
+                )
+                metadata["contentHash"] = hashlib.sha256(selected_image.content).hexdigest()
                 metadata_content = json.dumps(
                     metadata,
                     indent=2,
                     ensure_ascii=False,
                 ).encode("utf-8")
-                bundle.writestr(bundle_name, optimized_image, compress_type=zipfile.ZIP_STORED)
+                bundle.writestr(
+                    bundle_name,
+                    selected_image.content,
+                    compress_type=selected_image.compression_type,
+                )
                 bundle.writestr(
                     f"{bundle_name}.json",
                     metadata_content,
                     compress_type=zipfile.ZIP_DEFLATED,
                 )
                 bundled += 1
+                source_archive_size += source_image.archive_size
+                optimized_archive_size += selected_image.archive_size
         temporary_path.replace(zip_path)
     except OSError:
         temporary_path.unlink(missing_ok=True)
         raise
 
-    return bundled
+    return BundleResult(
+        image_count=bundled,
+        source_archive_size=source_archive_size,
+        optimized_archive_size=optimized_archive_size,
+    )
 
 
 @click.command()
@@ -754,17 +851,28 @@ def annotate(
                 "remaining images[/dim]"
             )
     
-    # Create a WebP-only ZIP bundle from every image with a sidecar.
+    # Create a smallest-format ZIP bundle from every image with a sidecar.
     if create_zip:
         zip_path = folder.parent / f"{folder.name}.meme.zip"
-        bundled = create_webp_bundle(zip_path, all_images, output_dir)
+        bundle_result = create_optimized_bundle(zip_path, all_images, output_dir)
         
-        if bundled > 0:
+        if bundle_result.image_count > 0:
             console.print(
                 f"\n[bold blue]📦 Created bundle: {zip_path}[/bold blue]"
             )
+            saved_bytes = (
+                bundle_result.source_archive_size - bundle_result.optimized_archive_size
+            )
+            saved_percent = (
+                saved_bytes / bundle_result.source_archive_size * 100
+                if bundle_result.source_archive_size
+                else 0
+            )
             console.print(
-                f"[dim]{bundled} image(s) bundled. "
+                f"[dim]{bundle_result.image_count} image(s) bundled; image payload "
+                f"{bundle_result.source_archive_size / 1024:.1f} KiB → "
+                f"{bundle_result.optimized_archive_size / 1024:.1f} KiB "
+                f"({saved_percent:.1f}% smaller). "
                 "Transfer this file to your Android device "
                 "and open with Riposte[/dim]"
             )

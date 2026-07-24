@@ -80,7 +80,7 @@ This verifies Copilot CLI is installed and authenticated.
 # Annotate all images in a folder
 meme-cli annotate ./my-memes
 
-# Annotate and create a WebP-optimized ZIP bundle
+# Annotate and create a size-optimized ZIP bundle
 meme-cli annotate ./my-memes --zip
 
 # Specify output directory for sidecars
@@ -115,7 +115,7 @@ Annotate images with AI-generated metadata.
 meme-cli annotate <folder> [OPTIONS]
 
 Options:
-  --zip                    Bundle optimized WebP images and sidecars into a .meme.zip file
+  --zip                    Bundle the smallest fidelity-safe images and sidecars into a .meme.zip file
   --output, -o PATH        Output directory for sidecar files (default: same as input)
   --model, -m TEXT         Model to use for analysis (default: gpt-5-mini)
   --languages, -l TEXT     Comma-separated BCP 47 language codes (default: en)
@@ -129,9 +129,11 @@ Options:
   --verbose, -v            Show detailed progress information
 ```
 
-When `--zip` is used, the CLI converts every image with a sidecar to quality-85
-WebP inside the bundle. The source files remain unchanged, and each bundled
-sidecar's `contentHash` is updated to match its optimized WebP image.
+When `--zip` is used, the CLI selects the smallest fidelity-safe encoding for
+each image: lossless WebP when it is smaller, quality-95 WebP only when it is
+at least 5% smaller, or the original format when neither WebP option reduces
+the archive. Source files remain unchanged, and bundled sidecar `contentHash`
+values always match their bundled image.
 
 #### Processing Modes
 
