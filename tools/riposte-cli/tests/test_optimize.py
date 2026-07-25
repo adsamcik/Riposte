@@ -11,6 +11,7 @@ from click.testing import CliRunner
 from PIL import Image
 
 from riposte_cli.commands import annotate
+from riposte_cli.commands import optimize as optimize_command
 from riposte_cli.commands.annotate import BundleImage, create_optimized_bundle, select_bundle_image
 from riposte_cli.commands.optimize import convert_to_webp, optimize
 from riposte_cli.commands.signal_export import (
@@ -32,6 +33,12 @@ def test_convert_to_webp_preserves_dimensions_and_transparency(tmp_path: Path) -
         assert optimized.format == "WEBP"
         assert optimized.size == (12, 8)
         assert optimized.mode == "RGBA"
+
+
+def test_lossless_webp_uses_fast_method_by_default() -> None:
+    assert optimize_command._get_webp_method(lossless=True, method=None) == 0
+    assert optimize_command._get_webp_method(lossless=False, method=None) == 6
+    assert optimize_command._get_webp_method(lossless=True, method=4) == 4
 
 
 def test_convert_to_webp_preserves_animation(tmp_path: Path) -> None:

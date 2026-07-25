@@ -13,6 +13,8 @@ from rich.console import Console
 from riposte_cli.hashing import get_image_hash
 
 console = Console()
+LOSSLESS_WEBP_METHOD = 0
+LOSSY_WEBP_METHOD = 6
 
 
 def _webp_mode(image: Image.Image) -> str:
@@ -22,19 +24,26 @@ def _webp_mode(image: Image.Image) -> str:
     return "RGB"
 
 
+def _get_webp_method(*, lossless: bool, method: int | None) -> int:
+    """Choose a bounded default for lossless encoding."""
+    if method is not None:
+        return method
+    return LOSSLESS_WEBP_METHOD if lossless else LOSSY_WEBP_METHOD
+
+
 def _save_as_webp(
     image: Image.Image,
     destination: Path | BinaryIO,
     *,
     quality: int,
     lossless: bool,
-    method: int = 6,
+    method: int | None = None,
 ) -> None:
     """Encode an open image as WebP while preserving animated frames."""
     save_options = {
         "format": "WEBP",
         "quality": quality,
-        "method": method,
+        "method": _get_webp_method(lossless=lossless, method=method),
         "lossless": lossless,
     }
     if icc_profile := image.info.get("icc_profile"):
@@ -64,7 +73,7 @@ def encode_image_as_webp(
     *,
     quality: int,
     lossless: bool,
-    method: int = 6,
+    method: int | None = None,
 ) -> bytes:
     """Encode an already-prepared image as optimized WebP bytes."""
     destination = io.BytesIO()
@@ -83,7 +92,7 @@ def optimize_image_to_bytes(
     *,
     quality: int,
     lossless: bool,
-    method: int = 6,
+    method: int | None = None,
 ) -> bytes:
     """Encode an image as optimized WebP bytes without creating a file."""
     with Image.open(source) as image:
