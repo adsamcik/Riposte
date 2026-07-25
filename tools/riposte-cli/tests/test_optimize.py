@@ -185,6 +185,31 @@ def test_select_bundle_image_skips_lossless_reencoding_for_jpeg(
     assert lossless_calls == [False]
 
 
+def test_select_bundle_image_uses_fast_method_for_lossless_candidate(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    source = tmp_path / "source.png"
+    Image.new("RGB", (2, 2), "white").save(source)
+    optimization_calls: list[tuple[int, bool, int]] = []
+
+    def fake_optimize(
+        _source: Path,
+        *,
+        quality: int,
+        lossless: bool,
+        method: int = 6,
+    ) -> bytes:
+        optimization_calls.append((quality, lossless, method))
+        return b"optimized"
+
+    monkeypatch.setattr(annotate, "optimize_image_to_bytes", fake_optimize)
+
+    select_bundle_image(source)
+
+    assert optimization_calls == [(95, False, 6), (100, True, 0)]
+
+
 def test_create_optimized_bundle_disambiguates_same_stem_images(
     tmp_path: Path,
     monkeypatch,

@@ -302,6 +302,7 @@ def select_bundle_image(image_path: Path) -> tuple[BundleImage, BundleImage]:
                 image_path,
                 quality=LOSSLESS_WEBP_QUALITY,
                 lossless=True,
+                method=0,
             ),
             ".webp",
         )

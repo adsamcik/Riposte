@@ -28,12 +28,13 @@ def _save_as_webp(
     *,
     quality: int,
     lossless: bool,
+    method: int = 6,
 ) -> None:
     """Encode an open image as WebP while preserving animated frames."""
     save_options = {
         "format": "WEBP",
         "quality": quality,
-        "method": 6,
+        "method": method,
         "lossless": lossless,
     }
     if icc_profile := image.info.get("icc_profile"):
@@ -58,17 +59,40 @@ def _save_as_webp(
     image.convert(_webp_mode(image)).save(destination, **save_options)
 
 
-def encode_image_as_webp(image: Image.Image, *, quality: int, lossless: bool) -> bytes:
+def encode_image_as_webp(
+    image: Image.Image,
+    *,
+    quality: int,
+    lossless: bool,
+    method: int = 6,
+) -> bytes:
     """Encode an already-prepared image as optimized WebP bytes."""
     destination = io.BytesIO()
-    _save_as_webp(image, destination, quality=quality, lossless=lossless)
+    _save_as_webp(
+        image,
+        destination,
+        quality=quality,
+        lossless=lossless,
+        method=method,
+    )
     return destination.getvalue()
 
 
-def optimize_image_to_bytes(source: Path, *, quality: int, lossless: bool) -> bytes:
+def optimize_image_to_bytes(
+    source: Path,
+    *,
+    quality: int,
+    lossless: bool,
+    method: int = 6,
+) -> bytes:
     """Encode an image as optimized WebP bytes without creating a file."""
     with Image.open(source) as image:
-        return encode_image_as_webp(image, quality=quality, lossless=lossless)
+        return encode_image_as_webp(
+            image,
+            quality=quality,
+            lossless=lossless,
+            method=method,
+        )
 
 
 def convert_to_webp(
