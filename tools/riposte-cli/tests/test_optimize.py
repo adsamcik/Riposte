@@ -143,7 +143,13 @@ def test_select_bundle_image_retains_source_without_material_savings(
     source_content = os.urandom(1_000)
     source.write_bytes(source_content)
 
-    def fake_optimize(_source: Path, *, quality: int, lossless: bool) -> bytes:
+    def fake_optimize(
+        _source: Path,
+        *,
+        quality: int,
+        lossless: bool,
+        method: int = 6,
+    ) -> bytes:
         return os.urandom(1_100 if lossless else 960)
 
     monkeypatch.setattr(annotate, "optimize_image_to_bytes", fake_optimize)
@@ -162,7 +168,13 @@ def test_select_bundle_image_uses_visually_lossless_webp_for_material_savings(
     source = tmp_path / "meme.jpg"
     source.write_bytes(os.urandom(1_000))
 
-    def fake_optimize(_source: Path, *, quality: int, lossless: bool) -> bytes:
+    def fake_optimize(
+        _source: Path,
+        *,
+        quality: int,
+        lossless: bool,
+        method: int = 6,
+    ) -> bytes:
         return os.urandom(1_100 if lossless else 900)
 
     monkeypatch.setattr(annotate, "optimize_image_to_bytes", fake_optimize)
@@ -181,7 +193,13 @@ def test_select_bundle_image_skips_lossless_reencoding_for_jpeg(
     source.write_bytes(os.urandom(1_000))
     lossless_calls: list[bool] = []
 
-    def fake_optimize(_source: Path, *, quality: int, lossless: bool) -> bytes:
+    def fake_optimize(
+        _source: Path,
+        *,
+        quality: int,
+        lossless: bool,
+        method: int = 6,
+    ) -> bytes:
         lossless_calls.append(lossless)
         return os.urandom(900)
 
@@ -217,6 +235,43 @@ def test_select_bundle_image_uses_fast_method_for_lossless_candidate(
     assert optimization_calls == [(95, False, 6), (100, True, 0)]
 
 
+def test_create_optimized_bundle_reuses_cached_webp_candidates(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    source = tmp_path / "meme.png"
+    Image.new("RGB", (8, 8), "white").save(source)
+    metadata_dir = tmp_path / "metadata"
+    metadata_dir.mkdir()
+    (metadata_dir / "meme.png.json").write_text(
+        json.dumps({"emojis": ["😂"]}),
+        encoding="utf-8",
+    )
+    calls: list[tuple[int, bool, int]] = []
+
+    def fake_optimize(
+        _source: Path,
+        *,
+        quality: int,
+        lossless: bool,
+        method: int = 6,
+    ) -> bytes:
+        calls.append((quality, lossless, method))
+        return b"lossless" if lossless else b"lossy"
+
+    monkeypatch.setattr(annotate, "optimize_image_to_bytes", fake_optimize)
+
+    first = create_optimized_bundle(tmp_path / "first.zip", [source], metadata_dir)
+    second = create_optimized_bundle(tmp_path / "second.zip", [source], metadata_dir)
+
+    assert calls == [(95, False, 6), (100, True, 0)]
+    assert first.cache_hits == 0
+    assert first.cache_misses == 2
+    assert second.cache_hits == 2
+    assert second.cache_misses == 0
+    assert len(list((metadata_dir / ".meme-webp-cache").glob("*.webp"))) == 2
+
+
 def test_create_optimized_bundle_disambiguates_same_stem_images(
     tmp_path: Path,
     monkeypatch,
@@ -234,7 +289,10 @@ def test_create_optimized_bundle_disambiguates_same_stem_images(
         )
     bundle_path = tmp_path / "memes.meme.zip"
 
-    def fake_select(source: Path) -> tuple[BundleImage, BundleImage]:
+    def fake_select(
+        source: Path,
+        **_kwargs: object,
+    ) -> tuple[BundleImage, BundleImage]:
         original = BundleImage(
             content=source.read_bytes(),
             suffix=source.suffix,

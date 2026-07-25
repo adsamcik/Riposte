@@ -52,6 +52,8 @@ LOSSLESS_WEBP_QUALITY = 100
 VISUALLY_LOSSLESS_WEBP_QUALITY = 95
 MIN_LOSSY_WEBP_SAVINGS_RATIO = 0.05
 LOSSLESS_SOURCE_EXTENSIONS = {".bmp", ".gif", ".png", ".tif", ".tiff"}
+WEBP_CACHE_DIRECTORY = ".meme-webp-cache"
+WEBP_CACHE_VERSION = "v1"
 
 # Supported image formats
 SUPPORTED_EXTENSIONS = {
@@ -257,6 +259,16 @@ class BundleResult:
     image_count: int
     source_archive_size: int
     optimized_archive_size: int
+    cache_hits: int
+    cache_misses: int
+
+
+@dataclass
+class BundleCacheStats:
+    """Mutable cache counters for a single bundle build."""
+
+    hits: int = 0
+    misses: int = 0
 
 
 def _get_zip_storage(content: bytes) -> tuple[int, int]:
@@ -279,17 +291,81 @@ def _create_bundle_image(content: bytes, suffix: str) -> BundleImage:
     )
 
 
-def select_bundle_image(image_path: Path) -> tuple[BundleImage, BundleImage]:
+def _cache_webp_candidate(
+    image_path: Path,
+    source_hash: str,
+    cache_dir: Path | None,
+    cache_stats: BundleCacheStats | None,
+    *,
+    quality: int,
+    lossless: bool,
+    method: int = 6,
+) -> bytes:
+    """Load or atomically store a WebP candidate for an unchanged source image."""
+    if cache_dir is None:
+        return optimize_image_to_bytes(
+            image_path,
+            quality=quality,
+            lossless=lossless,
+            method=method,
+        )
+
+    variant = f"{'lossless' if lossless else 'lossy'}-q{quality}-m{method}"
+    cache_path = cache_dir / f"{WEBP_CACHE_VERSION}-{source_hash}-{variant}.webp"
+    if cache_path.exists():
+        if cache_stats is not None:
+            cache_stats.hits += 1
+        return cache_path.read_bytes()
+
+    candidate = optimize_image_to_bytes(
+        image_path,
+        quality=quality,
+        lossless=lossless,
+        method=method,
+    )
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    temporary_file = tempfile.NamedTemporaryFile(
+        dir=cache_dir,
+        prefix=f".{cache_path.stem}-",
+        suffix=".tmp",
+        delete=False,
+    )
+    temporary_path = Path(temporary_file.name)
+    try:
+        temporary_file.write(candidate)
+        temporary_file.close()
+        temporary_path.replace(cache_path)
+    except OSError:
+        temporary_file.close()
+        temporary_path.unlink(missing_ok=True)
+        raise
+
+    if cache_stats is not None:
+        cache_stats.misses += 1
+    return candidate
+
+
+def select_bundle_image(
+    image_path: Path,
+    *,
+    cache_dir: Path | None = None,
+    cache_stats: BundleCacheStats | None = None,
+) -> tuple[BundleImage, BundleImage]:
     """Select the smallest fidelity-safe image encoding for a ZIP bundle.
 
     Lossless WebP is selected whenever it is smaller. Quality-95 WebP is
     selected only when it cuts the estimated archive size by at least 5%.
     Otherwise the source encoding is retained.
     """
-    source = _create_bundle_image(image_path.read_bytes(), image_path.suffix)
+    source_content = image_path.read_bytes()
+    source = _create_bundle_image(source_content, image_path.suffix)
+    source_hash = hashlib.sha256(source_content).hexdigest()
     visually_lossless_webp = _create_bundle_image(
-        optimize_image_to_bytes(
+        _cache_webp_candidate(
             image_path,
+            source_hash,
+            cache_dir,
+            cache_stats,
             quality=VISUALLY_LOSSLESS_WEBP_QUALITY,
             lossless=False,
         ),
@@ -298,8 +374,11 @@ def select_bundle_image(image_path: Path) -> tuple[BundleImage, BundleImage]:
     candidates = [source]
     if image_path.suffix.lower() in LOSSLESS_SOURCE_EXTENSIONS:
         lossless_webp = _create_bundle_image(
-            optimize_image_to_bytes(
+            _cache_webp_candidate(
                 image_path,
+                source_hash,
+                cache_dir,
+                cache_stats,
                 quality=LOSSLESS_WEBP_QUALITY,
                 lossless=True,
                 method=0,
@@ -353,6 +432,8 @@ def create_optimized_bundle(
     source_archive_size = 0
     optimized_archive_size = 0
     used_names: set[str] = set()
+    cache_stats = BundleCacheStats()
+    cache_dir = sidecar_dir / WEBP_CACHE_DIRECTORY
 
     try:
         with zipfile.ZipFile(
@@ -373,7 +454,11 @@ def create_optimized_bundle(
                         metadata = json.load(sidecar_file)
                     if not isinstance(metadata, dict):
                         raise ValueError("sidecar must contain a JSON object")
-                    source_image, selected_image = select_bundle_image(image_path)
+                    source_image, selected_image = select_bundle_image(
+                        image_path,
+                        cache_dir=cache_dir,
+                        cache_stats=cache_stats,
+                    )
                 except (OSError, ValueError, json.JSONDecodeError) as error:
                     temporary_path.unlink(missing_ok=True)
                     raise click.ClickException(
@@ -415,6 +500,8 @@ def create_optimized_bundle(
         image_count=bundled,
         source_archive_size=source_archive_size,
         optimized_archive_size=optimized_archive_size,
+        cache_hits=cache_stats.hits,
+        cache_misses=cache_stats.misses,
     )
 
 
@@ -915,6 +1002,11 @@ def annotate(
                 "Transfer this file to your Android device "
                 "and open with Riposte[/dim]"
             )
+            if bundle_result.cache_hits:
+                console.print(
+                    f"[dim]Reused {bundle_result.cache_hits} cached WebP candidate(s); "
+                    f"generated {bundle_result.cache_misses}.[/dim]"
+                )
         else:
             console.print(
                 "\n[yellow]No images with sidecars to bundle.[/yellow]"
