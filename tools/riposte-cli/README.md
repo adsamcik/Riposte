@@ -162,6 +162,8 @@ By default, the CLI uses content-based deduplication to avoid processing duplica
 
 The `contentHash` field (SHA-256) is included in each sidecar file for Android app deduplication.
 
+ZIP creation displays per-image progress while formats are evaluated and packed.
+
 **Examples:**
 
 ```bash

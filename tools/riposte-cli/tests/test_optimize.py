@@ -166,6 +166,25 @@ def test_select_bundle_image_uses_visually_lossless_webp_for_material_savings(
     assert len(selected.content) == 900
 
 
+def test_select_bundle_image_skips_lossless_reencoding_for_jpeg(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    source = tmp_path / "meme.jpg"
+    source.write_bytes(os.urandom(1_000))
+    lossless_calls: list[bool] = []
+
+    def fake_optimize(_source: Path, *, quality: int, lossless: bool) -> bytes:
+        lossless_calls.append(lossless)
+        return os.urandom(900)
+
+    monkeypatch.setattr(annotate, "optimize_image_to_bytes", fake_optimize)
+
+    select_bundle_image(source)
+
+    assert lossless_calls == [False]
+
+
 def test_create_optimized_bundle_disambiguates_same_stem_images(
     tmp_path: Path,
     monkeypatch,
@@ -200,7 +219,15 @@ def test_create_optimized_bundle_disambiguates_same_stem_images(
 
     monkeypatch.setattr(annotate, "select_bundle_image", fake_select)
 
-    create_optimized_bundle(bundle_path, [jpg, png, webp], tmp_path)
+    started_images: list[Path] = []
+    completed_images: list[bool] = []
+    create_optimized_bundle(
+        bundle_path,
+        [jpg, png, webp],
+        tmp_path,
+        on_image_started=started_images.append,
+        on_image_finished=lambda: completed_images.append(True),
+    )
 
     with zipfile.ZipFile(bundle_path) as bundle:
         assert bundle.namelist() == [
@@ -211,6 +238,25 @@ def test_create_optimized_bundle_disambiguates_same_stem_images(
             "meme.png.webp.webp",
             "meme.png.webp.webp.json",
         ]
+    assert started_images == [jpg, png, webp]
+    assert len(completed_images) == 3
+
+
+def test_annotate_zip_reports_bundle_progress(tmp_path: Path) -> None:
+    image_dir = tmp_path / "memes"
+    image_dir.mkdir()
+    for index in range(1, 4):
+        image_path = image_dir / f"meme_{index}.png"
+        Image.new("RGB", (8, 8), (index * 20, 30, 40)).save(image_path)
+        image_path.with_name(f"{image_path.name}.json").write_text(
+            json.dumps({"emojis": ["😂"]}),
+            encoding="utf-8",
+        )
+
+    result = CliRunner().invoke(annotate.annotate, [str(image_dir), "--zip"])
+
+    assert result.exit_code == 0, result.output
+    assert "Packing meme_3.png" in result.output
 
 
 def test_prepare_signal_sticker_preserves_transparency_on_512px_canvas(tmp_path: Path) -> None:

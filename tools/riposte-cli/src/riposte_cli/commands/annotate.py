@@ -8,6 +8,7 @@ import tempfile
 import time
 import zipfile
 import zlib
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -50,6 +51,7 @@ console = Console()
 LOSSLESS_WEBP_QUALITY = 100
 VISUALLY_LOSSLESS_WEBP_QUALITY = 95
 MIN_LOSSY_WEBP_SAVINGS_RATIO = 0.05
+LOSSLESS_SOURCE_EXTENSIONS = {".bmp", ".gif", ".png", ".tif", ".tiff"}
 
 # Supported image formats
 SUPPORTED_EXTENSIONS = {
@@ -285,14 +287,6 @@ def select_bundle_image(image_path: Path) -> tuple[BundleImage, BundleImage]:
     Otherwise the source encoding is retained.
     """
     source = _create_bundle_image(image_path.read_bytes(), image_path.suffix)
-    lossless_webp = _create_bundle_image(
-        optimize_image_to_bytes(
-            image_path,
-            quality=LOSSLESS_WEBP_QUALITY,
-            lossless=True,
-        ),
-        ".webp",
-    )
     visually_lossless_webp = _create_bundle_image(
         optimize_image_to_bytes(
             image_path,
@@ -302,8 +296,17 @@ def select_bundle_image(image_path: Path) -> tuple[BundleImage, BundleImage]:
         ".webp",
     )
     candidates = [source]
-    if lossless_webp.archive_size < source.archive_size:
-        candidates.append(lossless_webp)
+    if image_path.suffix.lower() in LOSSLESS_SOURCE_EXTENSIONS:
+        lossless_webp = _create_bundle_image(
+            optimize_image_to_bytes(
+                image_path,
+                quality=LOSSLESS_WEBP_QUALITY,
+                lossless=True,
+            ),
+            ".webp",
+        )
+        if lossless_webp.archive_size < source.archive_size:
+            candidates.append(lossless_webp)
     if visually_lossless_webp.archive_size <= source.archive_size * (
         1 - MIN_LOSSY_WEBP_SAVINGS_RATIO
     ):
@@ -332,6 +335,9 @@ def create_optimized_bundle(
     zip_path: Path,
     images: list[Path],
     sidecar_dir: Path,
+    *,
+    on_image_started: Callable[[Path], None] | None = None,
+    on_image_finished: Callable[[], None] | None = None,
 ) -> BundleResult:
     """Write an atomic bundle using the smallest fidelity-safe image formats."""
     temporary_file = tempfile.NamedTemporaryFile(
@@ -359,6 +365,8 @@ def create_optimized_bundle(
                 if not sidecar_path.exists():
                     continue
 
+                if on_image_started is not None:
+                    on_image_started(image_path)
                 try:
                     with open(sidecar_path, encoding="utf-8") as sidecar_file:
                         metadata = json.load(sidecar_file)
@@ -395,6 +403,8 @@ def create_optimized_bundle(
                 bundled += 1
                 source_archive_size += source_image.archive_size
                 optimized_archive_size += selected_image.archive_size
+                if on_image_finished is not None:
+                    on_image_finished()
         temporary_path.replace(zip_path)
     except OSError:
         temporary_path.unlink(missing_ok=True)
@@ -415,7 +425,7 @@ def create_optimized_bundle(
 @click.option(
     "--zip", "create_zip",
     is_flag=True,
-    help="Bundle optimized WebP images and sidecars into a .meme.zip file",
+    help="Bundle the smallest fidelity-safe images and sidecars into a .meme.zip file",
 )
 @click.option(
     "--output", "-o",
@@ -854,7 +864,35 @@ def annotate(
     # Create a smallest-format ZIP bundle from every image with a sidecar.
     if create_zip:
         zip_path = folder.parent / f"{folder.name}.meme.zip"
-        bundle_result = create_optimized_bundle(zip_path, all_images, output_dir)
+        bundle_images = [
+            image_path
+            for image_path in all_images
+            if has_sidecar(image_path, output_dir)
+        ]
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            TaskProgressColumn(),
+            TimeElapsedColumn(),
+            TimeRemainingColumn(),
+            console=console,
+        ) as bundle_progress:
+            bundle_task = bundle_progress.add_task(
+                "Preparing bundle...",
+                total=len(bundle_images),
+            )
+
+            def show_bundle_image(image_path: Path) -> None:
+                bundle_progress.update(bundle_task, description=f"Packing {image_path.name}")
+
+            bundle_result = create_optimized_bundle(
+                zip_path,
+                bundle_images,
+                output_dir,
+                on_image_started=show_bundle_image,
+                on_image_finished=lambda: bundle_progress.advance(bundle_task),
+            )
         
         if bundle_result.image_count > 0:
             console.print(
