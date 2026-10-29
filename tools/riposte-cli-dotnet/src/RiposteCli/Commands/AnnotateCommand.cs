@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 using System.CommandLine;
 using System.IO.Compression;
 using System.Diagnostics;
-using GitHub.Copilot.SDK;
+using GitHub.Copilot;
 using RiposteCli.Models;
 using RiposteCli.RateLimiting;
 using RiposteCli.Services;

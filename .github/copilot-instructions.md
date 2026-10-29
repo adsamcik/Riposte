@@ -256,7 +256,7 @@ The core user flow is: chatting → need a meme → open app → find via emoji/
 
 ## CLI Tool (`tools/riposte-cli-dotnet/`)
 
-.NET 8 CLI for batch AI annotation of meme images using GitHub Copilot SDK.
+.NET 10 CLI for batch AI annotation of meme images using GitHub Copilot SDK.
 
 ```bash
 cd tools/riposte-cli-dotnet

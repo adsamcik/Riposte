@@ -2,7 +2,7 @@
 
 A command-line tool for annotating meme images using the GitHub Copilot SDK. Generates metadata files compatible with the [Riposte](https://github.com/riposte/riposte) Android app.
 
-This is a .NET 8 rewrite of the original Python CLI, offering single-executable distribution and `dotnet tool` installation.
+This is a .NET 10 rewrite of the original Python CLI, offering single-executable distribution and `dotnet tool` installation.
 
 ## Features
 
@@ -20,7 +20,9 @@ This is a .NET 8 rewrite of the original Python CLI, offering single-executable 
 1. **GitHub Copilot CLI** installed and in PATH
 2. **Copilot Authentication**: `copilot auth login`
 3. **Active GitHub Copilot Subscription**
-4. **.NET 8 SDK** (for building from source)
+4. **.NET 10 SDK** (for building from source)
+
+Release builds also require a [Six Labors license](https://sixlabors.com/pricing/) for ImageSharp. Configure SixLaborsLicenseKey or SixLaborsLicenseFile; Debug builds can run without a license.
 
 ## Installation
 
@@ -43,7 +45,7 @@ dotnet run --project src/RiposteCli -- annotate ./memes
 ```bash
 cd tools/riposte-cli-dotnet
 dotnet publish src/RiposteCli -c Release -r win-x64 --self-contained -p:PublishSingleFile=true
-# Output: src/RiposteCli/bin/Release/net8.0/win-x64/publish/meme-cli.exe
+# Output: src/RiposteCli/bin/Release/net10.0/win-x64/publish/meme-cli.exe
 ```
 
 ## Quick Start

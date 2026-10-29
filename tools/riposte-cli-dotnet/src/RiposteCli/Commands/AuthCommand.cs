@@ -1,6 +1,6 @@
 using System.CommandLine;
 using System.Diagnostics;
-using GitHub.Copilot.SDK;
+using GitHub.Copilot;
 using Spectre.Console;
 
 namespace RiposteCli.Commands;

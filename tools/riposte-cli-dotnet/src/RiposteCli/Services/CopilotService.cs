@@ -1,6 +1,6 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using GitHub.Copilot.SDK;
+using GitHub.Copilot;
 using RiposteCli.Models;
 using RiposteCli.RateLimiting;
 
@@ -62,7 +62,7 @@ public sealed class CopilotService
                     Prompt = "Analyze this meme and provide the JSON metadata.",
                     Attachments =
                     [
-                        new UserMessageDataAttachmentsItemFile
+                        new AttachmentFile
                         {
                             Path = Path.GetFullPath(imagePath),
                             DisplayName = Path.GetFileName(imagePath),
@@ -161,7 +161,7 @@ public sealed class CopilotService
                     Prompt = "Analyze this meme and provide the requested JSON fields only.",
                     Attachments =
                     [
-                        new UserMessageDataAttachmentsItemFile
+                        new AttachmentFile
                         {
                             Path = Path.GetFullPath(imagePath),
                             DisplayName = Path.GetFileName(imagePath),
